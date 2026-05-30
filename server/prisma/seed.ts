@@ -13,6 +13,13 @@ const subDays = (n: number) => addDays(-n);
 const date = (s: string) => new Date(s + 'T00:00:00Z');
 
 async function main() {
+  // Si ya hay datos, no re-sembrar (evita borrar datos reales en cada deploy).
+  const yaHayDatos = await prisma.empresa.count();
+  if (yaHayDatos > 0) {
+    console.log('La base ya tiene datos, se omite el seed.');
+    return;
+  }
+
   console.log('Limpiando datos previos...');
   // Orden inverso de dependencias.
   await prisma.foto.deleteMany();
