@@ -9,6 +9,10 @@ export default {
           navy: '#1E293B',
           steel: '#64748B'
         }
+      },
+      fontFamily: {
+        sketch: ['Caveat', 'cursive'],
+        body: ['Inter', 'sans-serif'],
       }
     }
   },

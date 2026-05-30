@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Package,
@@ -25,6 +25,7 @@ const navItems = [
 
 export const Sidebar: React.FC = () => {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-slate-900 text-white">
@@ -32,7 +33,7 @@ export const Sidebar: React.FC = () => {
       <div className="px-5 py-6 border-b-2 border-slate-700">
         <div className="flex items-center gap-2">
           <Zap size={24} className="text-orange-500" fill="currentColor" />
-          <span className="text-2xl font-black text-orange-500 tracking-tight">ActivaQR</span>
+          <span className="font-sketch text-3xl font-black text-orange-500 tracking-tight">ActivaQR</span>
         </div>
         <div className="text-slate-400 text-xs mt-1 font-medium tracking-wider uppercase">Activos bajo control</div>
       </div>
@@ -45,7 +46,7 @@ export const Sidebar: React.FC = () => {
             to={to}
             end={to === '/'}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 font-semibold text-sm transition-colors ${
+              `flex items-center gap-3 px-3 min-h-[48px] font-sketch text-lg font-semibold transition-colors ${
                 isActive
                   ? 'bg-orange-500 text-white border-2 border-orange-400'
                   : 'text-slate-300 hover:bg-slate-800 hover:text-white border-2 border-transparent'
@@ -69,13 +70,28 @@ export const Sidebar: React.FC = () => {
 
   return (
     <>
-      {/* Mobile hamburger */}
-      <button
-        className="md:hidden fixed top-4 left-4 z-50 bg-slate-900 text-white p-2 border-2 border-slate-700"
-        onClick={() => setOpen(!open)}
-      >
-        {open ? <X size={22} /> : <Menu size={22} />}
-      </button>
+      {/* Mobile top header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-slate-900 border-b-2 border-slate-700 flex items-center justify-between px-4 h-14">
+        <div className="flex items-center gap-2">
+          <Zap size={20} className="text-orange-500" fill="currentColor" />
+          <span className="font-sketch text-2xl font-black text-orange-500">ActivaQR</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            className="bg-orange-500 text-white p-2 border-2 border-orange-400"
+            onClick={() => { navigate('/medicion'); }}
+            title="Nueva medición"
+          >
+            <ClipboardList size={18} />
+          </button>
+          <button
+            className="bg-slate-800 text-white p-2 border-2 border-slate-600"
+            onClick={() => setOpen(!open)}
+          >
+            {open ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+      </div>
 
       {/* Mobile overlay */}
       {open && (
@@ -85,7 +101,7 @@ export const Sidebar: React.FC = () => {
         />
       )}
 
-      {/* Mobile sidebar */}
+      {/* Mobile sidebar drawer */}
       <div
         className={`md:hidden fixed left-0 top-0 h-full w-64 z-50 transition-transform duration-200 ${
           open ? 'translate-x-0' : '-translate-x-full'
