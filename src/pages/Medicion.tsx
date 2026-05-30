@@ -10,7 +10,8 @@ import { StatusBadge } from '../components/ui/StatusBadge';
 export const Medicion: React.FC = () => {
   const { activoId } = useParams<{ activoId: string }>();
   const navigate = useNavigate();
-  const { activos, mediciones, addMedicion } = useActivos();
+  const { activos, mediciones, tecnicos, addMedicion, getSectorNombre, getTipo, getTecnicoNombre } = useActivos();
+  const tecnicosActivos = tecnicos.filter((t) => t.activo);
 
   const [searchCodigo, setSearchCodigo] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -30,6 +31,13 @@ export const Medicion: React.FC = () => {
         .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())[0]
     : undefined;
 
+  const tipoActivo = activo ? getTipo(activo.tipoId) : undefined;
+  // Por defecto mostramos todo si no encontramos el tipo (compat).
+  const mideTemperatura = tipoActivo ? tipoActivo.mideTemperatura : true;
+  const mideAmperaje = tipoActivo ? tipoActivo.mideAmperaje : activo ? activo.amperajeNormal > 0 : true;
+  const midePresion = tipoActivo ? tipoActivo.midePresion : activo ? activo.presionNormal > 0 : true;
+  const mideVibracion = tipoActivo ? tipoActivo.mideVibracion : true;
+
   const [form, setForm] = useState({
     temperatura: '',
     amperaje: '',
@@ -38,7 +46,7 @@ export const Medicion: React.FC = () => {
     horasMarcha: '',
     estado: 'normal' as EstadoMedicion,
     observaciones: '',
-    tecnico: '',
+    tecnicoId: '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -55,7 +63,7 @@ export const Medicion: React.FC = () => {
       horasMarcha: parseInt(form.horasMarcha) || 0,
       estado: form.estado,
       observaciones: form.observaciones,
-      tecnico: form.tecnico,
+      tecnicoId: form.tecnicoId,
     };
     addMedicion(newMedicion);
     setSavedMedicion(newMedicion);
@@ -85,7 +93,7 @@ export const Medicion: React.FC = () => {
             </div>
             <div className="flex justify-between">
               <span className="text-xs font-bold uppercase text-slate-500">Técnico</span>
-              <span className="text-sm">{savedMedicion.tecnico}</span>
+              <span className="text-sm">{getTecnicoNombre(savedMedicion.tecnicoId)}</span>
             </div>
             {savedMedicion.observaciones && (
               <div>
@@ -98,7 +106,7 @@ export const Medicion: React.FC = () => {
             <button
               onClick={() => {
                 setSubmitted(false);
-                setForm({ temperatura: '', amperaje: '', presion: '', vibracion: 'ninguna', horasMarcha: '', estado: 'normal', observaciones: '', tecnico: '' });
+                setForm({ temperatura: '', amperaje: '', presion: '', vibracion: 'ninguna', horasMarcha: '', estado: 'normal', observaciones: '', tecnicoId: '' });
               }}
               className="flex-1 bg-orange-500 text-white px-4 py-3 font-sketch font-bold text-xl border-2 border-slate-800"
             >
@@ -123,7 +131,7 @@ export const Medicion: React.FC = () => {
         <button onClick={() => navigate(-1)} className="border-2 border-slate-300 p-2 hover:border-slate-800 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
           <ArrowLeft size={18} />
         </button>
-        <h1 className="font-sketch text-4xl font-black text-slate-900 uppercase tracking-tight">Tomar Medición</h1>
+        <h1 className="font-sketch text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 uppercase tracking-tight">Tomar Medición</h1>
       </div>
 
       {/* Search by código */}
@@ -156,7 +164,7 @@ export const Medicion: React.FC = () => {
               <div>
                 <div className="font-sketch font-black text-3xl text-orange-400">{activo.codigo}</div>
                 <div className="font-semibold text-white text-sm">{activo.nombre}</div>
-                <div className="text-slate-400 text-xs mt-0.5">{activo.sector} · {activo.ubicacion}</div>
+                <div className="text-slate-400 text-xs mt-0.5">{getSectorNombre(activo.sectorId)} · {activo.ubicacion}</div>
               </div>
               <StatusBadge estado={activo.estado} />
             </div>
@@ -171,6 +179,7 @@ export const Medicion: React.FC = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="bg-[#FFFEF7] border-2 border-slate-700 shadow-[3px_3px_0px_0px_#1e293b] p-4 space-y-5">
             {/* Temperature */}
+            {mideTemperatura && (
             <div>
               <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
                 Temperatura (°C)
@@ -186,9 +195,10 @@ export const Medicion: React.FC = () => {
                 placeholder="0.0"
               />
             </div>
+            )}
 
             {/* Amperaje */}
-            {activo.amperajeNormal > 0 && (
+            {mideAmperaje && (
               <div>
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
                   Amperaje (A)
@@ -206,7 +216,7 @@ export const Medicion: React.FC = () => {
             )}
 
             {/* Presión */}
-            {activo.presionNormal > 0 && (
+            {midePresion && (
               <div>
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
                   Presión (bar)
@@ -224,6 +234,7 @@ export const Medicion: React.FC = () => {
             )}
 
             {/* Vibración */}
+            {mideVibracion && (
             <div>
               <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-2">Vibración</label>
               <div className="grid grid-cols-2 gap-2">
@@ -243,6 +254,7 @@ export const Medicion: React.FC = () => {
                 ))}
               </div>
             </div>
+            )}
 
             {/* Horas marcha */}
             <div>
@@ -311,14 +323,17 @@ export const Medicion: React.FC = () => {
             {/* Técnico */}
             <div>
               <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Técnico Responsable</label>
-              <input
-                type="text"
+              <select
                 required
-                value={form.tecnico}
-                onChange={(e) => setForm((p) => ({ ...p, tecnico: e.target.value }))}
+                value={form.tecnicoId}
+                onChange={(e) => setForm((p) => ({ ...p, tecnicoId: e.target.value }))}
                 className="w-full border-2 border-slate-300 px-3 h-14 text-xl outline-none focus:border-orange-500 bg-white"
-                placeholder="Nombre del técnico"
-              />
+              >
+                <option value="">Seleccionar técnico...</option>
+                {tecnicosActivos.map((t) => (
+                  <option key={t.id} value={t.id}>{t.nombre}</option>
+                ))}
+              </select>
             </div>
 
             {/* Submit sticky en mobile */}

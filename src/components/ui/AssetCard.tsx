@@ -10,9 +10,11 @@ import { MapPin, Clock, User } from 'lucide-react';
 interface AssetCardProps {
   activo: Activo;
   lastMedicion?: Medicion;
+  sectorNombre: string;
+  responsableNombre: string;
 }
 
-export const AssetCard: React.FC<AssetCardProps> = ({ activo, lastMedicion }) => {
+export const AssetCard: React.FC<AssetCardProps> = ({ activo, lastMedicion, sectorNombre, responsableNombre }) => {
   const navigate = useNavigate();
   const qrValue = `${window.location.origin}/medicion/${activo.id}`;
 
@@ -25,7 +27,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({ activo, lastMedicion }) =>
       <div className="flex justify-between items-start mb-3">
         <StatusBadge estado={activo.estado} size="sm" />
         <span className="font-sketch text-base font-bold uppercase bg-slate-100 border border-slate-300 px-2 py-0.5 text-slate-600 rotate-[1deg]">
-          {activo.sector}
+          {sectorNombre}
         </span>
       </div>
 
@@ -53,7 +55,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({ activo, lastMedicion }) =>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-slate-500">
           <User size={11} />
-          <span>{activo.responsable}</span>
+          <span>{responsableNombre}</span>
         </div>
         {lastMedicion && (
           <div className="flex items-center gap-1.5 text-xs text-slate-500">

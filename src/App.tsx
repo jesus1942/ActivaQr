@@ -8,6 +8,7 @@ import { Mantenimiento } from './pages/Mantenimiento';
 import { Reportes } from './pages/Reportes';
 import { ImportarDatos } from './pages/ImportarDatos';
 import { GestionQR } from './pages/GestionQR';
+import { Configuracion } from './pages/Configuracion';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="reportes" element={<Reportes />} />
           <Route path="importar" element={<ImportarDatos />} />
           <Route path="qr" element={<GestionQR />} />
+          <Route path="configuracion" element={<Configuracion />} />
         </Route>
       </Routes>
     </BrowserRouter>

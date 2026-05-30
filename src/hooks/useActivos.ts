@@ -1,29 +1,45 @@
 import { useStorage } from './useStorage';
-import { Activo, Medicion, TareaMantenimiento } from '../data/types';
-import { seedActivos, seedMediciones, seedTareas } from '../data/seed';
+import {
+  Activo,
+  Medicion,
+  TareaMantenimiento,
+  Sector,
+  TipoActivo,
+  Tecnico,
+} from '../data/types';
+import {
+  seedActivos,
+  seedMediciones,
+  seedTareas,
+  seedSectores,
+  seedTipos,
+  seedTecnicos,
+} from '../data/seed';
 
 export function useActivos() {
   const [activos, setActivos] = useStorage<Activo[]>('activos', seedActivos);
   const [mediciones, setMediciones] = useStorage<Medicion[]>('mediciones', seedMediciones);
   const [tareas, setTareas] = useStorage<TareaMantenimiento[]>('tareas', seedTareas);
+  const [sectores, setSectores] = useStorage<Sector[]>('sectores', seedSectores);
+  const [tipos, setTipos] = useStorage<TipoActivo[]>('tipos', seedTipos);
+  const [tecnicos, setTecnicos] = useStorage<Tecnico[]>('tecnicos', seedTecnicos);
 
+  // ── Activos ────────────────────────────────────────────────
   const addActivo = (activo: Activo) => {
     setActivos((prev) => [...prev, activo]);
   };
 
   const updateActivo = (id: string, updates: Partial<Activo>) => {
-    setActivos((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, ...updates } : a))
-    );
+    setActivos((prev) => prev.map((a) => (a.id === id ? { ...a, ...updates } : a)));
   };
 
   const deleteActivo = (id: string) => {
     setActivos((prev) => prev.filter((a) => a.id !== id));
   };
 
+  // ── Mediciones ─────────────────────────────────────────────
   const addMedicion = (medicion: Medicion) => {
     setMediciones((prev) => [...prev, medicion]);
-    // Update activo estado based on medicion estado
     if (medicion.estado === 'urgente') {
       updateActivo(medicion.activoId, { estado: 'critico' });
     } else if (medicion.estado === 'revision') {
@@ -34,8 +50,21 @@ export function useActivos() {
     }
   };
 
+  const deleteMedicion = (id: string) => {
+    setMediciones((prev) => prev.filter((m) => m.id !== id));
+  };
+
+  // ── Tareas ─────────────────────────────────────────────────
   const addTarea = (tarea: TareaMantenimiento) => {
     setTareas((prev) => [...prev, tarea]);
+  };
+
+  const updateTarea = (id: string, updates: Partial<TareaMantenimiento>) => {
+    setTareas((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
+  };
+
+  const deleteTarea = (id: string) => {
+    setTareas((prev) => prev.filter((t) => t.id !== id));
   };
 
   const completarTarea = (id: string, fechaRealizada: string, observaciones?: string) => {
@@ -48,22 +77,107 @@ export function useActivos() {
     );
   };
 
+  // ── Sectores ───────────────────────────────────────────────
+  const addSector = (sector: Sector) => {
+    setSectores((prev) => [...prev, sector]);
+  };
+
+  const updateSector = (id: string, updates: Partial<Sector>) => {
+    setSectores((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
+  };
+
+  const deleteSector = (id: string) => {
+    const enUso = activos.some((a) => a.sectorId === id);
+    if (enUso) {
+      setSectores((prev) => prev.map((s) => (s.id === id ? { ...s, activo: false } : s)));
+    } else {
+      setSectores((prev) => prev.filter((s) => s.id !== id));
+    }
+  };
+
+  // ── Tipos ──────────────────────────────────────────────────
+  const addTipo = (tipo: TipoActivo) => {
+    setTipos((prev) => [...prev, tipo]);
+  };
+
+  const updateTipo = (id: string, updates: Partial<TipoActivo>) => {
+    setTipos((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
+  };
+
+  const deleteTipo = (id: string) => {
+    const enUso = activos.some((a) => a.tipoId === id);
+    if (enUso) {
+      setTipos((prev) => prev.map((t) => (t.id === id ? { ...t, activo: false } : t)));
+    } else {
+      setTipos((prev) => prev.filter((t) => t.id !== id));
+    }
+  };
+
+  // ── Técnicos ───────────────────────────────────────────────
+  const addTecnico = (tecnico: Tecnico) => {
+    setTecnicos((prev) => [...prev, tecnico]);
+  };
+
+  const updateTecnico = (id: string, updates: Partial<Tecnico>) => {
+    setTecnicos((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
+  };
+
+  const deleteTecnico = (id: string) => {
+    const enUso =
+      activos.some((a) => a.responsableId === id) ||
+      mediciones.some((m) => m.tecnicoId === id) ||
+      tareas.some((t) => t.responsableId === id);
+    if (enUso) {
+      setTecnicos((prev) => prev.map((t) => (t.id === id ? { ...t, activo: false } : t)));
+    } else {
+      setTecnicos((prev) => prev.filter((t) => t.id !== id));
+    }
+  };
+
+  // ── Helpers ────────────────────────────────────────────────
+  const getSectorNombre = (id: string) => sectores.find((s) => s.id === id)?.nombre ?? '—';
+  const getTipoNombre = (id: string) => tipos.find((t) => t.id === id)?.nombre ?? '—';
+  const getTecnicoNombre = (id: string) => tecnicos.find((t) => t.id === id)?.nombre ?? '—';
+  const getTipo = (id: string): TipoActivo | undefined => tipos.find((t) => t.id === id);
+
   const resetData = () => {
     setActivos(seedActivos);
     setMediciones(seedMediciones);
     setTareas(seedTareas);
+    setSectores(seedSectores);
+    setTipos(seedTipos);
+    setTecnicos(seedTecnicos);
   };
 
   return {
     activos,
     mediciones,
     tareas,
+    sectores,
+    tipos,
+    tecnicos,
     addActivo,
     updateActivo,
     deleteActivo,
     addMedicion,
+    deleteMedicion,
     addTarea,
+    updateTarea,
+    deleteTarea,
     completarTarea,
+    addSector,
+    updateSector,
+    deleteSector,
+    addTipo,
+    updateTipo,
+    deleteTipo,
+    addTecnico,
+    updateTecnico,
+    deleteTecnico,
+    getSectorNombre,
+    getTipoNombre,
+    getTecnicoNombre,
+    getTipo,
     resetData,
   };
 }
