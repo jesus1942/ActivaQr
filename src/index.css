@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+body {
+  background-color: #F8FAFC;
+}
+
+.stamp-shadow {
+  box-shadow: 4px 4px 0px 0px rgba(0,0,0,0.8);
+}
+
+.stamp-shadow-sm {
+  box-shadow: 2px 2px 0px 0px rgba(0,0,0,0.6);
+}
+
+.warning-tape {
+  background: repeating-linear-gradient(
+    -45deg,
+    #F97316,
+    #F97316 20px,
+    #1E293B 20px,
+    #1E293B 40px
+  );
+}
+
+@media print {
+  .no-print { display: none !important; }
+  .sidebar { display: none !important; }
+  body { background: white; }
+}
