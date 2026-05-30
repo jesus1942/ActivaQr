@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  base: '/activaqr/',
+  base: '/ActivaQr/',
   plugins: [
     react(),
     VitePWA({
@@ -17,8 +17,8 @@ export default defineConfig({
         background_color: '#1E293B',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/activaqr/',
-        scope: '/activaqr/',
+        start_url: '/ActivaQr/',
+        scope: '/ActivaQr/',
         lang: 'es',
         categories: ['business', 'productivity', 'utilities'],
         icons: [
@@ -36,14 +36,14 @@ export default defineConfig({
             name: 'Tomar Medición',
             short_name: 'Medición',
             description: 'Cargar medición desde campo',
-            url: '/activaqr/#/medicion',
+            url: '/ActivaQr/#/medicion',
             icons: [{ src: 'icons/icon-96.png', sizes: '96x96' }]
           },
           {
             name: 'Ver Activos',
             short_name: 'Activos',
             description: 'Lista de activos',
-            url: '/activaqr/#/activos',
+            url: '/ActivaQr/#/activos',
             icons: [{ src: 'icons/icon-96.png', sizes: '96x96' }]
           }
         ]
