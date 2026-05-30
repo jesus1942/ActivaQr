@@ -66,10 +66,10 @@ export const Medicion: React.FC = () => {
   if (submitted && savedMedicion && activo) {
     return (
       <div className="max-w-lg mx-auto">
-        <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-6 text-center">
+        <div className="bg-[#FFFEF7] border-2 border-slate-700 shadow-[4px_4px_0px_0px_#1e293b] p-6 text-center">
           <CheckCircle size={48} className="text-emerald-500 mx-auto mb-3" />
-          <h2 className="text-2xl font-black text-slate-900 uppercase mb-1">Medición Registrada</h2>
-          <div className="font-mono font-bold text-orange-500 text-lg mb-4">{activo.codigo}</div>
+          <h2 className="font-sketch text-4xl font-black text-slate-900 uppercase mb-1">Medición Registrada</h2>
+          <div className="font-sketch font-bold text-orange-500 text-2xl mb-4">{activo.codigo}</div>
           <div className="text-left bg-slate-50 border-2 border-slate-200 p-4 space-y-2 mb-4">
             <div className="flex justify-between">
               <span className="text-xs font-bold uppercase text-slate-500">Fecha</span>
@@ -100,13 +100,13 @@ export const Medicion: React.FC = () => {
                 setSubmitted(false);
                 setForm({ temperatura: '', amperaje: '', presion: '', vibracion: 'ninguna', horasMarcha: '', estado: 'normal', observaciones: '', tecnico: '' });
               }}
-              className="flex-1 bg-orange-500 text-white px-4 py-2.5 font-bold border-2 border-slate-800"
+              className="flex-1 bg-orange-500 text-white px-4 py-3 font-sketch font-bold text-xl border-2 border-slate-800"
             >
               Nueva Medición
             </button>
             <button
               onClick={() => navigate(`/activos/${activo!.id}`)}
-              className="flex-1 border-2 border-slate-800 px-4 py-2.5 font-bold text-slate-700"
+              className="flex-1 border-2 border-slate-800 px-4 py-3 font-sketch font-bold text-xl text-slate-700"
             >
               Ver Activo
             </button>
@@ -117,33 +117,33 @@ export const Medicion: React.FC = () => {
   }
 
   return (
-    <div className="max-w-lg mx-auto">
+    <div className="max-w-lg mx-auto pb-24">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <button onClick={() => navigate(-1)} className="border-2 border-slate-300 p-1.5 hover:border-slate-800 transition-colors">
-          <ArrowLeft size={16} />
+        <button onClick={() => navigate(-1)} className="border-2 border-slate-300 p-2 hover:border-slate-800 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
+          <ArrowLeft size={18} />
         </button>
-        <h1 className="text-xl font-black text-slate-900 uppercase tracking-tight">Tomar Medición</h1>
+        <h1 className="font-sketch text-4xl font-black text-slate-900 uppercase tracking-tight">Tomar Medición</h1>
       </div>
 
       {/* Search by código */}
       {!activoId && (
-        <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4 mb-4">
+        <div className="bg-[#FFFEF7] border-2 border-slate-700 shadow-[3px_3px_0px_0px_#1e293b] p-4 mb-4">
           <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-2">Buscar por Código de Activo</label>
           <div className="flex gap-2">
-            <div className="flex items-center gap-2 border-2 border-slate-300 px-3 py-2 flex-1">
-              <Search size={15} className="text-slate-400" />
+            <div className="flex items-center gap-2 border-2 border-slate-300 px-3 h-14 flex-1">
+              <Search size={18} className="text-slate-400 flex-shrink-0" />
               <input
                 type="text"
                 placeholder="Ej: HOR-MOT-001"
                 value={searchCodigo}
                 onChange={(e) => setSearchCodigo(e.target.value)}
-                className="flex-1 outline-none text-sm font-mono uppercase"
+                className="flex-1 outline-none text-xl font-mono uppercase bg-transparent"
               />
             </div>
           </div>
           {searchCodigo && !activo && (
-            <p className="text-red-500 text-xs mt-1 font-semibold">Activo no encontrado</p>
+            <p className="text-red-500 text-sm mt-1 font-semibold">Activo no encontrado</p>
           )}
         </div>
       )}
@@ -151,10 +151,10 @@ export const Medicion: React.FC = () => {
       {activo && (
         <>
           {/* Activo info */}
-          <div className="bg-slate-900 text-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4 mb-4">
+          <div className="bg-slate-900 text-white border-2 border-slate-700 shadow-[3px_3px_0px_0px_#1e293b] p-4 mb-4">
             <div className="flex justify-between items-start">
               <div>
-                <div className="font-mono font-black text-xl text-orange-400">{activo.codigo}</div>
+                <div className="font-sketch font-black text-3xl text-orange-400">{activo.codigo}</div>
                 <div className="font-semibold text-white text-sm">{activo.nombre}</div>
                 <div className="text-slate-400 text-xs mt-0.5">{activo.sector} · {activo.ubicacion}</div>
               </div>
@@ -169,7 +169,7 @@ export const Medicion: React.FC = () => {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4 space-y-4">
+          <form onSubmit={handleSubmit} className="bg-[#FFFEF7] border-2 border-slate-700 shadow-[3px_3px_0px_0px_#1e293b] p-4 space-y-5">
             {/* Temperature */}
             <div>
               <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
@@ -182,7 +182,7 @@ export const Medicion: React.FC = () => {
                 required
                 value={form.temperatura}
                 onChange={(e) => setForm((p) => ({ ...p, temperatura: e.target.value }))}
-                className="w-full border-2 border-slate-300 px-4 py-3 text-2xl font-mono font-black outline-none focus:border-orange-500 text-center"
+                className="w-full border-2 border-slate-300 px-4 h-14 text-2xl font-mono font-black outline-none focus:border-orange-500 text-center bg-white"
                 placeholder="0.0"
               />
             </div>
@@ -199,7 +199,7 @@ export const Medicion: React.FC = () => {
                   step="0.1"
                   value={form.amperaje}
                   onChange={(e) => setForm((p) => ({ ...p, amperaje: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-4 py-2.5 text-lg font-mono outline-none focus:border-orange-500 text-center"
+                  className="w-full border-2 border-slate-300 px-4 h-14 text-xl font-mono outline-none focus:border-orange-500 text-center bg-white"
                   placeholder="0.0"
                 />
               </div>
@@ -217,7 +217,7 @@ export const Medicion: React.FC = () => {
                   step="0.1"
                   value={form.presion}
                   onChange={(e) => setForm((p) => ({ ...p, presion: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-4 py-2.5 text-lg font-mono outline-none focus:border-orange-500 text-center"
+                  className="w-full border-2 border-slate-300 px-4 h-14 text-xl font-mono outline-none focus:border-orange-500 text-center bg-white"
                   placeholder="0.0"
                 />
               </div>
@@ -226,16 +226,16 @@ export const Medicion: React.FC = () => {
             {/* Vibración */}
             <div>
               <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-2">Vibración</label>
-              <div className="grid grid-cols-4 gap-1">
+              <div className="grid grid-cols-2 gap-2">
                 {(['ninguna', 'leve', 'moderada', 'alta'] as const).map((v) => (
                   <button
                     key={v}
                     type="button"
                     onClick={() => setForm((p) => ({ ...p, vibracion: v }))}
-                    className={`py-2 text-xs font-bold uppercase border-2 transition-colors ${
+                    className={`h-12 font-sketch text-lg font-bold uppercase border-2 transition-colors ${
                       form.vibracion === v
                         ? 'bg-slate-900 text-white border-slate-900'
-                        : 'border-slate-300 text-slate-600 hover:border-slate-500'
+                        : 'border-slate-300 text-slate-600 hover:border-slate-500 bg-white'
                     }`}
                   >
                     {v}
@@ -251,19 +251,19 @@ export const Medicion: React.FC = () => {
                 type="number"
                 value={form.horasMarcha}
                 onChange={(e) => setForm((p) => ({ ...p, horasMarcha: e.target.value }))}
-                className="w-full border-2 border-slate-300 px-4 py-2.5 text-lg font-mono outline-none focus:border-orange-500 text-center"
+                className="w-full border-2 border-slate-300 px-4 h-14 text-xl font-mono outline-none focus:border-orange-500 text-center bg-white"
                 placeholder={String(activo.horasActuales)}
               />
             </div>
 
-            {/* Estado visual */}
+            {/* Estado visual — tarjetas grandes */}
             <div>
               <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-2">Estado Visual</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="flex flex-col gap-3">
                 <button
                   type="button"
                   onClick={() => setForm((p) => ({ ...p, estado: 'normal' }))}
-                  className={`py-3 font-black uppercase text-sm border-2 transition-all ${
+                  className={`w-full h-16 font-sketch font-black uppercase text-2xl border-2 transition-all ${
                     form.estado === 'normal'
                       ? 'bg-emerald-500 text-white border-emerald-700 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.5)]'
                       : 'bg-emerald-50 text-emerald-700 border-emerald-300'
@@ -274,7 +274,7 @@ export const Medicion: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setForm((p) => ({ ...p, estado: 'revision' }))}
-                  className={`py-3 font-black uppercase text-sm border-2 transition-all ${
+                  className={`w-full h-16 font-sketch font-black uppercase text-2xl border-2 transition-all ${
                     form.estado === 'revision'
                       ? 'bg-orange-500 text-white border-orange-700 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.5)]'
                       : 'bg-orange-50 text-orange-700 border-orange-300'
@@ -285,7 +285,7 @@ export const Medicion: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setForm((p) => ({ ...p, estado: 'urgente' }))}
-                  className={`py-3 font-black uppercase text-sm border-2 transition-all ${
+                  className={`w-full h-16 font-sketch font-black uppercase text-2xl border-2 transition-all ${
                     form.estado === 'urgente'
                       ? 'bg-red-600 text-white border-red-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.5)]'
                       : 'bg-red-50 text-red-700 border-red-300'
@@ -303,7 +303,7 @@ export const Medicion: React.FC = () => {
                 value={form.observaciones}
                 onChange={(e) => setForm((p) => ({ ...p, observaciones: e.target.value }))}
                 rows={3}
-                className="w-full border-2 border-slate-300 px-3 py-2 text-sm outline-none focus:border-orange-500"
+                className="w-full border-2 border-slate-300 px-3 py-3 text-base outline-none focus:border-orange-500 bg-white"
                 placeholder="Notas adicionales sobre el estado del equipo..."
               />
             </div>
@@ -316,17 +316,20 @@ export const Medicion: React.FC = () => {
                 required
                 value={form.tecnico}
                 onChange={(e) => setForm((p) => ({ ...p, tecnico: e.target.value }))}
-                className="w-full border-2 border-slate-300 px-3 py-2 text-sm outline-none focus:border-orange-500"
+                className="w-full border-2 border-slate-300 px-3 h-14 text-xl outline-none focus:border-orange-500 bg-white"
                 placeholder="Nombre del técnico"
               />
             </div>
 
-            <button
-              type="submit"
-              className="w-full bg-orange-500 text-white px-4 py-4 font-black text-lg uppercase border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.8)] transition-all"
-            >
-              Registrar Medición
-            </button>
+            {/* Submit sticky en mobile */}
+            <div className="fixed bottom-0 left-0 right-0 md:relative md:bottom-auto md:left-auto md:right-auto p-4 md:p-0 bg-[#FAFAF7] md:bg-transparent border-t-2 border-slate-200 md:border-0 z-30">
+              <button
+                type="submit"
+                className="w-full bg-orange-500 text-white px-4 h-16 font-sketch font-black text-2xl uppercase border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.8)] transition-all"
+              >
+                Registrar Medición
+              </button>
+            </div>
           </form>
         </>
       )}
@@ -334,10 +337,9 @@ export const Medicion: React.FC = () => {
       {!activo && !activoId && (
         <div className="text-center text-slate-400 py-12">
           <ClipboardList size={48} className="mx-auto mb-3 opacity-30" />
-          <p className="font-semibold">Escanea un código QR o busca por código</p>
+          <p className="font-sketch text-2xl">Escaneá un código QR o buscá por código</p>
         </div>
       )}
     </div>
   );
 };
-
