@@ -67,7 +67,7 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div>
-      <h1 className="text-3xl font-black text-slate-900 mb-2 uppercase tracking-tight">Dashboard</h1>
+      <h1 className="font-sketch text-5xl font-black text-slate-900 mb-2 uppercase tracking-tight">Dashboard</h1>
       <p className="text-slate-500 text-sm mb-6 font-medium">Vista general del sistema de activos</p>
 
       <AlertBanner messages={alertMessages} />
@@ -75,11 +75,11 @@ export const Dashboard: React.FC = () => {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {statCards.map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className={`bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4`}>
+          <div key={label} className={`bg-[#FFFEF7] border-2 border-slate-700 shadow-[3px_3px_0px_0px_#1e293b] p-4`}>
             <div className="flex justify-between items-start">
               <div>
                 <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">{label}</div>
-                <div className={`text-4xl font-black ${color}`}>{value}</div>
+                <div className={`font-sketch text-6xl font-black ${color}`}>{value}</div>
               </div>
               <div className={`${bg} p-3 border-2 border-slate-200`}>
                 <Icon size={22} className={color} />
