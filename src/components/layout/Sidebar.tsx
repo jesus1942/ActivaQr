@@ -10,8 +10,10 @@ import {
   QrCode,
   Menu,
   X,
-  Zap,
 } from 'lucide-react';
+
+const LOGO_LIGHT = '/ActivaQr/company-logo-hd.png';   // negro, para fondo claro
+const LOGO_DARK  = '/ActivaQr/company-logo1.png';      // claro, para fondo oscuro (sidebar navy)
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -30,12 +32,9 @@ export const Sidebar: React.FC = () => {
   const sidebarContent = (
     <div className="flex flex-col h-full bg-slate-900 text-white">
       {/* Logo */}
-      <div className="px-5 py-6 border-b-2 border-slate-700">
-        <div className="flex items-center gap-2">
-          <Zap size={24} className="text-orange-500" fill="currentColor" />
-          <span className="font-sketch text-3xl font-black text-orange-500 tracking-tight">ActivaQR</span>
-        </div>
-        <div className="text-slate-400 text-xs mt-1 font-medium tracking-wider uppercase">Activos bajo control</div>
+      <div className="px-5 py-5 border-b-2 border-slate-700">
+        <img src={LOGO_DARK} alt="Logo" className="h-12 w-auto object-contain" />
+        <div className="text-slate-400 text-xs mt-2 font-medium tracking-wider uppercase">Activos bajo control</div>
       </div>
 
       {/* Navigation */}
@@ -72,9 +71,8 @@ export const Sidebar: React.FC = () => {
     <>
       {/* Mobile top header */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-slate-900 border-b-2 border-slate-700 flex items-center justify-between px-4 h-14">
-        <div className="flex items-center gap-2">
-          <Zap size={20} className="text-orange-500" fill="currentColor" />
-          <span className="font-sketch text-2xl font-black text-orange-500">ActivaQR</span>
+        <div className="flex items-center">
+          <img src={LOGO_DARK} alt="Logo" className="h-8 w-auto object-contain" />
         </div>
         <div className="flex items-center gap-2">
           <button
