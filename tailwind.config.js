@@ -11,8 +11,8 @@ export default {
         }
       },
       fontFamily: {
-        sketch: ['Caveat', 'cursive'],
-        body: ['Inter', 'sans-serif'],
+        sketch: ['Space Grotesk', 'sans-serif'],
+        body: ['Space Grotesk', 'sans-serif'],
       }
     }
   },
