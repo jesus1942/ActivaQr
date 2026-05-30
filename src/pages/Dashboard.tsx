@@ -11,7 +11,7 @@ import { AlertBanner } from '../components/ui/AlertBanner';
 import { StatusBadge } from '../components/ui/StatusBadge';
 
 export const Dashboard: React.FC = () => {
-  const { activos, mediciones, tareas } = useActivos();
+  const { activos, mediciones, tareas, getSectorNombre, getTecnicoNombre } = useActivos();
   const navigate = useNavigate();
   const today = new Date();
 
@@ -39,7 +39,8 @@ export const Dashboard: React.FC = () => {
   // Chart: mediciones por sector
   const medicionesPorSector = activos.reduce<Record<string, number>>((acc, activo) => {
     const count = mediciones.filter((m) => m.activoId === activo.id).length;
-    acc[activo.sector] = (acc[activo.sector] || 0) + count;
+    const nombre = getSectorNombre(activo.sectorId);
+    acc[nombre] = (acc[nombre] || 0) + count;
     return acc;
   }, {});
   const chartData = Object.entries(medicionesPorSector).map(([sector, count]) => ({
@@ -67,7 +68,7 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div>
-      <h1 className="font-sketch text-5xl font-black text-slate-900 mb-2 uppercase tracking-tight">Dashboard</h1>
+      <h1 className="font-sketch text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 mb-2 uppercase tracking-tight">Dashboard</h1>
       <p className="text-slate-500 text-sm mb-6 font-medium">Vista general del sistema de activos</p>
 
       <AlertBanner messages={alertMessages} />
@@ -79,7 +80,7 @@ export const Dashboard: React.FC = () => {
             <div className="flex justify-between items-start">
               <div>
                 <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">{label}</div>
-                <div className={`font-sketch text-6xl font-black ${color}`}>{value}</div>
+                <div className={`font-sketch text-4xl sm:text-5xl md:text-6xl font-black ${color}`}>{value}</div>
               </div>
               <div className={`${bg} p-3 border-2 border-slate-200`}>
                 <Icon size={22} className={color} />
@@ -163,7 +164,7 @@ export const Dashboard: React.FC = () => {
                     <td className="px-3 py-2 text-slate-600">{format(parseISO(med.fecha), 'dd/MM/yyyy', { locale: es })}</td>
                     <td className="px-3 py-2 font-mono font-bold">{med.temperatura}°C</td>
                     <td className="px-3 py-2"><StatusBadge estado={med.estado} size="sm" /></td>
-                    <td className="px-3 py-2 text-slate-600 text-xs">{med.tecnico}</td>
+                    <td className="px-3 py-2 text-slate-600 text-xs">{getTecnicoNombre(med.tecnicoId)}</td>
                   </tr>
                 );
               })}

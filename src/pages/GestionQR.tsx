@@ -5,7 +5,7 @@ import { useActivos } from '../hooks/useActivos';
 import { StatusBadge } from '../components/ui/StatusBadge';
 
 export const GestionQR: React.FC = () => {
-  const { activos } = useActivos();
+  const { activos, getSectorNombre } = useActivos();
   const printRef = useRef<HTMLDivElement>(null);
 
   const handlePrintAll = () => {
@@ -22,7 +22,7 @@ export const GestionQR: React.FC = () => {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight">QR / Etiquetas</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 uppercase tracking-tight">QR / Etiquetas</h1>
           <p className="text-slate-500 text-sm mt-1">{activos.length} activos</p>
         </div>
         <button
@@ -50,7 +50,7 @@ export const GestionQR: React.FC = () => {
               {/* Info */}
               <div className="font-mono font-black text-xs text-slate-900 leading-tight">{activo.codigo}</div>
               <div className="text-xs text-slate-600 mt-0.5 leading-snug truncate">{activo.nombre}</div>
-              <div className="text-xs text-slate-400 mt-0.5">{activo.sector}</div>
+              <div className="text-xs text-slate-400 mt-0.5">{getSectorNombre(activo.sectorId)}</div>
 
               <div className="mt-2">
                 <StatusBadge estado={activo.estado} size="sm" />
@@ -75,7 +75,7 @@ export const GestionQR: React.FC = () => {
                         <div class="label">
                           <div class="code">${activo.codigo}</div>
                           <div class="name">${activo.nombre}</div>
-                          <div class="sector">${activo.sector}</div>
+                          <div class="sector">${getSectorNombre(activo.sectorId)}</div>
                           <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(qrValue)}" width="120" height="120" />
                           <div style="font-size:9px; color:#aaa; word-break:break-all;">${qrValue}</div>
                         </div>

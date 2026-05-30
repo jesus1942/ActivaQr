@@ -8,6 +8,7 @@ import {
   FileText,
   Upload,
   QrCode,
+  Settings,
   Menu,
   X,
 } from 'lucide-react';
@@ -23,6 +24,7 @@ const navItems = [
   { to: '/reportes', icon: FileText, label: 'Reportes' },
   { to: '/importar', icon: Upload, label: 'Importar Datos' },
   { to: '/qr', icon: QrCode, label: 'QR / Etiquetas' },
+  { to: '/configuracion', icon: Settings, label: 'Configuración' },
 ];
 
 export const Sidebar: React.FC = () => {

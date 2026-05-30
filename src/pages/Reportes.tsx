@@ -6,7 +6,7 @@ import { useActivos } from '../hooks/useActivos';
 import { jsPDF } from 'jspdf';
 
 export const Reportes: React.FC = () => {
-  const { activos, mediciones } = useActivos();
+  const { activos, mediciones, getSectorNombre, getTecnicoNombre } = useActivos();
   const [desde, setDesde] = useState(format(new Date(Date.now() - 30 * 24 * 3600 * 1000), 'yyyy-MM-dd'));
   const [hasta, setHasta] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [selectedActivos, setSelectedActivos] = useState<string[]>(activos.map((a) => a.id));
@@ -63,7 +63,7 @@ export const Reportes: React.FC = () => {
 
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Sector: ${activo.sector} | Responsable: ${activo.responsable} | Estado: ${activo.estado.toUpperCase()}`, 14, y + 4);
+      doc.text(`Sector: ${getSectorNombre(activo.sectorId)} | Responsable: ${getTecnicoNombre(activo.responsableId)} | Estado: ${activo.estado.toUpperCase()}`, 14, y + 4);
       y += 10;
 
       if (activoMeds.length === 0) {
@@ -96,7 +96,7 @@ export const Reportes: React.FC = () => {
           doc.text(med.presion > 0 ? `${med.presion} bar` : '-', 105, y + 4);
           doc.text(med.vibracion, 130, y + 4);
           doc.text(med.estado.toUpperCase(), 162, y + 4);
-          doc.text(med.tecnico, 180, y + 4);
+          doc.text(getTecnicoNombre(med.tecnicoId), 180, y + 4);
           y += 7;
         });
       }
@@ -108,7 +108,7 @@ export const Reportes: React.FC = () => {
 
   return (
     <div>
-      <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-2">Reportes</h1>
+      <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 uppercase tracking-tight mb-2">Reportes</h1>
       <p className="text-slate-500 text-sm mb-6">Genera reportes de mediciones y estado de activos</p>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -195,7 +195,7 @@ export const Reportes: React.FC = () => {
               </div>
 
               <div className="text-sm space-y-6">
-                <div className="flex gap-6 text-center">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 text-center">
                   <div className="flex-1 border-2 border-slate-200 p-3">
                     <div className="text-3xl font-black text-orange-500">{selectedActivos.length}</div>
                     <div className="text-xs uppercase text-slate-500 font-bold mt-1">Activos</div>
@@ -218,6 +218,7 @@ export const Reportes: React.FC = () => {
                         <span className="text-xs text-slate-400">{meds.length} mediciones</span>
                       </div>
                       {meds.length > 0 ? (
+                        <div className="overflow-x-auto">
                         <table className="w-full text-xs border-l-2 border-r-2 border-b-2 border-slate-200">
                           <thead>
                             <tr className="bg-slate-100">
@@ -235,11 +236,12 @@ export const Reportes: React.FC = () => {
                                 <td className="px-2 py-1 font-mono font-bold">{m.temperatura}°C</td>
                                 <td className="px-2 py-1 font-mono">{m.amperaje > 0 ? `${m.amperaje}A` : '-'}</td>
                                 <td className="px-2 py-1 font-semibold uppercase text-xs">{m.estado}</td>
-                                <td className="px-2 py-1">{m.tecnico}</td>
+                                <td className="px-2 py-1">{getTecnicoNombre(m.tecnicoId)}</td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
+                        </div>
                       ) : (
                         <div className="border-l-2 border-r-2 border-b-2 border-slate-200 px-3 py-2 text-slate-400 text-xs">Sin mediciones en el período</div>
                       )}
