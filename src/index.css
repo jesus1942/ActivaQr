@@ -25,6 +25,14 @@ body {
   background-color: #FAFAF7;
 }
 
+/* Respeta la barra de estado del celular en modo PWA (notch / hora / batería) */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+.h-safe-header {
+  height: calc(3.5rem + env(safe-area-inset-top));
+}
+
 .stamp-shadow {
   box-shadow: 4px 4px 0px 0px rgba(0,0,0,0.8);
 }
