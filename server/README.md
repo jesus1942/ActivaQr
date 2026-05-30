@@ -79,44 +79,31 @@ Base: `/api`
    En la configuración del servicio, poné **Root Directory = `server`**
    (Settings → Root Directory). Así Railway solo construye el backend.
 
-### 4. Build & Start
+### 4. Build & Start (automático)
 
-4. Con root `server/`, Railway detecta Node y corre:
+4. El archivo **`server/railway.json`** ya deja todo configurado. Con root `server/`,
+   Railway corre:
    - **Install:** `npm install` → dispara `postinstall` (`prisma generate`).
    - **Build:** `npm run build` (compila TS a `dist/`).
-   - **Start command:** `npm run start` (configurá esto en Settings → Deploy → Custom Start Command si no se detecta solo).
+   - **Start:** `npm run start:railway`, que en cada arranque:
+     1. `prisma db push` → crea/sincroniza las tablas en la base de Railway.
+     2. `tsx prisma/seed.ts` → siembra la empresa demo **solo si la base está vacía**
+        (el seed tiene una guarda; no borra datos reales en deploys posteriores).
+     3. `node dist/index.js` → levanta la API.
 
-### 5. Migrar y sembrar (primer arranque)
+   No hace falta correr ningún comando a mano: el primer deploy crea las tablas y
+   carga los datos de ejemplo automáticamente.
 
-5. Antes (o en el primer deploy) hay que crear las tablas y cargar datos.
-   Desde la pestaña del servicio, abrí una shell (Railway CLI o el botón de terminal) y corré:
+### 5. Variables de entorno
 
-   ```bash
-   npm run prisma:deploy   # aplica las migraciones en la base de Railway
-   npm run seed            # carga la empresa demo y datos de ejemplo
-   ```
-
-   > Si no tenés migraciones generadas aún, generalas localmente con
-   > `npm run prisma:migrate` y commiteá la carpeta `prisma/migrations/`.
-   > Alternativa rápida sin migraciones: `npx prisma db push` para sincronizar el schema.
-
-   Con Railway CLI desde tu máquina:
-
-   ```bash
-   railway run npm run prisma:deploy
-   railway run npm run seed
-   ```
-
-### 6. Variables de entorno
-
-6. En **Variables** del servicio:
+5. En **Variables** del servicio:
    - `DATABASE_URL` → la provee el plugin de PostgreSQL (referencialá con `${{Postgres.DATABASE_URL}}` si están en el mismo proyecto).
    - `PORT` → Railway la inyecta automáticamente; el servidor usa `process.env.PORT`.
    - `NODE_ENV=production` (recomendado).
 
-### 7. URL pública y conexión con el frontend
+### 6. URL pública y conexión con el frontend
 
-7. En **Settings → Networking → Generate Domain** Railway te da una URL pública,
+6. En **Settings → Networking → Generate Domain** Railway te da una URL pública,
    por ejemplo: `https://activaqr-production.up.railway.app`.
 
    Verificá: `https://<tu-dominio>/api/health` → `{ "status": "ok" }`.
