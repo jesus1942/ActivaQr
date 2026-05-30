@@ -91,8 +91,8 @@ export const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Bar Chart */}
-        <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
-          <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-4">Mediciones por Sector</h2>
+        <div className="bg-[#FFFEF7] border-2 border-slate-700 shadow-[3px_3px_0px_0px_#1e293b] p-4">
+          <h2 className="font-sketch text-2xl font-black uppercase tracking-wider text-slate-700 mb-4">Mediciones por Sector</h2>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={chartData} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -105,8 +105,8 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Upcoming Maintenance */}
-        <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
-          <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-4">Próximos Mantenimientos</h2>
+        <div className="bg-[#FFFEF7] border-2 border-slate-700 shadow-[3px_3px_0px_0px_#1e293b] p-4">
+          <h2 className="font-sketch text-2xl font-black uppercase tracking-wider text-slate-700 mb-4">Próximos Mantenimientos</h2>
           <div className="space-y-2">
             {upcomingTareas.length === 0 && (
               <p className="text-slate-400 text-sm">Sin tareas pendientes</p>
@@ -137,8 +137,8 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Recent mediciones */}
-      <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
-        <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-4">Actividad Reciente</h2>
+      <div className="bg-[#FFFEF7] border-2 border-slate-700 shadow-[3px_3px_0px_0px_#1e293b] p-4">
+        <h2 className="font-sketch text-2xl font-black uppercase tracking-wider text-slate-700 mb-4">Actividad Reciente</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

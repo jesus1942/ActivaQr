@@ -80,7 +80,7 @@ export const Activos: React.FC = () => {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Activos</h1>
+          <h1 className="font-sketch text-5xl font-black text-slate-900 uppercase tracking-tight">Activos</h1>
           <p className="text-slate-500 text-sm mt-1">{filtered.length} activos encontrados</p>
         </div>
         <button
