@@ -7,8 +7,8 @@ export const Layout: React.FC = () => {
     <div className="flex flex-col md:flex-row h-screen bg-[#FAFAF7] overflow-hidden">
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
-        {/* Spacer for mobile fixed header */}
-        <div className="md:hidden h-14" />
+        {/* Spacer for mobile fixed header (incluye safe-area de la barra de estado) */}
+        <div className="md:hidden h-safe-header" />
         <div className="p-4 md:p-8 min-h-full">
           <Outlet />
         </div>

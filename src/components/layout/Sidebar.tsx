@@ -72,7 +72,7 @@ export const Sidebar: React.FC = () => {
   return (
     <>
       {/* Mobile top header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-slate-900 border-b-2 border-slate-700 flex items-center justify-between px-4 h-14">
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-slate-900 border-b-2 border-slate-700 flex items-center justify-between px-4 h-14 box-content safe-top">
         <div className="flex items-center">
           <img src={LOGO_DARK} alt="Logo" className="h-8 w-auto object-contain" />
         </div>
@@ -103,7 +103,7 @@ export const Sidebar: React.FC = () => {
 
       {/* Mobile sidebar drawer */}
       <div
-        className={`md:hidden fixed left-0 top-0 h-full w-64 z-50 transition-transform duration-200 ${
+        className={`md:hidden fixed left-0 top-0 h-full w-64 z-50 transition-transform duration-200 safe-top bg-slate-900 ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
