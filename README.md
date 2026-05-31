@@ -176,4 +176,4 @@ La idea original es de **Natalia** — alguien que vio de cerca cómo se maneja 
 
 ---
 
-<sub>Desarrollado por **[Jesús Olguín](https://jesus1942.github.io/PoolCalculator/portfolio/)** · v1.0.0</sub>
+<sub>Desarrollado por **[Jesús Olguín](https://jesus1942.github.io/portfolio/)** · v1.0.0</sub>
