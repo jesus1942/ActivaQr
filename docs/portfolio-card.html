@@ -1,0 +1,214 @@
+<!--
+  ActivaQR — Card para portfolio
+  Pegá esto en tu index.html dentro del contenedor de projects/cards.
+  Ajustá los colores/clases según tu sistema de diseño.
+-->
+
+<article class="project-card activaqr-card">
+
+  <!-- Header con badge de estado "En producción" -->
+  <div class="card-header">
+    <div class="card-badges">
+      <span class="badge badge--live">🟢 En producción</span>
+      <span class="badge badge--saas">SaaS</span>
+    </div>
+    <div class="card-icon">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- QR icon simplificado -->
+        <rect x="2" y="2" width="12" height="12" rx="1" stroke="#f97316" stroke-width="2" fill="none"/>
+        <rect x="5" y="5" width="6" height="6" fill="#f97316"/>
+        <rect x="18" y="2" width="12" height="12" rx="1" stroke="#f97316" stroke-width="2" fill="none"/>
+        <rect x="21" y="5" width="6" height="6" fill="#f97316"/>
+        <rect x="2" y="18" width="12" height="12" rx="1" stroke="#f97316" stroke-width="2" fill="none"/>
+        <rect x="5" y="21" width="6" height="6" fill="#f97316"/>
+        <rect x="18" y="18" width="5" height="5" fill="#f97316"/>
+        <rect x="25" y="18" width="5" height="5" fill="#f97316"/>
+        <rect x="18" y="25" width="5" height="5" fill="#f97316"/>
+        <rect x="25" y="25" width="5" height="5" fill="#f97316"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Nombre y descripción -->
+  <h3 class="card-title">ActivaQR</h3>
+  <p class="card-tagline">Gestión de activos industriales por QR</p>
+  <p class="card-description">
+    SaaS multi-empresa para plantas industriales. Cada máquina tiene un QR: escanealo con el celular
+    y ves la ficha técnica completa, última medición, estado y responsable — sin instalar nada.
+    Los operarios registran temperatura, amperaje, presión y vibración en tiempo real.
+    Dashboard de alertas, reportes y suscripciones automáticas via Mercado Pago.
+  </p>
+
+  <!-- Features destacadas -->
+  <ul class="card-features">
+    <li>📱 Ficha técnica pública por QR (sin login)</li>
+    <li>📊 Dashboard con alertas por parámetro fuera de rango</li>
+    <li>💳 Suscripciones recurrentes via Mercado Pago</li>
+    <li>🔒 Multi-tenant con bloqueo inmediato por plan</li>
+    <li>📧 Email automático con plantilla al activar suscripción</li>
+    <li>💬 Integración WhatsApp Web para envío de links</li>
+  </ul>
+
+  <!-- Stack técnico -->
+  <div class="card-stack">
+    <span class="tech-badge">React</span>
+    <span class="tech-badge">TypeScript</span>
+    <span class="tech-badge">Node.js</span>
+    <span class="tech-badge">PostgreSQL</span>
+    <span class="tech-badge">Prisma</span>
+    <span class="tech-badge">Tailwind CSS</span>
+    <span class="tech-badge">Railway</span>
+  </div>
+
+  <!-- Links -->
+  <div class="card-links">
+    <a href="https://jesus1942.github.io/ActivaQr/" target="_blank" rel="noopener" class="btn btn--primary">
+      Ver demo →
+    </a>
+    <a href="https://github.com/jesus1942/ActivaQr" target="_blank" rel="noopener" class="btn btn--ghost">
+      GitHub
+    </a>
+  </div>
+
+</article>
+
+<!--
+==============================================
+  CSS PARA LA CARD — pegá en tu stylesheet
+==============================================
+
+.activaqr-card {
+  background: #ffffff;
+  border: 3px solid #0f172a;
+  box-shadow: 6px 6px 0px #0f172a;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.activaqr-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0px #0f172a;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-badges {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.5rem;
+  border: 2px solid currentColor;
+}
+
+.badge--live {
+  color: #16a34a;
+  background: #f0fdf4;
+}
+
+.badge--saas {
+  color: #ea580c;
+  background: #fff7ed;
+}
+
+.card-title {
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: #0f172a;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+.card-tagline {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #f97316;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: -0.5rem 0 0;
+}
+
+.card-description {
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.card-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.card-features li {
+  font-size: 0.85rem;
+  color: #334155;
+  font-weight: 500;
+}
+
+.card-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.tech-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: #f8fafc;
+  border: 2px solid #cbd5e1;
+  color: #475569;
+  padding: 0.15rem 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.card-links {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.btn {
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-decoration: none;
+  padding: 0.6rem 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 2px solid #0f172a;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px #0f172a;
+}
+
+.btn--primary {
+  background: #f97316;
+  color: #ffffff;
+}
+
+.btn--ghost {
+  background: transparent;
+  color: #0f172a;
+}
+-->
