@@ -15,14 +15,24 @@ import {
   seedTipos,
   seedTecnicos,
 } from '../data/seed';
+import { useRemote } from '../data/store';
 
 export function useActivos() {
-  const [activos, setActivos] = useStorage<Activo[]>('activos', seedActivos);
-  const [mediciones, setMediciones] = useStorage<Medicion[]>('mediciones', seedMediciones);
-  const [tareas, setTareas] = useStorage<TareaMantenimiento[]>('tareas', seedTareas);
-  const [sectores, setSectores] = useStorage<Sector[]>('sectores', seedSectores);
-  const [tipos, setTipos] = useStorage<TipoActivo[]>('tipos', seedTipos);
-  const [tecnicos, setTecnicos] = useStorage<Tecnico[]>('tecnicos', seedTecnicos);
+  // En modo remoto arrancamos con arrays vacíos para no mostrar datos de prueba
+  // mientras llega la primera respuesta de la API.
+  const defaultActivos    = useRemote ? [] : seedActivos;
+  const defaultMediciones = useRemote ? [] : seedMediciones;
+  const defaultTareas     = useRemote ? [] : seedTareas;
+  const defaultSectores   = useRemote ? [] : seedSectores;
+  const defaultTipos      = useRemote ? [] : seedTipos;
+  const defaultTecnicos   = useRemote ? [] : seedTecnicos;
+
+  const [activos, setActivos] = useStorage<Activo[]>('activos', defaultActivos as Activo[]);
+  const [mediciones, setMediciones] = useStorage<Medicion[]>('mediciones', defaultMediciones as Medicion[]);
+  const [tareas, setTareas] = useStorage<TareaMantenimiento[]>('tareas', defaultTareas as TareaMantenimiento[]);
+  const [sectores, setSectores] = useStorage<Sector[]>('sectores', defaultSectores as Sector[]);
+  const [tipos, setTipos] = useStorage<TipoActivo[]>('tipos', defaultTipos as TipoActivo[]);
+  const [tecnicos, setTecnicos] = useStorage<Tecnico[]>('tecnicos', defaultTecnicos as Tecnico[]);
 
   // ── Activos ────────────────────────────────────────────────
   const addActivo = (activo: Activo) => {
