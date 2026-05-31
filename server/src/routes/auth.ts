@@ -58,7 +58,7 @@ router.post('/login', async (req, res: Response, next: NextFunction) => {
         rol: usuario.rol,
         empresaId: usuario.empresaId,
         empresa: usuario.empresa
-          ? { id: usuario.empresa.id, nombre: usuario.empresa.nombre, logoUrl: usuario.empresa.logoUrl }
+          ? { id: usuario.empresa.id, nombre: usuario.empresa.nombre, logoUrl: usuario.empresa.logoUrl, plan: usuario.empresa.plan }
           : null,
       },
     });
@@ -82,7 +82,7 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: Response, next: Nex
       rol: usuario.rol,
       empresaId: usuario.empresaId,
       empresa: usuario.empresa
-        ? { id: usuario.empresa.id, nombre: usuario.empresa.nombre, logoUrl: usuario.empresa.logoUrl, estado: usuario.empresa.estado }
+        ? { id: usuario.empresa.id, nombre: usuario.empresa.nombre, logoUrl: usuario.empresa.logoUrl, estado: usuario.empresa.estado, plan: usuario.empresa.plan }
         : null,
     });
   } catch (err) {

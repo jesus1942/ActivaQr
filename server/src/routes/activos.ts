@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../prisma';
 import { resolveEmpresaId } from '../tenant';
+import { getLimite } from '../planLimits';
 
 const router = Router();
 
@@ -144,6 +145,22 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         error: 'Los campos "codigo", "nombre", "sectorId" y "tipoId" son obligatorios',
       });
     }
+
+    // Verificar límite de activos del plan.
+    const empresa = await prisma.empresa.findUnique({
+      where: { id: empresaId },
+      select: { plan: true, _count: { select: { activos: true } } },
+    });
+    if (empresa) {
+      const limite = getLimite(empresa.plan);
+      if (limite.activos !== null && empresa._count.activos >= limite.activos) {
+        return res.status(403).json({
+          code: 'limite_plan',
+          error: `Tu plan "${empresa.plan}" permite hasta ${limite.activos} activos. Actualizá tu plan para agregar más.`,
+        });
+      }
+    }
+
     if (!data.fechaIngreso) data.fechaIngreso = new Date();
 
     const activo = await prisma.activo.create({
