@@ -94,7 +94,7 @@ export const Sidebar: React.FC = () => {
           </>
         )}
         <a
-          href="https://jesus1942.github.io/PoolCalculator/portfolio/"
+          href="https://jesus1942.github.io/portfolio/"
           target="_blank"
           rel="noopener noreferrer"
           className="block mt-3 pt-3 border-t border-slate-700 text-slate-500 hover:text-orange-400 text-xs font-mono transition-colors"
