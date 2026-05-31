@@ -1,3 +1,4 @@
+// v1.0
 /**
  * Cliente de autenticación del frontend.
  * Guarda el token JWT en localStorage y lo adjunta a las requests.

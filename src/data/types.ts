@@ -1,3 +1,4 @@
+// v1.0
 export type EstadoActivo = 'normal' | 'alerta' | 'critico' | 'mantenimiento';
 export type EstadoMedicion = 'normal' | 'revision' | 'urgente';
 

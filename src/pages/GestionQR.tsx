@@ -1,3 +1,4 @@
+// v1.0
 import React, { useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Printer, Download } from 'lucide-react';

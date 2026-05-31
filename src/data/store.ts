@@ -1,3 +1,4 @@
+// v1.0
 /**
  * Capa de abstracción de datos.
  *

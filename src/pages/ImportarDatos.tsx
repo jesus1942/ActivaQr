@@ -1,3 +1,4 @@
+// v1.0
 import React, { useState, useRef } from 'react';
 import { Upload, FileText, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useActivos } from '../hooks/useActivos';

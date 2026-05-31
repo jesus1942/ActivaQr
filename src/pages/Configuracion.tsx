@@ -1,3 +1,4 @@
+// v1.0
 import React, { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, RotateCcw, Check, AlertTriangle, MessageSquare, ShieldCheck, ShieldOff, ChevronDown, ChevronRight } from 'lucide-react';
 import { useActivos } from '../hooks/useActivos';
