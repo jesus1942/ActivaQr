@@ -9,6 +9,7 @@ import {
   Package,
   CreditCard,
   XCircle,
+  MonitorSmartphone,
   X,
 } from 'lucide-react';
 import {
@@ -21,6 +22,13 @@ import {
   generarSuscripcion,
   cancelarSuscripcion,
 } from '../data/adminApi';
+import {
+  PermisoAcceso,
+  solicitarAccesoRemoto,
+  getPermisoAdmin,
+  revocarAccesoAdmin,
+} from '../data/accesoRemotoApi';
+import { PanelAccesoRemoto } from '../components/PanelAccesoRemoto';
 
 const PLANES = ['inicial', 'empresa', 'industrial'] as const;
 
@@ -30,6 +38,8 @@ export const Admin: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [toggling, setToggling] = useState<Set<string>>(new Set());
+  const [panelRemoto, setPanelRemoto] = useState<{ empresa: EmpresaAdmin; permiso: PermisoAcceso } | null>(null);
+  const [permisos, setPermisos] = useState<Record<string, PermisoAcceso | null>>({});
   const [resultadoSub, setResultadoSub] = useState<{
     empresaNombre: string;
     link: string;
@@ -41,7 +51,17 @@ export const Admin: React.FC = () => {
     setCargando(true);
     setError(null);
     try {
-      setEmpresas(await listarEmpresas());
+      const lista = await listarEmpresas();
+      setEmpresas(lista);
+      // Cargar permisos para empresas con plan compatible.
+      const compatibles = lista.filter((e) => ['empresa', 'industrial'].includes(e.plan));
+      const entries = await Promise.all(
+        compatibles.map(async (e) => {
+          try { return [e.id, await getPermisoAdmin(e.id)] as [string, PermisoAcceso | null]; }
+          catch { return [e.id, null] as [string, null]; }
+        })
+      );
+      setPermisos(Object.fromEntries(entries));
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error('[Admin] Error cargando empresas:', e);
@@ -51,9 +71,7 @@ export const Admin: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    cargar();
-  }, []);
+  useEffect(() => { cargar(); }, []);
 
   const toggleEstado = async (emp: EmpresaAdmin) => {
     if (toggling.has(emp.id)) return;
@@ -133,6 +151,31 @@ export const Admin: React.FC = () => {
       cargar();
     } catch (e) {
       alert(e instanceof Error ? e.message : 'No se pudo cancelar la suscripción.');
+    }
+  };
+
+  const abrirAccesoRemoto = async (emp: EmpresaAdmin) => {
+    const permiso = permisos[emp.id];
+    if (permiso?.estado === 'activo') {
+      setPanelRemoto({ empresa: emp, permiso });
+      return;
+    }
+    // Solicitar acceso nuevo.
+    const costoStr = prompt(`Costo mensual adicional del servicio de soporte para "${emp.nombre}" (ARS, dejá vacío si es sin cargo):`);
+    const costo = costoStr ? Number(costoStr) : undefined;
+    try {
+      const { permiso: nuevo, linkAprobacion, emailEnviado } = await solicitarAccesoRemoto(emp.id, costo);
+      setPermisos((prev) => ({ ...prev, [emp.id]: nuevo }));
+      // Abrir WhatsApp con el link.
+      const tel = prompt(`Número de WhatsApp de "${emp.nombre}" para enviar el link de aprobación:`);
+      if (tel?.trim()) {
+        const num = tel.trim().replace(/\D/g, '');
+        const msg = `Hola! Te enviamos una solicitud de acceso remoto de soporte desde *ActivaQR*.\nAprobá el acceso desde este link:\n\n${linkAprobacion}`;
+        window.open(`https://web.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msg)}`, '_blank');
+      }
+      alert(`Solicitud enviada.${emailEnviado ? ' Email enviado.' : ''}\nEsperando aprobación del cliente.`);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Error al solicitar acceso remoto.');
     }
   };
 
@@ -249,6 +292,19 @@ export const Admin: React.FC = () => {
                 >
                   <KeyRound size={14} />
                 </button>
+                {['empresa', 'industrial'].includes(emp.plan) && (
+                  <button
+                    onClick={() => abrirAccesoRemoto(emp)}
+                    title="Acceso remoto"
+                    className={`border-2 p-2 transition-colors ${
+                      permisos[emp.id]?.estado === 'activo'
+                        ? 'border-emerald-400 text-emerald-600 hover:border-emerald-600'
+                        : 'border-slate-300 hover:border-orange-500 hover:text-orange-600'
+                    }`}
+                  >
+                    <MonitorSmartphone size={14} />
+                  </button>
+                )}
                 <button
                   onClick={() => borrar(emp)}
                   title="Eliminar"
@@ -269,6 +325,15 @@ export const Admin: React.FC = () => {
             setModalAbierto(false);
             cargar();
           }}
+        />
+      )}
+
+      {panelRemoto && (
+        <PanelAccesoRemoto
+          empresaId={panelRemoto.empresa.id}
+          empresaNombre={panelRemoto.empresa.nombre}
+          permiso={panelRemoto.permiso}
+          onClose={() => setPanelRemoto(null)}
         />
       )}
 
