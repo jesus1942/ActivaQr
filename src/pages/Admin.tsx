@@ -165,10 +165,8 @@ export const Admin: React.FC = () => {
     try {
       const lista = await listarEmpresas();
       setEmpresas(lista);
-      // Cargar permisos para empresas con plan compatible.
-      const compatibles = lista.filter((e) => ['empresa', 'industrial'].includes(e.plan));
       const entries = await Promise.all(
-        compatibles.map(async (e) => {
+        lista.map(async (e) => {
           try { return [e.id, await getPermisoAdmin(e.id)] as [string, PermisoAcceso | null]; }
           catch { return [e.id, null] as [string, null]; }
         })
@@ -400,14 +398,16 @@ export const Admin: React.FC = () => {
                 >
                   <KeyRound size={14} />
                 </button>
-                {['empresa', 'industrial'].includes(emp.plan) && (
+                {(['empresa', 'industrial'].includes(emp.plan) || permisos[emp.id] != null) && (
                   <button
                     onClick={() => abrirAccesoRemoto(emp)}
-                    title="Acceso remoto"
+                    title={permisos[emp.id]?.estado === 'activo' ? 'Abrir panel remoto' : 'Solicitar acceso remoto'}
                     className={`border-2 p-2 transition-colors ${
                       permisos[emp.id]?.estado === 'activo'
                         ? 'border-emerald-400 text-emerald-600 hover:border-emerald-600'
-                        : 'border-slate-300 hover:border-orange-500 hover:text-orange-600'
+                        : permisos[emp.id]?.estado === 'pendiente'
+                          ? 'border-amber-400 text-amber-600 hover:border-amber-600'
+                          : 'border-slate-300 hover:border-orange-500 hover:text-orange-600'
                     }`}
                   >
                     <MonitorSmartphone size={14} />
