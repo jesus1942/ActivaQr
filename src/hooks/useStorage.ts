@@ -1,4 +1,16 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from 'react';
+
+// Contador global de claves remotas pendientes de carga.
+let _pendientes = 0;
+const _listeners = new Set<() => void>();
+const _notificar = () => _listeners.forEach((fn) => fn());
+export const cargaRemotaStore = {
+  subscribe: (fn: () => void) => { _listeners.add(fn); return () => _listeners.delete(fn); },
+  getSnapshot: () => _pendientes > 0,
+};
+export function useCargaRemota() {
+  return useSyncExternalStore(cargaRemotaStore.subscribe, cargaRemotaStore.getSnapshot);
+}
 import {
   useRemote,
   getActivos,
@@ -65,14 +77,20 @@ export function useStorage<T>(key: string, initialValue: T) {
       cargado.current = true;
       return;
     }
+    _pendientes++;
+    _notificar();
     fn().then((data) => {
       if (cancelado) return;
-      omitirGuardado.current = true; // no re-enviar lo que acabamos de traer
+      omitirGuardado.current = true;
       setValueState(data as T);
       cargado.current = true;
+    }).finally(() => {
+      if (!cancelado) { _pendientes = Math.max(0, _pendientes - 1); _notificar(); }
     });
     return () => {
       cancelado = true;
+      _pendientes = Math.max(0, _pendientes - 1);
+      _notificar();
     };
   }, [key]);
 
