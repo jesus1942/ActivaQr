@@ -45,6 +45,9 @@ export const Configuracion: React.FC = () => {
         <p className="text-slate-500 text-sm mt-1">Gestioná sectores, tipos de activo y técnicos</p>
       </div>
 
+      {/* Plan actual */}
+      {usuario && <SeccionPlan />}
+
       {/* Tabs */}
       <div className="flex flex-wrap gap-2 mb-6">
         {TABS.map((t) => (
@@ -212,11 +215,15 @@ interface TiposProps {
   deleteTipo: (id: string) => void;
 }
 
-const MIDE_FIELDS: { key: keyof Pick<TipoActivo, 'mideTemperatura' | 'mideAmperaje' | 'midePresion' | 'mideVibracion'>; label: string }[] = [
+const MIDE_FIELDS: { key: keyof Pick<TipoActivo, 'mideTemperatura' | 'mideAmperaje' | 'midePresion' | 'mideVibracion' | 'mideBateria' | 'mideToner' | 'mideContador' | 'mideVoltaje'>; label: string }[] = [
   { key: 'mideTemperatura', label: 'Temperatura' },
   { key: 'mideAmperaje', label: 'Amperaje' },
   { key: 'midePresion', label: 'Presión' },
   { key: 'mideVibracion', label: 'Vibración' },
+  { key: 'mideBateria', label: 'Batería' },
+  { key: 'mideToner', label: 'Tóner/Consumible' },
+  { key: 'mideContador', label: 'Contador (páginas/ciclos)' },
+  { key: 'mideVoltaje', label: 'Voltaje' },
 ];
 
 const TiposSection: React.FC<TiposProps> = ({ tipos, addTipo, updateTipo, deleteTipo }) => {
@@ -224,13 +231,13 @@ const TiposSection: React.FC<TiposProps> = ({ tipos, addTipo, updateTipo, delete
   const [adding, setAdding] = useState(false);
 
   const empty: Omit<TipoActivo, 'id'> = {
-    nombre: '', mideTemperatura: true, mideAmperaje: false, midePresion: false, mideVibracion: false, activo: true,
+    nombre: '', mideTemperatura: true, mideAmperaje: false, midePresion: false, mideVibracion: false, mideBateria: false, mideToner: false, mideContador: false, mideVoltaje: false, activo: true,
   };
   const [form, setForm] = useState<Omit<TipoActivo, 'id'>>(empty);
 
   const startAdd = () => { setForm(empty); setAdding(true); setEditing(null); };
   const startEdit = (t: TipoActivo) => {
-    setForm({ nombre: t.nombre, icono: t.icono, mideTemperatura: t.mideTemperatura, mideAmperaje: t.mideAmperaje, midePresion: t.midePresion, mideVibracion: t.mideVibracion, activo: t.activo });
+    setForm({ nombre: t.nombre, icono: t.icono, mideTemperatura: t.mideTemperatura, mideAmperaje: t.mideAmperaje, midePresion: t.midePresion, mideVibracion: t.mideVibracion, mideBateria: t.mideBateria ?? false, mideToner: t.mideToner ?? false, mideContador: t.mideContador ?? false, mideVoltaje: t.mideVoltaje ?? false, activo: t.activo });
     setEditing(t); setAdding(false);
   };
   const cancel = () => { setAdding(false); setEditing(null); };
@@ -263,7 +270,7 @@ const TiposSection: React.FC<TiposProps> = ({ tipos, addTipo, updateTipo, delete
             <div className="grid grid-cols-2 gap-2">
               {MIDE_FIELDS.map(({ key, label }) => (
                 <label key={key} className="flex items-center gap-2 border-2 border-slate-300 px-3 min-h-[44px] cursor-pointer">
-                  <input type="checkbox" checked={form[key]} onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.checked }))} className="w-4 h-4" />
+                  <input type="checkbox" checked={!!form[key]} onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.checked }))} className="w-4 h-4" />
                   <span className="text-sm font-semibold text-slate-700">{label}</span>
                 </label>
               ))}
@@ -293,7 +300,7 @@ const TiposSection: React.FC<TiposProps> = ({ tipos, addTipo, updateTipo, delete
               </div>
             </div>
             <div className="flex flex-wrap gap-1">
-              {MIDE_FIELDS.filter(({ key }) => t[key]).map(({ key, label }) => (
+              {MIDE_FIELDS.filter(({ key }) => !!t[key]).map(({ key, label }) => (
                 <span key={key} className="text-xs font-semibold bg-slate-100 border border-slate-300 px-2 py-0.5 text-slate-600 flex items-center gap-1">
                   <Check size={11} /> {label}
                 </span>
@@ -397,6 +404,69 @@ const TecnicosSection: React.FC<TecnicosProps> = ({ tecnicos, addTecnico, update
             </div>
           </Card>
         ))}
+      </div>
+    </div>
+  );
+};
+
+const PLAN_INFO: { plan: string; label: string; activos: string; tecnicos: string; qr: string; acceso: string }[] = [
+  { plan: 'inicial',    label: 'Inicial',    activos: '10',         tecnicos: '2',         qr: 'Suspendida', acceso: '—' },
+  { plan: 'empresa',    label: 'Empresa',    activos: '50',         tecnicos: '5',         qr: 'Siempre',    acceso: 'Soporte remoto' },
+  { plan: 'industrial', label: 'Industrial', activos: 'Ilimitado',  tecnicos: 'Ilimitado', qr: 'Siempre',    acceso: 'Soporte remoto' },
+];
+
+const SeccionPlan: React.FC = () => {
+  const { usuario } = useAuth();
+  const plan = (usuario?.empresa as { plan?: string } | null)?.plan ?? 'inicial';
+  const waNumero = import.meta.env.VITE_WA_SOPORTE ?? '';
+  const msg = encodeURIComponent(`Hola! Soy cliente de ActivaQR (empresa: ${usuario?.empresa?.nombre ?? ''}) y quiero consultar sobre un cambio de plan.`);
+  const waUrl = waNumero ? `https://wa.me/${waNumero}?text=${msg}` : null;
+
+  return (
+    <div className="mb-8 bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-5">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <div>
+          <h2 className="font-sketch font-black text-xl uppercase tracking-tight text-slate-800">Plan actual</h2>
+          <span className="inline-block mt-1 px-3 py-1 bg-orange-500 text-white text-xs font-black uppercase tracking-wider border-2 border-slate-800">
+            {plan.toUpperCase()}
+          </span>
+        </div>
+        {plan !== 'industrial' && (
+          waUrl ? (
+            <a
+              href={waUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 bg-emerald-500 text-white px-4 py-2 font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all text-sm"
+            >
+              Solicitar upgrade de plan
+            </a>
+          ) : (
+            <p className="text-sm text-slate-500 italic">Para cambiar tu plan contactá a tu administrador ActivaQR</p>
+          )
+        )}
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-2 border-slate-200">
+          <thead>
+            <tr className="bg-slate-900 text-white">
+              {['Plan', 'Activos', 'Técnicos', 'Ficha QR', 'Acceso remoto'].map((h) => (
+                <th key={h} className="text-left px-3 py-2 text-xs font-black uppercase tracking-wider whitespace-nowrap">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {PLAN_INFO.map((p, i) => (
+              <tr key={p.plan} className={`border-b border-slate-100 ${p.plan === plan ? 'bg-orange-50 font-bold' : i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
+                <td className="px-3 py-2 font-sketch font-bold">{p.label}{p.plan === plan && <span className="ml-2 text-orange-500 text-xs">← actual</span>}</td>
+                <td className="px-3 py-2">{p.activos}</td>
+                <td className="px-3 py-2">{p.tecnicos}</td>
+                <td className="px-3 py-2">{p.qr}</td>
+                <td className="px-3 py-2">{p.acceso}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

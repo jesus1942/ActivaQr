@@ -43,6 +43,10 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       mideAmperaje,
       midePresion,
       mideVibracion,
+      mideBateria,
+      mideToner,
+      mideContador,
+      mideVoltaje,
       activo,
     } = req.body ?? {};
     if (!nombre || typeof nombre !== 'string') {
@@ -57,6 +61,10 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         mideAmperaje,
         midePresion,
         mideVibracion,
+        mideBateria,
+        mideToner,
+        mideContador,
+        mideVoltaje,
         activo,
       },
     });
@@ -82,6 +90,10 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
       mideAmperaje,
       midePresion,
       mideVibracion,
+      mideBateria,
+      mideToner,
+      mideContador,
+      mideVoltaje,
       activo,
     } = req.body ?? {};
     const tipo = await prisma.tipoActivo.update({
@@ -93,6 +105,10 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
         mideAmperaje,
         midePresion,
         mideVibracion,
+        mideBateria,
+        mideToner,
+        mideContador,
+        mideVoltaje,
         activo,
       },
     });
