@@ -43,7 +43,9 @@ export const Admin: React.FC = () => {
     try {
       setEmpresas(await listarEmpresas());
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al cargar empresas.');
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error('[Admin] Error cargando empresas:', e);
+      setError(`Error al cargar empresas: ${msg}`);
     } finally {
       setCargando(false);
     }
