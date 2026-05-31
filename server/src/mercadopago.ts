@@ -85,7 +85,8 @@ export async function cancelarPreapproval(id: string): Promise<void> {
     body: JSON.stringify({ status: 'cancelled' }),
   });
   if (!res.ok) {
-    const data = (await res.json().catch(() => ({}))).message || 'No se pudo cancelar la suscripción en Mercado Pago.';
+    const body = await res.json().catch(() => ({})) as { message?: string };
+    const data = body.message || 'No se pudo cancelar la suscripción en Mercado Pago.';
     throw new Error(data);
   }
 }
