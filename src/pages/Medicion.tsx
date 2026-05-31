@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -7,6 +7,7 @@ import { useActivos } from '../hooks/useActivos';
 import { QrScanner, extraerActivoId } from '../components/QrScanner';
 import { Medicion as MedicionType, EstadoMedicion, Activo } from '../data/types';
 import { StatusBadge } from '../components/ui/StatusBadge';
+import { CategoriaEquipo, ParametroCategoria, getCategoria } from '../data/categoriasApi';
 
 // ── Lógica de alertas (espejo del backend) ────────────────────────────────────
 type NivelAlerta = 'normal' | 'alerta' | 'critico' | 'urgente';
@@ -85,6 +86,92 @@ function BarraUmbral({ valor, min, alerta, critico, max, invertido = false }: {
   );
 }
 
+// ─── Componente de parámetro dinámico ────────────────────────────────────────
+
+function ParamDinamicoInput({
+  param,
+  value,
+  onChange,
+}: {
+  param: ParametroCategoria;
+  value: string | number | boolean | undefined;
+  onChange: (v: string | number | boolean) => void;
+}) {
+  const strVal = value === undefined || value === null ? '' : String(value);
+
+  if (param.tipo === 'booleano') {
+    const boolVal = value === true || value === 'true';
+    return (
+      <div className="mb-4">
+        <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
+          {param.nombre}
+        </label>
+        <div className="flex gap-2">
+          {[true, false].map((b) => (
+            <button
+              key={String(b)}
+              type="button"
+              onClick={() => onChange(b)}
+              className={`flex-1 h-12 font-bold uppercase border-2 transition-colors ${
+                boolVal === b
+                  ? 'bg-slate-900 text-white border-slate-900'
+                  : 'border-slate-300 text-slate-600 hover:border-slate-500 bg-white'
+              }`}
+            >
+              {b ? 'Sí' : 'No'}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (param.tipo === 'texto') {
+    return (
+      <div className="mb-4">
+        <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
+          {param.nombre}
+        </label>
+        <input
+          type="text"
+          value={strVal}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500 bg-white"
+        />
+      </div>
+    );
+  }
+
+  // numerico / porcentaje
+  return (
+    <div className="mb-4">
+      <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
+        {param.nombre}{param.unidad ? ` (${param.unidad})` : ''}
+        {param.obligatorio && <span className="text-red-500 ml-1">*</span>}
+      </label>
+      <input
+        type="number"
+        step={param.tipo === 'porcentaje' ? '1' : '0.1'}
+        min={param.tipo === 'porcentaje' ? '0' : undefined}
+        max={param.tipo === 'porcentaje' ? '100' : undefined}
+        required={param.obligatorio}
+        value={strVal}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full border-2 border-slate-300 px-4 h-14 text-xl font-mono outline-none focus:border-orange-500 text-center bg-white"
+        placeholder="0"
+      />
+      <BarraUmbral
+        valor={strVal}
+        min={param.minNormal}
+        alerta={param.umbralAlerta}
+        critico={param.umbralCritico}
+        max={param.umbralUrgente}
+        invertido={param.invertido}
+      />
+    </div>
+  );
+}
+
 export const Medicion: React.FC = () => {
   const { activoId } = useParams<{ activoId: string }>();
   const navigate = useNavigate();
@@ -131,6 +218,14 @@ export const Medicion: React.FC = () => {
   const mideToner = tipoActivo?.mideToner ?? false;
   const mideContador = tipoActivo?.mideContador ?? false;
 
+  // Categoría dinámica
+  const [categoria, setCategoria] = useState<CategoriaEquipo | null>(null);
+  useEffect(() => {
+    const catId = tipoActivo?.categoriaId;
+    if (!catId) { setCategoria(null); return; }
+    getCategoria(catId).then(setCategoria).catch(() => setCategoria(null));
+  }, [tipoActivo?.categoriaId]);
+
   const [form, setForm] = useState({
     temperatura: '',
     amperaje: '',
@@ -145,6 +240,11 @@ export const Medicion: React.FC = () => {
     observaciones: '',
     tecnicoId: '',
   });
+
+  // Dynamic extra params from category
+  const [parametrosExtra, setParametrosExtra] = useState<Record<string, string | number | boolean>>({});
+  const setParamExtra = (clave: string, val: string | number | boolean) =>
+    setParametrosExtra((p) => ({ ...p, [clave]: val }));
 
   // Estado calculado automáticamente en tiempo real.
   const estadoAuto = useMemo(
@@ -178,6 +278,7 @@ export const Medicion: React.FC = () => {
       estado: form.estado,
       observaciones: form.observaciones,
       tecnicoId: form.tecnicoId,
+      ...(Object.keys(parametrosExtra).length > 0 ? { parametrosExtra } : {}),
     };
     addMedicion(newMedicion);
     setSavedMedicion(newMedicion);
@@ -221,6 +322,7 @@ export const Medicion: React.FC = () => {
               onClick={() => {
                 setSubmitted(false);
                 setForm({ temperatura: '', amperaje: '', presion: '', vibracion: 'ninguna', horasMarcha: '', voltaje: '', porcentajeBateria: '', nivelToner: '', contador: '', estado: 'normal', observaciones: '', tecnicoId: '' });
+              setParametrosExtra({});
               }}
               className="flex-1 bg-orange-500 text-white px-4 py-3 font-sketch font-bold text-xl border-2 border-slate-800"
             >
@@ -484,6 +586,25 @@ export const Medicion: React.FC = () => {
                   className="w-full border-2 border-slate-300 px-4 h-14 text-xl font-mono outline-none focus:border-orange-500 text-center bg-white"
                   placeholder="0"
                 />
+              </div>
+            )}
+
+            {/* Parámetros dinámicos de la categoría */}
+            {categoria && categoria.parametros.length > 0 && (
+              <div className="space-y-4">
+                <div className="border-t-2 border-dashed border-slate-300 pt-3">
+                  <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-3">
+                    {categoria.icono} {categoria.nombre}
+                  </p>
+                  {categoria.parametros.map((param) => (
+                    <ParamDinamicoInput
+                      key={param.id}
+                      param={param}
+                      value={parametrosExtra[param.clave]}
+                      onChange={(v) => setParamExtra(param.clave, v)}
+                    />
+                  ))}
+                </div>
               </div>
             )}
 

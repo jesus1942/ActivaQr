@@ -16,7 +16,9 @@ import syncRouter from './routes/sync';
 import webhooksRouter from './routes/webhooks';
 import publicRouter from './routes/public';
 import accesoRemotoRouter from './routes/accesoRemoto';
-import { requireAuth, requireAuthAndActiveEmpresa } from './auth';
+import categoriasRouter, { adminCategoriasRouter } from './routes/categorias';
+import { requireAuth, requireAuthAndActiveEmpresa, requireSuperadmin } from './auth';
+import { seedCategorias } from './seedCategorias';
 
 const app = express();
 
@@ -63,6 +65,8 @@ app.use('/api/activos', requireAuthAndActiveEmpresa, activosRouter);
 app.use('/api/mediciones', requireAuthAndActiveEmpresa, medicionesRouter);
 app.use('/api/tareas', requireAuthAndActiveEmpresa, tareasRouter);
 app.use('/api/sync', requireAuthAndActiveEmpresa, syncRouter);
+app.use('/api/categorias', requireAuthAndActiveEmpresa, categoriasRouter);
+app.use('/api/admin/categorias-globales', requireAuth, requireSuperadmin, adminCategoriasRouter);
 
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
@@ -73,6 +77,8 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 const PORT = Number(process.env.PORT) || 3001;
 app.listen(PORT, () => {
   console.log(`ActivaQR API escuchando en http://localhost:${PORT}`);
+  // Seed global equipment categories if not already present
+  seedCategorias().catch((e) => console.error('seedCategorias error:', e));
 });
 
 export default app;
