@@ -5,28 +5,40 @@ import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Activo, Medicion } from '../../data/types';
 import { StatusBadge } from './StatusBadge';
-import { MapPin, Clock, User } from 'lucide-react';
+import { MapPin, Clock, User, Pencil } from 'lucide-react';
 
 interface AssetCardProps {
   activo: Activo;
   lastMedicion?: Medicion;
   sectorNombre: string;
   responsableNombre: string;
+  onEdit?: () => void;
 }
 
-export const AssetCard: React.FC<AssetCardProps> = ({ activo, lastMedicion, sectorNombre, responsableNombre }) => {
+export const AssetCard: React.FC<AssetCardProps> = ({ activo, lastMedicion, sectorNombre, responsableNombre, onEdit }) => {
   const navigate = useNavigate();
   const qrValue = `${window.location.origin}${import.meta.env.BASE_URL}#/medicion/${activo.id}`;
 
   return (
     <div
-      className="bg-[#FFFEF7] border-2 border-slate-700 shadow-[4px_4px_0px_0px_#1e293b] cursor-pointer hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#1e293b] transition-all duration-150 p-4"
+      className="bg-[#FFFEF7] border-2 border-slate-700 shadow-[4px_4px_0px_0px_#1e293b] cursor-pointer hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#1e293b] transition-all duration-150 p-4 relative"
       onClick={() => navigate(`/activos/${activo.id}`)}
     >
+      {/* Edit button */}
+      {onEdit && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onEdit(); }}
+          title="Editar activo"
+          className="absolute top-2 right-2 border-2 border-slate-300 p-1 hover:border-orange-500 hover:text-orange-500 transition-colors bg-white z-10"
+        >
+          <Pencil size={14} />
+        </button>
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-start mb-3">
         <StatusBadge estado={activo.estado} size="sm" />
-        <span className="font-sketch text-base font-bold uppercase bg-slate-100 border border-slate-300 px-2 py-0.5 text-slate-600 rotate-[1deg]">
+        <span className="font-sketch text-base font-bold uppercase bg-slate-100 border border-slate-300 px-2 py-0.5 text-slate-600 rotate-[1deg] mr-6">
           {sectorNombre}
         </span>
       </div>

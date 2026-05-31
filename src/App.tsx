@@ -46,7 +46,7 @@ function PantallaBloqueo() {
   );
 }
 
-function AppRoutes() {
+function AuthedApp() {
   const { usuario, requiereLogin, empresaSuspendida } = useAuth();
 
   if (requiereLogin && !usuario) return <Login />;
@@ -55,44 +55,45 @@ function AppRoutes() {
   const esSuperadmin = usuario?.rol === 'superadmin';
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/ficha/:id" element={<FichaPublica />} />
-        <Route path="/acceso-remoto/aprobar/:token" element={<AprobarAccesoRemoto />} />
-
-        <Route path="/" element={<Layout />}>
-          {esSuperadmin ? (
-            <>
-              <Route index element={<Admin />} />
-              <Route path="admin" element={<Admin />} />
-              <Route path="mensajes" element={<MensajesAdmin />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </>
-          ) : (
-            <>
-              <Route index element={<Dashboard />} />
-              <Route path="activos" element={<Activos />} />
-              <Route path="activos/:id" element={<ActivoDetalle />} />
-              <Route path="medicion" element={<Medicion />} />
-              <Route path="medicion/:activoId" element={<Medicion />} />
-              <Route path="mantenimiento" element={<Mantenimiento />} />
-              <Route path="reportes" element={<Reportes />} />
-              <Route path="importar" element={<ImportarDatos />} />
-              <Route path="qr" element={<GestionQR />} />
-              <Route path="configuracion" element={<Configuracion />} />
-              <Route path="mensajes" element={<Mensajes />} />
-            </>
-          )}
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route path="/" element={<Layout />}>
+        {esSuperadmin ? (
+          <>
+            <Route index element={<Admin />} />
+            <Route path="admin" element={<Admin />} />
+            <Route path="mensajes" element={<MensajesAdmin />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </>
+        ) : (
+          <>
+            <Route index element={<Dashboard />} />
+            <Route path="activos" element={<Activos />} />
+            <Route path="activos/:id" element={<ActivoDetalle />} />
+            <Route path="medicion" element={<Medicion />} />
+            <Route path="medicion/:activoId" element={<Medicion />} />
+            <Route path="mantenimiento" element={<Mantenimiento />} />
+            <Route path="reportes" element={<Reportes />} />
+            <Route path="importar" element={<ImportarDatos />} />
+            <Route path="qr" element={<GestionQR />} />
+            <Route path="configuracion" element={<Configuracion />} />
+            <Route path="mensajes" element={<Mensajes />} />
+          </>
+        )}
+      </Route>
+    </Routes>
   );
 }
 
 function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/ficha/:id" element={<FichaPublica />} />
+          <Route path="/acceso-remoto/aprobar/:token" element={<AprobarAccesoRemoto />} />
+          <Route path="/*" element={<AuthedApp />} />
+        </Routes>
+      </BrowserRouter>
     </AuthProvider>
   );
 }

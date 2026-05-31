@@ -180,6 +180,10 @@ model TipoActivo {
   mideAmperaje     Boolean @default(false)
   midePresion      Boolean @default(false)
   mideVibracion    Boolean @default(true)
+  mideBateria      Boolean @default(false)
+  mideToner        Boolean @default(false)
+  mideContador     Boolean @default(false)
+  mideVoltaje      Boolean @default(false)
   activo           Boolean @default(true)
 
   empresa Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
@@ -258,7 +262,11 @@ model Medicion {
   amperaje      Float?
   presion       Float?
   vibracion     Vibracion      @default(ninguna)
-  horasMarcha   Int?
+  horasMarcha       Int?
+  voltaje           Float?
+  porcentajeBateria Int?
+  nivelToner        Int?
+  contador          Int?
   estado        EstadoMedicion @default(normal)
   observaciones String?
   origen        OrigenMedicion @default(manual)

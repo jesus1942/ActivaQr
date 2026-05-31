@@ -49,6 +49,10 @@ export const Medicion: React.FC = () => {
   const mideAmperaje = tipoActivo ? tipoActivo.mideAmperaje : activo ? activo.amperajeNormal > 0 : true;
   const midePresion = tipoActivo ? tipoActivo.midePresion : activo ? activo.presionNormal > 0 : true;
   const mideVibracion = tipoActivo ? tipoActivo.mideVibracion : true;
+  const mideVoltaje = tipoActivo?.mideVoltaje ?? false;
+  const mideBateria = tipoActivo?.mideBateria ?? false;
+  const mideToner = tipoActivo?.mideToner ?? false;
+  const mideContador = tipoActivo?.mideContador ?? false;
 
   const [form, setForm] = useState({
     temperatura: '',
@@ -56,6 +60,10 @@ export const Medicion: React.FC = () => {
     presion: '',
     vibracion: 'ninguna' as MedicionType['vibracion'],
     horasMarcha: '',
+    voltaje: '',
+    porcentajeBateria: '',
+    nivelToner: '',
+    contador: '',
     estado: 'normal' as EstadoMedicion,
     observaciones: '',
     tecnicoId: '',
@@ -73,6 +81,10 @@ export const Medicion: React.FC = () => {
       presion: parseFloat(form.presion) || 0,
       vibracion: form.vibracion,
       horasMarcha: parseInt(form.horasMarcha) || 0,
+      ...(mideVoltaje && form.voltaje !== '' ? { voltaje: parseFloat(form.voltaje) } : {}),
+      ...(mideBateria && form.porcentajeBateria !== '' ? { porcentajeBateria: parseInt(form.porcentajeBateria) } : {}),
+      ...(mideToner && form.nivelToner !== '' ? { nivelToner: parseInt(form.nivelToner) } : {}),
+      ...(mideContador && form.contador !== '' ? { contador: parseInt(form.contador) } : {}),
       estado: form.estado,
       observaciones: form.observaciones,
       tecnicoId: form.tecnicoId,
@@ -118,7 +130,7 @@ export const Medicion: React.FC = () => {
             <button
               onClick={() => {
                 setSubmitted(false);
-                setForm({ temperatura: '', amperaje: '', presion: '', vibracion: 'ninguna', horasMarcha: '', estado: 'normal', observaciones: '', tecnicoId: '' });
+                setForm({ temperatura: '', amperaje: '', presion: '', vibracion: 'ninguna', horasMarcha: '', voltaje: '', porcentajeBateria: '', nivelToner: '', contador: '', estado: 'normal', observaciones: '', tecnicoId: '' });
               }}
               className="flex-1 bg-orange-500 text-white px-4 py-3 font-sketch font-bold text-xl border-2 border-slate-800"
             >
@@ -290,6 +302,67 @@ export const Medicion: React.FC = () => {
                 placeholder={String(activo.horasActuales)}
               />
             </div>
+
+            {/* Voltaje */}
+            {mideVoltaje && (
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Voltaje (V)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={form.voltaje}
+                  onChange={(e) => setForm((p) => ({ ...p, voltaje: e.target.value }))}
+                  className="w-full border-2 border-slate-300 px-4 h-14 text-xl font-mono outline-none focus:border-orange-500 text-center bg-white"
+                  placeholder="0.0"
+                />
+              </div>
+            )}
+
+            {/* Batería */}
+            {mideBateria && (
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Batería (%)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={form.porcentajeBateria}
+                  onChange={(e) => setForm((p) => ({ ...p, porcentajeBateria: e.target.value }))}
+                  className="w-full border-2 border-slate-300 px-4 h-14 text-xl font-mono outline-none focus:border-orange-500 text-center bg-white"
+                  placeholder="0"
+                />
+              </div>
+            )}
+
+            {/* Nivel de tóner */}
+            {mideToner && (
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Nivel de tóner (%)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={form.nivelToner}
+                  onChange={(e) => setForm((p) => ({ ...p, nivelToner: e.target.value }))}
+                  className="w-full border-2 border-slate-300 px-4 h-14 text-xl font-mono outline-none focus:border-orange-500 text-center bg-white"
+                  placeholder="0"
+                />
+              </div>
+            )}
+
+            {/* Contador */}
+            {mideContador && (
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Contador (páginas/ciclos)</label>
+                <input
+                  type="number"
+                  value={form.contador}
+                  onChange={(e) => setForm((p) => ({ ...p, contador: e.target.value }))}
+                  className="w-full border-2 border-slate-300 px-4 h-14 text-xl font-mono outline-none focus:border-orange-500 text-center bg-white"
+                  placeholder="0"
+                />
+              </div>
+            )}
 
             {/* Estado visual — tarjetas grandes */}
             <div>
