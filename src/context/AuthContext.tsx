@@ -1,4 +1,4 @@
-// v1.0
+// v1.1.0
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import {
   UsuarioSesion,

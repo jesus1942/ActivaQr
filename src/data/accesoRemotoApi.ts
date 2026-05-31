@@ -1,4 +1,4 @@
-// v1.0
+// v1.1.0
 import { apiFetch, API_URL } from './auth';
 
 export interface PermisoAcceso {
@@ -14,9 +14,17 @@ export interface MensajeRemoto {
   id: string;
   autorRol: 'superadmin' | 'cliente';
   autorNombre: string;
-  contenido: string;
+  contenido: string | null;
+  tipo: 'texto' | 'imagen' | 'audio';
+  adjunto?: string | null;
   creadoEn: string;
   leido: boolean;
+}
+
+export interface MensajePayload {
+  contenido?: string;
+  tipo?: string;
+  adjunto?: string;
 }
 
 async function parse(res: Response) {
@@ -68,10 +76,30 @@ export async function getMensajesAdmin(empresaId: string): Promise<MensajeRemoto
   return parse(await apiFetch(`admin/empresas/${empresaId}/mensajes-remoto`));
 }
 
-export async function enviarMensajeAdmin(empresaId: string, contenido: string): Promise<MensajeRemoto> {
+export async function enviarMensajeAdmin(empresaId: string, payload: MensajePayload): Promise<MensajeRemoto> {
   return parse(await apiFetch(`admin/empresas/${empresaId}/mensajes-remoto`, {
     method: 'POST',
-    body: JSON.stringify({ contenido }),
+    body: JSON.stringify(payload),
+  }));
+}
+
+export async function crearMedicionRemota(
+  empresaId: string,
+  payload: {
+    activoId: string;
+    temperatura?: number;
+    amperaje?: number;
+    presion?: number;
+    vibracion?: string;
+    voltaje?: number;
+    porcentajeBateria?: number;
+    nivelToner?: number;
+    observaciones?: string;
+  }
+): Promise<any> {
+  return parse(await apiFetch(`admin/empresas/${empresaId}/mediciones-remoto`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
   }));
 }
 
@@ -98,9 +126,9 @@ export async function getMensajesCliente(): Promise<MensajeRemoto[]> {
   return parse(await apiFetch('acceso-remoto/mensajes'));
 }
 
-export async function enviarMensajeCliente(contenido: string): Promise<MensajeRemoto> {
+export async function enviarMensajeCliente(payload: MensajePayload): Promise<MensajeRemoto> {
   return parse(await apiFetch('acceso-remoto/mensajes', {
     method: 'POST',
-    body: JSON.stringify({ contenido }),
+    body: JSON.stringify(payload),
   }));
 }

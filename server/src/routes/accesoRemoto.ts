@@ -8,6 +8,9 @@ import { randomBytes } from 'crypto';
 import { prisma } from '../prisma';
 import { requireAuth, requireSuperadmin, AuthRequest } from '../auth';
 import { enviarEmailAccesoRemoto } from '../email';
+import { calcularEstadoAutomatico, estadoMedicionAActivo } from '../alertas';
+
+const MAX_ADJUNTO = 8_000_000; // ~6MB en base64
 
 const router = Router();
 
@@ -162,6 +165,77 @@ router.get(
   }
 );
 
+// POST /api/admin/empresas/:id/mediciones-remoto — intervenir: registrar medición remota
+router.post(
+  '/empresas/:id/mediciones-remoto',
+  requireAuth, requireSuperadmin,
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const p = await prisma.permisoAccesoRemoto.findUnique({ where: { empresaId: req.params.id } });
+      if (!p || p.estado !== 'activo') return res.status(403).json({ error: 'Sin permiso activo.' });
+
+      const {
+        activoId, temperatura, amperaje, presion, vibracion,
+        voltaje, porcentajeBateria, nivelToner, observaciones,
+      } = req.body ?? {};
+
+      if (!activoId || typeof activoId !== 'string') {
+        return res.status(400).json({ error: 'El campo "activoId" es obligatorio.' });
+      }
+
+      const activo = await prisma.activo.findFirst({
+        where: { id: activoId, empresaId: req.params.id },
+      });
+      if (!activo) return res.status(404).json({ error: 'Activo no encontrado.' });
+
+      // Estado automático según umbrales del activo.
+      const estadoCalculado = calcularEstadoAutomatico(
+        { temperatura, amperaje, presion, voltaje, porcentajeBateria, nivelToner },
+        activo,
+      );
+      // Mapear el nivel calculado al enum EstadoMedicion (normal | revision | urgente).
+      const estadoMedicion: 'normal' | 'revision' | 'urgente' =
+        estadoCalculado === 'urgente' ? 'urgente'
+        : estadoCalculado === 'normal' ? 'normal'
+        : 'revision';
+
+      // El técnico asignado: responsable del activo o primer técnico de la empresa.
+      let tecnicoId: string | null = activo.responsableId;
+      if (!tecnicoId) {
+        const tecnico = await prisma.tecnico.findFirst({ where: { empresaId: req.params.id } });
+        tecnicoId = tecnico?.id ?? null;
+      }
+
+      const medicion = await prisma.medicion.create({
+        data: {
+          activoId,
+          tecnicoId,
+          fecha: new Date(),
+          temperatura: temperatura ?? null,
+          amperaje: amperaje ?? null,
+          presion: presion ?? null,
+          vibracion: vibracion ?? undefined,
+          voltaje: voltaje ?? null,
+          porcentajeBateria: porcentajeBateria ?? null,
+          nivelToner: nivelToner ?? null,
+          estado: estadoMedicion as any,
+          observaciones: observaciones ?? null,
+          origen: 'manual',
+        },
+      });
+
+      // Escalar el estado del activo al peor entre el calculado y el actual.
+      const nuevoEstadoActivo = estadoMedicionAActivo(estadoCalculado);
+      const nivelActivo: Record<string, number> = { normal: 0, alerta: 1, mantenimiento: 1, critico: 2 };
+      if ((nivelActivo[nuevoEstadoActivo] ?? 0) > (nivelActivo[activo.estado] ?? 0)) {
+        await prisma.activo.update({ where: { id: activoId }, data: { estado: nuevoEstadoActivo } });
+      }
+
+      res.status(201).json(medicion);
+    } catch (err) { next(err); }
+  }
+);
+
 // POST /api/admin/empresas/:id/tareas-remoto — crear tarea en empresa del cliente
 router.post(
   '/empresas/:id/tareas-remoto',
@@ -215,10 +289,22 @@ router.post(
     try {
       const p = await prisma.permisoAccesoRemoto.findUnique({ where: { empresaId: req.params.id } });
       if (!p || p.estado !== 'activo') return res.status(403).json({ error: 'Sin permiso activo.' });
-      const { contenido } = req.body ?? {};
-      if (!contenido?.trim()) return res.status(400).json({ error: 'El mensaje no puede estar vacío.' });
+      const { contenido, tipo, adjunto } = req.body ?? {};
+      if (!contenido?.trim() && !adjunto) {
+        return res.status(400).json({ error: 'El mensaje no puede estar vacío.' });
+      }
+      if (adjunto && adjunto.length > MAX_ADJUNTO) {
+        return res.status(413).json({ error: 'El adjunto es demasiado grande (máx. ~6MB).' });
+      }
       const msg = await prisma.mensajeRemoto.create({
-        data: { permisoId: p.id, autorRol: 'superadmin', autorNombre: 'ActivaQR Soporte', contenido: contenido.trim() },
+        data: {
+          permisoId: p.id,
+          autorRol: 'superadmin',
+          autorNombre: 'ActivaQR Soporte',
+          contenido: contenido?.trim() || null,
+          tipo: tipo || 'texto',
+          adjunto: adjunto || null,
+        },
       });
       res.status(201).json(msg);
     } catch (err) { next(err); }
@@ -335,11 +421,23 @@ router.post(
         include: { empresa: { include: { usuarios: { where: { rol: 'admin' }, take: 1 } } } },
       });
       if (!p || p.estado !== 'activo') return res.status(403).json({ error: 'Sin permiso activo.' });
-      const { contenido } = req.body ?? {};
-      if (!contenido?.trim()) return res.status(400).json({ error: 'El mensaje no puede estar vacío.' });
+      const { contenido, tipo, adjunto } = req.body ?? {};
+      if (!contenido?.trim() && !adjunto) {
+        return res.status(400).json({ error: 'El mensaje no puede estar vacío.' });
+      }
+      if (adjunto && adjunto.length > MAX_ADJUNTO) {
+        return res.status(413).json({ error: 'El adjunto es demasiado grande (máx. ~6MB).' });
+      }
       const autorNombre = p.empresa.usuarios[0]?.nombre ?? p.empresa.nombre;
       const msg = await prisma.mensajeRemoto.create({
-        data: { permisoId: p.id, autorRol: 'cliente', autorNombre, contenido: contenido.trim() },
+        data: {
+          permisoId: p.id,
+          autorRol: 'cliente',
+          autorNombre,
+          contenido: contenido?.trim() || null,
+          tipo: tipo || 'texto',
+          adjunto: adjunto || null,
+        },
       });
       res.status(201).json(msg);
     } catch (err) { next(err); }

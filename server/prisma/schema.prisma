@@ -102,7 +102,9 @@ model MensajeRemoto {
   permisoId String
   autorRol  String   // 'superadmin' | 'cliente'
   autorNombre String
-  contenido String
+  contenido String?
+  tipo      String   @default("texto") // 'texto' | 'imagen' | 'audio'
+  adjunto   String?  @db.Text          // data URL base64 de imagen/audio
   creadoEn  DateTime @default(now())
   leido     Boolean  @default(false)
 

@@ -1,4 +1,4 @@
-// v1.0
+// v1.1.0
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'

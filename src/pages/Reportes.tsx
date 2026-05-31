@@ -1,4 +1,4 @@
-// v1.0
+// v1.1.0
 import React, { useState } from 'react';
 import { format, parseISO, isAfter, isBefore } from 'date-fns';
 import { es } from 'date-fns/locale';
