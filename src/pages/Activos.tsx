@@ -53,7 +53,18 @@ export const Activos: React.FC = () => {
     temperaturaAlerta: 85,
     temperaturaCritica: 95,
     amperajeNormal: 0,
+    amperajeAlerta: null,
+    amperajeCritico: null,
     presionNormal: 0,
+    presionAlerta: null,
+    presionCritica: null,
+    voltajeMin: null,
+    voltajeMax: null,
+    voltajeAlerta: null,
+    bateriaAlerta: null,
+    bateriaCritica: null,
+    tonerAlerta: null,
+    tonerCritico: null,
     intervaloMedicionHoras: 120,
     intervaloLubricacionHoras: 250,
     intervaloRodamientoHoras: 500,
@@ -417,10 +428,39 @@ const ParametrosMedicion: React.FC<{
           </div>
 
           <div className="col-span-2 sm:col-span-4">
-            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Otros parámetros</p>
+            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Amperaje</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <CampoNum label="Amperaje normal"  campo="amperajeNormal"  form={form} setForm={setForm} unidad="A" />
-              <CampoNum label="Presión normal"   campo="presionNormal"   form={form} setForm={setForm} unidad="bar" />
+              <CampoNum label="Normal"  campo="amperajeNormal"  form={form} setForm={setForm} unidad="A" />
+              <CampoNum label="Alerta"  campo="amperajeAlerta"  form={form} setForm={setForm} unidad="A" />
+              <CampoNum label="Crítico" campo="amperajeCritico" form={form} setForm={setForm} unidad="A" />
+            </div>
+          </div>
+
+          <div className="col-span-2 sm:col-span-4">
+            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Presión</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <CampoNum label="Normal"  campo="presionNormal"  form={form} setForm={setForm} unidad="bar" />
+              <CampoNum label="Alerta"  campo="presionAlerta"  form={form} setForm={setForm} unidad="bar" />
+              <CampoNum label="Crítica" campo="presionCritica" form={form} setForm={setForm} unidad="bar" />
+            </div>
+          </div>
+
+          <div className="col-span-2 sm:col-span-4">
+            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Voltaje</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <CampoNum label="Mín"    campo="voltajeMin"   form={form} setForm={setForm} unidad="V" />
+              <CampoNum label="Máx"    campo="voltajeMax"   form={form} setForm={setForm} unidad="V" />
+              <CampoNum label="Alerta" campo="voltajeAlerta" form={form} setForm={setForm} unidad="V" />
+            </div>
+          </div>
+
+          <div className="col-span-2 sm:col-span-4">
+            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Batería / Tóner (valores bajos = peor)</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <CampoNum label="Batería alerta"   campo="bateriaAlerta"  form={form} setForm={setForm} unidad="%" />
+              <CampoNum label="Batería crítica"  campo="bateriaCritica" form={form} setForm={setForm} unidad="%" />
+              <CampoNum label="Tóner alerta"     campo="tonerAlerta"    form={form} setForm={setForm} unidad="%" />
+              <CampoNum label="Tóner crítico"    campo="tonerCritico"   form={form} setForm={setForm} unidad="%" />
             </div>
           </div>
 
