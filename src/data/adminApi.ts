@@ -66,6 +66,26 @@ export async function cancelarMiSuscripcion(): Promise<void> {
   await parse(await apiFetch('empresas/mi-suscripcion', { method: 'DELETE' }));
 }
 
+export interface SolicitudUpgrade {
+  id: string;
+  nombre: string;
+  plan: string;
+  planSolicitado: string;
+  adminEmail?: string | null;
+}
+
+export async function solicitarUpgrade(plan: string): Promise<void> {
+  await parse(await apiFetch('suscripcion/solicitar-upgrade', { method: 'POST', body: JSON.stringify({ plan }) }));
+}
+
+export async function getSolicitudesUpgrade(): Promise<SolicitudUpgrade[]> {
+  return parse(await apiFetch('admin/solicitudes-upgrade'));
+}
+
+export async function descartarSolicitud(empresaId: string): Promise<void> {
+  await parse(await apiFetch(`admin/solicitudes-upgrade/${empresaId}`, { method: 'DELETE' }));
+}
+
 export async function generarSuscripcion(
   id: string,
   monto: number,

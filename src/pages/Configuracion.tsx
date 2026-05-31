@@ -4,7 +4,7 @@ import { Plus, Pencil, Trash2, RotateCcw, Check, AlertTriangle, MessageSquare, S
 import { useActivos } from '../hooks/useActivos';
 import { useAuth } from '../context/AuthContext';
 import { Sector, TipoActivo, Tecnico } from '../data/types';
-import { cancelarMiSuscripcion } from '../data/adminApi';
+import { cancelarMiSuscripcion, solicitarUpgrade } from '../data/adminApi';
 import {
   PermisoAcceso, MensajeRemoto,
   getSolicitudCliente, revocarAccesoCliente,
@@ -653,29 +653,30 @@ const PLAN_INFO: { plan: string; label: string; activos: string; tecnicos: strin
 
 const SeccionPlan: React.FC = () => {
   const { usuario } = useAuth();
-  const plan = (usuario?.empresa as { plan?: string } | null)?.plan ?? 'inicial';
-  const nombreEmpresa = usuario?.empresa?.nombre ?? '';
-  const waNumero = import.meta.env.VITE_WA_SOPORTE ?? '';
-  const emailSoporte = import.meta.env.VITE_EMAIL_SOPORTE ?? '';
-  const [planElegido, setPlanElegido] = useState<string | null>(null);
-  const [enviado, setEnviado] = useState(false);
+  const empresaExt = usuario?.empresa as { plan?: string; planSolicitado?: string | null } | null;
+  const plan = empresaExt?.plan ?? 'inicial';
+  const planSolicitadoActual = empresaExt?.planSolicitado ?? null;
+
+  const [cargando, setCargando] = useState(false);
+  const [exito, setExito] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const planesUpgrade = PLAN_INFO.filter((p) => {
     const orden: Record<string, number> = { inicial: 0, empresa: 1, industrial: 2 };
     return (orden[p.plan] ?? 0) > (orden[plan] ?? 0);
   });
 
-  const solicitarUpgrade = (planDestino: string) => {
-    const planLabel = PLAN_INFO.find((p) => p.plan === planDestino)?.label ?? planDestino;
-    const texto = `Hola! Soy cliente de ActivaQR.\nEmpresa: ${nombreEmpresa}\nPlan actual: ${plan.toUpperCase()}\nQuiero actualizar al plan: ${planLabel.toUpperCase()}\n\nPor favor indicarme costo y pasos a seguir.`;
-    if (waNumero) {
-      window.open(`https://wa.me/${waNumero}?text=${encodeURIComponent(texto)}`, '_blank');
-      setEnviado(true);
-    } else if (emailSoporte) {
-      window.location.href = `mailto:${emailSoporte}?subject=Upgrade%20de%20plan%20ActivaQR&body=${encodeURIComponent(texto)}`;
-      setEnviado(true);
-    } else {
-      setPlanElegido(planDestino);
+  const handleSolicitarUpgrade = async (planDestino: string) => {
+    setCargando(true);
+    setError(null);
+    setExito(false);
+    try {
+      await solicitarUpgrade(planDestino);
+      setExito(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al enviar la solicitud.');
+    } finally {
+      setCargando(false);
     }
   };
 
@@ -717,56 +718,52 @@ const SeccionPlan: React.FC = () => {
         </table>
       </div>
 
-      {/* Botones de upgrade */}
-      {planesUpgrade.length > 0 && !enviado && (
+      {/* Solicitud pendiente */}
+      {planSolicitadoActual && !exito && (
         <div className="border-t-2 border-slate-100 pt-4">
-          <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-3">Quiero actualizar al plan:</p>
+          <div className="bg-amber-50 border-2 border-amber-400 px-4 py-3">
+            <p className="font-black text-amber-700 text-sm uppercase tracking-wide">Solicitud pendiente</p>
+            <p className="text-sm text-amber-700 mt-0.5">
+              Plan {PLAN_INFO.find((p) => p.plan === planSolicitadoActual)?.label ?? planSolicitadoActual.toUpperCase()} — en proceso. El equipo de ActivaQR la gestionara a la brevedad.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Botones de upgrade */}
+      {planesUpgrade.length > 0 && !planSolicitadoActual && !exito && (
+        <div className="border-t-2 border-slate-100 pt-4">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-3">Mejorar plan a:</p>
           <div className="flex flex-wrap gap-2">
             {planesUpgrade.map((p) => (
               <button
                 key={p.plan}
-                onClick={() => solicitarUpgrade(p.plan)}
-                className="px-5 py-2.5 bg-orange-500 text-white border-2 border-slate-900 font-black uppercase tracking-wide shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all text-sm"
+                onClick={() => handleSolicitarUpgrade(p.plan)}
+                disabled={cargando}
+                className="px-5 py-2.5 bg-orange-500 text-white border-2 border-slate-900 font-black uppercase tracking-wide shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {p.label}
+                {cargando ? 'Enviando...' : `Mejorar plan a ${p.label}`}
               </button>
             ))}
           </div>
-          <p className="text-xs text-slate-400 mt-2">
-            {waNumero ? 'Se abrirá WhatsApp con tu solicitud lista para enviar.' : emailSoporte ? 'Se abrirá tu cliente de email con la solicitud.' : 'Te mostraremos la información de contacto.'}
-          </p>
         </div>
       )}
 
-      {enviado && (
+      {/* Confirmación */}
+      {exito && (
         <div className="border-t-2 border-slate-100 pt-4">
           <div className="bg-emerald-50 border-2 border-emerald-400 px-4 py-3">
             <p className="font-black text-emerald-700 text-sm uppercase tracking-wide">Solicitud enviada</p>
-            <p className="text-sm text-emerald-600 mt-0.5">Tu solicitud fue enviada. Te contactaremos para coordinar el cambio de plan.</p>
+            <p className="text-sm text-emerald-600 mt-0.5">El equipo de ActivaQR la procesara en breve.</p>
           </div>
-          <button onClick={() => setEnviado(false)} className="mt-2 text-xs text-slate-400 underline hover:text-slate-600">
-            Enviar otra solicitud
-          </button>
         </div>
       )}
 
-      {/* Fallback: sin canal configurado */}
-      {planElegido && !waNumero && !emailSoporte && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white border-2 border-slate-900 shadow-[4px_4px_0px_0px_#1e293b] max-w-sm w-full p-5 space-y-3">
-            <h3 className="font-black uppercase text-slate-900">Solicitar upgrade</h3>
-            <p className="text-sm text-slate-600">
-              Para cambiar al plan <strong>{PLAN_INFO.find((p) => p.plan === planElegido)?.label}</strong>, contactá a soporte de ActivaQR indicando:
-            </p>
-            <div className="bg-slate-50 border-2 border-slate-200 p-3 text-sm font-mono text-slate-700 whitespace-pre-wrap">
-              {`Empresa: ${nombreEmpresa}\nPlan actual: ${plan}\nPlan solicitado: ${planElegido}`}
-            </div>
-            <button
-              onClick={() => setPlanElegido(null)}
-              className="w-full py-2.5 bg-slate-900 text-white border-2 border-slate-900 font-black uppercase tracking-wide text-sm hover:bg-slate-700 transition-colors"
-            >
-              Cerrar
-            </button>
+      {/* Error */}
+      {error && (
+        <div className="border-t-2 border-slate-100 pt-4">
+          <div className="bg-red-50 border-2 border-red-400 px-4 py-3">
+            <p className="text-sm font-semibold text-red-700">{error}</p>
           </div>
         </div>
       )}
