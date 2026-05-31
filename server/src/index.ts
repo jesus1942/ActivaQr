@@ -14,7 +14,8 @@ import medicionesRouter from './routes/mediciones';
 import tareasRouter from './routes/tareas';
 import syncRouter from './routes/sync';
 import webhooksRouter from './routes/webhooks';
-import { requireAuth } from './auth';
+import publicRouter from './routes/public';
+import { requireAuth, requireAuthAndActiveEmpresa } from './auth';
 
 const app = express();
 
@@ -37,20 +38,25 @@ app.get('/api/health', (_req, res) => {
 // Webhooks externos (sin auth: los llama Mercado Pago).
 app.use('/api/webhooks', webhooksRouter);
 
+// Rutas públicas (sin auth): fichas técnicas para QR.
+app.use('/api/public', publicRouter);
+
 // Autenticación y administración.
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 
-// Rutas de datos: requieren usuario autenticado (cada empresa ve lo suyo).
-app.use('/api/empresas', requireAuth, empresasRouter);
-app.use('/api/sedes', requireAuth, sedesRouter);
-app.use('/api/sectores', requireAuth, sectoresRouter);
-app.use('/api/tipos', requireAuth, tiposRouter);
-app.use('/api/tecnicos', requireAuth, tecnicosRouter);
-app.use('/api/activos', requireAuth, activosRouter);
-app.use('/api/mediciones', requireAuth, medicionesRouter);
-app.use('/api/tareas', requireAuth, tareasRouter);
-app.use('/api/sync', requireAuth, syncRouter);
+// Rutas de datos: requieren token válido + empresa activa.
+// requireAuthAndActiveEmpresa verifica el estado en DB en cada request —
+// el bloqueo es inmediato cuando la empresa se suspende.
+app.use('/api/empresas', requireAuthAndActiveEmpresa, empresasRouter);
+app.use('/api/sedes', requireAuthAndActiveEmpresa, sedesRouter);
+app.use('/api/sectores', requireAuthAndActiveEmpresa, sectoresRouter);
+app.use('/api/tipos', requireAuthAndActiveEmpresa, tiposRouter);
+app.use('/api/tecnicos', requireAuthAndActiveEmpresa, tecnicosRouter);
+app.use('/api/activos', requireAuthAndActiveEmpresa, activosRouter);
+app.use('/api/mediciones', requireAuthAndActiveEmpresa, medicionesRouter);
+app.use('/api/tareas', requireAuthAndActiveEmpresa, tareasRouter);
+app.use('/api/sync', requireAuthAndActiveEmpresa, syncRouter);
 
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);

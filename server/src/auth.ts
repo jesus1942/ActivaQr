@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { prisma } from './prisma';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'activaqr-dev-secret-cambiar-en-produccion';
 const TOKEN_TTL = '30d';
@@ -45,6 +46,43 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
   }
   req.auth = payload;
   next();
+}
+
+/**
+ * Middleware: exige token válido Y que la empresa esté activa en la DB.
+ * Se ejecuta en cada request — el bloqueo es inmediato al suspender.
+ * Los superadmin nunca son bloqueados.
+ */
+export function requireAuthAndActiveEmpresa(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) {
+  const token = leerToken(req);
+  const payload = token ? verificarToken(token) : null;
+  if (!payload) {
+    return res.status(401).json({ error: 'No autorizado. Iniciá sesión.' });
+  }
+  req.auth = payload;
+
+  // Superadmin: siempre pasa.
+  if (payload.rol === 'superadmin' || !payload.empresaId) {
+    return next();
+  }
+
+  // Verificar estado de la empresa en DB (sin caché, tiempo real).
+  prisma.empresa
+    .findUnique({ where: { id: payload.empresaId }, select: { estado: true } })
+    .then((empresa) => {
+      if (!empresa || empresa.estado === 'suspendida') {
+        return res.status(403).json({
+          code: 'empresa_suspendida',
+          error: 'Tu suscripción está suspendida. Contactá al administrador.',
+        });
+      }
+      next();
+    })
+    .catch(next);
 }
 
 /**

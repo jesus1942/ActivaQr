@@ -62,9 +62,16 @@ export async function login(
   return data.usuario as UsuarioSesion;
 }
 
+export class EmpresaSuspendidaError extends Error {
+  constructor() {
+    super('empresa_suspendida');
+    this.name = 'EmpresaSuspendidaError';
+  }
+}
+
 /** Llama a un endpoint protegido con el token. */
 export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
-  return fetch(`${API_URL}/${path}`, {
+  const res = await fetch(`${API_URL}/${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -72,4 +79,15 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
       ...(init.headers || {}),
     },
   });
+
+  // Propagamos la suspensión como error especial para que cualquier
+  // componente o hook pueda reaccionar sin necesidad de verificar manualmente.
+  if (res.status === 403) {
+    const data = await res.clone().json().catch(() => ({}));
+    if (data?.code === 'empresa_suspendida') {
+      throw new EmpresaSuspendidaError();
+    }
+  }
+
+  return res;
 }
