@@ -1,9 +1,19 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { resolveEmpresaId } from '../tenant';
 
 const router = Router();
 const prisma = new PrismaClient();
+
+/**
+ * Envuelve un handler async para que cualquier error (ej: dato inválido,
+ * falla de Prisma) se reenvíe al error handler global en lugar de dejar
+ * la request colgada — Express 4 no captura promesas rechazadas solo.
+ */
+const asyncHandler =
+  (fn: (req: Request, res: Response) => Promise<unknown>) =>
+  (req: Request, res: Response, next: NextFunction) =>
+    fn(req, res).catch(next);
 
 // Helpers de coerción.
 const toDate = (v: unknown): Date | null =>
@@ -19,7 +29,7 @@ const toNum = (v: unknown): number | null =>
  */
 
 // ───────── Sectores ─────────
-router.put('/sectores', async (req, res) => {
+router.put('/sectores', asyncHandler(async (req, res) => {
   const empresaId = await resolveEmpresaId(req);
   const items: any[] = Array.isArray(req.body) ? req.body : [];
   const ids = items.map((i) => i.id);
@@ -42,10 +52,10 @@ router.put('/sectores', async (req, res) => {
     ),
   ]);
   res.json({ synced: items.length });
-});
+}));
 
 // ───────── Tipos ─────────
-router.put('/tipos', async (req, res) => {
+router.put('/tipos', asyncHandler(async (req, res) => {
   const empresaId = await resolveEmpresaId(req);
   const items: any[] = Array.isArray(req.body) ? req.body : [];
   const ids = items.map((i) => i.id);
@@ -71,10 +81,10 @@ router.put('/tipos', async (req, res) => {
     }),
   ]);
   res.json({ synced: items.length });
-});
+}));
 
 // ───────── Técnicos ─────────
-router.put('/tecnicos', async (req, res) => {
+router.put('/tecnicos', asyncHandler(async (req, res) => {
   const empresaId = await resolveEmpresaId(req);
   const items: any[] = Array.isArray(req.body) ? req.body : [];
   const ids = items.map((i) => i.id);
@@ -98,10 +108,10 @@ router.put('/tecnicos', async (req, res) => {
     }),
   ]);
   res.json({ synced: items.length });
-});
+}));
 
 // ───────── Activos ─────────
-router.put('/activos', async (req, res) => {
+router.put('/activos', asyncHandler(async (req, res) => {
   const empresaId = await resolveEmpresaId(req);
   const items: any[] = Array.isArray(req.body) ? req.body : [];
   const ids = items.map((i) => i.id);
@@ -143,10 +153,10 @@ router.put('/activos', async (req, res) => {
     }),
   ]);
   res.json({ synced: items.length });
-});
+}));
 
 // ───────── Mediciones ─────────
-router.put('/mediciones', async (req, res) => {
+router.put('/mediciones', asyncHandler(async (req, res) => {
   const empresaId = await resolveEmpresaId(req);
   const items: any[] = Array.isArray(req.body) ? req.body : [];
   const ids = items.map((i) => i.id);
@@ -176,10 +186,10 @@ router.put('/mediciones', async (req, res) => {
     }),
   ]);
   res.json({ synced: items.length });
-});
+}));
 
 // ───────── Tareas ─────────
-router.put('/tareas', async (req, res) => {
+router.put('/tareas', asyncHandler(async (req, res) => {
   const empresaId = await resolveEmpresaId(req);
   const items: any[] = Array.isArray(req.body) ? req.body : [];
   const ids = items.map((i) => i.id);
@@ -205,6 +215,6 @@ router.put('/tareas', async (req, res) => {
     }),
   ]);
   res.json({ synced: items.length });
-});
+}));
 
 export default router;
