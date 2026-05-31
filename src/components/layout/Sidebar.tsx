@@ -1,4 +1,4 @@
-// v1.0
+// v1.1.0
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {

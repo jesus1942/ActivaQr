@@ -1,4 +1,4 @@
-// v1.0
+// v1.1.0
 import React, { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, RotateCcw, Check, AlertTriangle, MessageSquare, ShieldCheck, ShieldOff, ChevronDown, ChevronRight } from 'lucide-react';
 import { useActivos } from '../hooks/useActivos';
@@ -944,8 +944,8 @@ const SeccionAccesoRemoto: React.FC = () => {
             <ChatRemoto
               mensajes={mensajes}
               miRol="cliente"
-              onEnviar={async (c) => {
-                const m = await enviarMensajeCliente(c);
+              onEnviar={async (payload) => {
+                const m = await enviarMensajeCliente(payload);
                 setMensajes((prev) => [...prev, m]);
               }}
             />
