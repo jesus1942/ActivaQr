@@ -29,6 +29,7 @@ export const Admin: React.FC = () => {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [toggling, setToggling] = useState<Set<string>>(new Set());
   const [resultadoSub, setResultadoSub] = useState<{
     empresaNombre: string;
     link: string;
@@ -53,9 +54,19 @@ export const Admin: React.FC = () => {
   }, []);
 
   const toggleEstado = async (emp: EmpresaAdmin) => {
+    if (toggling.has(emp.id)) return;
     const nuevo = emp.estado === 'activa' ? 'suspendida' : 'activa';
-    await actualizarEmpresa(emp.id, { estado: nuevo });
-    cargar();
+    setToggling((prev) => new Set(prev).add(emp.id));
+    // Actualización optimista: la UI responde al instante.
+    setEmpresas((prev) => prev.map((e) => e.id === emp.id ? { ...e, estado: nuevo } : e));
+    try {
+      await actualizarEmpresa(emp.id, { estado: nuevo });
+    } catch {
+      // Revertir si falla.
+      setEmpresas((prev) => prev.map((e) => e.id === emp.id ? { ...e, estado: emp.estado } : e));
+    } finally {
+      setToggling((prev) => { const s = new Set(prev); s.delete(emp.id); return s; });
+    }
   };
 
   const borrar = async (emp: EmpresaAdmin) => {
@@ -206,11 +217,12 @@ export const Admin: React.FC = () => {
               <div className="flex gap-2 mt-3 pt-3 border-t-2 border-slate-100">
                 <button
                   onClick={() => toggleEstado(emp)}
+                  disabled={toggling.has(emp.id)}
                   title={emp.estado === 'activa' ? 'Suspender' : 'Activar'}
-                  className="flex-1 flex items-center justify-center gap-1 border-2 border-slate-300 py-2 text-xs font-bold hover:border-slate-900 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-1 border-2 border-slate-300 py-2 text-xs font-bold hover:border-slate-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Power size={14} />
-                  {emp.estado === 'activa' ? 'Suspender' : 'Activar'}
+                  <Power size={14} className={toggling.has(emp.id) ? 'animate-spin' : ''} />
+                  {toggling.has(emp.id) ? '...' : emp.estado === 'activa' ? 'Suspender' : 'Activar'}
                 </button>
                 <button
                   onClick={() => suscribir(emp)}
