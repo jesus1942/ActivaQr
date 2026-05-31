@@ -227,6 +227,29 @@ router.post(
 
 // ── Cliente: aprobar, revocar, ver y enviar mensajes ─────────────────────────
 
+// GET /api/acceso-remoto/notificaciones — badge liviano para el sidebar
+router.get(
+  '/notificaciones',
+  requireAuth,
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const empresaId = req.auth?.empresaId;
+      if (!empresaId) return res.json({ mensajesNoLeidos: 0, tienePermisoPendiente: false });
+      const permiso = await prisma.permisoAccesoRemoto.findUnique({ where: { empresaId } });
+      if (!permiso) return res.json({ mensajesNoLeidos: 0, tienePermisoPendiente: false });
+      const mensajesNoLeidos = permiso.estado === 'activo'
+        ? await prisma.mensajeRemoto.count({
+            where: { permisoId: permiso.id, autorRol: 'superadmin', leido: false },
+          })
+        : 0;
+      res.json({
+        mensajesNoLeidos,
+        tienePermisoPendiente: permiso.estado === 'pendiente',
+      });
+    } catch (err) { next(err); }
+  }
+);
+
 // GET /api/acceso-remoto/solicitud — el cliente ve su solicitud pendiente
 router.get(
   '/solicitud',

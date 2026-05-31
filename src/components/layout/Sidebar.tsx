@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { getNotificacionesCliente } from '../../data/accesoRemotoApi';
 
 const LOGO_LIGHT = '/ActivaQr/company-logo-hd.png';   // negro, para fondo claro
 const LOGO_DARK  = '/ActivaQr/company-logo1.png';      // claro, para fondo oscuro (sidebar navy)
@@ -36,10 +37,23 @@ const navSuperadmin = [
 
 export const Sidebar: React.FC = () => {
   const [open, setOpen] = useState(false);
+  const [notif, setNotif] = useState({ mensajesNoLeidos: 0, tienePermisoPendiente: false });
   const navigate = useNavigate();
   const { usuario, logout } = useAuth();
 
   const navItems = usuario?.rol === 'superadmin' ? navSuperadmin : navEmpresa;
+
+  // Polling de notificaciones para clientes con plan empresa/industrial.
+  useEffect(() => {
+    if (!usuario || usuario.rol === 'superadmin') return;
+    const plan = usuario.empresa?.plan ?? '';
+    if (!['empresa', 'industrial'].includes(plan)) return;
+
+    const cargar = () => getNotificacionesCliente().then(setNotif).catch(() => {});
+    cargar();
+    const iv = setInterval(cargar, 30_000);
+    return () => clearInterval(iv);
+  }, [usuario]);
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-slate-900 text-white">
@@ -51,24 +65,35 @@ export const Sidebar: React.FC = () => {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/'}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 min-h-[48px] font-sketch text-lg font-semibold transition-colors ${
-                isActive
-                  ? 'bg-orange-500 text-white border-2 border-orange-400'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white border-2 border-transparent'
-              }`
-            }
-            onClick={() => setOpen(false)}
-          >
-            <Icon size={18} />
-            {label}
-          </NavLink>
-        ))}
+        {navItems.map(({ to, icon: Icon, label }) => {
+          const esConfig = to === '/configuracion';
+          const badge = esConfig
+            ? (notif.mensajesNoLeidos > 0 ? notif.mensajesNoLeidos : notif.tienePermisoPendiente ? '!' : 0)
+            : 0;
+          return (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === '/'}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 min-h-[48px] font-sketch text-lg font-semibold transition-colors ${
+                  isActive
+                    ? 'bg-orange-500 text-white border-2 border-orange-400'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white border-2 border-transparent'
+                }`
+              }
+              onClick={() => setOpen(false)}
+            >
+              <Icon size={18} />
+              <span className="flex-1">{label}</span>
+              {!!badge && (
+                <span className="min-w-[20px] h-5 flex items-center justify-center bg-orange-500 text-white text-xs font-black rounded-none px-1 border border-orange-400">
+                  {badge}
+                </span>
+              )}
+            </NavLink>
+          );
+        })}
       </nav>
 
       {/* Footer */}
