@@ -13,6 +13,7 @@ import {
   LogOut,
   Menu,
   X,
+  MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getNotificacionesCliente } from '../../data/accesoRemotoApi';
@@ -28,11 +29,13 @@ const navEmpresa = [
   { to: '/reportes', icon: FileText, label: 'Reportes' },
   { to: '/importar', icon: Upload, label: 'Importar Datos' },
   { to: '/qr', icon: QrCode, label: 'QR / Etiquetas' },
+  { to: '/mensajes', icon: MessageSquare, label: 'Mensajes' },
   { to: '/configuracion', icon: Settings, label: 'Configuración' },
 ];
 
 const navSuperadmin = [
   { to: '/', icon: Building2, label: 'Empresas' },
+  { to: '/mensajes', icon: MessageSquare, label: 'Mensajes' },
 ];
 
 export const Sidebar: React.FC = () => {
@@ -66,8 +69,8 @@ export const Sidebar: React.FC = () => {
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navItems.map(({ to, icon: Icon, label }) => {
-          const esConfig = to === '/configuracion';
-          const badge = esConfig
+          const esMensajes = to === '/mensajes';
+          const badge = esMensajes
             ? (notif.mensajesNoLeidos > 0 ? notif.mensajesNoLeidos : notif.tienePermisoPendiente ? '!' : 0)
             : 0;
           return (

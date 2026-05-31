@@ -9,6 +9,8 @@ import { Reportes } from './pages/Reportes';
 import { ImportarDatos } from './pages/ImportarDatos';
 import { GestionQR } from './pages/GestionQR';
 import { Configuracion } from './pages/Configuracion';
+import { Mensajes } from './pages/Mensajes';
+import { MensajesAdmin } from './pages/MensajesAdmin';
 import { Admin } from './pages/Admin';
 import { Login } from './pages/Login';
 import { FichaPublica } from './pages/FichaPublica';
@@ -47,24 +49,15 @@ function PantallaBloqueo() {
 function AppRoutes() {
   const { usuario, requiereLogin, empresaSuspendida } = useAuth();
 
-  // Modo API sin sesión → pantalla de login.
-  if (requiereLogin && !usuario) {
-    return <Login />;
-  }
-
-  // Empresa suspendida → pantalla de bloqueo inmediata.
-  if (empresaSuspendida && usuario?.rol !== 'superadmin') {
-    return <PantallaBloqueo />;
-  }
+  if (requiereLogin && !usuario) return <Login />;
+  if (empresaSuspendida && usuario?.rol !== 'superadmin') return <PantallaBloqueo />;
 
   const esSuperadmin = usuario?.rol === 'superadmin';
 
   return (
     <BrowserRouter>
       <Routes>
-        {/* Ficha pública de activo (para QR, sin login) */}
         <Route path="/ficha/:id" element={<FichaPublica />} />
-        {/* Aprobación de acceso remoto (sin login) */}
         <Route path="/acceso-remoto/aprobar/:token" element={<AprobarAccesoRemoto />} />
 
         <Route path="/" element={<Layout />}>
@@ -72,6 +65,7 @@ function AppRoutes() {
             <>
               <Route index element={<Admin />} />
               <Route path="admin" element={<Admin />} />
+              <Route path="mensajes" element={<MensajesAdmin />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
           ) : (
@@ -86,6 +80,7 @@ function AppRoutes() {
               <Route path="importar" element={<ImportarDatos />} />
               <Route path="qr" element={<GestionQR />} />
               <Route path="configuracion" element={<Configuracion />} />
+              <Route path="mensajes" element={<Mensajes />} />
             </>
           )}
         </Route>
