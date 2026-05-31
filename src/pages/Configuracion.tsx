@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Pencil, Trash2, RotateCcw, Check, AlertTriangle } from 'lucide-react';
 import { useActivos } from '../hooks/useActivos';
+import { useAuth } from '../context/AuthContext';
 import { Sector, TipoActivo, Tecnico } from '../data/types';
 import { cancelarMiSuscripcion } from '../data/adminApi';
 
@@ -22,8 +23,12 @@ export const Configuracion: React.FC = () => {
     tipos, addTipo, updateTipo, deleteTipo,
     tecnicos, addTecnico, updateTecnico, deleteTecnico,
   } = useActivos();
+  const { usuario } = useAuth();
 
   const [tab, setTab] = useState<Tab>('sectores');
+
+  const mpEstadoSub = usuario?.empresa?.mpEstadoSub ?? null;
+  const tieneSubActiva = mpEstadoSub === 'authorized' || mpEstadoSub === 'pending';
 
   return (
     <div>
@@ -71,7 +76,7 @@ export const Configuracion: React.FC = () => {
         />
       )}
 
-      <SeccionSuscripcion />
+      {tieneSubActiva && <SeccionSuscripcion />}
     </div>
   );
 };

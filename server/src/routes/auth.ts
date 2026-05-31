@@ -82,7 +82,7 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: Response, next: Nex
       rol: usuario.rol,
       empresaId: usuario.empresaId,
       empresa: usuario.empresa
-        ? { id: usuario.empresa.id, nombre: usuario.empresa.nombre, logoUrl: usuario.empresa.logoUrl, estado: usuario.empresa.estado, plan: usuario.empresa.plan }
+        ? { id: usuario.empresa.id, nombre: usuario.empresa.nombre, logoUrl: usuario.empresa.logoUrl, estado: usuario.empresa.estado, plan: usuario.empresa.plan, mpEstadoSub: usuario.empresa.mpEstadoSub ?? null }
         : null,
     });
   } catch (err) {
