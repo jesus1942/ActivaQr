@@ -69,16 +69,25 @@ export class EmpresaSuspendidaError extends Error {
   }
 }
 
-/** Llama a un endpoint protegido con el token. */
+/** Llama a un endpoint protegido con el token. Timeout de 15s para evitar cuelgues. */
 export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
-  const res = await fetch(`${API_URL}/${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...authHeaders(),
-      ...(init.headers || {}),
-    },
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15_000);
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/${path}`, {
+      ...init,
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders(),
+        ...(init.headers || {}),
+      },
+    });
+  } finally {
+    clearTimeout(timer);
+  }
 
   // Propagamos la suspensión como error especial para que cualquier
   // componente o hook pueda reaccionar sin necesidad de verificar manualmente.
