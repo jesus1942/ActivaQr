@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Search, Plus, LayoutGrid, List, X } from 'lucide-react';
+import { Search, Plus, LayoutGrid, List, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useActivos } from '../hooks/useActivos';
 import { AssetCard } from '../components/ui/AssetCard';
 import { StatusBadge } from '../components/ui/StatusBadge';
@@ -325,6 +325,10 @@ export const Activos: React.FC = () => {
                   className="w-full border-2 border-slate-300 px-3 py-2 text-sm outline-none focus:border-orange-500"
                 />
               </div>
+
+              {/* Parámetros de medición */}
+              <ParametrosMedicion form={form} setForm={setForm} />
+
               <div className="sm:col-span-2 flex justify-end gap-3 mt-2">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 min-h-[44px] border-2 border-slate-400 font-bold text-slate-600">
                   Cancelar
@@ -334,6 +338,82 @@ export const Activos: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── Componente de parámetros de medición (colapsable) ────────────────────────
+type FormActivo = Omit<Activo, 'id'>;
+
+const CampoNum: React.FC<{
+  label: string;
+  campo: keyof FormActivo;
+  form: FormActivo;
+  setForm: React.Dispatch<React.SetStateAction<FormActivo>>;
+  unidad?: string;
+}> = ({ label, campo, form, setForm, unidad }) => (
+  <div>
+    <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-1">
+      {label}{unidad && <span className="text-slate-400 font-normal normal-case"> ({unidad})</span>}
+    </label>
+    <input
+      type="number"
+      value={(form[campo] as number) ?? ''}
+      onChange={(e) => setForm((prev) => ({ ...prev, [campo]: e.target.value === '' ? null : Number(e.target.value) }))}
+      className="w-full border-2 border-slate-300 px-3 h-10 text-sm outline-none focus:border-orange-500"
+    />
+  </div>
+);
+
+const ParametrosMedicion: React.FC<{
+  form: FormActivo;
+  setForm: React.Dispatch<React.SetStateAction<FormActivo>>;
+}> = ({ form, setForm }) => {
+  const [abierto, setAbierto] = useState(false);
+
+  return (
+    <div className="sm:col-span-2 border-2 border-slate-200">
+      <button
+        type="button"
+        onClick={() => setAbierto((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors"
+      >
+        <span className="text-xs font-black uppercase tracking-wider text-slate-600">
+          Parámetros de medición y alertas
+        </span>
+        {abierto ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+      </button>
+
+      {abierto && (
+        <div className="p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="col-span-2 sm:col-span-4">
+            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2">Temperatura</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <CampoNum label="Mín normal" campo="temperaturaMin" form={form} setForm={setForm} unidad="°C" />
+              <CampoNum label="Máx normal" campo="temperaturaMax" form={form} setForm={setForm} unidad="°C" />
+              <CampoNum label="Alerta"     campo="temperaturaAlerta"   form={form} setForm={setForm} unidad="°C" />
+              <CampoNum label="Crítica"    campo="temperaturaCritica"  form={form} setForm={setForm} unidad="°C" />
+            </div>
+          </div>
+
+          <div className="col-span-2 sm:col-span-4">
+            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Otros parámetros</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <CampoNum label="Amperaje normal"  campo="amperajeNormal"  form={form} setForm={setForm} unidad="A" />
+              <CampoNum label="Presión normal"   campo="presionNormal"   form={form} setForm={setForm} unidad="bar" />
+            </div>
+          </div>
+
+          <div className="col-span-2 sm:col-span-4">
+            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Intervalos de mantenimiento</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <CampoNum label="Medición c/"     campo="intervaloMedicionHoras"     form={form} setForm={setForm} unidad="hs" />
+              <CampoNum label="Lubricación c/"  campo="intervaloLubricacionHoras"  form={form} setForm={setForm} unidad="hs" />
+              <CampoNum label="Rodamientos c/"  campo="intervaloRodamientoHoras"   form={form} setForm={setForm} unidad="hs" />
+            </div>
           </div>
         </div>
       )}
