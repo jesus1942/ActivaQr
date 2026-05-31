@@ -149,7 +149,6 @@ router.post('/empresas/:id/suscripcion', async (req: AuthRequest, res: Response,
 
     const pre = await crearPreapproval({
       empresaId: empresa.id,
-      payerEmail,
       monto: montoNum,
       razon: `Suscripción ActivaQR — ${empresa.nombre}`,
       backUrl,
