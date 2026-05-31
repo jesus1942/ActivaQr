@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../prisma';
 import { resolveEmpresaId } from '../tenant';
+import { calcularEstadoAutomatico, estadoMedicionAActivo } from '../alertas';
 
 const router = Router();
 
@@ -60,6 +61,20 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     });
     if (!activo) return res.status(404).json({ error: 'Activo no encontrado' });
 
+    // Calcular estado automático a partir de umbrales del activo.
+    // Si el técnico no envió estado (o envió 'normal'), lo calculamos.
+    // Si envió 'urgente'/'critico', respetamos su criterio visual.
+    const estadoCalculado = calcularEstadoAutomatico(
+      { temperatura, amperaje, presion, voltaje, porcentajeBateria, nivelToner },
+      activo,
+    );
+    // El estado final es el peor entre el calculado y el enviado por el técnico.
+    const nivelManual: Record<string, number> = { normal: 0, revision: 1, alerta: 1, critico: 2, urgente: 3 };
+    const nivelCalc: Record<string, number> = { normal: 0, alerta: 1, critico: 2, urgente: 3 };
+    const estadoFinal = (nivelManual[estado ?? 'normal'] ?? 0) >= (nivelCalc[estadoCalculado] ?? 0)
+      ? (estado ?? 'normal')
+      : estadoCalculado;
+
     const fotosCreate =
       Array.isArray(fotos) && fotos.length > 0
         ? {
@@ -84,7 +99,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         porcentajeBateria,
         nivelToner,
         contador,
-        estado,
+        estado: estadoFinal as any,
         observaciones,
         origen,
         ...(fotosCreate ? { fotos: fotosCreate } : {}),
@@ -92,13 +107,13 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       include: { tecnico: true, fotos: true },
     });
 
-    // Escalado de estado del activo según la medición.
-    let nuevoEstado: typeof activo.estado | null = null;
-    if (medicion.estado === 'urgente' && activo.estado !== 'critico') {
-      nuevoEstado = 'critico';
-    } else if (medicion.estado === 'revision' && activo.estado === 'normal') {
-      nuevoEstado = 'alerta';
-    }
+    // Actualizar estado del activo automáticamente según la medición.
+    const nuevoEstadoActivo = estadoMedicionAActivo(estadoCalculado);
+    // Solo escalar (nunca bajar automáticamente — requiere revisión manual).
+    const nivelActivo: Record<string, number> = { normal: 0, alerta: 1, mantenimiento: 1, critico: 2 };
+    const nuevoEstado = (nivelActivo[nuevoEstadoActivo] ?? 0) > (nivelActivo[activo.estado] ?? 0)
+      ? nuevoEstadoActivo
+      : null;
 
     // Actualizar horas si la medición trae un valor mayor.
     const data: any = {};

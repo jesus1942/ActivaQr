@@ -229,7 +229,18 @@ model Activo {
   temperaturaAlerta         Float?
   temperaturaCritica        Float?
   amperajeNormal            Float?
+  amperajeAlerta            Float?
+  amperajeCritico           Float?
   presionNormal             Float?
+  presionAlerta             Float?
+  presionCritica            Float?
+  voltajeMin                Float?
+  voltajeMax                Float?
+  voltajeAlerta             Float?
+  bateriaAlerta             Int?
+  bateriaCritica            Int?
+  tonerAlerta               Int?
+  tonerCritico              Int?
   intervaloMedicionHoras    Int?
   intervaloLubricacionHoras Int?
   intervaloRodamientoHoras  Int?
