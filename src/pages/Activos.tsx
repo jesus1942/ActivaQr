@@ -1,4 +1,4 @@
-// v1.0
+// v1.1.0
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';

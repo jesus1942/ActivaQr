@@ -254,6 +254,27 @@ ActivaQr/
 
 ---
 
+## Versiones
+
+### v1.1.0
+- Sistema de alertas automaticas con umbrales en tiempo real (normal / alerta / critico / urgente)
+- Plantillas de parametros por categoria de equipo (8 categorias globales: motor diesel, hidraulico, neumatico, electrico, bomba, HVAC, IT, general)
+- Acceso remoto de soporte: panel para abrir cada activo, ver historial e intervenir registrando mediciones
+- Chat de soporte con envio de fotos (comprimidas) y audios
+- Pagina de Mensajes con notificaciones para cliente y superadmin
+- Mejora de plan gestionada dentro de la app (solicitud del cliente + procesamiento del superadmin)
+- Modal de WhatsApp con selector de codigo de pais
+- Pantalla de carga animada
+- Interfaz sin emojis, estilo neo-brutalista consistente
+
+### v1.0.0
+- Gestion de activos industriales con QR
+- Ficha publica via QR sin login
+- Registro de mediciones y mantenimientos
+- Multi-tenant con planes y suscripciones Mercado Pago
+
+---
+
 ## Licencia
 
 MIT License — Copyright (c) 2024 ActivaQR

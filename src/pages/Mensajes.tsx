@@ -1,4 +1,4 @@
-// v1.0
+// v1.1.0
 import React, { useEffect, useState } from 'react';
 import { MessageSquare, ShieldCheck, ShieldOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -115,8 +115,8 @@ export const Mensajes: React.FC = () => {
           <ChatRemoto
             mensajes={mensajes}
             miRol="cliente"
-            onEnviar={async (c) => {
-              const m = await enviarMensajeCliente(c);
+            onEnviar={async (payload) => {
+              const m = await enviarMensajeCliente(payload);
               setMensajes((prev) => [...prev, m]);
             }}
           />

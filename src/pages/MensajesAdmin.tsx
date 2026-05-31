@@ -1,4 +1,4 @@
-// v1.0
+// v1.1.0
 import React, { useEffect, useState, useCallback } from 'react';
 import { MessageSquare, MonitorSmartphone, RefreshCw } from 'lucide-react';
 import { EmpresaAdmin, listarEmpresas } from '../data/adminApi';

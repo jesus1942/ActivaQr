@@ -1,4 +1,4 @@
-// v1.0
+// v1.1.0
 import React, { useState } from 'react';
 import { LogIn, Lock, Mail } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
