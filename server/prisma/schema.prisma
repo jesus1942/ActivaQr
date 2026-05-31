@@ -75,12 +75,20 @@ model Empresa {
   estado    EstadoEmpresa @default(activa)
   creadaEn  DateTime      @default(now())
 
+  // Suscripción Mercado Pago.
+  mpPreapprovalId String?   // id del preapproval (suscripción) en MP
+  mpEstadoSub     String?   // estado reportado por MP: authorized, paused, cancelled...
+  mpMonto         Float?    // monto mensual acordado
+  mpUltimoPago    DateTime? // fecha del último pago aprobado
+
   usuarios Usuario[]
   sedes    Sede[]
   sectores Sector[]
   tipos    TipoActivo[]
   tecnicos Tecnico[]
   activos  Activo[]
+
+  @@index([mpPreapprovalId])
 }
 
 model Usuario {

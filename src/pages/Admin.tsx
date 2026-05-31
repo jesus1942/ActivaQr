@@ -7,6 +7,7 @@ import {
   KeyRound,
   Users,
   Package,
+  CreditCard,
   X,
 } from 'lucide-react';
 import {
@@ -16,6 +17,7 @@ import {
   actualizarEmpresa,
   eliminarEmpresa,
   resetPassword,
+  generarSuscripcion,
 } from '../data/adminApi';
 
 const PLANES = ['inicial', 'empresa', 'industrial'] as const;
@@ -64,6 +66,21 @@ export const Admin: React.FC = () => {
     if (!pass) return;
     await resetPassword(emp.id, pass);
     alert('Contraseña actualizada.');
+  };
+
+  const suscribir = async (emp: EmpresaAdmin) => {
+    const monto = prompt(`Monto mensual de la suscripción para "${emp.nombre}" (ARS):`);
+    if (!monto) return;
+    try {
+      const { initPoint } = await generarSuscripcion(emp.id, Number(monto));
+      // Copiamos el link y lo abrimos para enviárselo a la empresa.
+      await navigator.clipboard?.writeText(initPoint).catch(() => {});
+      alert('Link de suscripción generado y copiado al portapapeles.\nSe abrirá en una pestaña nueva para que lo revises y se lo pases a la empresa.');
+      window.open(initPoint, '_blank');
+      cargar();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'No se pudo generar la suscripción.');
+    }
   };
 
   return (
@@ -132,6 +149,20 @@ export const Admin: React.FC = () => {
                 </p>
               )}
 
+              {emp.mpEstadoSub && (
+                <p className="text-xs mt-1 font-mono text-slate-600">
+                  <span className="uppercase font-black text-slate-400">Sub:</span>{' '}
+                  <span
+                    className={
+                      emp.mpEstadoSub === 'authorized' ? 'text-emerald-600' : 'text-amber-600'
+                    }
+                  >
+                    {emp.mpEstadoSub}
+                  </span>
+                  {emp.mpMonto ? ` · $${emp.mpMonto}/mes` : ''}
+                </p>
+              )}
+
               <div className="flex gap-2 mt-3 pt-3 border-t-2 border-slate-100">
                 <button
                   onClick={() => toggleEstado(emp)}
@@ -140,6 +171,13 @@ export const Admin: React.FC = () => {
                 >
                   <Power size={14} />
                   {emp.estado === 'activa' ? 'Suspender' : 'Activar'}
+                </button>
+                <button
+                  onClick={() => suscribir(emp)}
+                  title="Generar link de suscripción (Mercado Pago)"
+                  className="border-2 border-slate-300 p-2 hover:border-emerald-600 hover:text-emerald-600 transition-colors"
+                >
+                  <CreditCard size={14} />
                 </button>
                 <button
                   onClick={() => resetear(emp)}
