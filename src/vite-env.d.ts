@@ -1,3 +1,4 @@
+// v1.0
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {

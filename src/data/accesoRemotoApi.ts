@@ -1,3 +1,4 @@
+// v1.0
 import { apiFetch, API_URL } from './auth';
 
 export interface PermisoAcceso {

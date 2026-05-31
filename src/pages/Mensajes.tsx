@@ -1,3 +1,4 @@
+// v1.0
 import React, { useEffect, useState } from 'react';
 import { MessageSquare, ShieldCheck, ShieldOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';

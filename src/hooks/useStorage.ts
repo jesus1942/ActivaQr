@@ -1,3 +1,4 @@
+// v1.0
 import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from 'react';
 
 // Contador global de claves remotas pendientes de carga.

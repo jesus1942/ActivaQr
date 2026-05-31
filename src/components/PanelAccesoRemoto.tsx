@@ -1,3 +1,4 @@
+// v1.0
 /**
  * Panel de acceso remoto que usa el superadmin para ver activos,
  * mediciones y chatear con un cliente que otorgó permiso.
