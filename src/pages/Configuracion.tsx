@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, RotateCcw, Check, AlertTriangle, MessageSquare, ShieldCheck, ShieldOff } from 'lucide-react';
+import { Plus, Pencil, Trash2, RotateCcw, Check, AlertTriangle, MessageSquare, ShieldCheck, ShieldOff, ChevronDown, ChevronRight } from 'lucide-react';
 import { useActivos } from '../hooks/useActivos';
 import { useAuth } from '../context/AuthContext';
 import { Sector, TipoActivo, Tecnico } from '../data/types';
@@ -10,13 +10,18 @@ import {
   getMensajesCliente, enviarMensajeCliente,
 } from '../data/accesoRemotoApi';
 import { ChatRemoto } from '../components/ChatRemoto';
+import {
+  CategoriaEquipo, ParametroCategoria,
+  getCategorias, crearCategoria, eliminarCategoria, agregarParametro,
+} from '../data/categoriasApi';
 
-type Tab = 'sectores' | 'tipos' | 'tecnicos';
+type Tab = 'sectores' | 'tipos' | 'tecnicos' | 'categorias';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'sectores', label: 'Sectores' },
   { id: 'tipos', label: 'Tipos de Activo' },
   { id: 'tecnicos', label: 'Técnicos' },
+  { id: 'categorias', label: 'Categorías' },
 ];
 
 const inputCls =
@@ -84,6 +89,8 @@ export const Configuracion: React.FC = () => {
           deleteTecnico={deleteTecnico}
         />
       )}
+
+      {tab === 'categorias' && <CategoriasSection />}
 
       {tieneSubActiva && <SeccionSuscripcion />}
       <SeccionAccesoRemoto />
@@ -229,15 +236,20 @@ const MIDE_FIELDS: { key: keyof Pick<TipoActivo, 'mideTemperatura' | 'mideAmpera
 const TiposSection: React.FC<TiposProps> = ({ tipos, addTipo, updateTipo, deleteTipo }) => {
   const [editing, setEditing] = useState<TipoActivo | null>(null);
   const [adding, setAdding] = useState(false);
+  const [categorias, setCategorias] = useState<CategoriaEquipo[]>([]);
+
+  useEffect(() => {
+    getCategorias().then(setCategorias).catch(() => {});
+  }, []);
 
   const empty: Omit<TipoActivo, 'id'> = {
-    nombre: '', mideTemperatura: true, mideAmperaje: false, midePresion: false, mideVibracion: false, mideBateria: false, mideToner: false, mideContador: false, mideVoltaje: false, activo: true,
+    nombre: '', categoriaId: null, mideTemperatura: true, mideAmperaje: false, midePresion: false, mideVibracion: false, mideBateria: false, mideToner: false, mideContador: false, mideVoltaje: false, activo: true,
   };
   const [form, setForm] = useState<Omit<TipoActivo, 'id'>>(empty);
 
   const startAdd = () => { setForm(empty); setAdding(true); setEditing(null); };
   const startEdit = (t: TipoActivo) => {
-    setForm({ nombre: t.nombre, icono: t.icono, mideTemperatura: t.mideTemperatura, mideAmperaje: t.mideAmperaje, midePresion: t.midePresion, mideVibracion: t.mideVibracion, mideBateria: t.mideBateria ?? false, mideToner: t.mideToner ?? false, mideContador: t.mideContador ?? false, mideVoltaje: t.mideVoltaje ?? false, activo: t.activo });
+    setForm({ nombre: t.nombre, icono: t.icono, categoriaId: t.categoriaId ?? null, mideTemperatura: t.mideTemperatura, mideAmperaje: t.mideAmperaje, midePresion: t.midePresion, mideVibracion: t.mideVibracion, mideBateria: t.mideBateria ?? false, mideToner: t.mideToner ?? false, mideContador: t.mideContador ?? false, mideVoltaje: t.mideVoltaje ?? false, activo: t.activo });
     setEditing(t); setAdding(false);
   };
   const cancel = () => { setAdding(false); setEditing(null); };
@@ -266,7 +278,32 @@ const TiposSection: React.FC<TiposProps> = ({ tipos, addTipo, updateTipo, delete
             <input required value={form.nombre} onChange={(e) => setForm((p) => ({ ...p, nombre: e.target.value }))} className={inputCls} />
           </div>
           <div>
-            <label className={labelCls}>¿Qué mide?</label>
+            <label className={labelCls}>Categoría de equipo</label>
+            <select
+              value={form.categoriaId ?? ''}
+              onChange={(e) => setForm((p) => ({ ...p, categoriaId: e.target.value || null }))}
+              className={inputCls}
+            >
+              <option value="">Sin categoría</option>
+              {categorias.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.icono ? `${c.icono} ` : ''}{c.nombre}{c.empresaId === null ? ' (Global)' : ''}
+                </option>
+              ))}
+            </select>
+            {form.categoriaId && (() => {
+              const cat = categorias.find((c) => c.id === form.categoriaId);
+              if (!cat || cat.parametros.length === 0) return null;
+              return (
+                <div className="mt-2 p-2 bg-slate-50 border border-slate-200 text-xs text-slate-600">
+                  <span className="font-bold">Parámetros dinámicos: </span>
+                  {cat.parametros.map((p) => `${p.nombre}${p.unidad ? ` (${p.unidad})` : ''}`).join(', ')}
+                </div>
+              );
+            })()}
+          </div>
+          <div>
+            <label className={labelCls}>¿Qué mide? (campos fijos heredados)</label>
             <div className="grid grid-cols-2 gap-2">
               {MIDE_FIELDS.map(({ key, label }) => (
                 <label key={key} className="flex items-center gap-2 border-2 border-slate-300 px-3 min-h-[44px] cursor-pointer">
@@ -408,6 +445,204 @@ const TecnicosSection: React.FC<TecnicosProps> = ({ tecnicos, addTecnico, update
     </div>
   );
 };
+
+// ─── CATEGORÍAS ────────────────────────────────────────────────
+
+const CategoriasSection: React.FC = () => {
+  const [categorias, setCategorias] = useState<CategoriaEquipo[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [expandido, setExpandido] = useState<Record<string, boolean>>({});
+  const [adding, setAdding] = useState(false);
+  const [formNueva, setFormNueva] = useState({ nombre: '', icono: '', descripcion: '' });
+  const [guardando, setGuardando] = useState(false);
+
+  const cargar = () => {
+    setCargando(true);
+    getCategorias()
+      .then(setCategorias)
+      .catch((e) => setError(e.message))
+      .finally(() => setCargando(false));
+  };
+
+  useEffect(() => { cargar(); }, []);
+
+  const toggleExpand = (id: string) =>
+    setExpandido((p) => ({ ...p, [id]: !p[id] }));
+
+  const handleCrear = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setGuardando(true);
+    setError(null);
+    try {
+      const nueva = await crearCategoria({
+        nombre: formNueva.nombre,
+        icono: formNueva.icono || undefined,
+        descripcion: formNueva.descripcion || undefined,
+      });
+      setCategorias((p) => [...p, nueva]);
+      setAdding(false);
+      setFormNueva({ nombre: '', icono: '', descripcion: '' });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al crear categoría');
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const handleEliminar = async (id: string, nombre: string) => {
+    if (!window.confirm(`¿Eliminar la categoría "${nombre}"?`)) return;
+    try {
+      await eliminarCategoria(id);
+      setCategorias((p) => p.filter((c) => c.id !== id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al eliminar');
+    }
+  };
+
+  if (cargando) return <p className="text-slate-500 text-sm">Cargando categorías...</p>;
+
+  const globales = categorias.filter((c) => c.empresaId === null);
+  const propias = categorias.filter((c) => c.empresaId !== null);
+
+  return (
+    <div className="space-y-6">
+      {error && (
+        <div className="border-2 border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>
+      )}
+
+      {/* Categorías globales */}
+      <div>
+        <h3 className="font-sketch font-black text-lg uppercase tracking-tight text-slate-700 mb-3">
+          Categorías globales
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {globales.map((cat) => (
+            <CategoriaCard
+              key={cat.id}
+              cat={cat}
+              expandido={!!expandido[cat.id]}
+              onToggle={() => toggleExpand(cat.id)}
+              isGlobal
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Categorías propias */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-sketch font-black text-lg uppercase tracking-tight text-slate-700">
+            Mis categorías
+          </h3>
+          {!adding && (
+            <AddButton onClick={() => setAdding(true)} label="Nueva categoría" />
+          )}
+        </div>
+
+        {adding && (
+          <form onSubmit={handleCrear} className="bg-white border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)] p-4 space-y-3 mb-4">
+            <div>
+              <label className={labelCls}>Nombre *</label>
+              <input required value={formNueva.nombre} onChange={(e) => setFormNueva((p) => ({ ...p, nombre: e.target.value }))} className={inputCls} placeholder="Ej: Turbina de vapor" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Ícono (emoji)</label>
+                <input value={formNueva.icono} onChange={(e) => setFormNueva((p) => ({ ...p, icono: e.target.value }))} className={inputCls} placeholder="⚙️" />
+              </div>
+              <div>
+                <label className={labelCls}>Descripción</label>
+                <input value={formNueva.descripcion} onChange={(e) => setFormNueva((p) => ({ ...p, descripcion: e.target.value }))} className={inputCls} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button type="button" onClick={() => setAdding(false)} className="px-4 min-h-[44px] border-2 border-slate-400 font-bold text-slate-600">Cancelar</button>
+              <button type="submit" disabled={guardando} className="px-4 min-h-[44px] bg-orange-500 text-white border-2 border-slate-800 font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] disabled:opacity-50">
+                {guardando ? 'Guardando...' : 'Crear'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {propias.length === 0 && !adding && (
+          <p className="text-slate-400 text-sm italic">Aún no tenés categorías propias. Las globales están disponibles para todos.</p>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {propias.map((cat) => (
+            <CategoriaCard
+              key={cat.id}
+              cat={cat}
+              expandido={!!expandido[cat.id]}
+              onToggle={() => toggleExpand(cat.id)}
+              onEliminar={() => handleEliminar(cat.id, cat.nombre)}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface CategoriaCardProps {
+  cat: CategoriaEquipo;
+  expandido: boolean;
+  onToggle: () => void;
+  isGlobal?: boolean;
+  onEliminar?: () => void;
+}
+
+const CategoriaCard: React.FC<CategoriaCardProps> = ({ cat, expandido, onToggle, isGlobal, onEliminar }) => (
+  <div className="bg-white border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)]">
+    <div
+      className="flex items-center justify-between gap-2 p-3 cursor-pointer hover:bg-slate-50 transition-colors"
+      onClick={onToggle}
+    >
+      <div className="flex items-center gap-2 min-w-0">
+        {cat.icono && <span className="text-lg flex-shrink-0">{cat.icono}</span>}
+        <span className="font-bold text-slate-800 truncate">{cat.nombre}</span>
+        {isGlobal && (
+          <span className="ml-1 text-xs font-black uppercase tracking-wider bg-slate-100 border border-slate-300 px-1.5 py-0.5 text-slate-500 flex-shrink-0">
+            Global
+          </span>
+        )}
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <span className="text-xs text-slate-400">{cat.parametros.length} params</span>
+        {!isGlobal && onEliminar && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onEliminar(); }}
+            className="p-1 border-2 border-slate-300 text-red-600 hover:border-red-600 hover:bg-red-50 transition-colors"
+            title="Eliminar"
+          >
+            <Trash2 size={13} />
+          </button>
+        )}
+        {expandido ? <ChevronDown size={16} className="text-slate-400" /> : <ChevronRight size={16} className="text-slate-400" />}
+      </div>
+    </div>
+    {expandido && (
+      <div className="border-t-2 border-slate-200 p-3 space-y-1">
+        {cat.parametros.length === 0 ? (
+          <p className="text-xs text-slate-400 italic">Sin parámetros definidos.</p>
+        ) : (
+          cat.parametros.map((p) => (
+            <div key={p.id} className="flex items-center justify-between text-xs text-slate-600 py-0.5 border-b border-slate-100 last:border-0">
+              <span className="font-semibold">{p.nombre}</span>
+              <div className="flex items-center gap-2 text-slate-400">
+                {p.unidad && <span className="font-mono">{p.unidad}</span>}
+                {p.umbralAlerta != null && <span className="text-amber-600">⚠{p.umbralAlerta}</span>}
+                {p.umbralCritico != null && <span className="text-red-500">🔴{p.umbralCritico}</span>}
+                {p.invertido && <span title="Valor bajo es peor">↓</span>}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    )}
+  </div>
+);
 
 const PLAN_INFO: { plan: string; label: string; activos: string; tecnicos: string; qr: string; acceso: string }[] = [
   { plan: 'inicial',    label: 'Inicial',    activos: '10',         tecnicos: '2',         qr: 'Suspendida', acceso: '—' },
