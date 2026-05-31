@@ -1,3 +1,4 @@
+// v1.0
 import React from 'react';
 import { EstadoActivo, EstadoMedicion } from '../../data/types';
 

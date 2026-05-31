@@ -1,3 +1,4 @@
+// v1.0
 import { Activo, Medicion, TareaMantenimiento, Sector, TipoActivo, Tecnico } from './types';
 import { addDays, subDays, format } from 'date-fns';
 

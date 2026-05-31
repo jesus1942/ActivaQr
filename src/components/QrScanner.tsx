@@ -1,3 +1,4 @@
+// v1.0
 import React, { useEffect, useRef, useState } from 'react';
 import { Camera, X } from 'lucide-react';
 

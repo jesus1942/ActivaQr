@@ -1,3 +1,4 @@
+// v1.0
 import { apiFetch } from './auth';
 
 export interface EmpresaAdmin {

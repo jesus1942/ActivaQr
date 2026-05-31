@@ -1,3 +1,4 @@
+// v1.0
 import React, { useEffect, useRef, useState } from 'react';
 import { Send } from 'lucide-react';
 import { MensajeRemoto } from '../data/accesoRemotoApi';

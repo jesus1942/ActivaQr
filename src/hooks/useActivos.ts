@@ -1,3 +1,4 @@
+// v1.0
 import { useStorage } from './useStorage';
 import {
   Activo,
