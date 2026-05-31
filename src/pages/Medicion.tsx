@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Search, CheckCircle, ArrowLeft, ClipboardList } from 'lucide-react';
+import { Search, CheckCircle, ArrowLeft, ClipboardList, Camera } from 'lucide-react';
 import { useActivos } from '../hooks/useActivos';
+import { QrScanner, extraerActivoId } from '../components/QrScanner';
 import { Medicion as MedicionType, EstadoMedicion } from '../data/types';
 import { StatusBadge } from '../components/ui/StatusBadge';
 
@@ -16,6 +17,17 @@ export const Medicion: React.FC = () => {
   const [searchCodigo, setSearchCodigo] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [savedMedicion, setSavedMedicion] = useState<MedicionType | null>(null);
+  const [escaneando, setEscaneando] = useState(false);
+
+  const onEscaneo = (texto: string) => {
+    setEscaneando(false);
+    const id = extraerActivoId(texto);
+    if (id && activos.some((a) => a.id === id)) {
+      navigate(`/medicion/${id}`);
+    } else {
+      alert('El QR no corresponde a un activo de esta cuenta.');
+    }
+  };
 
   // Find activo by id or by codigo search
   let activo = activos.find((a) => a.id === activoId);

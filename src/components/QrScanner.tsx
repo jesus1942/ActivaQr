@@ -7,6 +7,16 @@ import { Camera, X } from 'lucide-react';
  * disponible (ej: iOS Safari), avisa al usuario para que use la
  * cámara nativa del teléfono.
  */
+/**
+ * Extrae el id del activo desde el texto de un QR.
+ * Los QR de ActivaQR codifican una URL tipo `.../#/medicion/<id>`
+ * (o `.../#/activos/<id>`). Devuelve el id o null.
+ */
+export function extraerActivoId(texto: string): string | null {
+  const match = texto.match(/(?:medicion|activos)\/([^/?#\s]+)/);
+  return match ? match[1] : null;
+}
+
 export const QrScanner: React.FC<{
   onResult: (texto: string) => void;
   onClose: () => void;
