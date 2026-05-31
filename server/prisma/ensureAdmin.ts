@@ -16,14 +16,14 @@ async function main() {
 
   const existente = await prisma.usuario.findUnique({ where: { email } });
   if (existente) {
-    // Garantiza que siga siendo superadmin y esté activo.
-    if (existente.rol !== 'superadmin' || !existente.activo) {
-      await prisma.usuario.update({
-        where: { id: existente.id },
-        data: { rol: 'superadmin', activo: true },
-      });
-    }
-    console.log(`Superadmin ya existe: ${email}`);
+    // Garantiza superadmin/activo y SINCRONIZA la contraseña con la variable
+    // de entorno, para que cambiar SUPERADMIN_PASSWORD en Railway tenga efecto.
+    const passwordHash = await bcrypt.hash(password, 10);
+    await prisma.usuario.update({
+      where: { id: existente.id },
+      data: { rol: 'superadmin', activo: true, passwordHash },
+    });
+    console.log(`Superadmin actualizado: ${email}`);
   } else {
     const passwordHash = await bcrypt.hash(password, 10);
     await prisma.usuario.create({
