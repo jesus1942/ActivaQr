@@ -39,6 +39,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     const {
       nombre,
       icono,
+      categoriaId,
       mideTemperatura,
       mideAmperaje,
       midePresion,
@@ -57,6 +58,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         empresaId,
         nombre,
         icono,
+        categoriaId: categoriaId ?? null,
         mideTemperatura,
         mideAmperaje,
         midePresion,
@@ -86,6 +88,7 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
     const {
       nombre,
       icono,
+      categoriaId,
       mideTemperatura,
       mideAmperaje,
       midePresion,
@@ -101,6 +104,7 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
       data: {
         nombre,
         icono,
+        categoriaId: categoriaId !== undefined ? (categoriaId ?? null) : undefined,
         mideTemperatura,
         mideAmperaje,
         midePresion,

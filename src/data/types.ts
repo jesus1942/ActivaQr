@@ -12,6 +12,7 @@ export interface TipoActivo {
   id: string;
   nombre: string;
   icono?: string;
+  categoriaId?: string | null;
   mideTemperatura: boolean;
   mideAmperaje: boolean;
   midePresion: boolean;
@@ -85,6 +86,7 @@ export interface Medicion {
   porcentajeBateria?: number;
   nivelToner?: number;
   contador?: number;
+  parametrosExtra?: Record<string, string | number | boolean> | null;
 }
 
 export interface TareaMantenimiento {
