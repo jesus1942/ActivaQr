@@ -3,9 +3,16 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Search, Plus, LayoutGrid, List, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useActivos } from '../hooks/useActivos';
+import { useAuth } from '../context/AuthContext';
 import { AssetCard } from '../components/ui/AssetCard';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { Activo, EstadoActivo } from '../data/types';
+
+const LIMITES_ACTIVOS: Record<string, number | null> = {
+  inicial:    10,
+  empresa:    50,
+  industrial: null,
+};
 
 const ESTADOS: { value: string; label: string }[] = [
   { value: 'todos', label: 'Todos los estados' },
@@ -21,6 +28,7 @@ export const Activos: React.FC = () => {
     addActivo, updateActivo,
     getSectorNombre, getTipoNombre, getTecnicoNombre,
   } = useActivos();
+  const { usuario } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -81,7 +89,15 @@ export const Activos: React.FC = () => {
       return 0;
     });
 
-  const openNew = () => { setEditId(null); setForm(emptyActivo); setShowModal(true); };
+  const openNew = () => {
+    const plan = (usuario?.empresa as { plan?: string } | null)?.plan ?? 'inicial';
+    const limite = LIMITES_ACTIVOS[plan] ?? 10;
+    if (limite !== null && activos.length >= limite) {
+      alert(`Tu plan "${plan}" permite hasta ${limite} activos.\nActualizá tu plan para agregar más.`);
+      return;
+    }
+    setEditId(null); setForm(emptyActivo); setShowModal(true);
+  };
   const openEdit = (a: Activo) => {
     const { id, ...rest } = a;
     void id;

@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../prisma';
 import { resolveEmpresaId } from '../tenant';
+import { getLimite } from '../planLimits';
 
 const router = Router();
 
@@ -40,6 +41,22 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     if (!nombre || typeof nombre !== 'string') {
       return res.status(400).json({ error: 'El campo "nombre" es obligatorio' });
     }
+
+    // Verificar límite de usuarios (técnicos activos) del plan.
+    const empresa = await prisma.empresa.findUnique({
+      where: { id: empresaId },
+      select: { plan: true, _count: { select: { tecnicos: { where: { activo: true } } } } },
+    });
+    if (empresa) {
+      const limite = getLimite(empresa.plan);
+      if (limite.usuarios !== null && empresa._count.tecnicos >= limite.usuarios) {
+        return res.status(403).json({
+          code: 'limite_plan',
+          error: `Tu plan "${empresa.plan}" permite hasta ${limite.usuarios} técnicos. Actualizá tu plan para agregar más.`,
+        });
+      }
+    }
+
     const tecnico = await prisma.tecnico.create({
       data: { empresaId, nombre, rol, email, telefono, activo },
     });

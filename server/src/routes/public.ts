@@ -7,13 +7,16 @@ import { prisma } from '../prisma';
 
 const router = Router();
 
+// Planes que permiten ver fichas QR aunque la empresa esté suspendida.
+const PLANES_CON_FICHA_PUBLICA = ['empresa', 'industrial'];
+
 // GET /api/public/activos/:id — ficha técnica de un activo (para QR)
 router.get('/activos/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const activo = await prisma.activo.findUnique({
       where: { id: req.params.id },
       include: {
-        empresa: { select: { nombre: true, logoUrl: true } },
+        empresa: { select: { nombre: true, logoUrl: true, estado: true, plan: true } },
         sector: { select: { nombre: true } },
         tipo: { select: { nombre: true } },
         responsable: { select: { nombre: true, email: true, telefono: true } },
@@ -26,13 +29,10 @@ router.get('/activos/:id', async (req: Request, res: Response, next: NextFunctio
 
     if (!activo) return res.status(404).json({ error: 'Activo no encontrado.' });
 
-    // Verificar que la empresa esté activa para mostrar la ficha.
-    const empresa = await prisma.empresa.findUnique({
-      where: { id: activo.empresaId },
-      select: { estado: true },
-    });
+    const empresa = activo.empresa;
 
-    if (!empresa || empresa.estado === 'suspendida') {
+    // Si la empresa está suspendida, solo planes empresa/industrial permiten ver la ficha.
+    if (empresa.estado === 'suspendida' && !PLANES_CON_FICHA_PUBLICA.includes(empresa.plan)) {
       return res.status(403).json({
         code: 'empresa_suspendida',
         error: 'Este servicio está temporalmente suspendido.',
