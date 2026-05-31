@@ -16,6 +16,10 @@ export interface TipoActivo {
   mideAmperaje: boolean;
   midePresion: boolean;
   mideVibracion: boolean;
+  mideBateria?: boolean;
+  mideToner?: boolean;
+  mideContador?: boolean;
+  mideVoltaje?: boolean;
   activo: boolean;
 }
 
@@ -66,6 +70,10 @@ export interface Medicion {
   estado: EstadoMedicion;
   observaciones: string;
   tecnicoId: string;
+  voltaje?: number;
+  porcentajeBateria?: number;
+  nivelToner?: number;
+  contador?: number;
 }
 
 export interface TareaMantenimiento {

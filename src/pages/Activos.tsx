@@ -211,6 +211,7 @@ export const Activos: React.FC = () => {
                 lastMedicion={lastMed}
                 sectorNombre={getSectorNombre(activo.sectorId)}
                 responsableNombre={getTecnicoNombre(activo.responsableId)}
+                onEdit={() => openEdit(activo)}
               />
             );
           })}
