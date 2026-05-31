@@ -57,12 +57,13 @@ export async function resetPassword(id: string, password: string): Promise<void>
 
 export async function generarSuscripcion(
   id: string,
-  monto: number
+  monto: number,
+  payerEmailOverride?: string
 ): Promise<{ initPoint: string; preapprovalId: string }> {
   return parse(
     await apiFetch(`admin/empresas/${id}/suscripcion`, {
       method: 'POST',
-      body: JSON.stringify({ monto }),
+      body: JSON.stringify({ monto, payerEmailOverride }),
     })
   );
 }
