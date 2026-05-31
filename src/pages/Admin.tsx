@@ -40,6 +40,12 @@ export const Admin: React.FC = () => {
   const [toggling, setToggling] = useState<Set<string>>(new Set());
   const [panelRemoto, setPanelRemoto] = useState<{ empresa: EmpresaAdmin; permiso: PermisoAcceso } | null>(null);
   const [permisos, setPermisos] = useState<Record<string, PermisoAcceso | null>>({});
+  const [resultadoRemoto, setResultadoRemoto] = useState<{
+    empresaNombre: string;
+    link: string;
+    emailEnviado: boolean;
+    waAbierto: boolean;
+  } | null>(null);
   const [resultadoSub, setResultadoSub] = useState<{
     empresaNombre: string;
     link: string;
@@ -166,14 +172,18 @@ export const Admin: React.FC = () => {
     try {
       const { permiso: nuevo, linkAprobacion, emailEnviado } = await solicitarAccesoRemoto(emp.id, costo);
       setPermisos((prev) => ({ ...prev, [emp.id]: nuevo }));
+
       // Abrir WhatsApp con el link.
-      const tel = prompt(`Número de WhatsApp de "${emp.nombre}" para enviar el link de aprobación:`);
+      const tel = prompt(`Número de WhatsApp de "${emp.nombre}" para enviar el link de aprobación (ej: 5491112345678):\nDejá vacío para omitir.`);
+      let waAbierto = false;
       if (tel?.trim()) {
         const num = tel.trim().replace(/\D/g, '');
         const msg = `Hola! Te enviamos una solicitud de acceso remoto de soporte desde *ActivaQR*.\nAprobá el acceso desde este link:\n\n${linkAprobacion}`;
-        window.open(`https://web.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msg)}`, '_blank');
+        const ventana = window.open(`https://web.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msg)}`, '_blank');
+        waAbierto = !!ventana;
       }
-      alert(`Solicitud enviada.${emailEnviado ? ' Email enviado.' : ''}\nEsperando aprobación del cliente.`);
+
+      setResultadoRemoto({ empresaNombre: emp.nombre, link: linkAprobacion, emailEnviado, waAbierto });
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Error al solicitar acceso remoto.');
     }
@@ -334,6 +344,16 @@ export const Admin: React.FC = () => {
           empresaNombre={panelRemoto.empresa.nombre}
           permiso={panelRemoto.permiso}
           onClose={() => setPanelRemoto(null)}
+        />
+      )}
+
+      {resultadoRemoto && (
+        <ModalResultadoRemoto
+          empresaNombre={resultadoRemoto.empresaNombre}
+          link={resultadoRemoto.link}
+          emailEnviado={resultadoRemoto.emailEnviado}
+          waAbierto={resultadoRemoto.waAbierto}
+          onClose={() => setResultadoRemoto(null)}
         />
       )}
 
@@ -533,6 +553,88 @@ const ModalResultadoSuscripcion: React.FC<{
             </button>
           </div>
         </div>
+
+        <div className="flex justify-end pt-2">
+          <button
+            onClick={onClose}
+            className="px-5 py-2 bg-orange-500 text-white border-2 border-slate-900 font-black uppercase tracking-wide shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
+          >
+            Listo
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const ModalResultadoRemoto: React.FC<{
+  empresaNombre: string;
+  link: string;
+  emailEnviado: boolean;
+  waAbierto: boolean;
+  onClose: () => void;
+}> = ({ empresaNombre, link, emailEnviado, waAbierto, onClose }) => (
+  <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+    <div className="bg-white border-2 border-slate-900 shadow-[6px_6px_0px_0px_#1e293b] w-full max-w-md">
+      <div className="flex items-center justify-between border-b-2 border-slate-900 px-5 py-3 bg-slate-900 text-white">
+        <h2 className="font-sketch font-black text-lg uppercase tracking-wide flex items-center gap-2">
+          <MonitorSmartphone size={18} /> Solicitud enviada
+        </h2>
+        <button onClick={onClose}><X size={20} /></button>
+      </div>
+
+      <div className="p-5 space-y-4">
+        <p className="text-sm text-slate-700">
+          Se generó la solicitud de acceso remoto para <strong>{empresaNombre}</strong>.
+          El cliente debe aprobar el acceso desde el link que le enviaste.
+        </p>
+
+        <div className="border-2 border-slate-200 divide-y-2 divide-slate-200">
+          <div className="flex items-center gap-3 px-4 py-3">
+            <span className={`w-5 h-5 flex items-center justify-center text-xs font-black border-2 ${waAbierto ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-amber-50 border-amber-300 text-amber-600'}`}>
+              {waAbierto ? '✓' : '!'}
+            </span>
+            <span className="text-sm font-semibold text-slate-700">
+              {waAbierto
+                ? 'WhatsApp Web abierto con mensaje listo'
+                : 'WhatsApp bloqueado por el navegador — copiá el link manualmente'}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 px-4 py-3">
+            <span className={`w-5 h-5 flex items-center justify-center text-xs font-black border-2 ${emailEnviado ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-amber-50 border-amber-300 text-amber-600'}`}>
+              {emailEnviado ? '✓' : '!'}
+            </span>
+            <span className="text-sm font-semibold text-slate-700">
+              {emailEnviado
+                ? 'Email de aprobación enviado automáticamente'
+                : 'Email no enviado (RESEND_API_KEY no configurada)'}
+            </span>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-1">Link de aprobación para el cliente</p>
+          <div className="flex gap-2">
+            <input
+              readOnly
+              value={link}
+              className="flex-1 border-2 border-slate-300 px-3 py-2 text-xs font-mono truncate outline-none"
+              onFocus={(e) => e.target.select()}
+            />
+            <button
+              onClick={() => navigator.clipboard?.writeText(link)}
+              className="border-2 border-slate-900 px-3 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 transition-colors whitespace-nowrap"
+            >
+              Copiar
+            </button>
+          </div>
+        </div>
+
+        {!waAbierto && (
+          <div className="bg-amber-50 border-2 border-amber-300 px-3 py-2 text-xs text-amber-800 font-semibold">
+            El navegador bloqueó la ventana de WhatsApp. Copiá el link de arriba y envialo manualmente.
+          </div>
+        )}
 
         <div className="flex justify-end pt-2">
           <button

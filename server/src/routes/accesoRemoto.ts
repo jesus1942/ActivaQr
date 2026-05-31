@@ -48,18 +48,24 @@ router.post(
       const adminEmail = empresa.usuarios[0]?.email;
       const adminNombre = empresa.usuarios[0]?.nombre ?? empresa.nombre;
 
-      // Enviar email si está configurado.
+      // Enviar email si está configurado. Rastreamos si realmente se envió.
+      let emailEnviado = false;
       if (adminEmail) {
-        await enviarEmailAccesoRemoto({
-          destinatario: adminEmail,
-          empresaNombre: empresa.nombre,
-          adminNombre,
-          linkAprobacion,
-          costoMensual: costoMensual ?? null,
-        }).catch(() => {});
+        try {
+          await enviarEmailAccesoRemoto({
+            destinatario: adminEmail,
+            empresaNombre: empresa.nombre,
+            adminNombre,
+            linkAprobacion,
+            costoMensual: costoMensual ?? null,
+          });
+          emailEnviado = true;
+        } catch {
+          emailEnviado = false;
+        }
       }
 
-      res.json({ permiso, linkAprobacion, emailEnviado: !!adminEmail });
+      res.json({ permiso, linkAprobacion, emailEnviado, adminEmail: adminEmail ?? null });
     } catch (err) {
       next(err);
     }
