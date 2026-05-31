@@ -50,7 +50,18 @@ export interface Activo {
   temperaturaAlerta: number;
   temperaturaCritica: number;
   amperajeNormal: number;
+  amperajeAlerta?: number | null;
+  amperajeCritico?: number | null;
   presionNormal: number;
+  presionAlerta?: number | null;
+  presionCritica?: number | null;
+  voltajeMin?: number | null;
+  voltajeMax?: number | null;
+  voltajeAlerta?: number | null;
+  bateriaAlerta?: number | null;
+  bateriaCritica?: number | null;
+  tonerAlerta?: number | null;
+  tonerCritico?: number | null;
   intervaloMedicionHoras: number;
   intervaloLubricacionHoras: number;
   intervaloRodamientoHoras: number;
