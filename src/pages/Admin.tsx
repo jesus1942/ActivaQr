@@ -33,6 +33,105 @@ import { PanelAccesoRemoto } from '../components/PanelAccesoRemoto';
 
 const PLANES = ['inicial', 'empresa', 'industrial'] as const;
 
+// ── Modal selector de WhatsApp ────────────────────────────────────────────────
+const CODIGOS_PAIS = [
+  { codigo: '54',  bandera: 'AR', nombre: 'Argentina' },
+  { codigo: '598', bandera: 'UY', nombre: 'Uruguay' },
+  { codigo: '595', bandera: 'PY', nombre: 'Paraguay' },
+  { codigo: '591', bandera: 'BO', nombre: 'Bolivia' },
+  { codigo: '56',  bandera: 'CL', nombre: 'Chile' },
+  { codigo: '55',  bandera: 'BR', nombre: 'Brasil' },
+  { codigo: '51',  bandera: 'PE', nombre: 'Perú' },
+  { codigo: '57',  bandera: 'CO', nombre: 'Colombia' },
+  { codigo: '34',  bandera: 'ES', nombre: 'España' },
+  { codigo: '1',   bandera: 'US', nombre: 'EE.UU. / Canadá' },
+];
+
+const ModalWhatsapp: React.FC<{
+  titulo: string;
+  nombreEmpresa: string;
+  onConfirm: (numeroCompleto: string) => void;
+  onOmitir: () => void;
+}> = ({ titulo, nombreEmpresa, onConfirm, onOmitir }) => {
+  const [pais, setPais] = useState(CODIGOS_PAIS[0]);
+  const [numero, setNumero] = useState('');
+
+  const soloDigitos = numero.replace(/\D/g, '');
+  const preview = soloDigitos ? `+${pais.codigo} ${soloDigitos}` : '';
+  const completo = soloDigitos ? `${pais.codigo}${soloDigitos}` : '';
+
+  return (
+    <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
+      <div className="bg-white border-2 border-slate-900 shadow-[6px_6px_0px_0px_#1e293b] w-full max-w-sm">
+        <div className="flex items-center justify-between border-b-2 border-slate-900 px-5 py-3 bg-slate-900 text-white">
+          <h2 className="font-sketch font-black text-base uppercase tracking-wide">{titulo}</h2>
+          <button onClick={onOmitir}><X size={18} /></button>
+        </div>
+        <div className="p-5 space-y-4">
+          <p className="text-sm text-slate-600">
+            WhatsApp de <strong>{nombreEmpresa}</strong> para enviar el link directamente.
+          </p>
+
+          <div>
+            <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-1">Pais</label>
+            <select
+              value={pais.codigo}
+              onChange={(e) => setPais(CODIGOS_PAIS.find((c) => c.codigo === e.target.value) ?? CODIGOS_PAIS[0])}
+              className="w-full border-2 border-slate-300 px-3 h-11 text-sm font-semibold outline-none focus:border-orange-500 bg-white"
+            >
+              {CODIGOS_PAIS.map((c) => (
+                <option key={c.codigo} value={c.codigo}>
+                  {c.bandera} — {c.nombre} (+{c.codigo})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-1">
+              Numero (sin 0, sin codigo de pais)
+            </label>
+            <div className="flex gap-2 items-center">
+              <span className="border-2 border-slate-300 px-3 h-14 flex items-center font-mono font-black text-slate-700 text-sm bg-slate-50 whitespace-nowrap">
+                +{pais.codigo}
+              </span>
+              <input
+                type="tel"
+                autoFocus
+                value={numero}
+                onChange={(e) => setNumero(e.target.value)}
+                placeholder="1112345678"
+                className="flex-1 border-2 border-slate-300 px-4 h-14 text-xl font-mono outline-none focus:border-orange-500 text-center"
+              />
+            </div>
+            {preview && (
+              <p className="text-xs text-slate-500 mt-1.5 font-mono">
+                Numero completo: <span className="font-black text-slate-800">{preview}</span>
+              </p>
+            )}
+          </div>
+
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={onOmitir}
+              className="flex-1 py-2.5 border-2 border-slate-300 text-sm font-bold text-slate-600 hover:border-slate-500 transition-colors"
+            >
+              Omitir
+            </button>
+            <button
+              onClick={() => completo && onConfirm(completo)}
+              disabled={!soloDigitos}
+              className="flex-1 py-2.5 bg-slate-900 text-white border-2 border-slate-900 text-sm font-black uppercase tracking-wide hover:bg-slate-700 transition-colors disabled:opacity-40"
+            >
+              Abrir WhatsApp
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const Admin: React.FC = () => {
   const [empresas, setEmpresas] = useState<EmpresaAdmin[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -52,6 +151,12 @@ export const Admin: React.FC = () => {
     link: string;
     emailEnviado: boolean;
     waEnviado: boolean;
+  } | null>(null);
+  const [modalWa, setModalWa] = useState<{
+    titulo: string;
+    nombreEmpresa: string;
+    mensaje: string;
+    onDone: (waAbierto: boolean) => void;
   } | null>(null);
 
   const cargar = async () => {
@@ -125,27 +230,19 @@ export const Admin: React.FC = () => {
       const initPoint = res.initPoint;
       await navigator.clipboard?.writeText(initPoint).catch(() => {});
 
-      // WhatsApp Web con el link pre-cargado
-      const telefonoRaw = prompt(
-        `Número de WhatsApp de "${emp.nombre}" para enviar el link (ej: 5491112345678).\nDejá vacío para omitir WhatsApp:`,
-        (emp as EmpresaAdmin & { telefono?: string }).telefono ?? ''
-      );
-      let waEnviado = false;
-      if (telefonoRaw && telefonoRaw.trim()) {
-        const numero = telefonoRaw.trim().replace(/\D/g, '');
-        const mensaje = `Hola! Te enviamos el link para activar tu suscripción en *ActivaQR*:\n\n${initPoint}\n\nCualquier consulta estamos a disposición.`;
-        window.open(`https://web.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(mensaje)}`, '_blank');
-        waEnviado = true;
-      }
+      const mensajeWa = `Hola! Te enviamos el link para activar tu suscripción en *ActivaQR*:\n\n${initPoint}\n\nCualquier consulta estamos a disposición.`;
+      const emailEnviado = !!(res as { emailEnviado?: boolean }).emailEnviado;
 
-      setResultadoSub({
-        empresaNombre: emp.nombre,
-        link: initPoint,
-        emailEnviado: !!(res as { emailEnviado?: boolean }).emailEnviado,
-        waEnviado,
+      setModalWa({
+        titulo: 'Enviar link por WhatsApp',
+        nombreEmpresa: emp.nombre,
+        mensaje: mensajeWa,
+        onDone: (waEnviado) => {
+          setModalWa(null);
+          setResultadoSub({ empresaNombre: emp.nombre, link: initPoint, emailEnviado, waEnviado });
+          cargar();
+        },
       });
-
-      cargar();
     } catch (e) {
       alert(e instanceof Error ? e.message : 'No se pudo generar la suscripción.');
     }
@@ -174,17 +271,17 @@ export const Admin: React.FC = () => {
       const { permiso: nuevo, linkAprobacion, emailEnviado } = await solicitarAccesoRemoto(emp.id, costo);
       setPermisos((prev) => ({ ...prev, [emp.id]: nuevo }));
 
-      // Abrir WhatsApp con el link.
-      const tel = prompt(`Número de WhatsApp de "${emp.nombre}" para enviar el link de aprobación (ej: 5491112345678):\nDejá vacío para omitir.`);
-      let waAbierto = false;
-      if (tel?.trim()) {
-        const num = tel.trim().replace(/\D/g, '');
-        const msg = `Hola! Te enviamos una solicitud de acceso remoto de soporte desde *ActivaQR*.\nAprobá el acceso desde este link:\n\n${linkAprobacion}`;
-        const ventana = window.open(`https://web.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msg)}`, '_blank');
-        waAbierto = !!ventana;
-      }
+      const msgRemoto = `Hola! Te enviamos una solicitud de acceso remoto de soporte desde *ActivaQR*.\nAprobá el acceso desde este link:\n\n${linkAprobacion}`;
 
-      setResultadoRemoto({ empresaNombre: emp.nombre, link: linkAprobacion, emailEnviado, waAbierto });
+      setModalWa({
+        titulo: 'Enviar solicitud por WhatsApp',
+        nombreEmpresa: emp.nombre,
+        mensaje: msgRemoto,
+        onDone: (waAbierto) => {
+          setModalWa(null);
+          setResultadoRemoto({ empresaNombre: emp.nombre, link: linkAprobacion, emailEnviado, waAbierto });
+        },
+      });
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Error al solicitar acceso remoto.');
     }
@@ -365,6 +462,21 @@ export const Admin: React.FC = () => {
           emailEnviado={resultadoSub.emailEnviado}
           waEnviado={resultadoSub.waEnviado}
           onClose={() => setResultadoSub(null)}
+        />
+      )}
+
+      {modalWa && (
+        <ModalWhatsapp
+          titulo={modalWa.titulo}
+          nombreEmpresa={modalWa.nombreEmpresa}
+          onConfirm={(numero) => {
+            window.open(
+              `https://web.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(modalWa.mensaje)}`,
+              '_blank'
+            );
+            modalWa.onDone(true);
+          }}
+          onOmitir={() => modalWa.onDone(false)}
         />
       )}
     </div>
