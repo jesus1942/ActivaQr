@@ -15,6 +15,17 @@ enum Plan {
   industrial
 }
 
+enum EstadoEmpresa {
+  activa
+  suspendida
+}
+
+enum RolUsuario {
+  superadmin
+  admin
+  operador
+}
+
 enum RolTecnico {
   admin
   supervisor
@@ -56,18 +67,36 @@ enum EstadoTarea {
 // ---------- Modelos ----------
 
 model Empresa {
-  id        String   @id @default(uuid())
+  id        String        @id @default(uuid())
   nombre    String
   cuit      String?
   logoUrl   String?
-  plan      Plan     @default(inicial)
-  creadaEn  DateTime @default(now())
+  plan      Plan          @default(inicial)
+  estado    EstadoEmpresa @default(activa)
+  creadaEn  DateTime      @default(now())
 
+  usuarios Usuario[]
   sedes    Sede[]
   sectores Sector[]
   tipos    TipoActivo[]
   tecnicos Tecnico[]
   activos  Activo[]
+}
+
+model Usuario {
+  id           String     @id @default(uuid())
+  empresaId    String?    // null para el superadmin (no pertenece a una empresa)
+  email        String     @unique
+  passwordHash String
+  nombre       String
+  rol          RolUsuario @default(admin)
+  activo       Boolean    @default(true)
+  creadoEn     DateTime   @default(now())
+  ultimoAcceso DateTime?
+
+  empresa Empresa? @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@index([empresaId])
 }
 
 model Sede {
