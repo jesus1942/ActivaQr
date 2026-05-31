@@ -79,7 +79,7 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
         {/* Resumen */}
         <div className="px-5 py-3 border-b-2 border-slate-100 flex gap-4 flex-wrap text-sm">
           <span className="font-semibold text-slate-600">{activos.length} activos</span>
-          {criticos > 0 && <span className="font-black text-red-600">⚠ {criticos} críticos</span>}
+          {criticos > 0 && <span className="font-black text-red-600">{criticos} críticos</span>}
           {alertas > 0  && <span className="font-black text-amber-600">! {alertas} en alerta</span>}
           <span className={`ml-auto text-xs font-black uppercase px-2 py-1 border-2 ${
             permiso.estado === 'activo' ? 'border-emerald-400 text-emerald-700 bg-emerald-50' : 'border-slate-300 text-slate-500'

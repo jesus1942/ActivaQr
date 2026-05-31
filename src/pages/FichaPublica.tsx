@@ -74,7 +74,7 @@ export const FichaPublica: React.FC = () => {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
         <div className="bg-white border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] max-w-sm w-full p-6 text-center">
-          <p className="font-black text-2xl text-slate-800 mb-2">⚠</p>
+          <p className="font-black text-lg text-slate-800 mb-2">ERROR</p>
           <p className="font-semibold text-slate-700">{error || 'Activo no encontrado.'}</p>
         </div>
       </div>

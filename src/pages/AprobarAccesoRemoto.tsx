@@ -27,7 +27,6 @@ export const AprobarAccesoRemoto: React.FC = () => {
           )}
           {estado === 'ok' && (
             <div className="space-y-3">
-              <p className="text-2xl">✅</p>
               <p className="font-black text-slate-900 text-lg">¡Acceso aprobado!</p>
               <p className="text-slate-600 text-sm leading-relaxed">
                 El equipo de soporte de ActivaQR ahora puede ver tus activos y comunicarse con vos.
@@ -37,7 +36,6 @@ export const AprobarAccesoRemoto: React.FC = () => {
           )}
           {estado === 'error' && (
             <div className="space-y-3">
-              <p className="text-2xl">⚠️</p>
               <p className="font-black text-slate-900 text-lg">Link inválido o expirado</p>
               <p className="text-slate-600 text-sm">{msg || 'Este link ya no es válido. Contactá al soporte.'}</p>
             </div>
