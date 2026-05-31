@@ -1,0 +1,297 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Enums ----------
+
+enum Plan {
+  inicial
+  empresa
+  industrial
+}
+
+enum EstadoEmpresa {
+  activa
+  suspendida
+}
+
+enum RolUsuario {
+  superadmin
+  admin
+  operador
+}
+
+enum RolTecnico {
+  admin
+  supervisor
+  tecnico
+}
+
+enum EstadoActivo {
+  normal
+  alerta
+  critico
+  mantenimiento
+}
+
+enum Vibracion {
+  ninguna
+  leve
+  moderada
+  alta
+}
+
+enum EstadoMedicion {
+  normal
+  revision
+  urgente
+}
+
+enum OrigenMedicion {
+  manual
+  csv
+  api
+}
+
+enum EstadoTarea {
+  pendiente
+  completado
+  vencido
+}
+
+enum EstadoPermiso {
+  pendiente
+  activo
+  revocado
+}
+
+// ---------- Modelos ----------
+
+model PermisoAccesoRemoto {
+  id           String        @id @default(uuid())
+  empresaId    String        @unique   // una empresa, un permiso activo a la vez
+  token        String        @unique   // token del link de aprobación
+  estado       EstadoPermiso @default(pendiente)
+  solicitadoEn DateTime      @default(now())
+  otorgadoEn   DateTime?
+  revocadoEn   DateTime?
+  // Costo adicional facturado por este servicio
+  costoMensual Float?
+
+  empresa   Empresa          @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  mensajes  MensajeRemoto[]
+
+  @@index([token])
+}
+
+model MensajeRemoto {
+  id        String   @id @default(uuid())
+  permisoId String
+  autorRol  String   // 'superadmin' | 'cliente'
+  autorNombre String
+  contenido String
+  creadoEn  DateTime @default(now())
+  leido     Boolean  @default(false)
+
+  permiso PermisoAccesoRemoto @relation(fields: [permisoId], references: [id], onDelete: Cascade)
+
+  @@index([permisoId])
+}
+
+model Empresa {
+  id        String        @id @default(uuid())
+  nombre    String
+  cuit      String?
+  logoUrl   String?
+  plan      Plan          @default(inicial)
+  estado    EstadoEmpresa @default(activa)
+  creadaEn  DateTime      @default(now())
+
+  // Suscripción Mercado Pago.
+  mpPreapprovalId String?   // id del preapproval (suscripción) en MP
+  mpEstadoSub     String?   // estado reportado por MP: authorized, paused, cancelled...
+  mpMonto         Float?    // monto mensual acordado
+  mpUltimoPago    DateTime? // fecha del último pago aprobado
+
+  usuarios       Usuario[]
+  sedes          Sede[]
+  sectores       Sector[]
+  tipos          TipoActivo[]
+  tecnicos       Tecnico[]
+  activos        Activo[]
+  permisoAcceso  PermisoAccesoRemoto?
+
+  @@index([mpPreapprovalId])
+}
+
+model Usuario {
+  id           String     @id @default(uuid())
+  empresaId    String?    // null para el superadmin (no pertenece a una empresa)
+  email        String     @unique
+  passwordHash String
+  nombre       String
+  rol          RolUsuario @default(admin)
+  activo       Boolean    @default(true)
+  creadoEn     DateTime   @default(now())
+  ultimoAcceso DateTime?
+
+  empresa Empresa? @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@index([empresaId])
+}
+
+model Sede {
+  id        String  @id @default(uuid())
+  empresaId String
+  nombre    String
+  direccion String?
+  ciudad    String?
+
+  empresa Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  activos Activo[]
+
+  @@index([empresaId])
+}
+
+model Sector {
+  id        String  @id @default(uuid())
+  empresaId String
+  nombre    String
+  color     String?
+  activo    Boolean @default(true)
+
+  empresa Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  activos Activo[]
+
+  @@index([empresaId])
+}
+
+model TipoActivo {
+  id               String  @id @default(uuid())
+  empresaId        String
+  nombre           String
+  icono            String?
+  mideTemperatura  Boolean @default(true)
+  mideAmperaje     Boolean @default(false)
+  midePresion      Boolean @default(false)
+  mideVibracion    Boolean @default(true)
+  activo           Boolean @default(true)
+
+  empresa Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  activos Activo[]
+
+  @@index([empresaId])
+}
+
+model Tecnico {
+  id        String     @id @default(uuid())
+  empresaId String
+  nombre    String
+  rol       RolTecnico @default(tecnico)
+  email     String?
+  telefono  String?
+  activo    Boolean    @default(true)
+
+  empresa            Empresa              @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  activos            Activo[]
+  mediciones         Medicion[]
+  tareas             TareaMantenimiento[]
+
+  @@index([empresaId])
+}
+
+model Activo {
+  id                        String       @id @default(uuid())
+  empresaId                 String
+  sedeId                    String?
+  sectorId                  String
+  tipoId                    String
+  responsableId             String?
+  codigo                    String
+  nombre                    String
+  marca                     String?
+  modelo                    String?
+  fechaIngreso              DateTime
+  ubicacion                 String?
+  horasActuales             Int          @default(0)
+  estado                    EstadoActivo @default(normal)
+  temperaturaMin            Float?
+  temperaturaMax            Float?
+  temperaturaAlerta         Float?
+  temperaturaCritica        Float?
+  amperajeNormal            Float?
+  presionNormal             Float?
+  intervaloMedicionHoras    Int?
+  intervaloLubricacionHoras Int?
+  intervaloRodamientoHoras  Int?
+  proximoMantenimiento      DateTime?
+  notas                     String?
+  creadoEn                  DateTime     @default(now())
+  actualizadoEn             DateTime     @updatedAt
+
+  empresa     Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  sede        Sede?    @relation(fields: [sedeId], references: [id], onDelete: SetNull)
+  sector      Sector   @relation(fields: [sectorId], references: [id], onDelete: Restrict)
+  tipo        TipoActivo @relation(fields: [tipoId], references: [id], onDelete: Restrict)
+  responsable Tecnico? @relation(fields: [responsableId], references: [id], onDelete: SetNull)
+
+  mediciones Medicion[]
+  tareas     TareaMantenimiento[]
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId])
+  @@index([sectorId])
+  @@index([tipoId])
+}
+
+model Medicion {
+  id            String         @id @default(uuid())
+  activoId      String
+  tecnicoId     String?
+  fecha         DateTime       @default(now())
+  temperatura   Float?
+  amperaje      Float?
+  presion       Float?
+  vibracion     Vibracion      @default(ninguna)
+  horasMarcha   Int?
+  estado        EstadoMedicion @default(normal)
+  observaciones String?
+  origen        OrigenMedicion @default(manual)
+
+  activo  Activo   @relation(fields: [activoId], references: [id], onDelete: Cascade)
+  tecnico Tecnico? @relation(fields: [tecnicoId], references: [id], onDelete: SetNull)
+  fotos   Foto[]
+
+  @@index([activoId])
+}
+
+model Foto {
+  id         String @id @default(uuid())
+  medicionId String
+  url        String
+
+  medicion Medicion @relation(fields: [medicionId], references: [id], onDelete: Cascade)
+
+  @@index([medicionId])
+}
+
+model TareaMantenimiento {
+  id              String      @id @default(uuid())
+  activoId        String
+  responsableId   String?
+  tipo            String
+  fechaProgramada DateTime
+  fechaRealizada  DateTime?
+  estado          EstadoTarea @default(pendiente)
+  observaciones   String?
+
+  activo      Activo   @relation(fields: [activoId], references: [id], onDelete: Cascade)
+  responsable Tecnico? @relation(fields: [responsableId], references: [id], onDelete: SetNull)
+
+  @@index([activoId])
+}
