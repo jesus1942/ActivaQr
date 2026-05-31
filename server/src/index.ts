@@ -17,6 +17,7 @@ import webhooksRouter from './routes/webhooks';
 import publicRouter from './routes/public';
 import accesoRemotoRouter from './routes/accesoRemoto';
 import categoriasRouter, { adminCategoriasRouter } from './routes/categorias';
+import suscripcionRouter from './routes/suscripcion';
 import { requireAuth, requireAuthAndActiveEmpresa, requireSuperadmin } from './auth';
 import { seedCategorias } from './seedCategorias';
 
@@ -66,6 +67,7 @@ app.use('/api/mediciones', requireAuthAndActiveEmpresa, medicionesRouter);
 app.use('/api/tareas', requireAuthAndActiveEmpresa, tareasRouter);
 app.use('/api/sync', requireAuthAndActiveEmpresa, syncRouter);
 app.use('/api/categorias', requireAuthAndActiveEmpresa, categoriasRouter);
+app.use('/api/suscripcion', requireAuthAndActiveEmpresa, suscripcionRouter);
 app.use('/api/admin/categorias-globales', requireAuth, requireSuperadmin, adminCategoriasRouter);
 
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

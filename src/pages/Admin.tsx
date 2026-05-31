@@ -12,9 +12,12 @@ import {
   XCircle,
   MonitorSmartphone,
   X,
+  ArrowRight,
+  TrendingUp,
 } from 'lucide-react';
 import {
   EmpresaAdmin,
+  SolicitudUpgrade,
   listarEmpresas,
   crearEmpresa,
   actualizarEmpresa,
@@ -22,6 +25,8 @@ import {
   resetPassword,
   generarSuscripcion,
   cancelarSuscripcion,
+  getSolicitudesUpgrade,
+  descartarSolicitud,
 } from '../data/adminApi';
 import {
   PermisoAcceso,
@@ -134,6 +139,7 @@ const ModalWhatsapp: React.FC<{
 
 export const Admin: React.FC = () => {
   const [empresas, setEmpresas] = useState<EmpresaAdmin[]>([]);
+  const [solicitudes, setSolicitudes] = useState<SolicitudUpgrade[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -159,11 +165,20 @@ export const Admin: React.FC = () => {
     onDone: (waAbierto: boolean) => void;
   } | null>(null);
 
+  const cargarSolicitudes = async () => {
+    try {
+      const s = await getSolicitudesUpgrade();
+      setSolicitudes(s);
+    } catch {
+      // silencioso
+    }
+  };
+
   const cargar = async () => {
     setCargando(true);
     setError(null);
     try {
-      const lista = await listarEmpresas();
+      const [lista] = await Promise.all([listarEmpresas(), cargarSolicitudes()]);
       setEmpresas(lista);
       const entries = await Promise.all(
         lista.map(async (e) => {
@@ -291,6 +306,11 @@ export const Admin: React.FC = () => {
         <div>
           <h1 className="font-sketch text-3xl sm:text-4xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
             <Building2 size={32} /> Administración
+            {solicitudes.length > 0 && (
+              <span className="inline-flex items-center justify-center w-6 h-6 bg-orange-500 text-white text-xs font-black border-2 border-slate-900">
+                {solicitudes.length}
+              </span>
+            )}
           </h1>
           <p className="text-slate-500 text-sm mt-1">{empresas.length} empresas registradas</p>
         </div>
@@ -305,6 +325,38 @@ export const Admin: React.FC = () => {
       {error && (
         <div className="bg-red-50 border-2 border-red-300 text-red-700 px-4 py-3 font-semibold">
           {error}
+        </div>
+      )}
+
+      {/* Solicitudes de upgrade */}
+      {solicitudes.length > 0 && (
+        <div className="border-2 border-orange-400 bg-orange-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
+          <h2 className="font-sketch font-black text-lg uppercase tracking-tight text-slate-900 flex items-center gap-2 mb-4">
+            <TrendingUp size={20} className="text-orange-500" /> Solicitudes de upgrade
+            <span className="inline-flex items-center justify-center w-5 h-5 bg-orange-500 text-white text-xs font-black border-2 border-slate-900">
+              {solicitudes.length}
+            </span>
+          </h2>
+          <div className="space-y-3">
+            {solicitudes.map((sol) => (
+              <SolicitudUpgradeRow
+                key={sol.id}
+                solicitud={sol}
+                empresas={empresas}
+                onProcesar={async () => {
+                  const emp = empresas.find((e) => e.id === sol.id);
+                  if (emp) await suscribir(emp);
+                  await descartarSolicitud(sol.id);
+                  cargarSolicitudes();
+                }}
+                onDescartar={async () => {
+                  if (!confirm(`Descartar la solicitud de upgrade de "${sol.nombre}"?`)) return;
+                  await descartarSolicitud(sol.id);
+                  cargarSolicitudes();
+                }}
+              />
+            ))}
+          </div>
         </div>
       )}
 
@@ -761,6 +813,54 @@ const ModalResultadoRemoto: React.FC<{
     </div>
   </div>
 );
+
+const PLAN_LABEL: Record<string, string> = { inicial: 'Inicial', empresa: 'Empresa', industrial: 'Industrial' };
+
+const SolicitudUpgradeRow: React.FC<{
+  solicitud: SolicitudUpgrade;
+  empresas: EmpresaAdmin[];
+  onProcesar: () => Promise<void>;
+  onDescartar: () => Promise<void>;
+}> = ({ solicitud, onProcesar, onDescartar }) => {
+  const [procesando, setProcesando] = useState(false);
+  const [descartando, setDescartando] = useState(false);
+
+  return (
+    <div className="bg-white border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)] p-4 flex items-center justify-between flex-wrap gap-3">
+      <div className="min-w-0">
+        <p className="font-sketch font-black text-slate-900 text-base leading-tight">{solicitud.nombre}</p>
+        {solicitud.adminEmail && (
+          <p className="text-xs font-mono text-slate-500 mt-0.5">{solicitud.adminEmail}</p>
+        )}
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-xs font-black uppercase px-2 py-0.5 border-2 border-slate-300 text-slate-600">
+            {PLAN_LABEL[solicitud.plan] ?? solicitud.plan}
+          </span>
+          <ArrowRight size={14} className="text-orange-500 flex-shrink-0" />
+          <span className="text-xs font-black uppercase px-2 py-0.5 border-2 border-orange-400 bg-orange-50 text-orange-700">
+            {PLAN_LABEL[solicitud.planSolicitado] ?? solicitud.planSolicitado}
+          </span>
+        </div>
+      </div>
+      <div className="flex gap-2 flex-shrink-0">
+        <button
+          onClick={async () => { setProcesando(true); try { await onProcesar(); } finally { setProcesando(false); } }}
+          disabled={procesando || descartando}
+          className="px-4 py-2 bg-orange-500 text-white border-2 border-slate-900 font-black uppercase text-xs shadow-[2px_2px_0px_0px_#1e293b] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all disabled:opacity-50"
+        >
+          {procesando ? '...' : 'Procesar'}
+        </button>
+        <button
+          onClick={async () => { setDescartando(true); try { await onDescartar(); } finally { setDescartando(false); } }}
+          disabled={procesando || descartando}
+          className="px-4 py-2 border-2 border-red-300 text-red-600 font-bold text-xs hover:border-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+        >
+          {descartando ? '...' : 'Descartar'}
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const Campo: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <div className="mb-2">
