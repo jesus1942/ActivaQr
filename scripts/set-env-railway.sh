@@ -46,6 +46,14 @@ if [[ "$OPCION" == "2" ]]; then
   railway service "$SERVICIO" 2>/dev/null || true
 fi
 
+# Linkear al proyecto ActivaQR en Railway si no está linkeado.
+if ! railway status &>/dev/null; then
+  echo ""
+  warn "No hay proyecto linkeado. Vinculando al proyecto ActivaQR..."
+  railway link
+fi
+ok "Proyecto Railway vinculado"
+
 # ── 4. Pedir variables de forma segura ───────────────────────────────────────
 echo ""
 echo "Ingresá las variables. El texto NO se muestra mientras escribís."
