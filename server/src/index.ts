@@ -10,21 +10,26 @@ import tecnicosRouter from './routes/tecnicos';
 import activosRouter from './routes/activos';
 import medicionesRouter from './routes/mediciones';
 import tareasRouter from './routes/tareas';
+import syncRouter from './routes/sync';
 
 const app = express();
 
-// CORS abierto (el frontend vive en GitHub Pages, otro dominio).
-app.use(cors({ origin: '*' }));
-
-// Límite alto para soportar fotos en base64.
+app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// Health check.
-app.get('/api/health', (_req: Request, res: Response) => {
+app.get('/', (_req, res) => {
+  res.json({
+    nombre: 'ActivaQR API',
+    estado: 'ok',
+    docs: 'Todas las rutas viven bajo /api',
+    health: '/api/health',
+  });
+});
+
+app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Rutas de la API.
 app.use('/api/empresas', empresasRouter);
 app.use('/api/sedes', sedesRouter);
 app.use('/api/sectores', sectoresRouter);
@@ -33,17 +38,11 @@ app.use('/api/tecnicos', tecnicosRouter);
 app.use('/api/activos', activosRouter);
 app.use('/api/mediciones', medicionesRouter);
 app.use('/api/tareas', tareasRouter);
+app.use('/api/sync', syncRouter);
 
-// 404 para rutas desconocidas bajo /api.
-app.use('/api', (_req: Request, res: Response) => {
-  res.status(404).json({ error: 'Ruta no encontrada' });
-});
-
-// Manejador de errores global.
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
-  const status = err?.status && Number.isInteger(err.status) ? err.status : 500;
-  res.status(status).json({ error: err?.message || 'Error interno del servidor' });
+  res.status(500).json({ error: err.message });
 });
 
 const PORT = Number(process.env.PORT) || 3001;
