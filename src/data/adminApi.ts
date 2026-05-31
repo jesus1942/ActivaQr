@@ -7,6 +7,9 @@ export interface EmpresaAdmin {
   plan: 'inicial' | 'empresa' | 'industrial';
   estado: 'activa' | 'suspendida';
   creadaEn: string;
+  mpEstadoSub?: string | null;
+  mpMonto?: number | null;
+  mpUltimoPago?: string | null;
   _count: { activos: number; usuarios: number };
   usuarios: { id: string; nombre: string; email: string; activo: boolean; ultimoAcceso: string | null }[];
 }
@@ -48,6 +51,18 @@ export async function resetPassword(id: string, password: string): Promise<void>
     await apiFetch(`admin/empresas/${id}/reset-password`, {
       method: 'POST',
       body: JSON.stringify({ password }),
+    })
+  );
+}
+
+export async function generarSuscripcion(
+  id: string,
+  monto: number
+): Promise<{ initPoint: string; preapprovalId: string }> {
+  return parse(
+    await apiFetch(`admin/empresas/${id}/suscripcion`, {
+      method: 'POST',
+      body: JSON.stringify({ monto }),
     })
   );
 }

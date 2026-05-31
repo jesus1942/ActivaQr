@@ -13,6 +13,7 @@ import activosRouter from './routes/activos';
 import medicionesRouter from './routes/mediciones';
 import tareasRouter from './routes/tareas';
 import syncRouter from './routes/sync';
+import webhooksRouter from './routes/webhooks';
 import { requireAuth } from './auth';
 
 const app = express();
@@ -32,6 +33,9 @@ app.get('/', (_req, res) => {
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
+
+// Webhooks externos (sin auth: los llama Mercado Pago).
+app.use('/api/webhooks', webhooksRouter);
 
 // Autenticación y administración.
 app.use('/api/auth', authRouter);

@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../prisma';
 import { requireAuth, requireSuperadmin, AuthRequest } from '../auth';
+import { crearPreapproval, mpConfigurado } from '../mercadopago';
 
 const router = Router();
 
@@ -113,6 +114,53 @@ router.post('/empresas/:id/reset-password', async (req: AuthRequest, res: Respon
     const passwordHash = await bcrypt.hash(password, 10);
     await prisma.usuario.update({ where: { id: admin.id }, data: { passwordHash } });
     res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/admin/empresas/:id/suscripcion — genera el link de adhesión de MP
+router.post('/empresas/:id/suscripcion', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!mpConfigurado()) {
+      return res.status(503).json({
+        error: 'Mercado Pago no está configurado. Falta la variable MP_ACCESS_TOKEN.',
+      });
+    }
+
+    const { monto } = req.body ?? {};
+    const montoNum = Number(monto);
+    if (!montoNum || montoNum <= 0) {
+      return res.status(400).json({ error: 'Indicá un monto mensual válido.' });
+    }
+
+    const empresa = await prisma.empresa.findUnique({
+      where: { id: req.params.id },
+      include: { usuarios: { where: { rol: 'admin' }, take: 1 } },
+    });
+    if (!empresa) return res.status(404).json({ error: 'Empresa no encontrada.' });
+
+    const payerEmail = empresa.usuarios[0]?.email;
+    if (!payerEmail) {
+      return res.status(400).json({ error: 'La empresa no tiene un administrador con email.' });
+    }
+
+    const backUrl = process.env.MP_BACK_URL || 'https://jesus1942.github.io/ActivaQr/';
+
+    const pre = await crearPreapproval({
+      empresaId: empresa.id,
+      payerEmail,
+      monto: montoNum,
+      razon: `Suscripción ActivaQR — ${empresa.nombre}`,
+      backUrl,
+    });
+
+    await prisma.empresa.update({
+      where: { id: empresa.id },
+      data: { mpPreapprovalId: pre.id, mpEstadoSub: pre.status, mpMonto: montoNum },
+    });
+
+    res.json({ initPoint: pre.init_point, preapprovalId: pre.id });
   } catch (err) {
     next(err);
   }
