@@ -549,7 +549,7 @@ const CategoriasSection: React.FC = () => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Ícono (emoji)</label>
-                <input value={formNueva.icono} onChange={(e) => setFormNueva((p) => ({ ...p, icono: e.target.value }))} className={inputCls} placeholder="⚙️" />
+                <input value={formNueva.icono} onChange={(e) => setFormNueva((p) => ({ ...p, icono: e.target.value }))} className={inputCls} placeholder="icono" />
               </div>
               <div>
                 <label className={labelCls}>Descripción</label>
@@ -632,8 +632,8 @@ const CategoriaCard: React.FC<CategoriaCardProps> = ({ cat, expandido, onToggle,
               <span className="font-semibold">{p.nombre}</span>
               <div className="flex items-center gap-2 text-slate-400">
                 {p.unidad && <span className="font-mono">{p.unidad}</span>}
-                {p.umbralAlerta != null && <span className="text-amber-600">⚠{p.umbralAlerta}</span>}
-                {p.umbralCritico != null && <span className="text-red-500">🔴{p.umbralCritico}</span>}
+                {p.umbralAlerta != null && <span className="text-amber-600">alerta:{p.umbralAlerta}</span>}
+                {p.umbralCritico != null && <span className="text-red-500">critico:{p.umbralCritico}</span>}
                 {p.invertido && <span title="Valor bajo es peor">↓</span>}
               </div>
             </div>

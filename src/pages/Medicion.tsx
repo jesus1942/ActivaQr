@@ -58,10 +58,10 @@ function BarraUmbral({ valor, min, alerta, critico, max, invertido = false }: {
     : nivel === 'alerta' ? 'bg-amber-400'
     : 'bg-emerald-400';
 
-  const label = nivel === 'urgente' ? '⚡ INTERVENCIÓN URGENTE'
-    : nivel === 'critico' ? '🔴 CRÍTICO'
-    : nivel === 'alerta' ? '⚠ ALERTA'
-    : '✓ Normal';
+  const label = nivel === 'urgente' ? 'INTERVENCIÓN URGENTE'
+    : nivel === 'critico' ? 'CRÍTICO'
+    : nivel === 'alerta' ? 'ALERTA'
+    : 'Normal';
 
   const pct = (() => {
     if (invertido) {
@@ -415,9 +415,9 @@ export const Medicion: React.FC = () => {
               {estadoAuto === 'urgente' ? <Zap size={20} /> : <AlertTriangle size={20} />}
               <div>
                 <p className="font-black uppercase text-sm tracking-wide">
-                  {estadoAuto === 'urgente' ? '⚡ Intervención urgente requerida'
-                    : estadoAuto === 'critico' ? '🔴 Estado crítico detectado'
-                    : '⚠ Valor fuera del rango normal'}
+                  {estadoAuto === 'urgente' ? 'Intervención urgente requerida'
+                    : estadoAuto === 'critico' ? 'Estado crítico detectado'
+                    : 'Valor fuera del rango normal'}
                 </p>
                 {estadoAuto === 'urgente' && (
                   <p className="text-xs mt-0.5 font-semibold">Considerá detener el equipo y notificar al responsable.</p>
