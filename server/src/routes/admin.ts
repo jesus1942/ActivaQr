@@ -207,4 +207,53 @@ router.delete('/empresas/:id/suscripcion', async (req: AuthRequest, res: Respons
   }
 });
 
+// GET /api/admin/solicitudes-upgrade — lista empresas con upgrade pendiente
+router.get('/solicitudes-upgrade', async (_req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const solicitudes = await prisma.empresa.findMany({
+      where: { planSolicitado: { not: null } },
+      select: {
+        id: true,
+        nombre: true,
+        plan: true,
+        planSolicitado: true,
+        usuarios: {
+          where: { rol: 'admin' },
+          select: { email: true },
+          take: 1,
+        },
+      },
+      orderBy: { creadaEn: 'desc' },
+    });
+
+    const result = solicitudes.map((e) => ({
+      id: e.id,
+      nombre: e.nombre,
+      plan: e.plan,
+      planSolicitado: e.planSolicitado,
+      adminEmail: e.usuarios[0]?.email ?? null,
+    }));
+
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/admin/solicitudes-upgrade/:empresaId — descarta la solicitud
+router.delete('/solicitudes-upgrade/:empresaId', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    await prisma.empresa.update({
+      where: { id: req.params.empresaId },
+      data: { planSolicitado: null },
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+      return res.status(404).json({ error: 'Empresa no encontrada.' });
+    }
+    next(err);
+  }
+});
+
 export default router;

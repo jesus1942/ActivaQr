@@ -116,7 +116,8 @@ model Empresa {
   nombre    String
   cuit      String?
   logoUrl   String?
-  plan      Plan          @default(inicial)
+  plan           Plan          @default(inicial)
+  planSolicitado Plan?         // upgrade request from client
   estado    EstadoEmpresa @default(activa)
   creadaEn  DateTime      @default(now())
 
