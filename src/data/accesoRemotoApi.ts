@@ -89,6 +89,10 @@ export async function revocarAccesoCliente(): Promise<void> {
   await parse(await apiFetch('acceso-remoto/solicitud', { method: 'DELETE' }));
 }
 
+export async function getNotificacionesCliente(): Promise<{ mensajesNoLeidos: number; tienePermisoPendiente: boolean }> {
+  return parse(await apiFetch('acceso-remoto/notificaciones'));
+}
+
 export async function getMensajesCliente(): Promise<MensajeRemoto[]> {
   return parse(await apiFetch('acceso-remoto/mensajes'));
 }
