@@ -70,6 +70,14 @@ enum EstadoPermiso {
   revocado
 }
 
+enum TipoParametro {
+  numerico
+  porcentaje
+  booleano
+  texto
+  seleccion
+}
+
 // ---------- Modelos ----------
 
 model PermisoAccesoRemoto {
@@ -125,6 +133,7 @@ model Empresa {
   tecnicos       Tecnico[]
   activos        Activo[]
   permisoAcceso  PermisoAccesoRemoto?
+  categorias     CategoriaEquipo[]
 
   @@index([mpPreapprovalId])
 }
@@ -171,11 +180,48 @@ model Sector {
   @@index([empresaId])
 }
 
+model CategoriaEquipo {
+  id          String  @id @default(uuid())
+  empresaId   String?
+  nombre      String
+  icono       String?
+  descripcion String?
+  orden       Int     @default(0)
+
+  empresa    Empresa?             @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  parametros ParametroCategoria[]
+  tipos      TipoActivo[]
+
+  @@index([empresaId])
+}
+
+model ParametroCategoria {
+  id            String        @id @default(uuid())
+  categoriaId   String
+  nombre        String
+  clave         String
+  unidad        String?
+  tipo          TipoParametro @default(numerico)
+  obligatorio   Boolean       @default(false)
+  orden         Int           @default(0)
+  minNormal     Float?
+  maxNormal     Float?
+  umbralAlerta  Float?
+  umbralCritico Float?
+  umbralUrgente Float?
+  invertido     Boolean       @default(false)
+
+  categoria CategoriaEquipo @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+
+  @@index([categoriaId])
+}
+
 model TipoActivo {
   id               String  @id @default(uuid())
   empresaId        String
   nombre           String
   icono            String?
+  categoriaId      String?
   mideTemperatura  Boolean @default(true)
   mideAmperaje     Boolean @default(false)
   midePresion      Boolean @default(false)
@@ -186,10 +232,12 @@ model TipoActivo {
   mideVoltaje      Boolean @default(false)
   activo           Boolean @default(true)
 
-  empresa Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  activos Activo[]
+  empresa   Empresa          @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  categoria CategoriaEquipo? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+  activos   Activo[]
 
   @@index([empresaId])
+  @@index([categoriaId])
 }
 
 model Tecnico {
@@ -278,9 +326,10 @@ model Medicion {
   porcentajeBateria Int?
   nivelToner        Int?
   contador          Int?
-  estado        EstadoMedicion @default(normal)
-  observaciones String?
-  origen        OrigenMedicion @default(manual)
+  estado          EstadoMedicion @default(normal)
+  observaciones   String?
+  origen          OrigenMedicion @default(manual)
+  parametrosExtra Json?
 
   activo  Activo   @relation(fields: [activoId], references: [id], onDelete: Cascade)
   tecnico Tecnico? @relation(fields: [tecnicoId], references: [id], onDelete: SetNull)
