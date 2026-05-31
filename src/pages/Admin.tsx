@@ -72,15 +72,29 @@ export const Admin: React.FC = () => {
     const monto = prompt(`Monto mensual de la suscripción para "${emp.nombre}" (ARS):`);
     if (!monto) return;
     // En modo prueba MP exige que el payer_email sea de una cuenta MP argentina de prueba.
-    // Dejamos el campo vacío para producción (usa el email real del admin).
     const payerEmailOverride = prompt(
       'Email del comprador para MP (dejá vacío en producción, usá email de cuenta de prueba MP en testing):'
     ) || undefined;
     try {
       const { initPoint } = await generarSuscripcion(emp.id, Number(monto), payerEmailOverride);
       await navigator.clipboard?.writeText(initPoint).catch(() => {});
-      alert('Link de suscripción generado y copiado al portapapeles.\nSe abrirá en una pestaña nueva para que lo revises y se lo pases a la empresa.');
-      window.open(initPoint, '_blank');
+
+      // Abrir WhatsApp Web con el link pre-cargado
+      const telefonoGuardado = (emp as EmpresaAdmin & { telefono?: string }).telefono ?? '';
+      const telefonoRaw = prompt(
+        `Número de WhatsApp de "${emp.nombre}" para enviar el link (ej: 5491112345678).\nDejá vacío para omitir WhatsApp:`,
+        telefonoGuardado
+      );
+      if (telefonoRaw && telefonoRaw.trim()) {
+        const numero = telefonoRaw.trim().replace(/\D/g, '');
+        const mensaje = `Hola! Te enviamos el link para activar tu suscripción en *ActivaQR*:\n\n${initPoint}\n\nCualquier consulta estamos a disposición.`;
+        const waUrl = `https://web.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(mensaje)}`;
+        window.open(waUrl, '_blank');
+      } else {
+        // Si no hay WhatsApp, abre el link directo como antes
+        window.open(initPoint, '_blank');
+      }
+
       cargar();
     } catch (e) {
       alert(e instanceof Error ? e.message : 'No se pudo generar la suscripción.');
