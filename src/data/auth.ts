@@ -13,7 +13,7 @@ export interface UsuarioSesion {
   email: string;
   rol: 'superadmin' | 'admin' | 'operador';
   empresaId: string | null;
-  empresa: { id: string; nombre: string; logoUrl?: string | null; estado?: string; plan?: string } | null;
+  empresa: { id: string; nombre: string; logoUrl?: string | null; estado?: string; plan?: string; mpEstadoSub?: string | null } | null;
 }
 
 export function getToken(): string | null {

@@ -75,9 +75,15 @@ router.post('/empresas', async (req: AuthRequest, res: Response, next: NextFunct
 router.put('/empresas/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { nombre, cuit, plan, estado } = req.body ?? {};
+    // Solo incluir los campos que vienen definidos — nunca pisar con undefined.
+    const data: Record<string, unknown> = {};
+    if (nombre  !== undefined) data.nombre  = nombre;
+    if (cuit    !== undefined) data.cuit    = cuit;
+    if (plan    !== undefined) data.plan    = plan;
+    if (estado  !== undefined) data.estado  = estado;
     const empresa = await prisma.empresa.update({
       where: { id: req.params.id },
-      data: { nombre, cuit, plan, estado },
+      data,
     });
     res.json(empresa);
   } catch (err) {
