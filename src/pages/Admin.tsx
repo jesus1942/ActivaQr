@@ -71,9 +71,13 @@ export const Admin: React.FC = () => {
   const suscribir = async (emp: EmpresaAdmin) => {
     const monto = prompt(`Monto mensual de la suscripción para "${emp.nombre}" (ARS):`);
     if (!monto) return;
+    // En modo prueba MP exige que el payer_email sea de una cuenta MP argentina de prueba.
+    // Dejamos el campo vacío para producción (usa el email real del admin).
+    const payerEmailOverride = prompt(
+      'Email del comprador para MP (dejá vacío en producción, usá email de cuenta de prueba MP en testing):'
+    ) || undefined;
     try {
-      const { initPoint } = await generarSuscripcion(emp.id, Number(monto));
-      // Copiamos el link y lo abrimos para enviárselo a la empresa.
+      const { initPoint } = await generarSuscripcion(emp.id, Number(monto), payerEmailOverride);
       await navigator.clipboard?.writeText(initPoint).catch(() => {});
       alert('Link de suscripción generado y copiado al portapapeles.\nSe abrirá en una pestaña nueva para que lo revises y se lo pases a la empresa.');
       window.open(initPoint, '_blank');

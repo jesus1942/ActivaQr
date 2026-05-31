@@ -128,7 +128,7 @@ router.post('/empresas/:id/suscripcion', async (req: AuthRequest, res: Response,
       });
     }
 
-    const { monto } = req.body ?? {};
+    const { monto, payerEmailOverride } = req.body ?? {};
     const montoNum = Number(monto);
     if (!montoNum || montoNum <= 0) {
       return res.status(400).json({ error: 'Indicá un monto mensual válido.' });
@@ -140,7 +140,10 @@ router.post('/empresas/:id/suscripcion', async (req: AuthRequest, res: Response,
     });
     if (!empresa) return res.status(404).json({ error: 'Empresa no encontrada.' });
 
-    const payerEmail = empresa.usuarios[0]?.email;
+    // En modo prueba (token TEST-) el payer_email debe ser de una cuenta MP
+    // argentina de prueba. El superadmin puede pasarlo manualmente con
+    // payerEmailOverride, o usamos el email real del admin de la empresa.
+    const payerEmail = payerEmailOverride || empresa.usuarios[0]?.email;
     if (!payerEmail) {
       return res.status(400).json({ error: 'La empresa no tiene un administrador con email.' });
     }
@@ -149,6 +152,7 @@ router.post('/empresas/:id/suscripcion', async (req: AuthRequest, res: Response,
 
     const pre = await crearPreapproval({
       empresaId: empresa.id,
+      payerEmail,
       monto: montoNum,
       razon: `Suscripción ActivaQR — ${empresa.nombre}`,
       backUrl,
