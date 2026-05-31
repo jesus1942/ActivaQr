@@ -3,7 +3,8 @@ import bcrypt from 'bcryptjs';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../prisma';
 import { requireAuth, requireSuperadmin, AuthRequest } from '../auth';
-import { crearPreapproval, mpConfigurado } from '../mercadopago';
+import { crearPreapproval, cancelarPreapproval, mpConfigurado } from '../mercadopago';
+import { enviarEmailSuscripcion } from '../email';
 
 const router = Router();
 
@@ -163,7 +164,38 @@ router.post('/empresas/:id/suscripcion', async (req: AuthRequest, res: Response,
       data: { mpPreapprovalId: pre.id, mpEstadoSub: pre.status, mpMonto: montoNum },
     });
 
-    res.json({ initPoint: pre.init_point, preapprovalId: pre.id });
+    // Enviar email con el link de pago (si Resend está configurado)
+    await enviarEmailSuscripcion({
+      destinatario: payerEmail,
+      empresaNombre: empresa.nombre,
+      adminNombre: empresa.usuarios[0]?.nombre ?? '',
+      linkPago: pre.init_point,
+      monto: montoNum,
+    }).catch(() => {}); // silencioso si falla el email
+
+    res.json({ initPoint: pre.init_point, preapprovalId: pre.id, emailEnviado: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/admin/empresas/:id/suscripcion — cancela la suscripción en MP
+router.delete('/empresas/:id/suscripcion', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const empresa = await prisma.empresa.findUnique({ where: { id: req.params.id } });
+    if (!empresa) return res.status(404).json({ error: 'Empresa no encontrada.' });
+    if (!empresa.mpPreapprovalId) return res.status(400).json({ error: 'Esta empresa no tiene suscripción activa.' });
+
+    if (mpConfigurado()) {
+      await cancelarPreapproval(empresa.mpPreapprovalId);
+    }
+
+    await prisma.empresa.update({
+      where: { id: empresa.id },
+      data: { mpEstadoSub: 'cancelled' },
+    });
+
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }

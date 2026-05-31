@@ -8,6 +8,7 @@ import {
   Users,
   Package,
   CreditCard,
+  XCircle,
   X,
 } from 'lucide-react';
 import {
@@ -18,6 +19,7 @@ import {
   eliminarEmpresa,
   resetPassword,
   generarSuscripcion,
+  cancelarSuscripcion,
 } from '../data/adminApi';
 
 const PLANES = ['inicial', 'empresa', 'industrial'] as const;
@@ -27,6 +29,12 @@ export const Admin: React.FC = () => {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [resultadoSub, setResultadoSub] = useState<{
+    empresaNombre: string;
+    link: string;
+    emailEnviado: boolean;
+    waEnviado: boolean;
+  } | null>(null);
 
   const cargar = async () => {
     setCargando(true);
@@ -71,33 +79,47 @@ export const Admin: React.FC = () => {
   const suscribir = async (emp: EmpresaAdmin) => {
     const monto = prompt(`Monto mensual de la suscripción para "${emp.nombre}" (ARS):`);
     if (!monto) return;
-    // En modo prueba MP exige que el payer_email sea de una cuenta MP argentina de prueba.
     const payerEmailOverride = prompt(
       'Email del comprador para MP (dejá vacío en producción, usá email de cuenta de prueba MP en testing):'
     ) || undefined;
     try {
-      const { initPoint } = await generarSuscripcion(emp.id, Number(monto), payerEmailOverride);
+      const res = await generarSuscripcion(emp.id, Number(monto), payerEmailOverride);
+      const initPoint = res.initPoint;
       await navigator.clipboard?.writeText(initPoint).catch(() => {});
 
-      // Abrir WhatsApp Web con el link pre-cargado
-      const telefonoGuardado = (emp as EmpresaAdmin & { telefono?: string }).telefono ?? '';
+      // WhatsApp Web con el link pre-cargado
       const telefonoRaw = prompt(
         `Número de WhatsApp de "${emp.nombre}" para enviar el link (ej: 5491112345678).\nDejá vacío para omitir WhatsApp:`,
-        telefonoGuardado
+        (emp as EmpresaAdmin & { telefono?: string }).telefono ?? ''
       );
+      let waEnviado = false;
       if (telefonoRaw && telefonoRaw.trim()) {
         const numero = telefonoRaw.trim().replace(/\D/g, '');
         const mensaje = `Hola! Te enviamos el link para activar tu suscripción en *ActivaQR*:\n\n${initPoint}\n\nCualquier consulta estamos a disposición.`;
-        const waUrl = `https://web.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(mensaje)}`;
-        window.open(waUrl, '_blank');
-      } else {
-        // Si no hay WhatsApp, abre el link directo como antes
-        window.open(initPoint, '_blank');
+        window.open(`https://web.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(mensaje)}`, '_blank');
+        waEnviado = true;
       }
+
+      setResultadoSub({
+        empresaNombre: emp.nombre,
+        link: initPoint,
+        emailEnviado: !!(res as { emailEnviado?: boolean }).emailEnviado,
+        waEnviado,
+      });
 
       cargar();
     } catch (e) {
       alert(e instanceof Error ? e.message : 'No se pudo generar la suscripción.');
+    }
+  };
+
+  const cancelar = async (emp: EmpresaAdmin) => {
+    if (!confirm(`¿Cancelar la suscripción de "${emp.nombre}"?\nEsto la dará de baja en Mercado Pago.`)) return;
+    try {
+      await cancelarSuscripcion(emp.id);
+      cargar();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'No se pudo cancelar la suscripción.');
     }
   };
 
@@ -197,6 +219,15 @@ export const Admin: React.FC = () => {
                 >
                   <CreditCard size={14} />
                 </button>
+                {emp.mpPreapprovalId && emp.mpEstadoSub !== 'cancelled' && (
+                  <button
+                    onClick={() => cancelar(emp)}
+                    title="Cancelar suscripción"
+                    className="border-2 border-red-200 text-red-500 p-2 hover:border-red-600 hover:text-red-700 transition-colors"
+                  >
+                    <XCircle size={14} />
+                  </button>
+                )}
                 <button
                   onClick={() => resetear(emp)}
                   title="Resetear contraseña"
@@ -224,6 +255,16 @@ export const Admin: React.FC = () => {
             setModalAbierto(false);
             cargar();
           }}
+        />
+      )}
+
+      {resultadoSub && (
+        <ModalResultadoSuscripcion
+          empresaNombre={resultadoSub.empresaNombre}
+          link={resultadoSub.link}
+          emailEnviado={resultadoSub.emailEnviado}
+          waEnviado={resultadoSub.waEnviado}
+          onClose={() => setResultadoSub(null)}
         />
       )}
     </div>
@@ -352,6 +393,81 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
   );
 };
 
+const ModalResultadoSuscripcion: React.FC<{
+  empresaNombre: string;
+  link: string;
+  emailEnviado: boolean;
+  waEnviado: boolean;
+  onClose: () => void;
+}> = ({ empresaNombre, link, emailEnviado, waEnviado, onClose }) => (
+  <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+    <div className="bg-white border-2 border-slate-900 shadow-[6px_6px_0px_0px_#1e293b] w-full max-w-md">
+      <div className="flex items-center justify-between border-b-2 border-slate-900 px-5 py-3 bg-slate-900 text-white">
+        <h2 className="font-sketch font-black text-lg uppercase tracking-wide flex items-center gap-2">
+          <CreditCard size={18} /> Link generado
+        </h2>
+        <button onClick={onClose}><X size={20} /></button>
+      </div>
+
+      <div className="p-5 space-y-4">
+        <p className="text-sm text-slate-700">
+          El link de suscripción para <strong>{empresaNombre}</strong> fue generado y copiado al portapapeles.
+        </p>
+
+        {/* Estado de envíos */}
+        <div className="border-2 border-slate-200 divide-y-2 divide-slate-200">
+          <div className="flex items-center gap-3 px-4 py-3">
+            <span className={`w-5 h-5 flex items-center justify-center text-xs font-black border-2 ${waEnviado ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-slate-100 border-slate-300 text-slate-400'}`}>
+              {waEnviado ? '✓' : '–'}
+            </span>
+            <span className="text-sm font-semibold text-slate-700">
+              WhatsApp Web {waEnviado ? 'abierto con mensaje listo' : 'no enviado'}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 px-4 py-3">
+            <span className={`w-5 h-5 flex items-center justify-center text-xs font-black border-2 ${emailEnviado ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-amber-50 border-amber-300 text-amber-600'}`}>
+              {emailEnviado ? '✓' : '!'}
+            </span>
+            <span className="text-sm font-semibold text-slate-700">
+              {emailEnviado
+                ? 'Email enviado automáticamente'
+                : 'Email no enviado (RESEND_API_KEY no configurada)'}
+            </span>
+          </div>
+        </div>
+
+        {/* Link copiable */}
+        <div>
+          <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-1">Link de pago</p>
+          <div className="flex gap-2">
+            <input
+              readOnly
+              value={link}
+              className="flex-1 border-2 border-slate-300 px-3 py-2 text-xs font-mono truncate outline-none"
+              onFocus={(e) => e.target.select()}
+            />
+            <button
+              onClick={() => navigator.clipboard?.writeText(link)}
+              className="border-2 border-slate-900 px-3 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 transition-colors whitespace-nowrap"
+            >
+              Copiar
+            </button>
+          </div>
+        </div>
+
+        <div className="flex justify-end pt-2">
+          <button
+            onClick={onClose}
+            className="px-5 py-2 bg-orange-500 text-white border-2 border-slate-900 font-black uppercase tracking-wide shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
+          >
+            Listo
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 const Campo: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <div className="mb-2">
     <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
@@ -360,3 +476,4 @@ const Campo: React.FC<{ label: string; children: React.ReactNode }> = ({ label, 
     {children}
   </div>
 );
+

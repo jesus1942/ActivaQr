@@ -76,3 +76,16 @@ export async function obtenerPreapproval(id: string): Promise<PreapprovalInfo> {
   }
   return data as PreapprovalInfo;
 }
+
+/** Cancela una suscripción activa en Mercado Pago. */
+export async function cancelarPreapproval(id: string): Promise<void> {
+  const res = await fetch(`${MP_API}/preapproval/${id}`, {
+    method: 'PUT',
+    headers: headers(),
+    body: JSON.stringify({ status: 'cancelled' }),
+  });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))).message || 'No se pudo cancelar la suscripción en Mercado Pago.';
+    throw new Error(data);
+  }
+}

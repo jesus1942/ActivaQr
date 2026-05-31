@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Plus, Pencil, Trash2, RotateCcw, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, RotateCcw, Check, AlertTriangle } from 'lucide-react';
 import { useActivos } from '../hooks/useActivos';
 import { Sector, TipoActivo, Tecnico } from '../data/types';
+import { cancelarMiSuscripcion } from '../data/adminApi';
 
 type Tab = 'sectores' | 'tipos' | 'tecnicos';
 
@@ -69,6 +70,8 @@ export const Configuracion: React.FC = () => {
           deleteTecnico={deleteTecnico}
         />
       )}
+
+      <SeccionSuscripcion />
     </div>
   );
 };
@@ -383,6 +386,86 @@ const TecnicosSection: React.FC<TecnicosProps> = ({ tecnicos, addTecnico, update
           </Card>
         ))}
       </div>
+    </div>
+  );
+};
+
+const SeccionSuscripcion: React.FC = () => {
+  const [confirmando, setConfirmando] = useState(false);
+  const [cargando, setCargando] = useState(false);
+  const [cancelada, setCancelada] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleCancelar = async () => {
+    setCargando(true);
+    setError(null);
+    try {
+      await cancelarMiSuscripcion();
+      setCancelada(true);
+      setConfirmando(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al cancelar la suscripción.');
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  return (
+    <div className="mt-10 border-t-2 border-slate-200 pt-8">
+      <h2 className="font-sketch font-black text-xl uppercase tracking-tight text-slate-800 mb-1">
+        Suscripción
+      </h2>
+      <p className="text-sm text-slate-500 mb-4">
+        Gestioná tu suscripción activa a ActivaQR.
+      </p>
+
+      {cancelada ? (
+        <div className="border-2 border-emerald-400 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+          Tu suscripción fue cancelada. Los débitos automáticos se detendrán en el próximo ciclo.
+        </div>
+      ) : (
+        <>
+          {error && (
+            <div className="border-2 border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 mb-3">
+              {error}
+            </div>
+          )}
+
+          {!confirmando ? (
+            <button
+              onClick={() => setConfirmando(true)}
+              className="flex items-center gap-2 border-2 border-red-300 text-red-600 px-4 py-2 text-sm font-bold hover:border-red-600 hover:bg-red-50 transition-colors"
+            >
+              <AlertTriangle size={16} />
+              Cancelar mi suscripción
+            </button>
+          ) : (
+            <div className="border-2 border-red-400 bg-red-50 p-4 space-y-3 max-w-md">
+              <p className="text-sm font-black text-red-700 uppercase tracking-wide flex items-center gap-2">
+                <AlertTriangle size={16} /> Confirmá la cancelación
+              </p>
+              <p className="text-sm text-red-600">
+                Esto dará de baja tu suscripción en Mercado Pago. Los débitos automáticos se detendrán. ¿Estás seguro?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCancelar}
+                  disabled={cargando}
+                  className="px-4 py-2 bg-red-600 text-white border-2 border-red-800 font-bold text-sm disabled:opacity-50"
+                >
+                  {cargando ? 'Cancelando...' : 'Sí, cancelar suscripción'}
+                </button>
+                <button
+                  onClick={() => { setConfirmando(false); setError(null); }}
+                  className="px-4 py-2 border-2 border-slate-400 font-bold text-sm text-slate-600"
+                >
+                  No, volver
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };

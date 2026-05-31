@@ -1,6 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../prisma';
+import { requireAuth, AuthRequest } from '../auth';
+import { cancelarPreapproval, mpConfigurado } from '../mercadopago';
 
 const router = Router();
 
@@ -54,6 +56,31 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
       return res.status(404).json({ error: 'Empresa no encontrada' });
     }
+    next(err);
+  }
+});
+
+// DELETE /api/empresas/mi-suscripcion — el propio admin del tenant cancela su suscripción
+router.delete('/mi-suscripcion', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const empresaId = req.auth?.empresaId;
+    if (!empresaId) return res.status(403).json({ error: 'No tenés empresa asociada.' });
+
+    const empresa = await prisma.empresa.findUnique({ where: { id: empresaId } });
+    if (!empresa) return res.status(404).json({ error: 'Empresa no encontrada.' });
+    if (!empresa.mpPreapprovalId) return res.status(400).json({ error: 'No tenés suscripción activa.' });
+
+    if (mpConfigurado()) {
+      await cancelarPreapproval(empresa.mpPreapprovalId);
+    }
+
+    await prisma.empresa.update({
+      where: { id: empresaId },
+      data: { mpEstadoSub: 'cancelled' },
+    });
+
+    res.json({ ok: true });
+  } catch (err) {
     next(err);
   }
 });

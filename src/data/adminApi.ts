@@ -7,6 +7,7 @@ export interface EmpresaAdmin {
   plan: 'inicial' | 'empresa' | 'industrial';
   estado: 'activa' | 'suspendida';
   creadaEn: string;
+  mpPreapprovalId?: string | null;
   mpEstadoSub?: string | null;
   mpMonto?: number | null;
   mpUltimoPago?: string | null;
@@ -53,6 +54,15 @@ export async function resetPassword(id: string, password: string): Promise<void>
       body: JSON.stringify({ password }),
     })
   );
+}
+
+export async function cancelarSuscripcion(id: string): Promise<void> {
+  await parse(await apiFetch(`admin/empresas/${id}/suscripcion`, { method: 'DELETE' }));
+}
+
+/** El cliente cancela su propia suscripción (no requiere ser superadmin). */
+export async function cancelarMiSuscripcion(): Promise<void> {
+  await parse(await apiFetch('empresas/mi-suscripcion', { method: 'DELETE' }));
 }
 
 export async function generarSuscripcion(
