@@ -29,7 +29,6 @@ export interface PreapprovalCreado {
  */
 export async function crearPreapproval(params: {
   empresaId: string;
-  payerEmail: string;
   monto: number;
   razon: string;
   backUrl: string;
@@ -40,7 +39,6 @@ export async function crearPreapproval(params: {
     body: JSON.stringify({
       reason: params.razon,
       external_reference: params.empresaId,
-      payer_email: params.payerEmail,
       back_url: params.backUrl,
       status: 'pending',
       auto_recurring: {
