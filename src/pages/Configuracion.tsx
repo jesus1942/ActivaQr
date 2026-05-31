@@ -1,9 +1,15 @@
-import React, { useState } from 'react';
-import { Plus, Pencil, Trash2, RotateCcw, Check, AlertTriangle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Plus, Pencil, Trash2, RotateCcw, Check, AlertTriangle, MessageSquare, ShieldCheck, ShieldOff } from 'lucide-react';
 import { useActivos } from '../hooks/useActivos';
 import { useAuth } from '../context/AuthContext';
 import { Sector, TipoActivo, Tecnico } from '../data/types';
 import { cancelarMiSuscripcion } from '../data/adminApi';
+import {
+  PermisoAcceso, MensajeRemoto,
+  getSolicitudCliente, revocarAccesoCliente,
+  getMensajesCliente, enviarMensajeCliente,
+} from '../data/accesoRemotoApi';
+import { ChatRemoto } from '../components/ChatRemoto';
 
 type Tab = 'sectores' | 'tipos' | 'tecnicos';
 
@@ -77,6 +83,7 @@ export const Configuracion: React.FC = () => {
       )}
 
       {tieneSubActiva && <SeccionSuscripcion />}
+      <SeccionAccesoRemoto />
     </div>
   );
 };
@@ -470,6 +477,111 @@ const SeccionSuscripcion: React.FC = () => {
             </div>
           )}
         </>
+      )}
+    </div>
+  );
+};
+
+const SeccionAccesoRemoto: React.FC = () => {
+  const { usuario } = useAuth();
+  const plan = usuario?.empresa?.plan ?? 'inicial';
+  const [permiso, setPermiso] = useState<PermisoAcceso | null>(null);
+  const [mensajes, setMensajes] = useState<MensajeRemoto[]>([]);
+  const [mostrarChat, setMostrarChat] = useState(false);
+  const [cargando, setCargando] = useState(true);
+  const [revocar, setRevocar] = useState(false);
+
+  const planesConAcceso = ['empresa', 'industrial'];
+  if (!planesConAcceso.includes(plan)) return null;
+
+  useEffect(() => {
+    getSolicitudCliente()
+      .then(setPermiso)
+      .catch(() => {})
+      .finally(() => setCargando(false));
+  }, []);
+
+  useEffect(() => {
+    if (!mostrarChat || permiso?.estado !== 'activo') return;
+    getMensajesCliente().then(setMensajes).catch(() => {});
+    const iv = setInterval(() => {
+      getMensajesCliente().then(setMensajes).catch(() => {});
+    }, 8000);
+    return () => clearInterval(iv);
+  }, [mostrarChat, permiso?.estado]);
+
+  const handleRevocar = async () => {
+    await revocarAccesoCliente();
+    setPermiso((p) => p ? { ...p, estado: 'revocado' } : p);
+    setRevocar(false);
+  };
+
+  if (cargando) return null;
+  if (!permiso || permiso.estado === 'revocado') return null;
+
+  return (
+    <div className="mt-10 border-t-2 border-slate-200 pt-8">
+      <h2 className="font-sketch font-black text-xl uppercase tracking-tight text-slate-800 mb-1 flex items-center gap-2">
+        <ShieldCheck size={20} className="text-orange-500" /> Acceso remoto de soporte
+      </h2>
+
+      {permiso.estado === 'pendiente' && (
+        <div className="border-2 border-amber-400 bg-amber-50 p-4 max-w-md space-y-3">
+          <p className="text-sm font-black text-amber-700 uppercase tracking-wide">Solicitud pendiente</p>
+          <p className="text-sm text-amber-700 leading-relaxed">
+            El equipo de ActivaQR solicitó acceso remoto a tus activos para brindarte soporte.
+            {permiso.costoMensual ? ` Costo adicional: $${permiso.costoMensual.toLocaleString('es-AR')}/mes.` : ''}
+          </p>
+          <p className="text-xs text-amber-600">Si recibiste el link por email, hacé click en "Aprobar acceso" en ese email.</p>
+        </div>
+      )}
+
+      {permiso.estado === 'activo' && (
+        <div className="space-y-4 max-w-lg">
+          <div className="border-2 border-emerald-400 bg-emerald-50 px-4 py-3 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-black text-emerald-700 uppercase tracking-wide flex items-center gap-1">
+                <ShieldCheck size={14} /> Acceso activo
+              </p>
+              <p className="text-xs text-emerald-600 mt-0.5">
+                El soporte de ActivaQR puede ver tus activos y mediciones.
+                {permiso.costoMensual ? ` $${permiso.costoMensual.toLocaleString('es-AR')}/mes.` : ''}
+              </p>
+            </div>
+            {!revocar ? (
+              <button
+                onClick={() => setRevocar(true)}
+                className="flex items-center gap-1 text-xs font-bold text-red-600 border-2 border-red-300 px-3 py-2 hover:border-red-600 transition-colors whitespace-nowrap"
+              >
+                <ShieldOff size={13} /> Revocar
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <button onClick={handleRevocar} className="text-xs font-bold bg-red-600 text-white border-2 border-red-800 px-3 py-2">Confirmar</button>
+                <button onClick={() => setRevocar(false)} className="text-xs font-bold border-2 border-slate-300 px-3 py-2">No</button>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => setMostrarChat((v) => !v)}
+            className="flex items-center gap-2 text-sm font-bold border-2 border-slate-900 px-4 py-2 hover:bg-slate-50 transition-colors"
+          >
+            <MessageSquare size={16} />
+            {mostrarChat ? 'Ocultar chat' : 'Abrir chat con soporte'}
+          </button>
+
+          {mostrarChat && (
+            <ChatRemoto
+              mensajes={mensajes}
+              miRol="cliente"
+              onEnviar={async (c) => {
+                const m = await enviarMensajeCliente(c);
+                setMensajes((prev) => [...prev, m]);
+              }}
+            />
+          )}
+        </div>
       )}
     </div>
   );

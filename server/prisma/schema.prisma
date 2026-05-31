@@ -64,7 +64,44 @@ enum EstadoTarea {
   vencido
 }
 
+enum EstadoPermiso {
+  pendiente
+  activo
+  revocado
+}
+
 // ---------- Modelos ----------
+
+model PermisoAccesoRemoto {
+  id           String        @id @default(uuid())
+  empresaId    String        @unique   // una empresa, un permiso activo a la vez
+  token        String        @unique   // token del link de aprobación
+  estado       EstadoPermiso @default(pendiente)
+  solicitadoEn DateTime      @default(now())
+  otorgadoEn   DateTime?
+  revocadoEn   DateTime?
+  // Costo adicional facturado por este servicio
+  costoMensual Float?
+
+  empresa   Empresa          @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  mensajes  MensajeRemoto[]
+
+  @@index([token])
+}
+
+model MensajeRemoto {
+  id        String   @id @default(uuid())
+  permisoId String
+  autorRol  String   // 'superadmin' | 'cliente'
+  autorNombre String
+  contenido String
+  creadoEn  DateTime @default(now())
+  leido     Boolean  @default(false)
+
+  permiso PermisoAccesoRemoto @relation(fields: [permisoId], references: [id], onDelete: Cascade)
+
+  @@index([permisoId])
+}
 
 model Empresa {
   id        String        @id @default(uuid())
@@ -81,12 +118,13 @@ model Empresa {
   mpMonto         Float?    // monto mensual acordado
   mpUltimoPago    DateTime? // fecha del último pago aprobado
 
-  usuarios Usuario[]
-  sedes    Sede[]
-  sectores Sector[]
-  tipos    TipoActivo[]
-  tecnicos Tecnico[]
-  activos  Activo[]
+  usuarios       Usuario[]
+  sedes          Sede[]
+  sectores       Sector[]
+  tipos          TipoActivo[]
+  tecnicos       Tecnico[]
+  activos        Activo[]
+  permisoAcceso  PermisoAccesoRemoto?
 
   @@index([mpPreapprovalId])
 }

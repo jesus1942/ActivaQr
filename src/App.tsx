@@ -12,6 +12,7 @@ import { Configuracion } from './pages/Configuracion';
 import { Admin } from './pages/Admin';
 import { Login } from './pages/Login';
 import { FichaPublica } from './pages/FichaPublica';
+import { AprobarAccesoRemoto } from './pages/AprobarAccesoRemoto';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 function PantallaBloqueo() {
@@ -63,6 +64,8 @@ function AppRoutes() {
       <Routes>
         {/* Ficha pública de activo (para QR, sin login) */}
         <Route path="/ficha/:id" element={<FichaPublica />} />
+        {/* Aprobación de acceso remoto (sin login) */}
+        <Route path="/acceso-remoto/aprobar/:token" element={<AprobarAccesoRemoto />} />
 
         <Route path="/" element={<Layout />}>
           {esSuperadmin ? (

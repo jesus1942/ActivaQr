@@ -15,6 +15,7 @@ import tareasRouter from './routes/tareas';
 import syncRouter from './routes/sync';
 import webhooksRouter from './routes/webhooks';
 import publicRouter from './routes/public';
+import accesoRemotoRouter from './routes/accesoRemoto';
 import { requireAuth, requireAuthAndActiveEmpresa } from './auth';
 
 const app = express();
@@ -41,9 +42,14 @@ app.use('/api/webhooks', webhooksRouter);
 // Rutas públicas (sin auth): fichas técnicas para QR.
 app.use('/api/public', publicRouter);
 
+// Acceso remoto: rutas de admin van dentro de /api/admin (ver accesoRemotoRouter)
+// Rutas del cliente para acceso remoto.
+app.use('/api/acceso-remoto', accesoRemotoRouter);
+
 // Autenticación y administración.
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/admin', accesoRemotoRouter);
 
 // Rutas de datos: requieren token válido + empresa activa.
 // requireAuthAndActiveEmpresa verifica el estado en DB en cada request —

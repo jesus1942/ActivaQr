@@ -146,3 +146,50 @@ export async function enviarEmailSuscripcion(params: {
     html: plantillaSuscripcion(params),
   });
 }
+
+export async function enviarEmailAccesoRemoto(params: {
+  destinatario: string;
+  empresaNombre: string;
+  adminNombre: string;
+  linkAprobacion: string;
+  costoMensual: number | null;
+}): Promise<void> {
+  if (!emailConfigurado()) return;
+  const resend = getResend();
+  const from = process.env.RESEND_FROM || 'ActivaQR <noreply@activaqr.com>';
+  const costoTexto = params.costoMensual
+    ? `<p style="margin:0 0 20px;font-size:13px;color:#475569;">Este servicio tiene un costo adicional de <strong style="color:#0f172a;">$${params.costoMensual.toLocaleString('es-AR')} ARS/mes</strong> que se sumará a tu suscripción.</p>`
+    : '';
+  await resend.emails.send({
+    from,
+    to: params.destinatario,
+    subject: `Solicitud de acceso remoto — ActivaQR`,
+    html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;">
+<tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
+<tr><td style="background:#0f172a;padding:24px 32px;border:3px solid #0f172a;border-bottom:none;">
+  <span style="font-size:22px;font-weight:900;color:#f97316;text-transform:uppercase;letter-spacing:2px;">ActivaQR</span>
+</td></tr>
+<tr><td style="background:#fff;border:3px solid #0f172a;border-top:none;padding:32px;">
+  <p style="margin:0 0 8px;font-size:12px;font-weight:800;color:#f97316;text-transform:uppercase;letter-spacing:1px;">Solicitud de soporte remoto</p>
+  <h1 style="margin:0 0 20px;font-size:24px;font-weight:900;color:#0f172a;">Hola${params.adminNombre ? `, ${params.adminNombre}` : ''}!</h1>
+  <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">El equipo de <strong>ActivaQR</strong> está solicitando acceso remoto a los activos de <strong style="color:#0f172a;">${params.empresaNombre}</strong> para brindarte soporte técnico.</p>
+  ${costoTexto}
+  <p style="margin:0 0 8px;font-size:14px;color:#475569;">Si aprobás el acceso, el equipo de soporte podrá <strong>ver tus activos, mediciones y comunicarse con vos</strong> directamente desde la plataforma.</p>
+  <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+  <tr><td>
+    <a href="${params.linkAprobacion}" style="display:inline-block;background:#f97316;color:#fff;font-size:15px;font-weight:900;text-decoration:none;text-transform:uppercase;letter-spacing:1px;padding:14px 28px;border:3px solid #0f172a;box-shadow:4px 4px 0px #0f172a;">
+      Aprobar acceso →
+    </a>
+  </td></tr></table>
+  <p style="margin:0;font-size:12px;color:#94a3b8;">Si no solicitaste soporte, ignorá este email. Podés revocar el acceso en cualquier momento desde Configuración → Acceso remoto.</p>
+</td></tr>
+<tr><td style="background:#0f172a;padding:16px 32px;border:3px solid #0f172a;border-top:none;">
+  <p style="margin:0;font-size:11px;color:#475569;text-align:center;">© ${new Date().getFullYear()} ActivaQR</p>
+</td></tr>
+</table></td></tr></table>
+</body></html>`,
+  });
+}
