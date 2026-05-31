@@ -138,6 +138,9 @@ export const Medicion: React.FC = () => {
 
   return (
     <div className="max-w-lg mx-auto pb-24">
+      {escaneando && (
+        <QrScanner onResult={onEscaneo} onClose={() => setEscaneando(false)} />
+      )}
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <button onClick={() => navigate(-1)} className="border-2 border-slate-300 p-2 hover:border-slate-800 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
@@ -161,6 +164,14 @@ export const Medicion: React.FC = () => {
                 className="flex-1 outline-none text-xl font-mono uppercase bg-transparent"
               />
             </div>
+            <button
+              onClick={() => setEscaneando(true)}
+              title="Escanear QR"
+              className="flex items-center justify-center gap-2 bg-slate-900 text-white px-4 h-14 font-sketch font-bold uppercase border-2 border-slate-900 shadow-[3px_3px_0px_0px_#f97316] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all"
+            >
+              <Camera size={20} />
+              <span className="hidden sm:inline">Escanear</span>
+            </button>
           </div>
           {searchCodigo && !activo && (
             <p className="text-red-500 text-sm mt-1 font-semibold">Activo no encontrado</p>
