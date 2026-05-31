@@ -24,6 +24,7 @@ import {
   seedTipos,
   seedTecnicos,
 } from './seed';
+import { authHeaders } from './auth';
 
 export type { Activo, Medicion, TareaMantenimiento, Sector, TipoActivo, Tecnico } from './types';
 
@@ -66,7 +67,7 @@ function write<T>(key: string, value: T): void {
 
 async function apiGet<T>(path: string): Promise<T[]> {
   try {
-    const res = await fetch(`${API_URL}/${path}`);
+    const res = await fetch(`${API_URL}/${path}`, { headers: { ...authHeaders() } });
     if (!res.ok) throw new Error(`GET ${path} → ${res.status}`);
     return (await res.json()) as T[];
   } catch (e) {
@@ -79,7 +80,7 @@ async function apiSync<T>(entidad: string, data: T[]): Promise<void> {
   try {
     const res = await fetch(`${API_URL}/sync/${entidad}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify(data),
     });
     if (!res.ok) throw new Error(`SYNC ${entidad} → ${res.status}`);

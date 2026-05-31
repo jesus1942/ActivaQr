@@ -9,14 +9,17 @@ import {
   Upload,
   QrCode,
   Settings,
+  Building2,
+  LogOut,
   Menu,
   X,
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const LOGO_LIGHT = '/ActivaQr/company-logo-hd.png';   // negro, para fondo claro
 const LOGO_DARK  = '/ActivaQr/company-logo1.png';      // claro, para fondo oscuro (sidebar navy)
 
-const navItems = [
+const navEmpresa = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/activos', icon: Package, label: 'Activos' },
   { to: '/medicion', icon: ClipboardList, label: 'Mediciones' },
@@ -27,9 +30,16 @@ const navItems = [
   { to: '/configuracion', icon: Settings, label: 'Configuración' },
 ];
 
+const navSuperadmin = [
+  { to: '/', icon: Building2, label: 'Empresas' },
+];
+
 export const Sidebar: React.FC = () => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const { usuario, logout } = useAuth();
+
+  const navItems = usuario?.rol === 'superadmin' ? navSuperadmin : navEmpresa;
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-slate-900 text-white">
@@ -63,8 +73,25 @@ export const Sidebar: React.FC = () => {
 
       {/* Footer */}
       <div className="px-5 py-4 border-t-2 border-slate-700">
-        <div className="text-slate-500 text-xs font-mono">Planta Patagónica S.A.</div>
-        <div className="text-slate-600 text-xs font-mono">v1.0.0</div>
+        {usuario ? (
+          <>
+            <div className="text-white text-sm font-semibold truncate">
+              {usuario.empresa?.nombre ?? (usuario.rol === 'superadmin' ? 'ActivaQR · Admin' : usuario.nombre)}
+            </div>
+            <div className="text-slate-400 text-xs font-mono truncate">{usuario.email}</div>
+            <button
+              onClick={logout}
+              className="mt-2 flex items-center gap-2 text-slate-300 hover:text-white text-sm font-semibold"
+            >
+              <LogOut size={16} /> Cerrar sesión
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="text-slate-500 text-xs font-mono">Modo demo (local)</div>
+            <div className="text-slate-600 text-xs font-mono">v1.0.0</div>
+          </>
+        )}
       </div>
     </div>
   );
