@@ -4,7 +4,13 @@
  * Sin emojis. El formulario de contacto postea a /api/leads.
  */
 
-export function renderLanding(appUrl: string): string {
+export function renderLanding(appUrl: string, whatsapp?: string): string {
+  // whatsapp: numero en formato internacional sin signos (ej: 5491112345678)
+  const wa = (whatsapp || '').replace(/\D/g, '');
+  const waMsg = encodeURIComponent('Hola! Vi ActivaQR y quiero conocer mas sobre la app.');
+  const botonWhatsapp = wa
+    ? `<a class="btn btn-negro" href="https://wa.me/${wa}?text=${waMsg}" target="_blank" rel="noopener">Escribinos por WhatsApp</a>`
+    : '';
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -118,6 +124,7 @@ export function renderLanding(appUrl: string): string {
     <div class="links">
       <a class="nav-link" href="#features">Funciones</a>
       <a class="nav-link" href="#categorias">Rubros</a>
+      <a class="nav-link" href="#historia">Historia</a>
       <a class="nav-link" href="#planes">Planes</a>
       <a class="btn btn-naranja" href="${appUrl}" target="_blank" rel="noopener">Ingresar</a>
     </div>
@@ -231,6 +238,18 @@ export function renderLanding(appUrl: string): string {
   </div>
 </section>
 
+<section id="historia" style="background:#0f172a;border-top:3px solid #0f172a;border-bottom:3px solid #0f172a;padding:64px 0;">
+  <div class="wrap" style="max-width:760px;margin:0 auto;">
+    <p style="font-size:12px;font-weight:800;color:#f97316;text-transform:uppercase;letter-spacing:2px;margin:0 0 12px;">La historia detras de ActivaQR</p>
+    <h2 style="font-size:clamp(26px,4vw,36px);font-weight:900;color:#fff;margin:0 0 24px;line-height:1.15;">Naci&oacute; en casa, resolviendo un problema real.</h2>
+    <div style="font-size:16px;color:#cbd5e1;line-height:1.7;">
+      <p style="margin:0 0 18px;">No vengo de una gran empresa de software. Soy autodidacta: aprend&iacute; a programar resolviendo problemas concretos de la vida cotidiana, esos que uno vive todos los d&iacute;as y que nadie termina de solucionar bien.</p>
+      <p style="margin:0 0 18px;">ActivaQR empez&oacute; con una idea simple que surgi&oacute; en casa: proteger los equipos con los que trabajo a diario. Saber en qu&eacute; estado est&aacute;n, cu&aacute;ndo necesitan mantenimiento, y poder identificarlos al instante con solo escanear un c&oacute;digo. Que cualquiera que pase al lado de una m&aacute;quina sepa qu&eacute; es y c&oacute;mo est&aacute;, sin papeles ni planillas perdidas.</p>
+      <p style="margin:0;">De esa necesidad real, entre el taller y el teclado, naci&oacute; esta plataforma. Hoy la comparto con vos porque creo que el mismo problema que ten&iacute;a yo, lo tienen muchos.</p>
+    </div>
+  </div>
+</section>
+
 <section id="planes">
   <div class="wrap">
     <h2 class="titulo">Planes</h2>
@@ -295,6 +314,7 @@ export function renderLanding(appUrl: string): string {
         <button type="submit" class="btn btn-naranja" id="leadBtn">Solicitar acceso</button>
         <div class="form-msg" id="leadMsg"></div>
       </form>
+      ${botonWhatsapp ? `<div style="margin-top:16px;text-align:center;">${botonWhatsapp}</div>` : ''}
     </div>
   </div>
 </section>
