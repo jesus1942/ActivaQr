@@ -17,6 +17,7 @@ import tareasRouter from './routes/tareas';
 import syncRouter from './routes/sync';
 import webhooksRouter from './routes/webhooks';
 import publicRouter from './routes/public';
+import visitasRouter, { registrarVisita } from './routes/visitas';
 import accesoRemotoRouter from './routes/accesoRemoto';
 import categoriasRouter, { adminCategoriasRouter } from './routes/categorias';
 import suscripcionRouter from './routes/suscripcion';
@@ -53,7 +54,9 @@ app.use(express.json({ limit: '10mb' }));
 
 // Landing pública en la raíz.
 const APP_PUBLIC_URL = process.env.APP_PUBLIC_URL || 'https://jesus1942.github.io/ActivaQr/';
-app.get('/', (_req, res) => {
+app.get('/', (req, res) => {
+  // Registrar visita a la landing (fire-and-forget, nunca demora la página).
+  registrarVisita(req, 'landing').catch(() => {});
   res.set('Content-Type', 'text/html; charset=utf-8');
   res.send(renderLanding(APP_PUBLIC_URL, process.env.WHATSAPP_NUMERO || '5492804018359'));
 });
@@ -88,6 +91,9 @@ app.use('/api/webhooks', webhooksRouter);
 
 // Rutas públicas (sin auth): fichas técnicas para QR.
 app.use('/api/public', publicRouter);
+
+// Analítica propia de visitas (sin auth: la landing y las fichas públicas la llaman).
+app.use('/api/visitas', visitasRouter);
 
 // Acceso remoto: rutas de admin van dentro de /api/admin (ver accesoRemotoRouter)
 // Rutas del cliente para acceso remoto.

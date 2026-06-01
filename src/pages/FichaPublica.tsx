@@ -1,5 +1,5 @@
 // v1.1.0
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { API_URL, getToken, getUsuario } from '../data/auth';
 import { EstadoOperativoBadge } from '../components/ui/EstadoOperativoBadge';
@@ -53,6 +53,7 @@ export const FichaPublica: React.FC = () => {
   const [activo, setActivo] = useState<FichaActivo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
+  const visitaRegistrada = useRef(false);
 
   // Detectar si hay un usuario logueado que pertenece a la misma empresa
   const usuarioLogueado = getToken() ? getUsuario() : null;
@@ -69,7 +70,18 @@ export const FichaPublica: React.FC = () => {
       .then((r) => r.json())
       .then((data) => {
         if (data?.error) setError(data.error);
-        else setActivo(data);
+        else {
+          setActivo(data);
+          // Registrar visita a la ficha (una sola vez por montaje, fire-and-forget).
+          if (!visitaRegistrada.current) {
+            visitaRegistrada.current = true;
+            fetch(`${API_URL}/visitas`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ tipo: 'ficha', activoId: id }),
+            }).catch(() => {});
+          }
+        }
       })
       .catch(() => setError('No se pudo cargar la ficha del activo.'))
       .finally(() => setCargando(false));
