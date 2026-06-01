@@ -1,160 +1,329 @@
-# ActivaQR — Activos bajo control
+# ActivaQR
 
-> *"Cada máquina con su historia, cada mantenimiento con evidencia, cada falla antes de que suceda."*
+```
+ █████╗  ██████╗████████╗██╗██╗   ██╗ █████╗  ██████╗ ██████╗
+██╔══██╗██╔════╝╚══██╔══╝██║██║   ██║██╔══██╗██╔═══██╗██╔══██╗
+███████║██║        ██║   ██║██║   ██║███████║██║   ██║██████╔╝
+██╔══██║██║        ██║   ██║╚██╗ ██╔╝██╔══██║██║▄▄ ██║██╔══██╗
+██║  ██║╚██████╗   ██║   ██║ ╚████╔╝ ██║  ██║╚██████╔╝██║  ██║
+╚═╝  ╚═╝ ╚═════╝   ╚═╝   ╚═╝  ╚═══╝  ╚═╝  ╚═╝ ╚══▀▀═╝ ╚═╝  ╚═╝
+```
 
----
-
-## ¿De qué se trata?
-
-ActivaQR nació de una idea simple: **las empresas no saben exactamente qué equipos tienen, en qué estado están, cuándo se revisaron por última vez ni qué pieza está por fallar.**
-
-Y eso cuesta plata. Una máquina parada puede costar mucho más que haberla revisado a tiempo.
-
-La idea es esta: le generás a cada activo de tu empresa — desde un motor de hormigonera hasta el equipo más sofisticado — una ficha propia con su código QR. El técnico escanea el QR en campo, carga los valores que correspondan (temperatura, amperaje, presión, vibración, observaciones, fotos), y la app hace el resto: historial, alertas, reportes y avisos de mantenimiento antes de que algo te explote o te pare la producción.
-
-No reemplaza el SCADA. Lo complementa. Lee lo que la máquina informa **y** registra lo que el técnico ve con sus propios ojos.
+**Gestión de activos industriales con QR — sin papel, sin excusas.**
 
 ---
 
-## ¿Por qué existe?
+## Que es ActivaQR
 
-Porque en muchas empresas el mantenimiento todavía se lleva en cuadernos, WhatsApp, memoria del empleado o planillas incompletas.
+ActivaQR convierte cada máquina de tu planta en un nodo inteligente.
+Pegás un código QR en el equipo, cualquier persona con un celular escanea y accede al instante a la ficha técnica completa: temperatura normal, amperaje, estado actual, última medición y responsable.
 
-Porque un rodamiento que viene vibrando hace tres semanas no debería sorprender a nadie.
-
-Porque la información existe — lo que falta es ordenarla, darle un lugar y convertirla en acción.
-
----
-
-## ¿Qué hace la app?
-
-### Para el técnico en campo
-- Escanea el QR del equipo
-- Ve la ficha técnica y los valores normales
-- Carga la medición: temperatura, amperaje, presión, vibración, estado visual
-- Saca fotos, deja observaciones, firma la intervención
-- Funciona aunque haya mala señal
-
-### Para el supervisor o jefe de mantenimiento
-- Ve el estado de todos los activos en tiempo real
-- Recibe alertas cuando un valor sale de rango
-- Ve tendencias: si la temperatura viene subiendo en los últimos 3 controles, la app lo marca
-- Sabe cuándo toca lubricación, cambio de rodamiento o revisión general
-- Descarga reportes en PDF para auditorías, seguros o gerencia
-
-### Para el dueño o gerente
-- Sabe exactamente qué tiene, dónde está y cómo funciona
-- Tiene evidencia de cada intervención
-- Reduce paradas inesperadas y gastos de emergencia
-- Puede mostrarle a un cliente o aseguradora el historial completo de sus equipos
+El personal registrado carga mediciones, registra mantenimientos y recibe alertas cuando algo está fuera de rango — todo desde el celular, sin papel, sin hojas de cálculo perdidas.
 
 ---
 
-## Activos que puede manejar
+## Por que ActivaQR gana en el mercado local
 
-Cualquier cosa que tenga valores medibles y necesite mantenimiento:
+El mercado argentino y latinoamericano tiene soluciones de mantenimiento industrial. Ninguna hace lo que hace ActivaQR.
 
-- Motores eléctricos
-- Compresores
-- Bombas centrífugas
-- Cámaras frigoríficas
-- Tableros eléctricos
-- Rodamientos
-- Grupos electrógenos
-- Cintas transportadoras
-- Puentes grúa
-- Equipos de refrigeración
-- Máquinas viales
-- Motores navales
-- Calderas
-- Variadores de frecuencia
-- Cualquier equipo que hoy se controle en un cuaderno o en la memoria de alguien
+### Competidores directos y sus brechas
+
+| Caracteristica | ActivaQR | CruzarGT (AR) | Sentinello (AR) | Fracttal One (LATAM) | MP Software (LATAM) |
+|---|:---:|:---:|:---:|:---:|:---:|
+| Ficha publica via QR sin login | **SI** | NO | NO | NO | NO |
+| Alertas por umbrales configurables por equipo | **SI** | Solo vencimientos | Parcial (IoT) | No documentado | NO |
+| Categorias de parametros por tipo de equipo | **SI** | NO | NO | NO | NO |
+| Soporte remoto con intervencion directa | **SI** | NO | NO | NO | NO |
+| Chat con fotos y audio | **SI** | NO | NO | NO | NO |
+| Mejora de plan desde la app | **SI** | NO | NO | NO | NO |
+| Pago local con Mercado Pago | **SI** | NO | NO | NO | NO |
+| Multi-tenant para revendedores | **SI** | NO | NO | SI | SI |
+| Precio entrada para PyME | **Bajo (ARS)** | ARS $59.000/mes | Sin publicar | USD $279/mes | Sin publicar |
+
+### Lo que ninguno tiene
+
+**Ficha publica sin login.** Todos los competidores requieren que el operario tenga una cuenta y este logueado para ver los datos de un activo. ActivaQR permite que cualquier persona con un celular escanee el QR pegado en la maquina y vea la ficha completa en 3 segundos — sin app, sin contraseña, sin friccion. Ninguna de las soluciones relevadas tiene esta funcionalidad.
+
+**Intervencion remota del soporte tecnico.** Los competidores permiten ver datos. ActivaQR permite que el tecnico de soporte ingrese al sistema del cliente (con permiso aprobado por el cliente), vea sus activos en tiempo real y **registre una medicion directamente**, desencadenando el recalculo automatico de alertas. Es tele-mantenimiento real, no solo visualizacion.
+
+**Plantillas de parametros por categoria de equipo.** Motor diesel, hidraulico, neumatico, electrico, bomba centrifuga, HVAC, IT — cada categoria tiene sus propios parametros con umbrales de alerta, critico y urgente pre-configurados segun normas industriales. Ningun competidor ofrece esto out-of-the-box.
+
+**Adaptado al mercado argentino de verdad.** Mercado Pago para cobro, precios en ARS, interfaz en castellano rioplatense, sin overhead de infraestructura para el cliente. Los competidores internacionales cobran en USD ($279-$649/mes base) o piden demo antes de dar precio.
+
+### Posicionamiento
+
+```
+PRECIO
+  ^
+  |  ActivaQR ----> zona libre: precio local +
+  |                              features que no existen
+  |
+  |  CruzarGT        Sentinello
+  |  (compliance)     (IoT grande)
+  |
+  |                   Fracttal / MP / Tractian
+  |                   (enterprise USD)
+  +-------------------------------------------------> FEATURES DIFERENCIALES
+     bajo                                   alto
+```
+
+ActivaQR ocupa una zona que no tiene competidor directo: **precio accesible para PyMEs argentinas con features que solo tienen soluciones enterprise globales** — y con funcionalidades que no existen en ninguna de ellas.
 
 ---
 
-## Pantallas principales
+## Funcionalidades
 
-| Pantalla | Para qué sirve |
-|---|---|
-| **Dashboard** | Vista general: alertas, estado de flota, actividad reciente |
-| **Activos** | Lista y fichas de todos los equipos con filtros y buscador |
-| **Ficha del Activo** | Historial completo, gráficos de tendencia, QR imprimible |
-| **Tomar Medición** | Formulario mobile-first para carga en campo desde QR |
-| **Mantenimiento** | Tareas vencidas, pendientes y programadas |
-| **Reportes** | Generación de PDF para gerencia, auditoría o seguros |
-| **Gestión QR** | Impresión de etiquetas físicas para pegar en cada equipo |
-| **Importar Datos** | Carga desde CSV para empresas que ya tienen registros |
+**Ficha pública via QR (sin login)**
+Cualquier persona escanea el QR pegado en la máquina y accede al nombre del equipo, sector, estado actual, última medición, valores normales de referencia y responsable asignado. Sin app, sin registro.
 
----
+**Dashboard de planta**
+Vista general con el estado de todos los activos: normal / alerta / crítico / mantenimiento. Indicadores por sector, filtros rápidos y acceso directo a cada ficha.
 
-## Integración con sistemas existentes
+**Registro de mediciones**
+El operador registra temperatura, amperaje, presión, vibración y parámetros específicos por categoría de equipo directamente desde su celular. El sistema detecta automáticamente si el valor está fuera de rango.
 
-La app puede recibir datos automáticamente desde:
+**Gestión de mantenimientos**
+Registro de mantenimientos preventivos y correctivos por activo. Asignación de técnicos, fechas y estado de la tarea. Tareas vencidas marcadas automáticamente.
 
-- **CSV / Excel** — la forma más simple: la empresa exporta y la app importa
-- **API REST** — cualquier sistema puede enviar datos directamente
-- **OPC UA / MQTT** — para integración industrial avanzada con SCADA o PLC
-- **Bases de datos SQL** — conexión directa al histórico de planta
+**Alertas automáticas**
+Cuando una medición supera los límites configurados por equipo, el activo cambia de estado en el dashboard. Estados: normal → revisión → urgente.
 
-La app **solo lee datos, no interviene el proceso**. No toca el PLC, no modifica variables, no escribe comandos. Lee lo que la máquina informa y lo convierte en mantenimiento accionable.
+**Reportes exportables**
+Generación de reportes en PDF por activo, sector o planta completa. Incluye historial de mediciones, mantenimientos y estado actual.
+
+**Suscripciones con Mercado Pago**
+Débito automático mensual via Mercado Pago Preapproval API. Al generar el link: email automático con diseño personalizado (Resend) y WhatsApp Web con mensaje pre-cargado. Bloqueo inmediato si la suscripción se suspende.
+
+**Multi-tenant real**
+Cada empresa tiene sus propios activos, usuarios, sectores y datos completamente aislados. Roles: superadmin / admin / operador.
 
 ---
 
 ## Stack técnico
 
-- **Frontend:** React + TypeScript + Vite
-- **Estilos:** Tailwind CSS
-- **Gráficos:** Recharts
-- **QR:** qrcode.react
-- **Reportes PDF:** jsPDF
-- **Routing:** React Router v6
-- **Persistencia:** localStorage (MVP) → Railway + PostgreSQL (próximamente)
-- **Deploy:** GitHub Pages con GitHub Actions
+| Capa | Tecnología |
+|------|-----------|
+| Frontend | React 18 + TypeScript + Vite |
+| Estilos | Tailwind CSS (neo-brutalista: bordes gruesos, sombras duras, naranja/negro/blanco) |
+| Componentes | Lucide React + Recharts |
+| Backend | Node.js + Express + TypeScript |
+| Base de datos | PostgreSQL + Prisma ORM |
+| Auth | JWT 30 días con verificación en DB por request |
+| Pagos | Mercado Pago Preapproval API |
+| Email | Resend |
+| QR | qrcode.react |
+| PDF | jsPDF |
+| Deploy Backend | Railway |
+| Deploy Frontend | GitHub Pages |
+| PWA | vite-plugin-pwa + Workbox |
 
 ---
 
-## Cómo correrla localmente
+## Arquitectura
 
-```bash
-git clone https://github.com/jesus1942/activaqr.git
-cd activaqr
-npm install
-npm run dev
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        CLIENTE                              │
+│                                                             │
+│  ┌──────────────────────┐    ┌──────────────────────────┐  │
+│  │  React + Vite (SPA)  │    │  Celular — Escaneo QR    │  │
+│  │  GitHub Pages        │    │  Ficha pública (sin auth) │  │
+│  └──────────┬───────────┘    └──────────────────────────┘  │
+└─────────────┼───────────────────────────────────────────────┘
+              │ HTTPS / REST
+┌─────────────▼───────────────────────────────────────────────┐
+│                    BACKEND (Railway)                        │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │              Express + TypeScript                    │   │
+│  │                                                      │   │
+│  │  /api/auth          → JWT login / registro           │   │
+│  │  /api/empresas      → CRUD multi-tenant              │   │
+│  │  /api/activos       → Activos + QR                   │   │
+│  │  /api/mediciones    → Registro + alertas             │   │
+│  │  /api/mantenimientos → Tareas + historial            │   │
+│  │  /api/suscripcion   → Mercado Pago Preapproval       │   │
+│  │  /api/reportes      → Exportación PDF/CSV            │   │
+│  │  /public/:qr        → Ficha pública (sin auth)       │   │
+│  └─────────────────────┬───────────────────────────────┘   │
+└────────────────────────┼────────────────────────────────────┘
+                         │ Prisma ORM
+┌────────────────────────▼────────────────────────────────────┐
+│                   PostgreSQL (Railway)                      │
+│                                                             │
+│  Empresa → Usuarios → Activos → Mediciones                 │
+│                              → Mantenimientos              │
+│                              → Alertas                     │
+└─────────────────────────────────────────────────────────────┘
+         │                          │
+         ▼                          ▼
+   Mercado Pago               Resend (email)
+   Preapproval API            Plantilla HTML
+   Webhooks                   + WhatsApp Web
 ```
 
-Abre `http://localhost:5173` y ya tenés la app corriendo con datos de ejemplo.
+---
+
+## Quick Start
+
+### Prerrequisitos
+
+- Node.js >= 18
+- PostgreSQL local o en Railway
+- Cuenta en Mercado Pago Developers (para pagos)
+- Cuenta en Resend (para emails)
+
+### 1. Clonar el repositorio
+
+```bash
+git clone https://github.com/jesus1942/ActivaQr.git
+cd ActivaQr
+```
+
+### 2. Instalar dependencias
+
+```bash
+npm install
+cd server && npm install
+```
+
+### 3. Configurar variables de entorno
+
+```bash
+cd server
+cp .env.example .env
+# Editá el archivo con tus valores
+```
+
+### 4. Inicializar la base de datos
+
+```bash
+cd server
+npx prisma db push
+npx prisma generate
+npm run seed
+```
+
+### 5. Levantar en desarrollo
+
+```bash
+# Backend (desde /server)
+npm run dev
+# → API en http://localhost:3000
+
+# Frontend (desde raíz)
+npm run dev
+# → App en http://localhost:5173
+```
+
+### 6. Build de producción
+
+```bash
+# Frontend
+npm run build
+
+# Backend
+cd server
+npm run build
+npm start
+```
 
 ---
 
-## Contexto
+## Variables de entorno
 
-Esta app fue pensada para el contexto industrial de la Patagonia argentina: pesqueras, frigoríficos, hormigoneras, constructoras, transporte, talleres, servicios petroleros, generación de energía. Lugares donde el mantenimiento es crítico, donde una parada no programada tiene costo real, y donde la gestión de activos todavía tiene mucho para mejorar.
+### Backend (`/server/.env`)
 
-La idea es arrancar simple: QR, ficha técnica, carga de campo, historial, alertas y reporte. Después crecer: análisis predictivo, integración con SCADA, módulo de repuestos, órdenes de trabajo, análisis de costos.
+```env
+DATABASE_URL="postgresql://usuario:password@localhost:5432/activaqr"
+JWT_SECRET="secreto_largo_y_aleatorio"
+PORT=3000
+NODE_ENV=development
 
----
+MP_ACCESS_TOKEN="APP_USR-..."
+MP_PUBLIC_KEY="APP_USR-..."
+MP_WEBHOOK_SECRET="webhook_secret"
 
-## Roadmap
+RESEND_API_KEY="re_..."
+RESEND_FROM_EMAIL="noreply@tudominio.com"
 
-- [x] MVP con activos, mediciones, QR y alertas
-- [x] Deploy en GitHub Pages
-- [ ] Backend en Railway + PostgreSQL (multiusuario real)
-- [ ] App móvil nativa (React Native)
-- [ ] Integración OPC UA / MQTT
-- [ ] Análisis predictivo con tendencias automáticas
-- [ ] Módulo de repuestos e inventario
-- [ ] Órdenes de trabajo
-- [ ] Notificaciones push
-- [ ] Integración con SAP / Tango / otros ERP
+FRONTEND_URL="http://localhost:5173"
+BACKEND_URL="http://localhost:3000"
+```
 
----
+### Frontend (`/.env`)
 
-## Idea original
-
-La idea de ActivaQR es de **Natalia** — alguien que vio de cerca cómo se maneja el mantenimiento industrial en la práctica y entendió que había una forma mejor de hacerlo.
-
-La app existe porque antes de pensar en código, alguien pensó en el problema real: el técnico frente a la máquina, el dueño que no sabe qué tiene, el jefe de mantenimiento que maneja todo en la cabeza, y la falla que nadie vio venir.
+```env
+VITE_API_URL="http://localhost:3000"
+```
 
 ---
 
-*ActivaQR — Puerto Madryn, Patagonia Argentina.*
+## Planes
+
+| | Inicial | Empresa | Industrial |
+|---|:---:|:---:|:---:|
+| Activos | 10 | 50 | Ilimitados |
+| Usuarios | 1 | 5 | Ilimitados |
+| Fichas QR publicas | si | si | si |
+| Registro de mediciones | si | si | si |
+| Gestión de mantenimientos | si | si | si |
+| Alertas automáticas | si | si | si |
+| Sectores / áreas | — | si | si |
+| Importación CSV | — | si | si |
+| Fichas activas si cuenta suspendida | — | si | si |
+| Soporte prioritario | — | — | si |
+
+Todos los planes incluyen débito automático mensual via Mercado Pago.
+
+---
+
+## Estructura del proyecto
+
+```
+ActivaQr/
+├── src/                        # Frontend React + TypeScript
+│   ├── components/             # Componentes reutilizables
+│   ├── pages/                  # Páginas principales
+│   ├── hooks/                  # Custom hooks
+│   └── data/                   # API clients y tipos
+├── server/                     # Backend Express + TypeScript
+│   ├── src/
+│   │   ├── routes/             # Rutas de la API por módulo
+│   │   ├── middleware/         # Auth, validación, errores
+│   │   └── index.ts            # Entry point del servidor
+│   └── prisma/
+│       ├── schema.prisma       # Modelos y relaciones
+│       └── seed.ts             # Datos de ejemplo
+├── public/                     # Assets estáticos
+├── vite.config.ts
+├── tailwind.config.js
+└── tsconfig.json
+```
+
+---
+
+## Versiones
+
+### v1.1.0
+- Sistema de alertas automaticas con umbrales en tiempo real (normal / alerta / critico / urgente)
+- Plantillas de parametros por categoria de equipo (8 categorias globales: motor diesel, hidraulico, neumatico, electrico, bomba, HVAC, IT, general)
+- Acceso remoto de soporte: panel para abrir cada activo, ver historial e intervenir registrando mediciones
+- Chat de soporte con envio de fotos (comprimidas) y audios
+- Pagina de Mensajes con notificaciones para cliente y superadmin
+- Mejora de plan gestionada dentro de la app (solicitud del cliente + procesamiento del superadmin)
+- Modal de WhatsApp con selector de codigo de pais
+- Pantalla de carga animada
+- Interfaz sin emojis, estilo neo-brutalista consistente
+
+### v1.0.0
+- Gestion de activos industriales con QR
+- Ficha publica via QR sin login
+- Registro de mediciones y mantenimientos
+- Multi-tenant con planes y suscripciones Mercado Pago
+
+---
+
+## Licencia
+
+MIT License — Copyright (c) 2024 ActivaQR

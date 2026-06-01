@@ -119,7 +119,6 @@ export function renderLanding(appUrl: string): string {
       <a class="nav-link" href="#features">Funciones</a>
       <a class="nav-link" href="#categorias">Rubros</a>
       <a class="nav-link" href="#planes">Planes</a>
-      <a class="nav-link" href="#demo">Demo</a>
       <a class="btn btn-naranja" href="${appUrl}" target="_blank" rel="noopener">Ingresar</a>
     </div>
   </div>
@@ -212,24 +211,23 @@ export function renderLanding(appUrl: string): string {
   </div>
 </section>
 
-<section id="demo" style="border-top:3px solid var(--negro);background:#fff7ed">
-  <div class="wrap">
-    <h2 class="titulo">Probalo ahora mismo</h2>
-    <p class="bajada">Entrá con la cuenta demo y explorá todas las funciones sin registrarte.</p>
-    <div style="background:#fff;border:3px solid var(--negro);box-shadow:6px 6px 0 var(--negro);padding:28px;max-width:460px;">
-      <p style="font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#ea580c;margin-bottom:14px;">Credenciales de acceso</p>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
-        <tr>
-          <td style="padding:8px 0;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--gris);width:110px;">Usuario</td>
-          <td style="padding:8px 0;font-size:14px;font-family:monospace;color:var(--negro);font-weight:700;">demo@activaqr.com</td>
-        </tr>
-        <tr style="border-top:2px solid #e2e8f0;">
-          <td style="padding:8px 0;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--gris);">Contrasena</td>
-          <td style="padding:8px 0;font-size:14px;font-family:monospace;color:var(--negro);font-weight:700;">demo1234</td>
-        </tr>
-      </table>
-      <a class="btn btn-naranja" href="${appUrl}" target="_blank" rel="noopener">Probar la app ahora &rarr;</a>
+<section id="demo" style="background:#fff7ed;border-top:3px solid #0f172a;border-bottom:3px solid #0f172a;padding:64px 0;">
+  <div class="wrap" style="max-width:700px;margin:0 auto;text-align:center;">
+    <p style="font-size:12px;font-weight:800;color:#ea580c;text-transform:uppercase;letter-spacing:2px;margin:0 0 8px;">Acceso de prueba</p>
+    <h2 style="font-size:32px;font-weight:900;color:#0f172a;margin:0 0 16px;">Probá la app sin registrarte</h2>
+    <p style="font-size:15px;color:#475569;margin:0 0 32px;">Ingresá con las siguientes credenciales y explorá todas las funciones con datos de ejemplo reales.</p>
+    <div style="display:inline-block;background:#0f172a;border:3px solid #0f172a;padding:24px 40px;text-align:left;margin-bottom:32px;">
+      <div style="margin-bottom:12px;">
+        <span style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;">Usuario</span><br/>
+        <span style="font-size:18px;font-weight:900;color:#f97316;font-family:monospace;">demo@activaqr.com</span>
+      </div>
+      <div>
+        <span style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;">Contraseña</span><br/>
+        <span style="font-size:18px;font-weight:900;color:#f97316;font-family:monospace;">demo1234</span>
+      </div>
     </div>
+    <br/>
+    <a href="${appUrl}" style="display:inline-block;background:#f97316;color:#fff;font-size:15px;font-weight:900;text-decoration:none;text-transform:uppercase;letter-spacing:1px;padding:16px 36px;border:3px solid #0f172a;box-shadow:6px 6px 0px #0f172a;">Probar la app ahora &rarr;</a>
   </div>
 </section>
 

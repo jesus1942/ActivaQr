@@ -1,7 +1,7 @@
+// v1.1.0
 import React, { useState, useRef } from 'react';
 import { Upload, FileText, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useActivos } from '../hooks/useActivos';
-import { Activo } from '../data/types';
 import { format } from 'date-fns';
 
 interface PreviewRow {
@@ -16,7 +16,7 @@ interface PreviewRow {
 }
 
 export const ImportarDatos: React.FC = () => {
-  const { addActivo } = useActivos();
+  const { addActivo, sectores, tipos, tecnicos, addSector, addTipo, addTecnico } = useActivos();
   const [preview, setPreview] = useState<PreviewRow[]>([]);
   const [error, setError] = useState('');
   const [imported, setImported] = useState(false);
@@ -63,16 +63,54 @@ export const ImportarDatos: React.FC = () => {
   };
 
   const handleImport = () => {
+    // Resolvemos (o creamos) las entidades referenciadas por nombre.
+    // Acumulamos los nuevos ids localmente para no duplicar dentro del mismo import.
+    const localSectores = sectores.map((s) => ({ id: s.id, nombre: s.nombre }));
+    const localTipos = tipos.map((t) => ({ id: t.id, nombre: t.nombre }));
+    const localTecnicos = tecnicos.map((t) => ({ id: t.id, nombre: t.nombre }));
+
+    const norm = (s: string) => s.trim().toLowerCase();
+
+    const resolveSector = (nombre: string): string => {
+      if (!nombre) return localSectores[0]?.id ?? '';
+      const found = localSectores.find((s) => norm(s.nombre) === norm(nombre));
+      if (found) return found.id;
+      const id = `sec-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      addSector({ id, nombre: nombre.trim(), color: '#94A3B8', activo: true });
+      localSectores.push({ id, nombre: nombre.trim() });
+      return id;
+    };
+
+    const resolveTipo = (nombre: string): string => {
+      if (!nombre) return localTipos[0]?.id ?? '';
+      const found = localTipos.find((t) => norm(t.nombre) === norm(nombre));
+      if (found) return found.id;
+      const id = `tip-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      addTipo({ id, nombre: nombre.trim(), mideTemperatura: true, mideAmperaje: true, midePresion: false, mideVibracion: true, activo: true });
+      localTipos.push({ id, nombre: nombre.trim() });
+      return id;
+    };
+
+    const resolveTecnico = (nombre: string): string => {
+      if (!nombre) return '';
+      const found = localTecnicos.find((t) => norm(t.nombre) === norm(nombre));
+      if (found) return found.id;
+      const id = `tec-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      addTecnico({ id, nombre: nombre.trim(), rol: 'tecnico', activo: true });
+      localTecnicos.push({ id, nombre: nombre.trim() });
+      return id;
+    };
+
     preview.forEach((row) => {
       addActivo({
         id: `act-import-${Date.now()}-${Math.random().toString(36).slice(2)}`,
         codigo: row.codigo,
         nombre: row.nombre,
-        tipo: (row.tipo as Activo['tipo']) || 'otro',
-        sector: row.sector,
+        tipoId: resolveTipo(row.tipo),
+        sectorId: resolveSector(row.sector),
         marca: row.marca,
         modelo: row.modelo,
-        responsable: row.responsable,
+        responsableId: resolveTecnico(row.responsable),
         ubicacion: row.ubicacion,
         fechaIngreso: format(new Date(), 'yyyy-MM-dd'),
         horasActuales: 0,
@@ -100,7 +138,7 @@ COM-XXX-001,Compresor Ejemplo,compresor,Taller,Schulz,CSL 10,Pedro López,Taller
 
   return (
     <div>
-      <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-2">Importar Datos</h1>
+      <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 uppercase tracking-tight mb-2">Importar Datos</h1>
       <p className="text-slate-500 text-sm mb-6">Importa activos desde un archivo CSV</p>
 
       {imported && (
@@ -112,7 +150,7 @@ COM-XXX-001,Compresor Ejemplo,compresor,Taller,Schulz,CSL 10,Pedro López,Taller
 
       {/* Drop Zone */}
       <div
-        className={`border-4 border-dashed p-12 text-center mb-6 transition-colors cursor-pointer ${
+        className={`border-4 border-dashed p-6 sm:p-8 md:p-12 text-center mb-6 transition-colors cursor-pointer ${
           dragging ? 'border-orange-500 bg-orange-50' : 'border-slate-300 bg-white hover:border-orange-400'
         }`}
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
@@ -170,7 +208,7 @@ COM-XXX-001,Compresor Ejemplo,compresor,Taller,Schulz,CSL 10,Pedro López,Taller
         <div className="bg-slate-900 text-emerald-400 font-mono text-xs p-3 overflow-x-auto">
           <pre>{csvExample}</pre>
         </div>
-        <p className="text-xs text-slate-500 mt-2">Tipos válidos: motor, compresor, bomba, camara_frio, tablero, rodamiento, generador, otro</p>
+        <p className="text-xs text-slate-500 mt-2">Los valores de <span className="font-mono">tipo</span>, <span className="font-mono">sector</span> y <span className="font-mono">responsable</span> se asocian por nombre a las entidades existentes; si no existen, se crean automáticamente.</p>
       </div>
 
       {/* Preview table */}

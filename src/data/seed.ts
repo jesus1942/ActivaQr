@@ -1,21 +1,49 @@
-import { Activo, Medicion, TareaMantenimiento } from './types';
+// v1.1.0
+import { Activo, Medicion, TareaMantenimiento, Sector, TipoActivo, Tecnico } from './types';
 import { addDays, subDays, format } from 'date-fns';
 
 const today = new Date();
 const fmt = (d: Date) => format(d, 'yyyy-MM-dd');
+
+export const seedSectores: Sector[] = [
+  { id: 'sec-001', nombre: 'Planta', color: '#F97316', activo: true },
+  { id: 'sec-002', nombre: 'Taller', color: '#3B82F6', activo: true },
+  { id: 'sec-003', nombre: 'Pescadería', color: '#06B6D4', activo: true },
+  { id: 'sec-004', nombre: 'Frigorífico', color: '#6366F1', activo: true },
+  { id: 'sec-005', nombre: 'Electricidad', color: '#EAB308', activo: true },
+  { id: 'sec-006', nombre: 'Generación', color: '#10B981', activo: true },
+];
+
+export const seedTipos: TipoActivo[] = [
+  { id: 'tip-001', nombre: 'Motor', icono: 'motor', mideTemperatura: true, mideAmperaje: true, midePresion: false, mideVibracion: true, activo: true },
+  { id: 'tip-002', nombre: 'Compresor', icono: 'compresor', mideTemperatura: true, mideAmperaje: false, midePresion: true, mideVibracion: true, activo: true },
+  { id: 'tip-003', nombre: 'Bomba', icono: 'bomba', mideTemperatura: true, mideAmperaje: false, midePresion: true, mideVibracion: true, activo: true },
+  { id: 'tip-004', nombre: 'Cámara de frío', icono: 'camara_frio', mideTemperatura: true, mideAmperaje: false, midePresion: true, mideVibracion: false, activo: true },
+  { id: 'tip-005', nombre: 'Tablero', icono: 'tablero', mideTemperatura: true, mideAmperaje: true, midePresion: false, mideVibracion: false, activo: true },
+  { id: 'tip-006', nombre: 'Rodamiento', icono: 'rodamiento', mideTemperatura: true, mideAmperaje: false, midePresion: false, mideVibracion: true, activo: true },
+  { id: 'tip-007', nombre: 'Generador', icono: 'generador', mideTemperatura: true, mideAmperaje: true, midePresion: true, mideVibracion: false, activo: true },
+];
+
+export const seedTecnicos: Tecnico[] = [
+  { id: 'tec-001', nombre: 'Juan Rodríguez', rol: 'admin', email: 'juan.rodriguez@plantapatagonica.com', telefono: '+54 280 400-0001', activo: true },
+  { id: 'tec-002', nombre: 'Carlos Vera', rol: 'supervisor', email: 'carlos.vera@plantapatagonica.com', telefono: '+54 280 400-0002', activo: true },
+  { id: 'tec-003', nombre: 'María González', rol: 'tecnico', email: 'maria.gonzalez@plantapatagonica.com', telefono: '+54 280 400-0003', activo: true },
+  { id: 'tec-004', nombre: 'Roberto Sánchez', rol: 'tecnico', email: 'roberto.sanchez@plantapatagonica.com', telefono: '+54 280 400-0004', activo: true },
+  { id: 'tec-005', nombre: 'Alejandro Torres', rol: 'supervisor', email: 'alejandro.torres@plantapatagonica.com', telefono: '+54 280 400-0005', activo: true },
+];
 
 export const seedActivos: Activo[] = [
   {
     id: 'act-001',
     codigo: 'HOR-MOT-001',
     nombre: 'Motor Hormigonera Principal',
-    tipo: 'motor',
-    sector: 'Planta',
+    tipoId: 'tip-001',
+    sectorId: 'sec-001',
     marca: 'WEG',
     modelo: 'W22 15CV',
     fechaIngreso: '2023-03-15',
     ubicacion: 'Planta Principal - Sector A',
-    responsable: 'Juan Rodríguez',
+    responsableId: 'tec-001',
     horasActuales: 1240,
     estado: 'alerta',
     temperaturaMin: 40,
@@ -34,13 +62,13 @@ export const seedActivos: Activo[] = [
     id: 'act-002',
     codigo: 'TAL-COM-001',
     nombre: 'Compresor Aire Taller',
-    tipo: 'compresor',
-    sector: 'Taller',
+    tipoId: 'tip-002',
+    sectorId: 'sec-002',
     marca: 'Schulz',
     modelo: 'CSL 20BR/200',
     fechaIngreso: '2022-08-10',
     ubicacion: 'Taller Mecánico',
-    responsable: 'Carlos Vera',
+    responsableId: 'tec-002',
     horasActuales: 2180,
     estado: 'normal',
     temperaturaMin: 20,
@@ -59,13 +87,13 @@ export const seedActivos: Activo[] = [
     id: 'act-003',
     codigo: 'PES-BOM-001',
     nombre: 'Bomba Centrífuga Nº1',
-    tipo: 'bomba',
-    sector: 'Pescadería',
+    tipoId: 'tip-003',
+    sectorId: 'sec-003',
     marca: 'Grundfos',
     modelo: 'CM10-3',
     fechaIngreso: '2024-01-20',
     ubicacion: 'Sala de Bombas - Pescadería',
-    responsable: 'María González',
+    responsableId: 'tec-003',
     horasActuales: 890,
     estado: 'normal',
     temperaturaMin: 15,
@@ -84,13 +112,13 @@ export const seedActivos: Activo[] = [
     id: 'act-004',
     codigo: 'FRI-CAM-001',
     nombre: 'Cámara Frigorífica Nº1',
-    tipo: 'camara_frio',
-    sector: 'Frigorífico',
+    tipoId: 'tip-004',
+    sectorId: 'sec-004',
     marca: 'Bohn',
     modelo: 'LET-042',
     fechaIngreso: '2021-06-05',
     ubicacion: 'Sector Frío - Cámara 1',
-    responsable: 'Roberto Sánchez',
+    responsableId: 'tec-004',
     horasActuales: 8760,
     estado: 'critico',
     temperaturaMin: -25,
@@ -109,13 +137,13 @@ export const seedActivos: Activo[] = [
     id: 'act-005',
     codigo: 'PLT-CIN-001',
     nombre: 'Motor Cinta Transportadora',
-    tipo: 'motor',
-    sector: 'Planta',
+    tipoId: 'tip-001',
+    sectorId: 'sec-001',
     marca: 'Siemens',
     modelo: '1LA7 11kW',
     fechaIngreso: '2023-09-12',
     ubicacion: 'Planta - Línea de Producción',
-    responsable: 'Juan Rodríguez',
+    responsableId: 'tec-001',
     horasActuales: 650,
     estado: 'normal',
     temperaturaMin: 30,
@@ -134,13 +162,13 @@ export const seedActivos: Activo[] = [
     id: 'act-006',
     codigo: 'ELE-TAB-001',
     nombre: 'Tablero Eléctrico Principal',
-    tipo: 'tablero',
-    sector: 'Electricidad',
+    tipoId: 'tip-005',
+    sectorId: 'sec-005',
     marca: 'Schneider',
     modelo: 'PrismaPlus G',
     fechaIngreso: '2020-11-30',
     ubicacion: 'Sala Eléctrica Principal',
-    responsable: 'Alejandro Torres',
+    responsableId: 'tec-005',
     horasActuales: 0,
     estado: 'normal',
     temperaturaMin: 15,
@@ -159,13 +187,13 @@ export const seedActivos: Activo[] = [
     id: 'act-007',
     codigo: 'GEN-GRP-001',
     nombre: 'Grupo Electrógeno 150kVA',
-    tipo: 'generador',
-    sector: 'Generación',
+    tipoId: 'tip-007',
+    sectorId: 'sec-006',
     marca: 'Cummins',
     modelo: 'C150D5',
     fechaIngreso: '2022-03-18',
     ubicacion: 'Sala de Máquinas',
-    responsable: 'Alejandro Torres',
+    responsableId: 'tec-005',
     horasActuales: 320,
     estado: 'mantenimiento',
     temperaturaMin: 60,
@@ -184,13 +212,13 @@ export const seedActivos: Activo[] = [
     id: 'act-008',
     codigo: 'GRU-ROD-001',
     nombre: 'Rodamiento Puente Grúa',
-    tipo: 'rodamiento',
-    sector: 'Planta',
+    tipoId: 'tip-006',
+    sectorId: 'sec-001',
     marca: 'SKF',
     modelo: '6312-2RS',
     fechaIngreso: '2023-01-08',
     ubicacion: 'Nave Industrial - Puente Grúa',
-    responsable: 'Carlos Vera',
+    responsableId: 'tec-002',
     horasActuales: 1100,
     estado: 'alerta',
     temperaturaMin: 20,
@@ -220,7 +248,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 1100,
     estado: 'normal',
     observaciones: 'Funcionamiento normal',
-    tecnico: 'Juan Rodríguez',
+    tecnicoId: 'tec-001',
   },
   {
     id: 'med-002',
@@ -233,7 +261,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 1160,
     estado: 'normal',
     observaciones: '',
-    tecnico: 'Juan Rodríguez',
+    tecnicoId: 'tec-001',
   },
   {
     id: 'med-003',
@@ -246,7 +274,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 1200,
     estado: 'revision',
     observaciones: 'Temperatura levemente elevada, vibración leve detectada',
-    tecnico: 'Juan Rodríguez',
+    tecnicoId: 'tec-001',
   },
   {
     id: 'med-004',
@@ -259,7 +287,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 1230,
     estado: 'revision',
     observaciones: 'Temperatura en ascenso, programar revisión',
-    tecnico: 'Juan Rodríguez',
+    tecnicoId: 'tec-001',
   },
   {
     id: 'med-005',
@@ -272,7 +300,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 1240,
     estado: 'urgente',
     observaciones: 'ALERTA: temperatura por encima del límite de alerta',
-    tecnico: 'Juan Rodríguez',
+    tecnicoId: 'tec-001',
   },
   // act-002 - Compresor Taller - normal readings
   {
@@ -286,7 +314,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 2050,
     estado: 'normal',
     observaciones: '',
-    tecnico: 'Carlos Vera',
+    tecnicoId: 'tec-002',
   },
   {
     id: 'med-007',
@@ -299,7 +327,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 2120,
     estado: 'normal',
     observaciones: 'Funcionamiento correcto',
-    tecnico: 'Carlos Vera',
+    tecnicoId: 'tec-002',
   },
   {
     id: 'med-008',
@@ -312,7 +340,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 2180,
     estado: 'normal',
     observaciones: '',
-    tecnico: 'Carlos Vera',
+    tecnicoId: 'tec-002',
   },
   // act-003 - Bomba Pescadería
   {
@@ -326,7 +354,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 820,
     estado: 'normal',
     observaciones: '',
-    tecnico: 'María González',
+    tecnicoId: 'tec-003',
   },
   {
     id: 'med-010',
@@ -339,7 +367,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 860,
     estado: 'normal',
     observaciones: 'Sin novedades',
-    tecnico: 'María González',
+    tecnicoId: 'tec-003',
   },
   {
     id: 'med-011',
@@ -352,7 +380,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 890,
     estado: 'normal',
     observaciones: '',
-    tecnico: 'María González',
+    tecnicoId: 'tec-003',
   },
   // act-004 - Cámara Frigorífica - getting worse
   {
@@ -366,7 +394,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 8600,
     estado: 'normal',
     observaciones: '',
-    tecnico: 'Roberto Sánchez',
+    tecnicoId: 'tec-004',
   },
   {
     id: 'med-013',
@@ -379,7 +407,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 8700,
     estado: 'normal',
     observaciones: 'Temperatura dentro del rango',
-    tecnico: 'Roberto Sánchez',
+    tecnicoId: 'tec-004',
   },
   {
     id: 'med-014',
@@ -392,7 +420,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 8730,
     estado: 'revision',
     observaciones: 'Temperatura por encima del rango normal, investigar',
-    tecnico: 'Roberto Sánchez',
+    tecnicoId: 'tec-004',
   },
   {
     id: 'med-015',
@@ -405,7 +433,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 8760,
     estado: 'urgente',
     observaciones: 'CRÍTICO: temperatura muy por encima del límite de alerta',
-    tecnico: 'Roberto Sánchez',
+    tecnicoId: 'tec-004',
   },
   // act-005 - Motor Cinta
   {
@@ -419,7 +447,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 580,
     estado: 'normal',
     observaciones: '',
-    tecnico: 'Juan Rodríguez',
+    tecnicoId: 'tec-001',
   },
   {
     id: 'med-017',
@@ -432,7 +460,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 620,
     estado: 'normal',
     observaciones: 'Normal',
-    tecnico: 'Juan Rodríguez',
+    tecnicoId: 'tec-001',
   },
   {
     id: 'med-018',
@@ -445,7 +473,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 650,
     estado: 'normal',
     observaciones: '',
-    tecnico: 'Juan Rodríguez',
+    tecnicoId: 'tec-001',
   },
   // act-006 - Tablero Eléctrico
   {
@@ -459,7 +487,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 0,
     estado: 'normal',
     observaciones: 'Termografía realizada, sin puntos calientes',
-    tecnico: 'Alejandro Torres',
+    tecnicoId: 'tec-005',
   },
   {
     id: 'med-020',
@@ -472,7 +500,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 0,
     estado: 'normal',
     observaciones: '',
-    tecnico: 'Alejandro Torres',
+    tecnicoId: 'tec-005',
   },
   // act-007 - Generador
   {
@@ -486,7 +514,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 290,
     estado: 'normal',
     observaciones: '',
-    tecnico: 'Alejandro Torres',
+    tecnicoId: 'tec-005',
   },
   {
     id: 'med-022',
@@ -499,7 +527,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 310,
     estado: 'revision',
     observaciones: 'Necesita cambio de aceite',
-    tecnico: 'Alejandro Torres',
+    tecnicoId: 'tec-005',
   },
   // act-008 - Rodamiento Puente Grúa
   {
@@ -513,7 +541,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 1020,
     estado: 'normal',
     observaciones: '',
-    tecnico: 'Carlos Vera',
+    tecnicoId: 'tec-002',
   },
   {
     id: 'med-024',
@@ -526,7 +554,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 1070,
     estado: 'revision',
     observaciones: 'Vibración leve detectada, monitorear',
-    tecnico: 'Carlos Vera',
+    tecnicoId: 'tec-002',
   },
   {
     id: 'med-025',
@@ -539,7 +567,7 @@ export const seedMediciones: Medicion[] = [
     horasMarcha: 1100,
     estado: 'revision',
     observaciones: 'Temperatura en ascenso, vibración persiste',
-    tecnico: 'Carlos Vera',
+    tecnicoId: 'tec-002',
   },
 ];
 
@@ -550,7 +578,7 @@ export const seedTareas: TareaMantenimiento[] = [
     tipo: 'Cambio de Aceite',
     fechaProgramada: fmt(subDays(today, 2)),
     estado: 'vencido',
-    responsable: 'Alejandro Torres',
+    responsableId: 'tec-005',
     observaciones: 'Cambio de aceite motor diesel vencido',
   },
   {
@@ -559,7 +587,7 @@ export const seedTareas: TareaMantenimiento[] = [
     tipo: 'Revisión Sistema de Refrigeración',
     fechaProgramada: fmt(today),
     estado: 'vencido',
-    responsable: 'Roberto Sánchez',
+    responsableId: 'tec-004',
     observaciones: 'Revisar gas refrigerante y termostato',
   },
   {
@@ -568,7 +596,7 @@ export const seedTareas: TareaMantenimiento[] = [
     tipo: 'Lubricación de Rodamientos',
     fechaProgramada: fmt(addDays(today, 3)),
     estado: 'pendiente',
-    responsable: 'Juan Rodríguez',
+    responsableId: 'tec-001',
     observaciones: 'Lubricación lado polea y lado acoplamiento',
   },
   {
@@ -577,7 +605,7 @@ export const seedTareas: TareaMantenimiento[] = [
     tipo: 'Inspección de Rodamiento',
     fechaProgramada: fmt(addDays(today, 5)),
     estado: 'pendiente',
-    responsable: 'Carlos Vera',
+    responsableId: 'tec-002',
     observaciones: 'Inspección y posible reemplazo de rodamiento',
   },
   {
@@ -586,7 +614,7 @@ export const seedTareas: TareaMantenimiento[] = [
     tipo: 'Service Compresor',
     fechaProgramada: fmt(addDays(today, 15)),
     estado: 'pendiente',
-    responsable: 'Carlos Vera',
+    responsableId: 'tec-002',
     observaciones: 'Service 3000hs: filtros, aceite, correas',
   },
   {
@@ -596,7 +624,7 @@ export const seedTareas: TareaMantenimiento[] = [
     fechaProgramada: fmt(subDays(today, 20)),
     fechaRealizada: fmt(subDays(today, 18)),
     estado: 'completado',
-    responsable: 'María González',
+    responsableId: 'tec-003',
     observaciones: 'Sellos reemplazados correctamente',
   },
   {
@@ -606,7 +634,7 @@ export const seedTareas: TareaMantenimiento[] = [
     fechaProgramada: fmt(subDays(today, 35)),
     fechaRealizada: fmt(subDays(today, 35)),
     estado: 'completado',
-    responsable: 'Juan Rodríguez',
+    responsableId: 'tec-001',
     observaciones: 'Correas tensadas según especificación',
   },
 ];

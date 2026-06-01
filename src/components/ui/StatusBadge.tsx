@@ -1,3 +1,4 @@
+// v1.1.0
 import React from 'react';
 import { EstadoActivo, EstadoMedicion } from '../../data/types';
 
@@ -8,26 +9,26 @@ interface StatusBadgeProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-const statusConfig: Record<EstadoType, { bg: string; text: string; label: string }> = {
-  normal: { bg: 'bg-emerald-500', text: 'text-white', label: 'NORMAL' },
-  alerta: { bg: 'bg-orange-500', text: 'text-white', label: 'ALERTA' },
-  critico: { bg: 'bg-red-600', text: 'text-white', label: 'CRÍTICO' },
-  mantenimiento: { bg: 'bg-blue-600', text: 'text-white', label: 'MANT.' },
-  revision: { bg: 'bg-yellow-500', text: 'text-slate-900', label: 'REVISIÓN' },
-  urgente: { bg: 'bg-red-600', text: 'text-white', label: 'URGENTE' },
+const statusConfig: Record<EstadoType, { border: string; text: string; bg: string; label: string; rotate: string }> = {
+  normal:       { border: 'border-emerald-600', text: 'text-emerald-700', bg: 'bg-emerald-100/70', label: 'NORMAL',   rotate: 'rotate-[-1deg]' },
+  alerta:       { border: 'border-orange-500',  text: 'text-orange-700',  bg: 'bg-orange-100/70',  label: 'ALERTA',   rotate: 'rotate-[1deg]'  },
+  critico:      { border: 'border-red-700',     text: 'text-red-700',     bg: 'bg-red-100/70',     label: 'CRÍTICO',  rotate: 'rotate-[-1deg]' },
+  mantenimiento:{ border: 'border-blue-700',    text: 'text-blue-700',    bg: 'bg-blue-100/70',    label: 'MANT.',    rotate: 'rotate-[1deg]'  },
+  revision:     { border: 'border-yellow-600',  text: 'text-yellow-800',  bg: 'bg-yellow-100/70',  label: 'REVISIÓN', rotate: 'rotate-[-1deg]' },
+  urgente:      { border: 'border-red-700',     text: 'text-red-700',     bg: 'bg-red-100/70',     label: 'URGENTE',  rotate: 'rotate-[1deg]'  },
 };
 
 const sizeConfig = {
-  sm: 'text-xs px-2 py-0.5',
-  md: 'text-sm px-3 py-1',
-  lg: 'text-base px-4 py-1.5',
+  sm: 'text-base px-2.5 py-0.5',
+  md: 'text-lg px-3 py-1',
+  lg: 'text-xl px-4 py-1.5',
 };
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ estado, size = 'md' }) => {
   const config = statusConfig[estado] || statusConfig.normal;
   return (
     <span
-      className={`inline-block font-mono font-bold uppercase tracking-widest border-2 border-slate-800 ${config.bg} ${config.text} ${sizeConfig[size]}`}
+      className={`inline-block font-sketch font-bold uppercase tracking-wider border-2 ${config.border} ${config.text} ${config.bg} ${config.rotate} ${sizeConfig[size]}`}
     >
       {config.label}
     </span>
