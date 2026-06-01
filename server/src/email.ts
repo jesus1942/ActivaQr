@@ -147,6 +147,59 @@ export async function enviarEmailSuscripcion(params: {
   });
 }
 
+export interface LeadDatos {
+  nombre: string;
+  empresa?: string;
+  email: string;
+  telefono?: string;
+  mensaje?: string;
+}
+
+/**
+ * Envía la notificación de un nuevo lead capturado desde la landing.
+ * Destinatario: LEAD_EMAIL (o RESEND_FROM como fallback). Si no hay Resend
+ * configurado, retorna sin error (el endpoint igual loguea el lead).
+ */
+export async function enviarEmailLead(lead: LeadDatos): Promise<boolean> {
+  if (!emailConfigurado()) return false;
+  const destino = process.env.LEAD_EMAIL || process.env.RESEND_FROM_EMAIL;
+  if (!destino) return false;
+
+  const resend = getResend();
+  const from = process.env.RESEND_FROM || 'ActivaQR <noreply@activaqr.com>';
+  const fila = (k: string, v?: string) =>
+    v ? `<tr><td style="padding:6px 0;font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;width:130px;vertical-align:top;">${k}</td><td style="padding:6px 0;font-size:14px;color:#0f172a;">${v}</td></tr>` : '';
+
+  await resend.emails.send({
+    from,
+    to: destino,
+    subject: `Nuevo lead ActivaQR — ${lead.nombre}${lead.empresa ? ` (${lead.empresa})` : ''}`,
+    html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;"><tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
+<tr><td style="background:#0f172a;padding:20px 28px;border:3px solid #0f172a;border-bottom:none;">
+  <span style="font-size:20px;font-weight:900;color:#f97316;text-transform:uppercase;letter-spacing:2px;">ActivaQR</span>
+  <span style="float:right;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;">Nuevo lead</span>
+</td></tr>
+<tr><td style="background:#fff;border:3px solid #0f172a;border-top:none;padding:28px;">
+  <h1 style="margin:0 0 18px;font-size:22px;font-weight:900;color:#0f172a;">Solicitud de acceso</h1>
+  <table width="100%" cellpadding="0" cellspacing="0">
+    ${fila('Nombre', lead.nombre)}
+    ${fila('Empresa', lead.empresa)}
+    ${fila('Email', lead.email)}
+    ${fila('Teléfono', lead.telefono)}
+    ${fila('Mensaje', lead.mensaje)}
+  </table>
+</td></tr>
+<tr><td style="background:#0f172a;padding:14px 28px;border:3px solid #0f172a;border-top:none;">
+  <p style="margin:0;font-size:11px;color:#475569;text-align:center;">© ${new Date().getFullYear()} ActivaQR — Lead capturado desde la landing.</p>
+</td></tr>
+</table></td></tr></table></body></html>`,
+  });
+  return true;
+}
+
 export async function enviarEmailAccesoRemoto(params: {
   destinatario: string;
   empresaNombre: string;
