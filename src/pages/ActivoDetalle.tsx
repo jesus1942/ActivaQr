@@ -1,3 +1,4 @@
+// v1.1.0
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
@@ -6,7 +7,7 @@ import { es } from 'date-fns/locale';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { ArrowLeft, Printer, ClipboardList } from 'lucide-react';
+import { ArrowLeft, Printer, ClipboardList, Pencil, Trash2 } from 'lucide-react';
 import { useActivos } from '../hooks/useActivos';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { ValueGauge } from '../components/ui/ValueGauge';
@@ -14,7 +15,11 @@ import { ValueGauge } from '../components/ui/ValueGauge';
 export const ActivoDetalle: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { activos, mediciones, tareas } = useActivos();
+  const {
+    activos, mediciones, tareas,
+    deleteActivo, deleteMedicion,
+    getSectorNombre, getTipoNombre, getTecnicoNombre,
+  } = useActivos();
 
   const activo = activos.find((a) => a.id === id);
   if (!activo) return <div className="p-8 text-red-600 font-bold">Activo no encontrado</div>;
@@ -25,7 +30,7 @@ export const ActivoDetalle: React.FC = () => {
 
   const last10 = activoMediciones.slice(-10);
   const activoTareas = tareas.filter((t) => t.activoId === id);
-  const qrValue = `${window.location.origin}/medicion/${activo.id}`;
+  const qrValue = `${window.location.origin}${import.meta.env.BASE_URL}#/medicion/${activo.id}`;
 
   const chartData = last10.map((m) => ({
     fecha: format(parseISO(m.fecha), 'dd/MM', { locale: es }),
@@ -37,14 +42,21 @@ export const ActivoDetalle: React.FC = () => {
     window.print();
   };
 
+  const handleDelete = () => {
+    if (window.confirm(`¿Eliminar el activo "${activo!.codigo} — ${activo!.nombre}"? Esta acción no se puede deshacer.`)) {
+      deleteActivo(activo!.id);
+      navigate('/activos');
+    }
+  };
+
   const ficha = [
     { label: 'Código', value: activo.codigo },
-    { label: 'Tipo', value: activo.tipo.replace('_', ' ') },
-    { label: 'Sector', value: activo.sector },
+    { label: 'Tipo', value: getTipoNombre(activo.tipoId) },
+    { label: 'Sector', value: getSectorNombre(activo.sectorId) },
     { label: 'Marca', value: activo.marca },
     { label: 'Modelo', value: activo.modelo },
     { label: 'Ubicación', value: activo.ubicacion },
-    { label: 'Responsable', value: activo.responsable },
+    { label: 'Responsable', value: getTecnicoNombre(activo.responsableId) },
     { label: 'Fecha Ingreso', value: format(parseISO(activo.fechaIngreso), 'dd/MM/yyyy', { locale: es }) },
     { label: 'Horas Actuales', value: `${activo.horasActuales} hs` },
     { label: 'Intervalo Medición', value: `${activo.intervaloMedicionHoras} hs` },
@@ -55,20 +67,36 @@ export const ActivoDetalle: React.FC = () => {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row items-start gap-4 mb-6">
         <button
           onClick={() => navigate('/activos')}
-          className="flex items-center gap-1 text-slate-600 hover:text-slate-900 font-semibold border-2 border-slate-300 px-3 py-1.5 hover:border-slate-800 transition-colors"
+          className="flex items-center gap-1 text-slate-600 hover:text-slate-900 font-semibold border-2 border-slate-300 px-3 min-h-[44px] hover:border-slate-800 transition-colors"
         >
           <ArrowLeft size={16} />
           Volver
         </button>
         <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <span className="font-mono font-black text-2xl text-slate-900">{activo.codigo}</span>
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="font-mono font-black text-2xl sm:text-3xl text-slate-900">{activo.codigo}</span>
             <StatusBadge estado={activo.estado} size="lg" />
           </div>
           <h1 className="text-lg font-bold text-slate-700 mt-0.5">{activo.nombre}</h1>
+        </div>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button
+            onClick={() => navigate('/activos', { state: { editId: activo.id } })}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border-2 border-slate-800 px-3 min-h-[44px] font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+          >
+            <Pencil size={15} />
+            Editar
+          </button>
+          <button
+            onClick={handleDelete}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border-2 border-red-600 text-red-600 px-3 min-h-[44px] font-bold hover:bg-red-50 transition-colors"
+          >
+            <Trash2 size={15} />
+            Eliminar
+          </button>
         </div>
       </div>
 
@@ -77,7 +105,7 @@ export const ActivoDetalle: React.FC = () => {
         <div className="lg:col-span-2 space-y-4">
           <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
             <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-3 border-b-2 border-slate-200 pb-2">Ficha Técnica</h2>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
               {ficha.map(({ label, value }) => (
                 <div key={label} className="flex gap-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-500 min-w-28">{label}:</span>
@@ -139,7 +167,7 @@ export const ActivoDetalle: React.FC = () => {
           <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4 text-center">
             <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-3">Código QR</h2>
             <div className="inline-block border-4 border-slate-800 p-3 bg-white mb-3">
-              <QRCodeSVG value={qrValue} size={160} />
+              <QRCodeSVG value={qrValue} size={140} className="w-full max-w-[160px] h-auto" />
             </div>
             <div className="font-mono text-xs text-slate-500 mb-4 break-all">{activo.codigo}</div>
             <button
@@ -206,22 +234,33 @@ export const ActivoDetalle: React.FC = () => {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-slate-900 text-white">
-              {['Fecha', 'Temp.', 'Amperaje', 'Presión', 'Vibración', 'Estado', 'Técnico', 'Observaciones'].map((h) => (
-                <th key={h} className="text-left px-3 py-2.5 text-xs font-black uppercase tracking-wider">{h}</th>
+              {['Fecha', 'Temp.', 'Amperaje', 'Presión', 'Vibración', 'Estado', 'Técnico', 'Observaciones', ''].map((h, idx) => (
+                <th key={h || idx} className="text-left px-3 py-2.5 text-xs font-black uppercase tracking-wider whitespace-nowrap">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {last10.reverse().map((m, i) => (
+            {[...last10].reverse().map((m, i) => (
               <tr key={m.id} className={`border-b border-slate-100 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
-                <td className="px-3 py-2 font-mono text-xs">{format(parseISO(m.fecha), 'dd/MM/yyyy', { locale: es })}</td>
-                <td className="px-3 py-2 font-mono font-bold">{m.temperatura}°C</td>
-                <td className="px-3 py-2 font-mono">{m.amperaje > 0 ? `${m.amperaje}A` : '-'}</td>
-                <td className="px-3 py-2 font-mono">{m.presion > 0 ? `${m.presion} bar` : '-'}</td>
+                <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">{format(parseISO(m.fecha), 'dd/MM/yyyy', { locale: es })}</td>
+                <td className="px-3 py-2 font-mono font-bold whitespace-nowrap">{m.temperatura}°C</td>
+                <td className="px-3 py-2 font-mono whitespace-nowrap">{m.amperaje > 0 ? `${m.amperaje}A` : '-'}</td>
+                <td className="px-3 py-2 font-mono whitespace-nowrap">{m.presion > 0 ? `${m.presion} bar` : '-'}</td>
                 <td className="px-3 py-2 capitalize text-xs">{m.vibracion}</td>
                 <td className="px-3 py-2"><StatusBadge estado={m.estado} size="sm" /></td>
-                <td className="px-3 py-2 text-xs text-slate-600">{m.tecnico}</td>
+                <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap">{getTecnicoNombre(m.tecnicoId)}</td>
                 <td className="px-3 py-2 text-xs text-slate-500 max-w-48 truncate">{m.observaciones || '-'}</td>
+                <td className="px-3 py-2">
+                  <button
+                    onClick={() => {
+                      if (window.confirm('¿Eliminar esta medición?')) deleteMedicion(m.id);
+                    }}
+                    title="Eliminar medición"
+                    className="text-red-600 hover:bg-red-50 p-1.5 border-2 border-transparent hover:border-red-200"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

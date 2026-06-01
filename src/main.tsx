@@ -1,7 +1,13 @@
+// v1.1.0
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import { ensureSeed } from './data/store'
+
+// Inicializa localStorage con los seeds (incluye sectores, tipos y técnicos)
+// si las claves aún no existen.
+ensureSeed()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

@@ -92,16 +92,13 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: Response, next: Nex
   }
 });
 
-// POST /api/auth/forgot-password
 router.post('/forgot-password', async (req, res: Response, next: NextFunction) => {
   try {
     const { email } = req.body ?? {};
     if (!email) return res.status(400).json({ error: 'Email es obligatorio.' });
-
     const usuario = await prisma.usuario.findUnique({
       where: { email: String(email).toLowerCase().trim() },
     });
-
     if (usuario) {
       const token = crypto.randomBytes(32).toString('hex');
       const expiry = new Date(Date.now() + 60 * 60 * 1000);
@@ -118,38 +115,29 @@ router.post('/forgot-password', async (req, res: Response, next: NextFunction) =
         resetUrl,
       }).catch((e) => console.error('[forgot-password] email error:', e));
     }
-
     res.json({ ok: true });
   } catch (err) {
     next(err);
   }
 });
 
-// POST /api/auth/reset-password
 router.post('/reset-password', async (req, res: Response, next: NextFunction) => {
   try {
     const { token, password } = req.body ?? {};
     if (!token || !password) {
       return res.status(400).json({ error: 'Token y contrasena son obligatorios.' });
     }
-
     const usuario = await prisma.usuario.findFirst({
-      where: {
-        resetToken: String(token),
-        resetTokenExpiry: { gt: new Date() },
-      },
+      where: { resetToken: String(token), resetTokenExpiry: { gt: new Date() } },
     });
-
     if (!usuario) {
       return res.status(400).json({ error: 'Token invalido o expirado' });
     }
-
     const passwordHash = await bcrypt.hash(password, 10);
     await prisma.usuario.update({
       where: { id: usuario.id },
       data: { passwordHash, resetToken: null, resetTokenExpiry: null },
     });
-
     res.json({ ok: true });
   } catch (err) {
     next(err);

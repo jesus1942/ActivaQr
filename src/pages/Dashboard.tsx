@@ -1,3 +1,4 @@
+// v1.1.0
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -11,7 +12,7 @@ import { AlertBanner } from '../components/ui/AlertBanner';
 import { StatusBadge } from '../components/ui/StatusBadge';
 
 export const Dashboard: React.FC = () => {
-  const { activos, mediciones, tareas } = useActivos();
+  const { activos, mediciones, tareas, getSectorNombre, getTecnicoNombre } = useActivos();
   const navigate = useNavigate();
   const today = new Date();
 
@@ -39,7 +40,8 @@ export const Dashboard: React.FC = () => {
   // Chart: mediciones por sector
   const medicionesPorSector = activos.reduce<Record<string, number>>((acc, activo) => {
     const count = mediciones.filter((m) => m.activoId === activo.id).length;
-    acc[activo.sector] = (acc[activo.sector] || 0) + count;
+    const nombre = getSectorNombre(activo.sectorId);
+    acc[nombre] = (acc[nombre] || 0) + count;
     return acc;
   }, {});
   const chartData = Object.entries(medicionesPorSector).map(([sector, count]) => ({
@@ -67,7 +69,7 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div>
-      <h1 className="text-3xl font-black text-slate-900 mb-2 uppercase tracking-tight">Dashboard</h1>
+      <h1 className="font-sketch text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 mb-2 uppercase tracking-tight">Dashboard</h1>
       <p className="text-slate-500 text-sm mb-6 font-medium">Vista general del sistema de activos</p>
 
       <AlertBanner messages={alertMessages} />
@@ -75,11 +77,11 @@ export const Dashboard: React.FC = () => {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {statCards.map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className={`bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4`}>
+          <div key={label} className={`bg-[#FFFEF7] border-2 border-slate-700 shadow-[3px_3px_0px_0px_#1e293b] p-4`}>
             <div className="flex justify-between items-start">
               <div>
                 <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">{label}</div>
-                <div className={`text-4xl font-black ${color}`}>{value}</div>
+                <div className={`font-sketch text-4xl sm:text-5xl md:text-6xl font-black ${color}`}>{value}</div>
               </div>
               <div className={`${bg} p-3 border-2 border-slate-200`}>
                 <Icon size={22} className={color} />
@@ -91,8 +93,8 @@ export const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Bar Chart */}
-        <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
-          <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-4">Mediciones por Sector</h2>
+        <div className="bg-[#FFFEF7] border-2 border-slate-700 shadow-[3px_3px_0px_0px_#1e293b] p-4">
+          <h2 className="font-sketch text-2xl font-black uppercase tracking-wider text-slate-700 mb-4">Mediciones por Sector</h2>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={chartData} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -105,8 +107,8 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Upcoming Maintenance */}
-        <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
-          <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-4">Próximos Mantenimientos</h2>
+        <div className="bg-[#FFFEF7] border-2 border-slate-700 shadow-[3px_3px_0px_0px_#1e293b] p-4">
+          <h2 className="font-sketch text-2xl font-black uppercase tracking-wider text-slate-700 mb-4">Próximos Mantenimientos</h2>
           <div className="space-y-2">
             {upcomingTareas.length === 0 && (
               <p className="text-slate-400 text-sm">Sin tareas pendientes</p>
@@ -137,8 +139,8 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Recent mediciones */}
-      <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
-        <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-4">Actividad Reciente</h2>
+      <div className="bg-[#FFFEF7] border-2 border-slate-700 shadow-[3px_3px_0px_0px_#1e293b] p-4">
+        <h2 className="font-sketch text-2xl font-black uppercase tracking-wider text-slate-700 mb-4">Actividad Reciente</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -163,7 +165,7 @@ export const Dashboard: React.FC = () => {
                     <td className="px-3 py-2 text-slate-600">{format(parseISO(med.fecha), 'dd/MM/yyyy', { locale: es })}</td>
                     <td className="px-3 py-2 font-mono font-bold">{med.temperatura}°C</td>
                     <td className="px-3 py-2"><StatusBadge estado={med.estado} size="sm" /></td>
-                    <td className="px-3 py-2 text-slate-600 text-xs">{med.tecnico}</td>
+                    <td className="px-3 py-2 text-slate-600 text-xs">{getTecnicoNombre(med.tecnicoId)}</td>
                   </tr>
                 );
               })}
