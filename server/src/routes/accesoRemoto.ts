@@ -9,6 +9,7 @@ import { prisma } from '../prisma';
 import { requireAuth, requireSuperadmin, AuthRequest } from '../auth';
 import { enviarEmailAccesoRemoto } from '../email';
 import { calcularEstadoAutomatico, estadoMedicionAActivo } from '../alertas';
+import { enviarPushASuperadmin, enviarPushAEmpresa } from '../push';
 
 const MAX_ADJUNTO = 8_000_000; // ~6MB en base64
 
@@ -67,6 +68,12 @@ router.post(
           emailEnviado = false;
         }
       }
+
+      enviarPushASuperadmin({
+        title: 'Nueva solicitud de acceso remoto',
+        body: 'Empresa: ' + empresa.nombre,
+        url: '#/admin',
+      }).catch((e) => console.error('[acceso-remoto] error push solicitud:', e));
 
       res.json({ permiso, linkAprobacion, emailEnviado, adminEmail: adminEmail ?? null });
     } catch (err) {
@@ -306,6 +313,11 @@ router.post(
           adjunto: adjunto || null,
         },
       });
+      enviarPushAEmpresa(req.params.id, {
+        title: 'Nuevo mensaje de soporte',
+        body: contenido?.trim()?.slice(0, 120) || 'Adjunto recibido',
+        url: '#/mensajes',
+      }, ['admin', 'operador']).catch((e) => console.error('[acceso-remoto] error push msg cliente:', e));
       res.status(201).json(msg);
     } catch (err) { next(err); }
   }
@@ -439,6 +451,11 @@ router.post(
           adjunto: adjunto || null,
         },
       });
+      enviarPushASuperadmin({
+        title: 'Nuevo mensaje de ' + (p.empresa.nombre || autorNombre),
+        body: contenido?.trim()?.slice(0, 120) || 'Adjunto recibido',
+        url: '#/admin',
+      }).catch((e) => console.error('[acceso-remoto] error push msg superadmin:', e));
       res.status(201).json(msg);
     } catch (err) { next(err); }
   }

@@ -21,6 +21,8 @@ import accesoRemotoRouter from './routes/accesoRemoto';
 import categoriasRouter, { adminCategoriasRouter } from './routes/categorias';
 import suscripcionRouter from './routes/suscripcion';
 import operadoresRouter from './routes/operadores';
+import pushRouter from './routes/push';
+import { enviarPushASuperadmin } from './push';
 import { requireAuth, requireAuthAndActiveEmpresa, requireSuperadmin } from './auth';
 import { seedCategorias } from './seedCategorias';
 import { seedDemo } from './seedDemo';
@@ -73,6 +75,11 @@ app.post('/api/leads', async (req: Request, res: Response) => {
   } catch (e) {
     console.error('[LEAD] error enviando email:', e);
   }
+  enviarPushASuperadmin({
+    title: 'Nuevo lead',
+    body: nombre + (empresa ? ' - ' + empresa : ''),
+    url: '#/admin',
+  }).catch((e) => console.error('[LEAD] error push:', e));
   res.json({ ok: true });
 });
 
@@ -106,6 +113,8 @@ app.use('/api/sync', requireAuthAndActiveEmpresa, syncRouter);
 app.use('/api/categorias', requireAuthAndActiveEmpresa, categoriasRouter);
 app.use('/api/suscripcion', requireAuthAndActiveEmpresa, suscripcionRouter);
 app.use('/api/operadores', requireAuthAndActiveEmpresa, operadoresRouter);
+// Push: la ruta public-key no requiere auth, las demás aplican requireAuth por-ruta.
+app.use('/api/push', pushRouter);
 app.use('/api/admin/categorias-globales', requireAuth, requireSuperadmin, adminCategoriasRouter);
 
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
