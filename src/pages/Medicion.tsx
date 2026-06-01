@@ -30,15 +30,34 @@ function evalMin(v: number, alerta?: number | null, critico?: number | null): Ni
 function calcularEstado(form: Record<string, string>, activo: Activo): NivelAlerta {
   let e: NivelAlerta = 'normal';
   const t = parseFloat(form.temperatura);
-  if (!isNaN(t)) e = peor(e, evalMax(t, activo.temperaturaAlerta, activo.temperaturaCritica, activo.temperaturaMax));
+  if (!isNaN(t)) {
+    e = peor(e, evalMax(t, activo.temperaturaAlerta, activo.temperaturaCritica, activo.temperaturaMax));
+    // Temperatura por debajo del minimo tambien es anormal
+    if (activo.temperaturaMin != null && t < activo.temperaturaMin) e = peor(e, 'alerta');
+  }
   const a = parseFloat(form.amperaje);
-  if (!isNaN(a)) e = peor(e, evalMax(a, (activo as any).amperajeAlerta, (activo as any).amperajeCritico));
+  if (!isNaN(a)) {
+    e = peor(e, evalMax(a, (activo as any).amperajeAlerta, (activo as any).amperajeCritico));
+    if ((activo as any).amperajeNormal > 0 && a === 0) e = peor(e, 'alerta');
+  }
   const p = parseFloat(form.presion);
-  if (!isNaN(p)) e = peor(e, evalMax(p, (activo as any).presionAlerta, (activo as any).presionCritica));
+  if (!isNaN(p)) {
+    e = peor(e, evalMax(p, (activo as any).presionAlerta, (activo as any).presionCritica));
+    if ((activo as any).presionNormal > 0 && p === 0) e = peor(e, 'alerta');
+  }
+  const v = parseFloat(form.voltaje);
+  if (!isNaN(v)) {
+    if (v === 0) e = peor(e, 'critico');
+    if ((activo as any).voltajeMin != null && v < (activo as any).voltajeMin) e = peor(e, 'alerta');
+    if ((activo as any).voltajeMax != null && v > (activo as any).voltajeMax) e = peor(e, 'alerta');
+  }
   const bat = parseInt(form.porcentajeBateria);
   if (!isNaN(bat)) e = peor(e, evalMin(bat, (activo as any).bateriaAlerta, (activo as any).bateriaCritica));
   const ton = parseInt(form.nivelToner);
   if (!isNaN(ton)) e = peor(e, evalMin(ton, (activo as any).tonerAlerta, (activo as any).tonerCritico));
+  // Vibracion: moderada = alerta, alta = critico
+  if (form.vibracion === 'alta') e = peor(e, 'critico');
+  else if (form.vibracion === 'moderada') e = peor(e, 'alerta');
   return e;
 }
 
@@ -176,7 +195,7 @@ function ParamDinamicoInput({
 export const Medicion: React.FC = () => {
   const { activoId } = useParams<{ activoId: string }>();
   const navigate = useNavigate();
-  const { activos, mediciones, tecnicos, addMedicion, getSectorNombre, getTipo, getTecnicoNombre } = useActivos();
+  const { activos, mediciones, tecnicos, addMedicion, updateActivo, getSectorNombre, getTipo, getTecnicoNombre } = useActivos();
   const tecnicosActivos = tecnicos.filter((t) => t.activo);
 
   const [searchCodigo, setSearchCodigo] = useState('');
@@ -276,12 +295,31 @@ export const Medicion: React.FC = () => {
       ...(mideBateria && form.porcentajeBateria !== '' ? { porcentajeBateria: parseInt(form.porcentajeBateria) } : {}),
       ...(mideToner && form.nivelToner !== '' ? { nivelToner: parseInt(form.nivelToner) } : {}),
       ...(mideContador && form.contador !== '' ? { contador: parseInt(form.contador) } : {}),
-      estado: form.estado,
+      estado: (() => {
+        // El estado de la medicion es el peor entre el manual y el automatico.
+        const autoMed: EstadoMedicion = estadoAuto === 'urgente' ? 'urgente'
+          : estadoAuto === 'critico' || estadoAuto === 'alerta' ? 'revision'
+          : 'normal';
+        const niv: Record<string, number> = { normal: 0, revision: 1, urgente: 2 };
+        return (niv[form.estado] ?? 0) >= (niv[autoMed] ?? 0) ? form.estado : autoMed;
+      })(),
       observaciones: form.observaciones,
       tecnicoId: form.tecnicoId,
       ...(Object.keys(parametrosExtra).length > 0 ? { parametrosExtra } : {}),
     };
     addMedicion(newMedicion);
+
+    // Actualizar la etiqueta del activo segun el estado calculado.
+    // Solo escalamos (nunca bajamos automaticamente: requiere revision manual).
+    const nivelActivo: Record<string, number> = { normal: 0, alerta: 1, mantenimiento: 1, critico: 2 };
+    const estadoActivoCalc: 'normal' | 'alerta' | 'critico' =
+      estadoAuto === 'urgente' || estadoAuto === 'critico' ? 'critico'
+      : estadoAuto === 'alerta' ? 'alerta'
+      : 'normal';
+    if ((nivelActivo[estadoActivoCalc] ?? 0) > (nivelActivo[activo.estado] ?? 0)) {
+      updateActivo(activo.id, { estado: estadoActivoCalc });
+    }
+
     setSavedMedicion(newMedicion);
     setSubmitted(true);
   };
