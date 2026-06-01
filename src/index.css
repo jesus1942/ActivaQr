@@ -2,12 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --font-sketch: 'Space Grotesk', sans-serif;
+  --font-body: 'Space Grotesk', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+}
+
 * {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, .font-sketch {
+  font-family: var(--font-sketch);
+  letter-spacing: -0.02em;
+}
+
+code, .font-mono {
+  font-family: var(--font-mono);
 }
 
 body {
-  background-color: #F8FAFC;
+  background-color: #FAFAF7;
+}
+
+/* Respeta la barra de estado del celular en modo PWA (notch / hora / batería) */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+.h-safe-header {
+  height: calc(3.5rem + env(safe-area-inset-top));
 }
 
 .stamp-shadow {

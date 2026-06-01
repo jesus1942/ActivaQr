@@ -9,6 +9,10 @@ export default {
           navy: '#1E293B',
           steel: '#64748B'
         }
+      },
+      fontFamily: {
+        sketch: ['Space Grotesk', 'sans-serif'],
+        body: ['Space Grotesk', 'sans-serif'],
       }
     }
   },

@@ -31,16 +31,16 @@ function PantallaBloqueo() {
         </div>
         <div className="p-6 space-y-4">
           <p className="text-slate-700 font-semibold text-base leading-relaxed">
-            Tu suscripcion ha sido suspendida. No podes acceder a la aplicacion hasta que el administrador reactive la cuenta.
+            Tu suscripción ha sido suspendida. No podés acceder a la aplicación hasta que el administrador reactive la cuenta.
           </p>
           <p className="text-slate-500 text-sm">
-            Si crees que es un error, contacta al soporte de ActivaQR.
+            Si creés que es un error, contactá al soporte de ActivaQR.
           </p>
           <button
             onClick={logout}
             className="w-full mt-2 px-4 py-3 border-2 border-slate-400 font-bold text-slate-600 hover:border-slate-700 transition-colors text-sm uppercase tracking-wide"
           >
-            Cerrar sesion
+            Cerrar sesión
           </button>
         </div>
       </div>

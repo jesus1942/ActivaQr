@@ -1,18 +1,50 @@
+// v1.1.0
 export type EstadoActivo = 'normal' | 'alerta' | 'critico' | 'mantenimiento';
-export type TipoActivo = 'motor' | 'compresor' | 'bomba' | 'camara_frio' | 'tablero' | 'rodamiento' | 'generador' | 'otro';
 export type EstadoMedicion = 'normal' | 'revision' | 'urgente';
+
+export interface Sector {
+  id: string;
+  nombre: string;
+  color?: string;
+  activo: boolean;
+}
+
+export interface TipoActivo {
+  id: string;
+  nombre: string;
+  icono?: string;
+  categoriaId?: string | null;
+  mideTemperatura: boolean;
+  mideAmperaje: boolean;
+  midePresion: boolean;
+  mideVibracion: boolean;
+  mideBateria?: boolean;
+  mideToner?: boolean;
+  mideContador?: boolean;
+  mideVoltaje?: boolean;
+  activo: boolean;
+}
+
+export interface Tecnico {
+  id: string;
+  nombre: string;
+  rol: 'admin' | 'supervisor' | 'tecnico';
+  email?: string;
+  telefono?: string;
+  activo: boolean;
+}
 
 export interface Activo {
   id: string;
   codigo: string;
   nombre: string;
-  tipo: TipoActivo;
-  sector: string;
+  tipoId: string;
+  sectorId: string;
   marca: string;
   modelo: string;
   fechaIngreso: string;
   ubicacion: string;
-  responsable: string;
+  responsableId: string;
   horasActuales: number;
   estado: EstadoActivo;
   temperaturaMin: number;
@@ -20,7 +52,18 @@ export interface Activo {
   temperaturaAlerta: number;
   temperaturaCritica: number;
   amperajeNormal: number;
+  amperajeAlerta?: number | null;
+  amperajeCritico?: number | null;
   presionNormal: number;
+  presionAlerta?: number | null;
+  presionCritica?: number | null;
+  voltajeMin?: number | null;
+  voltajeMax?: number | null;
+  voltajeAlerta?: number | null;
+  bateriaAlerta?: number | null;
+  bateriaCritica?: number | null;
+  tonerAlerta?: number | null;
+  tonerCritico?: number | null;
   intervaloMedicionHoras: number;
   intervaloLubricacionHoras: number;
   intervaloRodamientoHoras: number;
@@ -39,7 +82,12 @@ export interface Medicion {
   horasMarcha: number;
   estado: EstadoMedicion;
   observaciones: string;
-  tecnico: string;
+  tecnicoId: string;
+  voltaje?: number;
+  porcentajeBateria?: number;
+  nivelToner?: number;
+  contador?: number;
+  parametrosExtra?: Record<string, string | number | boolean> | null;
 }
 
 export interface TareaMantenimiento {
@@ -49,6 +97,6 @@ export interface TareaMantenimiento {
   fechaProgramada: string;
   fechaRealizada?: string;
   estado: 'pendiente' | 'completado' | 'vencido';
-  responsable: string;
+  responsableId: string;
   observaciones: string;
 }

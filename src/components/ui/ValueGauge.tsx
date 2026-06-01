@@ -1,3 +1,4 @@
+// v1.1.0
 import React from 'react';
 
 interface ValueGaugeProps {
