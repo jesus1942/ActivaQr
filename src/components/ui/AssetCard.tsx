@@ -19,7 +19,7 @@ interface AssetCardProps {
 
 export const AssetCard: React.FC<AssetCardProps> = ({ activo, lastMedicion, sectorNombre, responsableNombre, onEdit }) => {
   const navigate = useNavigate();
-  const qrValue = `${window.location.origin}${import.meta.env.BASE_URL}#/medicion/${activo.id}`;
+  const qrValue = `${window.location.origin}${import.meta.env.BASE_URL}#/ficha/${activo.id}`;
 
   return (
     <div

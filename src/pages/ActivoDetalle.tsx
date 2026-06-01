@@ -32,7 +32,7 @@ export const ActivoDetalle: React.FC = () => {
 
   const last10 = activoMediciones.slice(-10);
   const activoTareas = tareas.filter((t) => t.activoId === id);
-  const qrValue = `${window.location.origin}${import.meta.env.BASE_URL}#/medicion/${activo.id}`;
+  const qrValue = `${window.location.origin}${import.meta.env.BASE_URL}#/ficha/${activo.id}`;
 
   const chartData = last10.map((m) => ({
     fecha: format(parseISO(m.fecha), 'dd/MM', { locale: es }),
