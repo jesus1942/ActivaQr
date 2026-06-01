@@ -65,7 +65,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     // Si el técnico no envió estado (o envió 'normal'), lo calculamos.
     // Si envió 'urgente'/'critico', respetamos su criterio visual.
     const estadoCalculado = calcularEstadoAutomatico(
-      { temperatura, amperaje, presion, voltaje, porcentajeBateria, nivelToner },
+      { temperatura, amperaje, presion, voltaje, porcentajeBateria, nivelToner, vibracion },
       activo,
     );
     // El estado final es el peor entre el calculado y el enviado por el técnico.
