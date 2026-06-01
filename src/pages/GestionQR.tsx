@@ -21,7 +21,7 @@ export const GestionQR: React.FC = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
         <div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 uppercase tracking-tight">QR / Etiquetas</h1>
           <p className="text-slate-500 text-sm mt-1">{activos.length} activos</p>
