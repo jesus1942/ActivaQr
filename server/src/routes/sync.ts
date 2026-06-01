@@ -133,6 +133,9 @@ router.put('/activos', asyncHandler(async (req, res) => {
         ubicacion: i.ubicacion ?? null,
         horasActuales: toNum(i.horasActuales) ?? 0,
         estado: i.estado ?? 'normal',
+        estadoOperativo: ['operativo', 'pausa', 'mantenimiento', 'montaje', 'fuera_servicio'].includes(i.estadoOperativo)
+          ? i.estadoOperativo
+          : 'operativo',
         temperaturaMin: toNum(i.temperaturaMin),
         temperaturaMax: toNum(i.temperaturaMax),
         temperaturaAlerta: toNum(i.temperaturaAlerta),

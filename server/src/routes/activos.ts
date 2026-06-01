@@ -6,6 +6,8 @@ import { getLimite } from '../planLimits';
 
 const router = Router();
 
+const ESTADOS_OPERATIVOS = ['operativo', 'pausa', 'mantenimiento', 'montaje', 'fuera_servicio'];
+
 // Campos que se aceptan para crear/actualizar un activo.
 function pickActivoData(body: any) {
   const {
@@ -21,6 +23,7 @@ function pickActivoData(body: any) {
     ubicacion,
     horasActuales,
     estado,
+    estadoOperativo,
     temperaturaMin,
     temperaturaMax,
     temperaturaAlerta,
@@ -79,6 +82,13 @@ function pickActivoData(body: any) {
     intervaloRodamientoHoras,
     notas,
   };
+
+  // Estado operativo: solo persistir si es un valor válido.
+  if (estadoOperativo !== undefined) {
+    data.estadoOperativo = ESTADOS_OPERATIVOS.includes(estadoOperativo)
+      ? estadoOperativo
+      : 'operativo';
+  }
 
   if (fechaIngreso !== undefined) data.fechaIngreso = new Date(fechaIngreso);
   if (proximoMantenimiento !== undefined) {
@@ -184,6 +194,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     }
 
     if (!data.fechaIngreso) data.fechaIngreso = new Date();
+    if (!data.estadoOperativo) data.estadoOperativo = 'operativo';
 
     const activo = await prisma.activo.create({
       data: { ...data, empresaId },
