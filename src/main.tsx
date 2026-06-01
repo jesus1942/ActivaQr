@@ -7,8 +7,8 @@ import { ensureSeed } from './data/store'
 
 // Si la URL tiene ?demo=1 limpiar sesión antes de renderizar nada
 if (window.location.hash.includes('demo=1')) {
-  localStorage.removeItem('activaqr_token');
-  localStorage.removeItem('activaqr_user');
+  sessionStorage.removeItem('activaqr_token');
+  sessionStorage.removeItem('activaqr_user');
 }
 
 // Inicializa localStorage con los seeds (incluye sectores, tipos y técnicos)

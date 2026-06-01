@@ -18,7 +18,7 @@ export const DemoBanner: React.FC = () => {
   useEffect(() => {
     if (!usuario || usuario.email !== 'demo@activaqr.com') return;
 
-    const token = localStorage.getItem('activaqr_token');
+    const token = sessionStorage.getItem('activaqr_token');
     if (!token) return;
 
     const exp = getExpFromToken(token);

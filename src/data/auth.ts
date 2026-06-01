@@ -1,12 +1,15 @@
 // v1.1.0
 /**
  * Cliente de autenticación del frontend.
- * Guarda el token JWT en localStorage y lo adjunta a las requests.
+ * Guarda el token JWT en sessionStorage: la sesión se cierra al matar la app.
  */
 export const API_URL: string | undefined = import.meta.env.VITE_API_URL;
 
 const TOKEN_KEY = 'activaqr_token';
 const USER_KEY = 'activaqr_user';
+
+// La sesión vive en sessionStorage para que se cierre cuando se mata la app.
+const authStore = window.sessionStorage;
 
 export interface UsuarioSesion {
   id: string;
@@ -18,21 +21,21 @@ export interface UsuarioSesion {
 }
 
 export function getToken(): string | null {
-  const token = localStorage.getItem(TOKEN_KEY);
+  const token = authStore.getItem(TOKEN_KEY);
   if (!token) return null;
   // Verificar expiración del JWT sin librería — decodificar payload base64
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
     if (payload.exp && payload.exp * 1000 < Date.now()) {
       // Token expirado — limpiar sesión
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(USER_KEY);
+      authStore.removeItem(TOKEN_KEY);
+      authStore.removeItem(USER_KEY);
       return null;
     }
   } catch {
     // Token malformado — limpiar
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    authStore.removeItem(TOKEN_KEY);
+    authStore.removeItem(USER_KEY);
     return null;
   }
   return token;
@@ -41,7 +44,7 @@ export function getToken(): string | null {
 export function getUsuario(): UsuarioSesion | null {
   if (!getToken()) return null; // token expirado o inválido
   try {
-    const raw = localStorage.getItem(USER_KEY);
+    const raw = authStore.getItem(USER_KEY);
     return raw ? (JSON.parse(raw) as UsuarioSesion) : null;
   } catch {
     return null;
@@ -49,11 +52,12 @@ export function getUsuario(): UsuarioSesion | null {
 }
 
 function guardarSesion(token: string, usuario: UsuarioSesion) {
-  localStorage.setItem(TOKEN_KEY, token);
-  localStorage.setItem(USER_KEY, JSON.stringify(usuario));
+  authStore.setItem(TOKEN_KEY, token);
+  authStore.setItem(USER_KEY, JSON.stringify(usuario));
 }
 
 export function logout() {
+  authStore.clear();
   localStorage.clear();
 }
 
