@@ -22,6 +22,55 @@ El personal registrado carga mediciones, registra mantenimientos y recibe alerta
 
 ---
 
+## Por que ActivaQR gana en el mercado local
+
+El mercado argentino y latinoamericano tiene soluciones de mantenimiento industrial. Ninguna hace lo que hace ActivaQR.
+
+### Competidores directos y sus brechas
+
+| Caracteristica | ActivaQR | CruzarGT (AR) | Sentinello (AR) | Fracttal One (LATAM) | MP Software (LATAM) |
+|---|:---:|:---:|:---:|:---:|:---:|
+| Ficha publica via QR sin login | **SI** | NO | NO | NO | NO |
+| Alertas por umbrales configurables por equipo | **SI** | Solo vencimientos | Parcial (IoT) | No documentado | NO |
+| Categorias de parametros por tipo de equipo | **SI** | NO | NO | NO | NO |
+| Soporte remoto con intervencion directa | **SI** | NO | NO | NO | NO |
+| Chat con fotos y audio | **SI** | NO | NO | NO | NO |
+| Mejora de plan desde la app | **SI** | NO | NO | NO | NO |
+| Pago local con Mercado Pago | **SI** | NO | NO | NO | NO |
+| Multi-tenant para revendedores | **SI** | NO | NO | SI | SI |
+| Precio entrada para PyME | **Bajo (ARS)** | ARS $59.000/mes | Sin publicar | USD $279/mes | Sin publicar |
+
+### Lo que ninguno tiene
+
+**Ficha publica sin login.** Todos los competidores requieren que el operario tenga una cuenta y este logueado para ver los datos de un activo. ActivaQR permite que cualquier persona con un celular escanee el QR pegado en la maquina y vea la ficha completa en 3 segundos — sin app, sin contraseña, sin friccion. Ninguna de las soluciones relevadas tiene esta funcionalidad.
+
+**Intervencion remota del soporte tecnico.** Los competidores permiten ver datos. ActivaQR permite que el tecnico de soporte ingrese al sistema del cliente (con permiso aprobado por el cliente), vea sus activos en tiempo real y **registre una medicion directamente**, desencadenando el recalculo automatico de alertas. Es tele-mantenimiento real, no solo visualizacion.
+
+**Plantillas de parametros por categoria de equipo.** Motor diesel, hidraulico, neumatico, electrico, bomba centrifuga, HVAC, IT — cada categoria tiene sus propios parametros con umbrales de alerta, critico y urgente pre-configurados segun normas industriales. Ningun competidor ofrece esto out-of-the-box.
+
+**Adaptado al mercado argentino de verdad.** Mercado Pago para cobro, precios en ARS, interfaz en castellano rioplatense, sin overhead de infraestructura para el cliente. Los competidores internacionales cobran en USD ($279-$649/mes base) o piden demo antes de dar precio.
+
+### Posicionamiento
+
+```
+PRECIO
+  ^
+  |  ActivaQR ----> zona libre: precio local +
+  |                              features que no existen
+  |
+  |  CruzarGT        Sentinello
+  |  (compliance)     (IoT grande)
+  |
+  |                   Fracttal / MP / Tractian
+  |                   (enterprise USD)
+  +-------------------------------------------------> FEATURES DIFERENCIALES
+     bajo                                   alto
+```
+
+ActivaQR ocupa una zona que no tiene competidor directo: **precio accesible para PyMEs argentinas con features que solo tienen soluciones enterprise globales** — y con funcionalidades que no existen en ninguna de ellas.
+
+---
+
 ## Funcionalidades
 
 **Ficha pública via QR (sin login)**
