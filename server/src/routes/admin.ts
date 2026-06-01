@@ -259,4 +259,15 @@ router.delete('/solicitudes-upgrade/:empresaId', async (req: AuthRequest, res: R
   }
 });
 
+// POST /api/admin/seed-demo — recrea la empresa demo si no existe
+router.post('/seed-demo', async (_req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { seedDemo } = await import('../seedDemo');
+    await seedDemo();
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
