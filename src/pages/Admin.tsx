@@ -35,6 +35,7 @@ import {
   revocarAccesoAdmin,
 } from '../data/accesoRemotoApi';
 import { PanelAccesoRemoto } from '../components/PanelAccesoRemoto';
+import { NotificacionesPush } from '../components/NotificacionesPush';
 import { apiFetch } from '../data/auth';
 
 const PLANES = ['inicial', 'empresa', 'industrial'] as const;
@@ -336,6 +337,8 @@ export const Admin: React.FC = () => {
           </button>
         </div>
       </div>
+
+      <NotificacionesPush />
 
       {error && (
         <div className="bg-red-50 border-2 border-red-300 text-red-700 px-4 py-3 font-semibold">
