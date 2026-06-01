@@ -54,8 +54,7 @@ function guardarSesion(token: string, usuario: UsuarioSesion) {
 }
 
 export function logout() {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
+  localStorage.clear();
 }
 
 /** Cabeceras con el token para usar en fetch. */

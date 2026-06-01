@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { prisma } from './prisma';
 
 const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? (() => { throw new Error('JWT_SECRET is required in production'); })() : 'activaqr-dev-secret-local');
-export const TOKEN_TTL = '30d';
+export const TOKEN_TTL = '7d';
 export const DEMO_TOKEN_TTL = '2h';
 
 export interface TokenPayload {
