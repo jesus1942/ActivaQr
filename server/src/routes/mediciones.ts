@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../prisma';
 import { resolveEmpresaId } from '../tenant';
 import { calcularEstadoAutomatico, estadoMedicionAActivo } from '../alertas';
+import { enviarPushAEmpresa } from '../push';
 
 const router = Router();
 
@@ -126,6 +127,19 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     }
     if (Object.keys(data).length > 0) {
       await prisma.activo.update({ where: { id: activoId }, data });
+    }
+
+    // Notificar push cuando el activo escala a crítico o alerta.
+    if (nuevoEstado === 'critico' || nuevoEstado === 'alerta') {
+      enviarPushAEmpresa(
+        activo.empresaId,
+        {
+          title: 'Alerta en ' + activo.nombre,
+          body: 'Estado: ' + nuevoEstado + '. Codigo ' + activo.codigo,
+          url: '#/activos/' + activo.id,
+        },
+        ['admin', 'operador'],
+      ).catch((e) => console.error('[medicion] error push:', e));
     }
 
     res.status(201).json(medicion);

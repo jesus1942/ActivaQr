@@ -163,8 +163,20 @@ model Usuario {
   resetTokenExpiry DateTime?
 
   empresa Empresa? @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  pushSubscriptions PushSubscription[]
 
   @@index([empresaId])
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  usuarioId String
+  endpoint  String   @unique @db.Text
+  p256dh    String   @db.Text
+  auth      String   @db.Text
+  creadoEn  DateTime @default(now())
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  @@index([usuarioId])
 }
 
 model Sede {

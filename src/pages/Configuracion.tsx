@@ -12,6 +12,7 @@ import {
   getMensajesCliente, enviarMensajeCliente,
 } from '../data/accesoRemotoApi';
 import { ChatRemoto } from '../components/ChatRemoto';
+import { NotificacionesPush } from '../components/NotificacionesPush';
 import {
   CategoriaEquipo, ParametroCategoria,
   getCategorias, crearCategoria, eliminarCategoria, agregarParametro,
@@ -52,6 +53,8 @@ export const Configuracion: React.FC = () => {
         </h1>
         <p className="text-slate-500 text-sm mt-1">Gestioná sectores, tipos de activo y técnicos</p>
       </div>
+
+      <NotificacionesPush />
 
       {/* Plan actual */}
       {usuario && <SeccionPlan />}
