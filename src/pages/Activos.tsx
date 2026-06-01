@@ -7,7 +7,8 @@ import { useActivos } from '../hooks/useActivos';
 import { useAuth } from '../context/AuthContext';
 import { AssetCard } from '../components/ui/AssetCard';
 import { StatusBadge } from '../components/ui/StatusBadge';
-import { Activo, EstadoActivo } from '../data/types';
+import { ESTADOS_OPERATIVOS } from '../components/ui/EstadoOperativoBadge';
+import { Activo, EstadoActivo, EstadoOperativo } from '../data/types';
 
 const LIMITES_ACTIVOS: Record<string, number | null> = {
   inicial:    10,
@@ -49,6 +50,7 @@ export const Activos: React.FC = () => {
     responsableId: tecnicosActivos[0]?.id ?? '',
     horasActuales: 0,
     estado: 'normal',
+    estadoOperativo: 'operativo',
     temperaturaMin: 20,
     temperaturaMax: 80,
     temperaturaAlerta: 85,
@@ -325,6 +327,16 @@ export const Activos: React.FC = () => {
                   className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
                 >
                   {['normal', 'alerta', 'critico', 'mantenimiento'].map((s) => <option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Estado Operativo</label>
+                <select
+                  value={form.estadoOperativo ?? 'operativo'}
+                  onChange={(e) => setForm((prev) => ({ ...prev, estadoOperativo: e.target.value as EstadoOperativo }))}
+                  className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
+                >
+                  {ESTADOS_OPERATIVOS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </select>
               </div>
               <div>

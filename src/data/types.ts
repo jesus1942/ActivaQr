@@ -1,6 +1,7 @@
 // v1.1.0
 export type EstadoActivo = 'normal' | 'alerta' | 'critico' | 'mantenimiento';
 export type EstadoMedicion = 'normal' | 'revision' | 'urgente';
+export type EstadoOperativo = 'operativo' | 'pausa' | 'mantenimiento' | 'montaje' | 'fuera_servicio';
 
 export interface Sector {
   id: string;
@@ -47,6 +48,7 @@ export interface Activo {
   responsableId: string;
   horasActuales: number;
   estado: EstadoActivo;
+  estadoOperativo?: EstadoOperativo;
   temperaturaMin: number;
   temperaturaMax: number;
   temperaturaAlerta: number;

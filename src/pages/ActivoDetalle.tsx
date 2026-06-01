@@ -10,14 +10,16 @@ import {
 import { ArrowLeft, Printer, ClipboardList, Pencil, Trash2 } from 'lucide-react';
 import { useActivos } from '../hooks/useActivos';
 import { StatusBadge } from '../components/ui/StatusBadge';
+import { EstadoOperativoBadge, ESTADOS_OPERATIVOS } from '../components/ui/EstadoOperativoBadge';
 import { ValueGauge } from '../components/ui/ValueGauge';
+import { EstadoOperativo } from '../data/types';
 
 export const ActivoDetalle: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const {
     activos, mediciones, tareas,
-    deleteActivo, deleteMedicion,
+    deleteActivo, deleteMedicion, updateActivo,
     getSectorNombre, getTipoNombre, getTecnicoNombre,
   } = useActivos();
 
@@ -79,8 +81,19 @@ export const ActivoDetalle: React.FC = () => {
           <div className="flex items-center gap-3 flex-wrap">
             <span className="font-mono font-black text-2xl sm:text-3xl text-slate-900">{activo.codigo}</span>
             <StatusBadge estado={activo.estado} size="lg" />
+            <EstadoOperativoBadge estado={activo.estadoOperativo ?? 'operativo'} size="lg" />
           </div>
           <h1 className="text-lg font-bold text-slate-700 mt-0.5">{activo.nombre}</h1>
+          <div className="flex items-center gap-2 mt-2">
+            <label className="text-xs font-black uppercase tracking-wider text-slate-500">Estado operativo:</label>
+            <select
+              value={activo.estadoOperativo ?? 'operativo'}
+              onChange={(e) => updateActivo(activo.id, { estadoOperativo: e.target.value as EstadoOperativo })}
+              className="border-2 border-slate-800 px-2 h-9 text-sm font-semibold outline-none focus:border-orange-500 bg-white"
+            >
+              {ESTADOS_OPERATIVOS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+          </div>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
           <button

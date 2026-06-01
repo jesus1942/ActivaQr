@@ -39,6 +39,14 @@ enum EstadoActivo {
   mantenimiento
 }
 
+enum EstadoOperativo {
+  operativo
+  pausa
+  mantenimiento
+  montaje
+  fuera_servicio
+}
+
 enum Vibracion {
   ninguna
   leve
@@ -277,6 +285,7 @@ model Activo {
   ubicacion                 String?
   horasActuales             Int          @default(0)
   estado                    EstadoActivo @default(normal)
+  estadoOperativo           EstadoOperativo @default(operativo)
   temperaturaMin            Float?
   temperaturaMax            Float?
   temperaturaAlerta         Float?

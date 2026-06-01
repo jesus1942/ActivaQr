@@ -6,6 +6,7 @@ import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Activo, Medicion } from '../../data/types';
 import { StatusBadge } from './StatusBadge';
+import { EstadoOperativoBadge } from './EstadoOperativoBadge';
 import { MapPin, Clock, User, Pencil } from 'lucide-react';
 
 interface AssetCardProps {
@@ -37,11 +38,14 @@ export const AssetCard: React.FC<AssetCardProps> = ({ activo, lastMedicion, sect
       )}
 
       {/* Header */}
-      <div className="flex justify-between items-start mb-3">
+      <div className="flex justify-between items-start mb-2">
         <StatusBadge estado={activo.estado} size="sm" />
         <span className="font-sketch text-base font-bold uppercase bg-slate-100 border border-slate-300 px-2 py-0.5 text-slate-600 rotate-[1deg] mr-6">
           {sectorNombre}
         </span>
+      </div>
+      <div className="mb-3">
+        <EstadoOperativoBadge estado={activo.estadoOperativo ?? 'operativo'} size="sm" />
       </div>
 
       {/* Code & Name */}

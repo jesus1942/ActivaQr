@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { API_URL, getToken, getUsuario } from '../data/auth';
+import { EstadoOperativoBadge } from '../components/ui/EstadoOperativoBadge';
+import { EstadoOperativo } from '../data/types';
 
 interface FichaActivo {
   id: string;
@@ -11,6 +13,7 @@ interface FichaActivo {
   modelo: string;
   ubicacion: string;
   estado: string;
+  estadoOperativo?: EstadoOperativo;
   fechaIngreso: string;
   proximoMantenimiento: string;
   horasActuales: number;
@@ -124,6 +127,12 @@ export const FichaPublica: React.FC = () => {
             <span className={`text-xs font-black uppercase px-2 py-1 border-2 whitespace-nowrap ${estadoColor}`}>
               {activo.estado}
             </span>
+          </div>
+
+          {/* Estado operativo — visible para el visitante que escanea el QR */}
+          <div className="mb-4 -mt-1">
+            <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-1.5">Estado operativo</p>
+            <EstadoOperativoBadge estado={activo.estadoOperativo ?? 'operativo'} size="lg" />
           </div>
 
           <Fila label="Marca"     value={activo.marca} />
