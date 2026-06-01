@@ -18,10 +18,28 @@ export interface UsuarioSesion {
 }
 
 export function getToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) return null;
+  // Verificar expiración del JWT sin librería — decodificar payload base64
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      // Token expirado — limpiar sesión
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      return null;
+    }
+  } catch {
+    // Token malformado — limpiar
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    return null;
+  }
+  return token;
 }
 
 export function getUsuario(): UsuarioSesion | null {
+  if (!getToken()) return null; // token expirado o inválido
   try {
     const raw = localStorage.getItem(USER_KEY);
     return raw ? (JSON.parse(raw) as UsuarioSesion) : null;
