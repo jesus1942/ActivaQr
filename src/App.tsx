@@ -18,6 +18,7 @@ import { FichaPublica } from './pages/FichaPublica';
 import { AprobarAccesoRemoto } from './pages/AprobarAccesoRemoto';
 import { ResetPassword } from './pages/ResetPassword';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { DashboardOperador } from './pages/DashboardOperador';
 
 function PantallaBloqueo() {
   const { logout } = useAuth();
@@ -53,6 +54,8 @@ function AuthedApp() {
 
   if (requiereLogin && !usuario) return <Login />;
   if (empresaSuspendida && usuario?.rol !== 'superadmin') return <PantallaBloqueo />;
+
+  if (usuario?.rol === 'operador') return <DashboardOperador />;
 
   const esSuperadmin = usuario?.rol === 'superadmin';
 
