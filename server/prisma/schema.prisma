@@ -148,9 +148,11 @@ model Usuario {
   passwordHash String
   nombre       String
   rol          RolUsuario @default(admin)
-  activo       Boolean    @default(true)
-  creadoEn     DateTime   @default(now())
-  ultimoAcceso DateTime?
+  activo           Boolean    @default(true)
+  creadoEn         DateTime   @default(now())
+  ultimoAcceso     DateTime?
+  resetToken       String?    @unique
+  resetTokenExpiry DateTime?
 
   empresa Empresa? @relation(fields: [empresaId], references: [id], onDelete: Cascade)
 
