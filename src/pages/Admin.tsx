@@ -477,6 +477,27 @@ export const Admin: React.FC = () => {
               {/* Panel de operaciones desplegable */}
               {abierta && (
                 <div className="border-t-2 border-slate-900 p-3 bg-slate-50 space-y-2">
+                  {/* Cambio de plan manual */}
+                  <div className="flex gap-2">
+                    {(['inicial', 'empresa', 'industrial'] as const).map((p) => (
+                      <button
+                        key={p}
+                        onClick={async () => {
+                          if (emp.plan === p) return;
+                          await actualizarEmpresa(emp.id, { plan: p });
+                          cargar();
+                        }}
+                        className={`flex-1 py-1.5 text-xs font-black uppercase border-2 transition-colors ${
+                          emp.plan === p
+                            ? 'bg-slate-900 text-white border-slate-900'
+                            : 'bg-white border-slate-300 hover:border-orange-500 hover:text-orange-600'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+
                   <button
                     onClick={() => toggleEstado(emp)}
                     disabled={toggling.has(emp.id)}
