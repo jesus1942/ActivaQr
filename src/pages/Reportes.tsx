@@ -213,10 +213,10 @@ export const Reportes: React.FC = () => {
                   const meds = filteredMediciones.filter((m) => m.activoId === activoId);
                   return (
                     <div key={activoId}>
-                      <div className="bg-slate-900 text-white px-3 py-2 flex justify-between items-center">
-                        <span className="font-mono font-bold">{activo.codigo}</span>
-                        <span className="text-sm">{activo.nombre}</span>
-                        <span className="text-xs text-slate-400">{meds.length} mediciones</span>
+                      <div className="bg-slate-900 text-white px-3 py-2 flex justify-between items-center gap-2">
+                        <span className="font-mono font-bold flex-shrink-0">{activo.codigo}</span>
+                        <span className="text-sm truncate min-w-0 flex-1 text-center">{activo.nombre}</span>
+                        <span className="text-xs text-slate-400 flex-shrink-0 whitespace-nowrap">{meds.length} mediciones</span>
                       </div>
                       {meds.length > 0 ? (
                         <div className="overflow-x-auto">
