@@ -55,7 +55,7 @@ app.use(express.json({ limit: '10mb' }));
 const APP_PUBLIC_URL = process.env.APP_PUBLIC_URL || 'https://jesus1942.github.io/ActivaQr/';
 app.get('/', (_req, res) => {
   res.set('Content-Type', 'text/html; charset=utf-8');
-  res.send(renderLanding(APP_PUBLIC_URL, process.env.WHATSAPP_NUMERO));
+  res.send(renderLanding(APP_PUBLIC_URL, process.env.WHATSAPP_NUMERO || '5492804018359'));
 });
 
 app.get('/api/health', (_req, res) => {
