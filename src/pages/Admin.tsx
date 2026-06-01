@@ -23,6 +23,7 @@ import {
   SolicitudUpgrade,
   Estadisticas,
   getEstadisticas,
+  reiniciarEstadisticas,
   listarEmpresas,
   crearEmpresa,
   actualizarEmpresa,
@@ -350,7 +351,16 @@ export const Admin: React.FC = () => {
 
       <NotificacionesPush />
 
-      {estadisticas && <PanelEstadisticas estadisticas={estadisticas} />}
+      {estadisticas && (
+        <PanelEstadisticas
+          estadisticas={estadisticas}
+          onReiniciar={async () => {
+            if (!confirm('Reiniciar el contador de visitas? Se borran todos los registros de visitas y escaneos.')) return;
+            await reiniciarEstadisticas();
+            getEstadisticas().then(setEstadisticas).catch(() => {});
+          }}
+        />
+      )}
 
       {error && (
         <div className="bg-red-50 border-2 border-red-300 text-red-700 px-4 py-3 font-semibold">
@@ -899,13 +909,21 @@ const StatCard: React.FC<{ label: string; valor: number }> = ({ label, valor }) 
   </div>
 );
 
-const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas }> = ({ estadisticas }) => {
+const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReiniciar: () => void }> = ({ estadisticas, onReiniciar }) => {
   const maxVisitas = estadisticas.topFichas.reduce((m, f) => Math.max(m, f.visitas), 0) || 1;
   return (
     <div className="border-2 border-slate-900 bg-slate-50 shadow-[4px_4px_0px_0px_#1e293b] p-4 space-y-4">
-      <h2 className="font-sketch font-black text-lg uppercase tracking-tight text-slate-900 flex items-center gap-2">
-        <BarChart3 size={20} className="text-orange-500" /> Visitas
-      </h2>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <h2 className="font-sketch font-black text-lg uppercase tracking-tight text-slate-900 flex items-center gap-2">
+          <BarChart3 size={20} className="text-orange-500" /> Visitas
+        </h2>
+        <button
+          onClick={onReiniciar}
+          className="text-xs font-bold uppercase tracking-wide text-slate-500 border-2 border-slate-300 px-3 py-1.5 hover:border-red-400 hover:text-red-500 transition-colors"
+        >
+          Reiniciar contador
+        </button>
+      </div>
 
       <div>
         <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">

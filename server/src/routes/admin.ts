@@ -330,6 +330,16 @@ router.get('/estadisticas', async (_req: AuthRequest, res: Response, next: NextF
   }
 });
 
+// DELETE /api/admin/estadisticas — reinicia el contador de visitas
+router.delete('/estadisticas', async (_req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    await prisma.visita.deleteMany({});
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /api/admin/seed-demo — recrea la empresa demo si no existe
 router.post('/seed-demo', async (_req: AuthRequest, res: Response, next: NextFunction) => {
   try {
