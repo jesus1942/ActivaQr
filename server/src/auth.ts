@@ -13,8 +13,8 @@ export interface TokenPayload {
   empresaId: string | null;
 }
 
-export function firmarToken(payload: TokenPayload, ttl: string = TOKEN_TTL): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: ttl });
+export function firmarToken(payload: TokenPayload, ttl?: string): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: (ttl ?? TOKEN_TTL) as any });
 }
 
 export function verificarToken(token: string): TokenPayload | null {
