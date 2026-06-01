@@ -20,23 +20,39 @@ import categoriasRouter, { adminCategoriasRouter } from './routes/categorias';
 import suscripcionRouter from './routes/suscripcion';
 import { requireAuth, requireAuthAndActiveEmpresa, requireSuperadmin } from './auth';
 import { seedCategorias } from './seedCategorias';
+import { renderLanding } from './landing';
+import { enviarEmailLead } from './email';
 
 const app = express();
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
+// Landing pública en la raíz.
+const APP_PUBLIC_URL = process.env.APP_PUBLIC_URL || 'https://jesus1942.github.io/ActivaQr/';
 app.get('/', (_req, res) => {
-  res.json({
-    nombre: 'ActivaQR API',
-    estado: 'ok',
-    docs: 'Todas las rutas viven bajo /api',
-    health: '/api/health',
-  });
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  res.send(renderLanding(APP_PUBLIC_URL));
 });
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
+});
+
+// Captura de leads desde la landing (sin auth).
+app.post('/api/leads', async (req: Request, res: Response) => {
+  const { nombre, empresa, email, telefono, mensaje } = req.body ?? {};
+  if (!nombre || !email) {
+    return res.status(400).json({ error: 'Nombre y email son obligatorios.' });
+  }
+  // Siempre dejamos rastro en logs por si el email no está configurado.
+  console.log('[LEAD]', JSON.stringify({ nombre, empresa, email, telefono, mensaje, fecha: new Date().toISOString() }));
+  try {
+    await enviarEmailLead({ nombre, empresa, email, telefono, mensaje });
+  } catch (e) {
+    console.error('[LEAD] error enviando email:', e);
+  }
+  res.json({ ok: true });
 });
 
 // Webhooks externos (sin auth: los llama Mercado Pago).
