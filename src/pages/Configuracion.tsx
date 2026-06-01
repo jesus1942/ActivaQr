@@ -455,7 +455,7 @@ const CategoriasSection: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [expandido, setExpandido] = useState<Record<string, boolean>>({});
   const [adding, setAdding] = useState(false);
-  const [formNueva, setFormNueva] = useState({ nombre: '', icono: '', descripcion: '' });
+  const [formNueva, setFormNueva] = useState({ nombre: '', descripcion: '' });
   const [guardando, setGuardando] = useState(false);
 
   const cargar = () => {
@@ -478,12 +478,12 @@ const CategoriasSection: React.FC = () => {
     try {
       const nueva = await crearCategoria({
         nombre: formNueva.nombre,
-        icono: formNueva.icono || undefined,
         descripcion: formNueva.descripcion || undefined,
       });
       setCategorias((p) => [...p, nueva]);
+      setExpandido((p) => ({ ...p, [nueva.id]: true }));
       setAdding(false);
-      setFormNueva({ nombre: '', icono: '', descripcion: '' });
+      setFormNueva({ nombre: '', descripcion: '' });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al crear categoría');
     } finally {
@@ -501,6 +501,14 @@ const CategoriasSection: React.FC = () => {
     }
   };
 
+  const handleParametroAgregado = (categoriaId: string, nuevo: ParametroCategoria) => {
+    setCategorias((prev) =>
+      prev.map((c) =>
+        c.id === categoriaId ? { ...c, parametros: [...c.parametros, nuevo] } : c
+      )
+    );
+  };
+
   if (cargando) return <p className="text-slate-500 text-sm">Cargando categorías...</p>;
 
   const globales = categorias.filter((c) => c.empresaId === null);
@@ -512,11 +520,28 @@ const CategoriasSection: React.FC = () => {
         <div className="border-2 border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>
       )}
 
+      {/* Cómo funciona */}
+      <div className="border-2 border-slate-800 bg-slate-900 text-white p-4 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)]">
+        <h3 className="font-sketch font-black text-lg uppercase tracking-tight mb-2 text-orange-400">Cómo funcionan las categorías</h3>
+        <p className="text-sm text-slate-200 leading-relaxed mb-3">
+          Una categoría define <strong>qué se mide</strong> en cada tipo de equipo. Por ejemplo "Motor Diesel" mide
+          temperatura de agua, presión de aceite y RPM; "Estética" mide potencia, disparos y temperatura del cabezal.
+          Cada parámetro tiene sus umbrales — cuando una medición los supera, el sistema dispara la alerta automática.
+        </p>
+        <ol className="text-sm text-slate-200 space-y-1.5 list-none">
+          <li className="flex gap-2"><span className="font-black text-orange-400 flex-shrink-0">1.</span> Elegí una categoría <strong>global</strong> lista para usar, o creá la tuya con "Nueva categoría".</li>
+          <li className="flex gap-2"><span className="font-black text-orange-400 flex-shrink-0">2.</span> Si es propia, agregale parámetros con sus unidades y umbrales (alerta / crítico / urgente).</li>
+          <li className="flex gap-2"><span className="font-black text-orange-400 flex-shrink-0">3.</span> En <strong>Tipos de Activo</strong> asignás la categoría al tipo de equipo.</li>
+          <li className="flex gap-2"><span className="font-black text-orange-400 flex-shrink-0">4.</span> Al medir ese activo, el formulario muestra esos parámetros y calcula el estado solo.</li>
+        </ol>
+      </div>
+
       {/* Categorías globales */}
       <div>
-        <h3 className="font-sketch font-black text-lg uppercase tracking-tight text-slate-700 mb-3">
+        <h3 className="font-sketch font-black text-lg uppercase tracking-tight text-slate-700 mb-1">
           Categorías globales
         </h3>
+        <p className="text-xs text-slate-500 mb-3">Listas para usar. Cubren rubros desde estética hasta aeroespacial. Tocá una para ver sus parámetros.</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {globales.map((cat) => (
             <CategoriaCard
@@ -547,16 +572,11 @@ const CategoriasSection: React.FC = () => {
               <label className={labelCls}>Nombre *</label>
               <input required value={formNueva.nombre} onChange={(e) => setFormNueva((p) => ({ ...p, nombre: e.target.value }))} className={inputCls} placeholder="Ej: Turbina de vapor" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={labelCls}>Ícono (emoji)</label>
-                <input value={formNueva.icono} onChange={(e) => setFormNueva((p) => ({ ...p, icono: e.target.value }))} className={inputCls} placeholder="icono" />
-              </div>
-              <div>
-                <label className={labelCls}>Descripción</label>
-                <input value={formNueva.descripcion} onChange={(e) => setFormNueva((p) => ({ ...p, descripcion: e.target.value }))} className={inputCls} />
-              </div>
+            <div>
+              <label className={labelCls}>Descripción</label>
+              <input value={formNueva.descripcion} onChange={(e) => setFormNueva((p) => ({ ...p, descripcion: e.target.value }))} className={inputCls} placeholder="Para qué tipo de equipo es" />
             </div>
+            <p className="text-xs text-slate-500">Después de crearla, abrila para agregarle parámetros.</p>
             <div className="flex justify-end gap-3">
               <button type="button" onClick={() => setAdding(false)} className="px-4 min-h-[44px] border-2 border-slate-400 font-bold text-slate-600">Cancelar</button>
               <button type="submit" disabled={guardando} className="px-4 min-h-[44px] bg-orange-500 text-white border-2 border-slate-800 font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] disabled:opacity-50">
@@ -578,6 +598,7 @@ const CategoriasSection: React.FC = () => {
               expandido={!!expandido[cat.id]}
               onToggle={() => toggleExpand(cat.id)}
               onEliminar={() => handleEliminar(cat.id, cat.nombre)}
+              onParametroAgregado={(p) => handleParametroAgregado(cat.id, p)}
             />
           ))}
         </div>
@@ -592,58 +613,195 @@ interface CategoriaCardProps {
   onToggle: () => void;
   isGlobal?: boolean;
   onEliminar?: () => void;
+  onParametroAgregado?: (p: ParametroCategoria) => void;
 }
 
-const CategoriaCard: React.FC<CategoriaCardProps> = ({ cat, expandido, onToggle, isGlobal, onEliminar }) => (
-  <div className="bg-white border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)]">
-    <div
-      className="flex items-center justify-between gap-2 p-3 cursor-pointer hover:bg-slate-50 transition-colors"
-      onClick={onToggle}
-    >
-      <div className="flex items-center gap-2 min-w-0">
-        {cat.icono && <span className="text-lg flex-shrink-0">{cat.icono}</span>}
-        <span className="font-bold text-slate-800 truncate">{cat.nombre}</span>
-        {isGlobal && (
-          <span className="ml-1 text-xs font-black uppercase tracking-wider bg-slate-100 border border-slate-300 px-1.5 py-0.5 text-slate-500 flex-shrink-0">
-            Global
-          </span>
-        )}
+const TIPOS_PARAM: { value: ParametroCategoria['tipo']; label: string }[] = [
+  { value: 'numerico', label: 'Numérico' },
+  { value: 'porcentaje', label: 'Porcentaje' },
+  { value: 'booleano', label: 'Sí / No' },
+  { value: 'texto', label: 'Texto' },
+  { value: 'seleccion', label: 'Selección' },
+];
+
+const slugificar = (s: string) =>
+  s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+
+const CategoriaCard: React.FC<CategoriaCardProps> = ({ cat, expandido, onToggle, isGlobal, onEliminar, onParametroAgregado }) => {
+  const empty = { nombre: '', unidad: '', tipo: 'numerico' as ParametroCategoria['tipo'], umbralAlerta: '', umbralCritico: '', umbralUrgente: '', invertido: false };
+  const [paramForm, setParamForm] = useState(empty);
+  const [agregando, setAgregando] = useState(false);
+  const [guardandoParam, setGuardandoParam] = useState(false);
+  const [errorParam, setErrorParam] = useState<string | null>(null);
+
+  const esNumerico = paramForm.tipo === 'numerico' || paramForm.tipo === 'porcentaje';
+
+  const handleAgregarParam = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!paramForm.nombre.trim()) return;
+    setGuardandoParam(true);
+    setErrorParam(null);
+    try {
+      const nuevo = await agregarParametro(cat.id, {
+        nombre: paramForm.nombre.trim(),
+        clave: slugificar(paramForm.nombre) || `param_${Date.now()}`,
+        unidad: paramForm.unidad || undefined,
+        tipo: paramForm.tipo,
+        orden: cat.parametros.length + 1,
+        umbralAlerta: esNumerico && paramForm.umbralAlerta !== '' ? Number(paramForm.umbralAlerta) : undefined,
+        umbralCritico: esNumerico && paramForm.umbralCritico !== '' ? Number(paramForm.umbralCritico) : undefined,
+        umbralUrgente: esNumerico && paramForm.umbralUrgente !== '' ? Number(paramForm.umbralUrgente) : undefined,
+        invertido: esNumerico ? paramForm.invertido : false,
+      });
+      onParametroAgregado?.(nuevo);
+      setParamForm(empty);
+      setAgregando(false);
+    } catch (e) {
+      setErrorParam(e instanceof Error ? e.message : 'Error al agregar parámetro');
+    } finally {
+      setGuardandoParam(false);
+    }
+  };
+
+  return (
+    <div className="bg-white border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)]">
+      <div
+        className="flex items-center justify-between gap-2 p-3 cursor-pointer hover:bg-slate-50 transition-colors"
+        onClick={onToggle}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="font-bold text-slate-800 truncate">{cat.nombre}</span>
+          {isGlobal && (
+            <span className="ml-1 text-xs font-black uppercase tracking-wider bg-slate-100 border border-slate-300 px-1.5 py-0.5 text-slate-500 flex-shrink-0">
+              Global
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span className="text-xs text-slate-400">{cat.parametros.length} params</span>
+          {!isGlobal && onEliminar && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onEliminar(); }}
+              className="p-1 border-2 border-slate-300 text-red-600 hover:border-red-600 hover:bg-red-50 transition-colors"
+              title="Eliminar"
+            >
+              <Trash2 size={13} />
+            </button>
+          )}
+          {expandido ? <ChevronDown size={16} className="text-slate-400" /> : <ChevronRight size={16} className="text-slate-400" />}
+        </div>
       </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <span className="text-xs text-slate-400">{cat.parametros.length} params</span>
-        {!isGlobal && onEliminar && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onEliminar(); }}
-            className="p-1 border-2 border-slate-300 text-red-600 hover:border-red-600 hover:bg-red-50 transition-colors"
-            title="Eliminar"
-          >
-            <Trash2 size={13} />
-          </button>
-        )}
-        {expandido ? <ChevronDown size={16} className="text-slate-400" /> : <ChevronRight size={16} className="text-slate-400" />}
-      </div>
-    </div>
-    {expandido && (
-      <div className="border-t-2 border-slate-200 p-3 space-y-1">
-        {cat.parametros.length === 0 ? (
-          <p className="text-xs text-slate-400 italic">Sin parámetros definidos.</p>
-        ) : (
-          cat.parametros.map((p) => (
-            <div key={p.id} className="flex items-center justify-between text-xs text-slate-600 py-0.5 border-b border-slate-100 last:border-0">
-              <span className="font-semibold">{p.nombre}</span>
-              <div className="flex items-center gap-2 text-slate-400">
-                {p.unidad && <span className="font-mono">{p.unidad}</span>}
-                {p.umbralAlerta != null && <span className="text-amber-600">alerta:{p.umbralAlerta}</span>}
-                {p.umbralCritico != null && <span className="text-red-500">critico:{p.umbralCritico}</span>}
-                {p.invertido && <span title="Valor bajo es peor">↓</span>}
+      {expandido && (
+        <div className="border-t-2 border-slate-200 p-3 space-y-1">
+          {cat.descripcion && <p className="text-xs text-slate-500 italic mb-2">{cat.descripcion}</p>}
+          {cat.parametros.length === 0 ? (
+            <p className="text-xs text-slate-400 italic">Sin parámetros definidos.</p>
+          ) : (
+            cat.parametros.map((p) => (
+              <div key={p.id} className="flex items-center justify-between text-xs text-slate-600 py-0.5 border-b border-slate-100 last:border-0">
+                <span className="font-semibold">{p.nombre}</span>
+                <div className="flex items-center gap-2 text-slate-400">
+                  {p.unidad && <span className="font-mono">{p.unidad}</span>}
+                  {p.umbralAlerta != null && <span className="text-amber-600">alerta:{p.umbralAlerta}</span>}
+                  {p.umbralCritico != null && <span className="text-red-500">critico:{p.umbralCritico}</span>}
+                  {p.invertido && <span title="Valor bajo es peor">baja</span>}
+                </div>
               </div>
+            ))
+          )}
+
+          {/* Agregar parámetro (solo categorías propias) */}
+          {!isGlobal && onParametroAgregado && (
+            <div className="pt-2">
+              {!agregando ? (
+                <button
+                  onClick={() => setAgregando(true)}
+                  className="flex items-center gap-1.5 text-xs font-bold text-orange-600 border-2 border-orange-300 px-2.5 py-1.5 hover:border-orange-500 transition-colors"
+                >
+                  <Plus size={13} /> Agregar parámetro
+                </button>
+              ) : (
+                <form onSubmit={handleAgregarParam} className="border-2 border-slate-200 bg-slate-50 p-3 space-y-2 mt-1">
+                  {errorParam && <p className="text-xs text-red-600 font-semibold">{errorParam}</p>}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="col-span-2">
+                      <label className="text-xs font-black uppercase tracking-wider text-slate-500">Nombre del parámetro *</label>
+                      <input
+                        autoFocus required value={paramForm.nombre}
+                        onChange={(e) => setParamForm((p) => ({ ...p, nombre: e.target.value }))}
+                        className="w-full border-2 border-slate-300 px-2 h-9 text-sm outline-none focus:border-orange-500 bg-white"
+                        placeholder="Ej: Temperatura de cabezal"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-black uppercase tracking-wider text-slate-500">Unidad</label>
+                      <input
+                        value={paramForm.unidad}
+                        onChange={(e) => setParamForm((p) => ({ ...p, unidad: e.target.value }))}
+                        className="w-full border-2 border-slate-300 px-2 h-9 text-sm outline-none focus:border-orange-500 bg-white"
+                        placeholder="°C, bar, %"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-black uppercase tracking-wider text-slate-500">Tipo</label>
+                      <select
+                        value={paramForm.tipo}
+                        onChange={(e) => setParamForm((p) => ({ ...p, tipo: e.target.value as ParametroCategoria['tipo'] }))}
+                        className="w-full border-2 border-slate-300 px-2 h-9 text-sm outline-none focus:border-orange-500 bg-white"
+                      >
+                        {TIPOS_PARAM.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  {esNumerico && (
+                    <>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="text-xs font-black uppercase tracking-wider text-amber-600">Alerta</label>
+                          <input type="number" step="any" value={paramForm.umbralAlerta}
+                            onChange={(e) => setParamForm((p) => ({ ...p, umbralAlerta: e.target.value }))}
+                            className="w-full border-2 border-slate-300 px-2 h-9 text-sm outline-none focus:border-amber-500 bg-white" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-black uppercase tracking-wider text-red-500">Crítico</label>
+                          <input type="number" step="any" value={paramForm.umbralCritico}
+                            onChange={(e) => setParamForm((p) => ({ ...p, umbralCritico: e.target.value }))}
+                            className="w-full border-2 border-slate-300 px-2 h-9 text-sm outline-none focus:border-red-500 bg-white" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-black uppercase tracking-wider text-red-700">Urgente</label>
+                          <input type="number" step="any" value={paramForm.umbralUrgente}
+                            onChange={(e) => setParamForm((p) => ({ ...p, umbralUrgente: e.target.value }))}
+                            className="w-full border-2 border-slate-300 px-2 h-9 text-sm outline-none focus:border-red-700 bg-white" />
+                        </div>
+                      </div>
+                      <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+                        <input type="checkbox" checked={paramForm.invertido}
+                          onChange={(e) => setParamForm((p) => ({ ...p, invertido: e.target.checked }))} />
+                        El valor es peligroso cuando <strong>baja</strong> (ej: presión de aceite, batería, nivel)
+                      </label>
+                    </>
+                  )}
+
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button type="button" onClick={() => { setAgregando(false); setParamForm(empty); setErrorParam(null); }}
+                      className="px-3 h-9 border-2 border-slate-300 text-xs font-bold text-slate-600">Cancelar</button>
+                    <button type="submit" disabled={guardandoParam}
+                      className="px-3 h-9 bg-slate-900 text-white text-xs font-black uppercase border-2 border-slate-900 disabled:opacity-50">
+                      {guardandoParam ? 'Guardando...' : 'Agregar'}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
-          ))
-        )}
-      </div>
-    )}
-  </div>
-);
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const PLAN_INFO: { plan: string; label: string; activos: string; tecnicos: string; qr: string; acceso: string }[] = [
   { plan: 'inicial',    label: 'Inicial',    activos: '10',         tecnicos: '2',         qr: 'Suspendida', acceso: '—' },
