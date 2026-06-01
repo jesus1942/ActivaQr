@@ -1,7 +1,9 @@
 import { Router, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { prisma } from '../prisma';
-import { firmarToken, requireAuth, AuthRequest } from '../auth';
+import { firmarToken, requireAuth, AuthRequest, DEMO_TOKEN_TTL } from '../auth';
+import { enviarEmailResetPassword } from '../email';
 
 const router = Router();
 
@@ -42,12 +44,13 @@ router.post('/login', async (req, res: Response, next: NextFunction) => {
       data: { ultimoAcceso: new Date() },
     });
 
+    const isDemo = usuario.email === 'demo@activaqr.com';
     const token = firmarToken({
       userId: usuario.id,
       email: usuario.email,
       rol: usuario.rol,
       empresaId: usuario.empresaId,
-    });
+    }, isDemo ? DEMO_TOKEN_TTL : undefined);
 
     res.json({
       token,
@@ -85,6 +88,61 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: Response, next: Nex
         ? { id: usuario.empresa.id, nombre: usuario.empresa.nombre, logoUrl: usuario.empresa.logoUrl, estado: usuario.empresa.estado, plan: usuario.empresa.plan, mpEstadoSub: usuario.empresa.mpEstadoSub ?? null }
         : null,
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/forgot-password', async (req, res: Response, next: NextFunction) => {
+  try {
+    const { email } = req.body ?? {};
+    if (!email) return res.status(400).json({ error: 'Email es obligatorio.' });
+    const usuario = await prisma.usuario.findUnique({
+      where: { email: String(email).toLowerCase().trim() },
+    });
+    if (usuario) {
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiry = new Date(Date.now() + 60 * 60 * 1000);
+      await prisma.usuario.update({
+        where: { id: usuario.id },
+        data: { resetToken: token, resetTokenExpiry: expiry },
+      });
+      const appPublicUrl = process.env.APP_PUBLIC_URL || 'https://jesus1942.github.io/ActivaQr/';
+      const resetUrl = `${appPublicUrl}#/reset-password?token=${token}`;
+      await enviarEmailResetPassword({
+        destinatario: usuario.email,
+        adminNombre: usuario.nombre,
+        token,
+        resetUrl,
+      }).catch((e) => console.error('[forgot-password] email error:', e));
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/reset-password', async (req, res: Response, next: NextFunction) => {
+  try {
+    const { token, password } = req.body ?? {};
+    if (!token || !password) {
+      return res.status(400).json({ error: 'Token y contrasena son obligatorios.' });
+    }
+    if (String(password).length < 8) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres.' });
+    }
+    const usuario = await prisma.usuario.findFirst({
+      where: { resetToken: String(token), resetTokenExpiry: { gt: new Date() } },
+    });
+    if (!usuario) {
+      return res.status(400).json({ error: 'Token invalido o expirado' });
+    }
+    const passwordHash = await bcrypt.hash(password, 10);
+    await prisma.usuario.update({
+      where: { id: usuario.id },
+      data: { passwordHash, resetToken: null, resetTokenExpiry: null },
+    });
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }

@@ -200,6 +200,47 @@ export async function enviarEmailLead(lead: LeadDatos): Promise<boolean> {
   return true;
 }
 
+export async function enviarEmailResetPassword(params: {
+  destinatario: string;
+  adminNombre: string;
+  token: string;
+  resetUrl: string;
+}): Promise<void> {
+  if (!emailConfigurado()) return;
+  const resend = getResend();
+  const from = process.env.RESEND_FROM || 'ActivaQR <noreply@activaqr.com>';
+  await resend.emails.send({
+    from,
+    to: params.destinatario,
+    subject: 'Recuperar contraseña — ActivaQR',
+    html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;"><tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
+<tr><td style="background:#0f172a;padding:24px 32px;border:3px solid #0f172a;border-bottom:none;">
+  <span style="font-size:22px;font-weight:900;color:#f97316;text-transform:uppercase;letter-spacing:2px;">ActivaQR</span>
+</td></tr>
+<tr><td style="background:#fff;border:3px solid #0f172a;border-top:none;padding:32px;">
+  <p style="margin:0 0 8px;font-size:12px;font-weight:800;color:#f97316;text-transform:uppercase;letter-spacing:1px;">Recuperar contrasena</p>
+  <h1 style="margin:0 0 20px;font-size:24px;font-weight:900;color:#0f172a;">Hola${params.adminNombre ? `, ${params.adminNombre}` : ''}!</h1>
+  <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">Recibimos una solicitud para restablecer la contrasena de tu cuenta en <strong>ActivaQR</strong>. El link es valido por 1 hora.</p>
+  <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+  <tr><td>
+    <a href="${params.resetUrl}" style="display:inline-block;background:#f97316;color:#fff;font-size:15px;font-weight:900;text-decoration:none;text-transform:uppercase;letter-spacing:1px;padding:14px 28px;border:3px solid #0f172a;box-shadow:4px 4px 0px #0f172a;">
+      Restablecer contrasena &rarr;
+    </a>
+  </td></tr></table>
+  <p style="margin:0 0 8px;font-size:13px;color:#64748b;">O copia y pega este link en tu navegador:</p>
+  <p style="margin:0 0 20px;font-size:12px;color:#0f172a;background:#f8fafc;border:2px solid #e2e8f0;padding:10px 14px;word-break:break-all;font-family:monospace;">${params.resetUrl}</p>
+  <p style="margin:0;font-size:12px;color:#94a3b8;">Si no solicitaste este cambio, ignora este email. Tu contrasena no sera modificada.</p>
+</td></tr>
+<tr><td style="background:#0f172a;padding:16px 32px;border:3px solid #0f172a;border-top:none;">
+  <p style="margin:0;font-size:11px;color:#475569;text-align:center;">© ${new Date().getFullYear()} ActivaQR</p>
+</td></tr>
+</table></td></tr></table></body></html>`,
+  });
+}
+
 export async function enviarEmailAccesoRemoto(params: {
   destinatario: string;
   empresaNombre: string;
