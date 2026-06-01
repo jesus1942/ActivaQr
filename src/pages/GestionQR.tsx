@@ -14,8 +14,8 @@ export const GestionQR: React.FC = () => {
   };
 
   const handlePrintOne = (activoId: string) => {
-    // Set a query param or use a print-specific approach
-    const url = `${window.location.origin}${import.meta.env.BASE_URL}#/medicion/${activoId}`;
+    // La ficha publica: cualquiera puede identificar el equipo sin cuenta.
+    const url = `${window.location.origin}${import.meta.env.BASE_URL}#/ficha/${activoId}`;
     window.open(url, '_blank');
   };
 
@@ -37,7 +37,7 @@ export const GestionQR: React.FC = () => {
 
       <div ref={printRef} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 print:grid-cols-4">
         {activos.map((activo) => {
-          const qrValue = `${window.location.origin}${import.meta.env.BASE_URL}#/medicion/${activo.id}`;
+          const qrValue = `${window.location.origin}${import.meta.env.BASE_URL}#/ficha/${activo.id}`;
           return (
             <div
               key={activo.id}
