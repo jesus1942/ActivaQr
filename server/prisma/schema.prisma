@@ -374,6 +374,20 @@ model Foto {
   @@index([medicionId])
 }
 
+model Visita {
+  id        String   @id @default(uuid())
+  tipo      String   // 'landing' | 'ficha'
+  activoId  String?  // solo para tipo 'ficha'
+  referer   String?
+  userAgent String?  @db.Text
+  pais      String?
+  creadoEn  DateTime @default(now())
+
+  @@index([tipo])
+  @@index([activoId])
+  @@index([creadoEn])
+}
+
 model TareaMantenimiento {
   id              String      @id @default(uuid())
   activoId        String
