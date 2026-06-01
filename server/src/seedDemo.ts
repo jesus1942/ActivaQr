@@ -6,9 +6,14 @@ export async function seedDemo() {
   const DEMO_EMAIL = 'demo@activaqr.com';
   const DEMO_EMPRESA = 'Demo ActivaQR';
 
-  const existing = await prisma.usuario.findUnique({ where: { email: DEMO_EMAIL } });
-  if (existing) {
-    return;
+  const existingUser = await prisma.usuario.findUnique({
+    where: { email: DEMO_EMAIL },
+    include: { empresa: true },
+  });
+  if (existingUser?.empresa) return;
+  // Usuario existe pero empresa fue borrada — borrar usuario huerfano y recrear todo
+  if (existingUser) {
+    await prisma.usuario.delete({ where: { id: existingUser.id } });
   }
 
   const passwordHash = await bcrypt.hash('demo1234', 10);
