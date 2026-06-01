@@ -100,6 +100,10 @@ export async function getEstadisticas(): Promise<Estadisticas> {
   return parse(await apiFetch('admin/estadisticas'));
 }
 
+export async function reiniciarEstadisticas(): Promise<void> {
+  await apiFetch('admin/estadisticas', { method: 'DELETE' });
+}
+
 export async function generarSuscripcion(
   id: string,
   monto: number,
