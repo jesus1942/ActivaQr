@@ -1,6 +1,7 @@
 import { Router, Response, NextFunction } from 'express';
 import { prisma } from '../prisma';
 import { AuthRequest } from '../auth';
+import { enviarPushASuperadmin } from '../push';
 
 const router = Router();
 
@@ -34,6 +35,12 @@ router.post('/solicitar-upgrade', async (req: AuthRequest, res: Response, next: 
       where: { id: empresaId },
       data: { planSolicitado: plan as 'empresa' | 'industrial' },
     });
+
+    enviarPushASuperadmin({
+      title: 'Solicitud de upgrade',
+      body: `${empresa.nombre} solicita el plan ${plan}`,
+      url: '#/admin',
+    }).catch(() => {});
 
     res.json({ ok: true });
   } catch (err) {
