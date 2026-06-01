@@ -21,8 +21,18 @@ code, .font-mono {
   font-family: var(--font-mono);
 }
 
-body {
+html, body {
   background-color: #FAFAF7;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  max-width: 100%;
+}
+
+/* Evita que inputs en iOS hagan zoom al enfocar (font < 16px lo dispara) */
+@media (max-width: 640px) {
+  input, select, textarea {
+    font-size: 16px;
+  }
 }
 
 /* Respeta la barra de estado del celular en modo PWA (notch / hora / batería) */
