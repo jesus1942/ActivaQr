@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 import authRouter from './routes/auth';
 import adminRouter from './routes/admin';
@@ -26,7 +28,24 @@ import { enviarEmailLead } from './email';
 
 const app = express();
 
-app.use(cors());
+app.use(helmet({ contentSecurityPolicy: false }));
+
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://jesus1942.github.io,https://activaqr-production.up.railway.app').split(',').map(s => s.trim());
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || ALLOWED_ORIGINS.some(o => origin.startsWith(o)) || (process.env.NODE_ENV !== 'production' && (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')))) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS not allowed'));
+    }
+  },
+  credentials: true,
+}));
+
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: 'Demasiados intentos. Intentá en 15 minutos.' } });
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+
 app.use(express.json({ limit: '10mb' }));
 
 // Landing pública en la raíz.

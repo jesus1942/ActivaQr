@@ -2,8 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma } from './prisma';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'activaqr-dev-secret-cambiar-en-produccion';
-const TOKEN_TTL = '30d';
+const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? (() => { throw new Error('JWT_SECRET is required in production'); })() : 'activaqr-dev-secret-local');
+export const TOKEN_TTL = '30d';
+export const DEMO_TOKEN_TTL = '2h';
 
 export interface TokenPayload {
   userId: string;
@@ -12,8 +13,8 @@ export interface TokenPayload {
   empresaId: string | null;
 }
 
-export function firmarToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_TTL });
+export function firmarToken(payload: TokenPayload, ttl: string = TOKEN_TTL): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: ttl });
 }
 
 export function verificarToken(token: string): TokenPayload | null {

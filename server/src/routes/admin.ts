@@ -39,6 +39,9 @@ router.post('/empresas', async (req: AuthRequest, res: Response, next: NextFunct
         error: 'Faltan datos: nombre de empresa, email y contraseña del administrador.',
       });
     }
+    if (String(adminPassword).length < 8) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres.' });
+    }
 
     const emailNorm = String(adminEmail).toLowerCase().trim();
     const yaExiste = await prisma.usuario.findUnique({ where: { email: emailNorm } });
