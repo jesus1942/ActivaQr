@@ -259,6 +259,77 @@ router.delete('/solicitudes-upgrade/:empresaId', async (req: AuthRequest, res: R
   }
 });
 
+// GET /api/admin/estadisticas — analítica propia de visitas (landing + fichas)
+router.get('/estadisticas', async (_req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const ahora = Date.now();
+    const hace24h = new Date(ahora - 24 * 60 * 60 * 1000);
+    const hace7d = new Date(ahora - 7 * 24 * 60 * 60 * 1000);
+
+    const [
+      landingHoy,
+      landingSemana,
+      landingTotal,
+      fichasHoy,
+      fichasSemana,
+      fichasTotal,
+      topGrupos,
+    ] = await Promise.all([
+      prisma.visita.count({ where: { tipo: 'landing', creadoEn: { gte: hace24h } } }),
+      prisma.visita.count({ where: { tipo: 'landing', creadoEn: { gte: hace7d } } }),
+      prisma.visita.count({ where: { tipo: 'landing' } }),
+      prisma.visita.count({ where: { tipo: 'ficha', creadoEn: { gte: hace24h } } }),
+      prisma.visita.count({ where: { tipo: 'ficha', creadoEn: { gte: hace7d } } }),
+      prisma.visita.count({ where: { tipo: 'ficha' } }),
+      prisma.visita.groupBy({
+        by: ['activoId'],
+        where: { tipo: 'ficha', activoId: { not: null } },
+        _count: { activoId: true },
+        orderBy: { _count: { activoId: 'desc' } },
+        take: 10,
+      }),
+    ]);
+
+    const activoIds = topGrupos
+      .map((g) => g.activoId)
+      .filter((id): id is string => !!id);
+
+    const activos = activoIds.length
+      ? await prisma.activo.findMany({
+          where: { id: { in: activoIds } },
+          select: { id: true, nombre: true, codigo: true, empresa: { select: { nombre: true } } },
+        })
+      : [];
+    const activoMap = new Map(activos.map((a) => [a.id, a]));
+
+    const topFichas = topGrupos
+      .map((g) => {
+        const a = g.activoId ? activoMap.get(g.activoId) : undefined;
+        if (!a) return null; // activo eliminado: lo saltamos
+        return {
+          activoId: a.id,
+          nombre: a.nombre,
+          codigo: a.codigo,
+          empresa: a.empresa?.nombre ?? '',
+          visitas: g._count.activoId,
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+
+    res.json({
+      landingHoy,
+      landingSemana,
+      landingTotal,
+      fichasHoy,
+      fichasSemana,
+      fichasTotal,
+      topFichas,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /api/admin/seed-demo — recrea la empresa demo si no existe
 router.post('/seed-demo', async (_req: AuthRequest, res: Response, next: NextFunction) => {
   try {

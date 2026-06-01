@@ -14,10 +14,15 @@ import {
   X,
   ArrowRight,
   TrendingUp,
+  BarChart3,
+  QrCode,
+  Globe,
 } from 'lucide-react';
 import {
   EmpresaAdmin,
   SolicitudUpgrade,
+  Estadisticas,
+  getEstadisticas,
   listarEmpresas,
   crearEmpresa,
   actualizarEmpresa,
@@ -142,6 +147,7 @@ const ModalWhatsapp: React.FC<{
 export const Admin: React.FC = () => {
   const [empresas, setEmpresas] = useState<EmpresaAdmin[]>([]);
   const [solicitudes, setSolicitudes] = useState<SolicitudUpgrade[]>([]);
+  const [estadisticas, setEstadisticas] = useState<Estadisticas | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -199,6 +205,10 @@ export const Admin: React.FC = () => {
   };
 
   useEffect(() => { cargar(); }, []);
+
+  useEffect(() => {
+    getEstadisticas().then(setEstadisticas).catch(() => {});
+  }, []);
 
   const toggleEstado = async (emp: EmpresaAdmin) => {
     if (toggling.has(emp.id)) return;
@@ -339,6 +349,8 @@ export const Admin: React.FC = () => {
       </div>
 
       <NotificacionesPush />
+
+      {estadisticas && <PanelEstadisticas estadisticas={estadisticas} />}
 
       {error && (
         <div className="bg-red-50 border-2 border-red-300 text-red-700 px-4 py-3 font-semibold">
@@ -875,6 +887,77 @@ const SolicitudUpgradeRow: React.FC<{
         >
           {descartando ? '...' : 'Descartar'}
         </button>
+      </div>
+    </div>
+  );
+};
+
+const StatCard: React.FC<{ label: string; valor: number }> = ({ label, valor }) => (
+  <div className="bg-white border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b] p-3 text-center">
+    <p className="font-sketch font-black text-3xl sm:text-4xl text-orange-500 leading-none">{valor}</p>
+    <p className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-slate-500 mt-1">{label}</p>
+  </div>
+);
+
+const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas }> = ({ estadisticas }) => {
+  const maxVisitas = estadisticas.topFichas.reduce((m, f) => Math.max(m, f.visitas), 0) || 1;
+  return (
+    <div className="border-2 border-slate-900 bg-slate-50 shadow-[4px_4px_0px_0px_#1e293b] p-4 space-y-4">
+      <h2 className="font-sketch font-black text-lg uppercase tracking-tight text-slate-900 flex items-center gap-2">
+        <BarChart3 size={20} className="text-orange-500" /> Visitas
+      </h2>
+
+      <div>
+        <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+          <Globe size={14} /> Landing
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          <StatCard label="Hoy" valor={estadisticas.landingHoy} />
+          <StatCard label="Semana" valor={estadisticas.landingSemana} />
+          <StatCard label="Total" valor={estadisticas.landingTotal} />
+        </div>
+      </div>
+
+      <div>
+        <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+          <QrCode size={14} /> Fichas QR
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          <StatCard label="Hoy" valor={estadisticas.fichasHoy} />
+          <StatCard label="Semana" valor={estadisticas.fichasSemana} />
+          <StatCard label="Total" valor={estadisticas.fichasTotal} />
+        </div>
+      </div>
+
+      <div>
+        <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Equipos mas escaneados</p>
+        {estadisticas.topFichas.length === 0 ? (
+          <p className="text-sm text-slate-400 font-semibold py-2">Aun no hay escaneos registrados.</p>
+        ) : (
+          <div className="space-y-2">
+            {estadisticas.topFichas.map((f) => (
+              <div
+                key={f.activoId}
+                className="bg-white border-2 border-slate-900 shadow-[2px_2px_0px_0px_#1e293b] p-2.5"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-orange-500">{f.codigo}</p>
+                    <p className="font-sketch font-black text-sm text-slate-900 leading-tight truncate">{f.nombre}</p>
+                    <p className="text-xs text-slate-500 truncate">{f.empresa}</p>
+                  </div>
+                  <span className="font-sketch font-black text-2xl text-slate-900 shrink-0">{f.visitas}</span>
+                </div>
+                <div className="mt-2 h-2 bg-slate-100 border border-slate-300">
+                  <div
+                    className="h-full bg-orange-500"
+                    style={{ width: `${Math.round((f.visitas / maxVisitas) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

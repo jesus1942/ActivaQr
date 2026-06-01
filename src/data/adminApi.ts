@@ -86,6 +86,20 @@ export async function descartarSolicitud(empresaId: string): Promise<void> {
   await parse(await apiFetch(`admin/solicitudes-upgrade/${empresaId}`, { method: 'DELETE' }));
 }
 
+export interface Estadisticas {
+  landingHoy: number;
+  landingSemana: number;
+  landingTotal: number;
+  fichasHoy: number;
+  fichasSemana: number;
+  fichasTotal: number;
+  topFichas: { activoId: string; nombre: string; codigo: string; empresa: string; visitas: number }[];
+}
+
+export async function getEstadisticas(): Promise<Estadisticas> {
+  return parse(await apiFetch('admin/estadisticas'));
+}
+
 export async function generarSuscripcion(
   id: string,
   monto: number,
