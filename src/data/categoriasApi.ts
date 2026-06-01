@@ -29,19 +29,19 @@ export interface CategoriaEquipo {
 }
 
 export async function getCategorias(): Promise<CategoriaEquipo[]> {
-  const res = await apiFetch('api/categorias');
+  const res = await apiFetch('categorias');
   if (!res.ok) throw new Error('Error al cargar categorías');
   return res.json();
 }
 
 export async function getCategoria(id: string): Promise<CategoriaEquipo> {
-  const res = await apiFetch(`api/categorias/${id}`);
+  const res = await apiFetch(`categorias/${id}`);
   if (!res.ok) throw new Error('Categoría no encontrada');
   return res.json();
 }
 
 export async function crearCategoria(data: Partial<CategoriaEquipo>): Promise<CategoriaEquipo> {
-  const res = await apiFetch('api/categorias', {
+  const res = await apiFetch('categorias', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -53,7 +53,7 @@ export async function crearCategoria(data: Partial<CategoriaEquipo>): Promise<Ca
 }
 
 export async function eliminarCategoria(id: string): Promise<void> {
-  const res = await apiFetch(`api/categorias/${id}`, { method: 'DELETE' });
+  const res = await apiFetch(`categorias/${id}`, { method: 'DELETE' });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err?.error || 'Error al eliminar categoría');
@@ -64,7 +64,7 @@ export async function agregarParametro(
   categoriaId: string,
   data: Partial<ParametroCategoria>
 ): Promise<ParametroCategoria> {
-  const res = await apiFetch(`api/categorias/${categoriaId}/parametros`, {
+  const res = await apiFetch(`categorias/${categoriaId}/parametros`, {
     method: 'POST',
     body: JSON.stringify(data),
   });
