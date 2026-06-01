@@ -35,6 +35,7 @@ import {
   revocarAccesoAdmin,
 } from '../data/accesoRemotoApi';
 import { PanelAccesoRemoto } from '../components/PanelAccesoRemoto';
+import { apiFetch } from '../data/auth';
 
 const PLANES = ['inicial', 'empresa', 'industrial'] as const;
 
@@ -314,12 +315,26 @@ export const Admin: React.FC = () => {
           </h1>
           <p className="text-slate-500 text-sm mt-1">{empresas.length} empresas registradas</p>
         </div>
-        <button
-          onClick={() => setModalAbierto(true)}
-          className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 font-sketch font-bold uppercase border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all"
-        >
-          <Plus size={18} /> Nueva empresa
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={async () => {
+              try {
+                const res = await apiFetch('admin/seed-demo', { method: 'POST' });
+                if (res.ok) { cargar(); } else { alert('Error al recrear demo'); }
+              } catch { alert('Error al recrear demo'); }
+            }}
+            className="flex items-center gap-2 bg-white text-slate-700 px-4 py-2 font-sketch font-bold uppercase border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-sm"
+            title="Recrear empresa y usuario demo si fueron eliminados"
+          >
+            Recrear demo
+          </button>
+          <button
+            onClick={() => setModalAbierto(true)}
+            className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 font-sketch font-bold uppercase border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all"
+          >
+            <Plus size={18} /> Nueva empresa
+          </button>
+        </div>
       </div>
 
       {error && (
