@@ -390,14 +390,19 @@ export const Admin: React.FC = () => {
                 empresas={empresas}
                 onProcesar={async () => {
                   const emp = empresas.find((e) => e.id === sol.id);
-                  if (emp) await suscribir(emp);
+                  // 1. Aplicar el nuevo plan en la base de datos
+                  await actualizarEmpresa(sol.id, { plan: sol.planSolicitado });
+                  // 2. Generar link de suscripcion MP
+                  if (emp) await suscribir({ ...emp, plan: sol.planSolicitado as EmpresaAdmin['plan'] });
+                  // 3. Limpiar la solicitud
                   await descartarSolicitud(sol.id);
-                  cargarSolicitudes();
+                  // 4. Recargar lista completa para reflejar el nuevo plan en las cards
+                  cargar();
                 }}
                 onDescartar={async () => {
                   if (!confirm(`Descartar la solicitud de upgrade de "${sol.nombre}"?`)) return;
                   await descartarSolicitud(sol.id);
-                  cargarSolicitudes();
+                  cargar();
                 }}
               />
             ))}
