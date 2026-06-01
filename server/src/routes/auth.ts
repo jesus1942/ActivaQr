@@ -2,7 +2,7 @@ import { Router, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '../prisma';
-import { firmarToken, requireAuth, AuthRequest } from '../auth';
+import { firmarToken, requireAuth, AuthRequest, DEMO_TOKEN_TTL } from '../auth';
 import { enviarEmailResetPassword } from '../email';
 
 const router = Router();
@@ -44,12 +44,13 @@ router.post('/login', async (req, res: Response, next: NextFunction) => {
       data: { ultimoAcceso: new Date() },
     });
 
+    const isDemo = usuario.email === 'demo@activaqr.com';
     const token = firmarToken({
       userId: usuario.id,
       email: usuario.email,
       rol: usuario.rol,
       empresaId: usuario.empresaId,
-    });
+    }, isDemo ? DEMO_TOKEN_TTL : undefined);
 
     res.json({
       token,
@@ -126,6 +127,9 @@ router.post('/reset-password', async (req, res: Response, next: NextFunction) =>
     const { token, password } = req.body ?? {};
     if (!token || !password) {
       return res.status(400).json({ error: 'Token y contrasena son obligatorios.' });
+    }
+    if (String(password).length < 8) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres.' });
     }
     const usuario = await prisma.usuario.findFirst({
       where: { resetToken: String(token), resetTokenExpiry: { gt: new Date() } },
