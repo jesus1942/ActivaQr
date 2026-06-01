@@ -1,7 +1,7 @@
 // v1.1.0
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { API_URL } from '../data/auth';
+import { API_URL, getToken, getUsuario } from '../data/auth';
 
 interface FichaActivo {
   id: string;
@@ -21,7 +21,7 @@ interface FichaActivo {
   amperajeNormal: number;
   presionNormal: number;
   notas: string;
-  empresa: { nombre: string; logoUrl?: string | null };
+  empresa: { id: string; nombre: string; logoUrl?: string | null };
   sector: { nombre: string } | null;
   tipo: { nombre: string } | null;
   responsable: { nombre: string; email?: string; telefono?: string } | null;
@@ -50,6 +50,15 @@ export const FichaPublica: React.FC = () => {
   const [activo, setActivo] = useState<FichaActivo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
+
+  // Detectar si hay un usuario logueado que pertenece a la misma empresa
+  const usuarioLogueado = getToken() ? getUsuario() : null;
+  const puedeRegistrar = !!(
+    usuarioLogueado &&
+    activo &&
+    (usuarioLogueado.rol === 'operador' || usuarioLogueado.rol === 'admin') &&
+    usuarioLogueado.empresaId === activo.empresa.id
+  );
 
   useEffect(() => {
     if (!id || !API_URL) return;
@@ -160,6 +169,15 @@ export const FichaPublica: React.FC = () => {
             <p className="text-xs font-black uppercase tracking-wider text-orange-500 mb-2">Notas</p>
             <p className="text-sm text-slate-700 leading-relaxed">{activo.notas}</p>
           </div>
+        )}
+
+        {puedeRegistrar && (
+          <a
+            href={`#/medicion/${activo.id}`}
+            className="block w-full min-h-[56px] bg-orange-500 text-white font-black text-center border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] text-base uppercase tracking-wide flex items-center justify-center hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
+          >
+            Registrar medicion
+          </a>
         )}
 
         <p className="text-center text-xs text-slate-400 pb-4">

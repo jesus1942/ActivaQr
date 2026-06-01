@@ -16,7 +16,7 @@ router.get('/activos/:id', async (req: Request, res: Response, next: NextFunctio
     const activo = await prisma.activo.findUnique({
       where: { id: req.params.id },
       include: {
-        empresa: { select: { nombre: true, logoUrl: true, estado: true, plan: true } },
+        empresa: { select: { id: true, nombre: true, logoUrl: true, estado: true, plan: true } },
         sector: { select: { nombre: true } },
         tipo: { select: { nombre: true } },
         responsable: { select: { nombre: true, email: true, telefono: true } },
