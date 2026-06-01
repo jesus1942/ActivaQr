@@ -422,6 +422,19 @@ export const Medicion: React.FC = () => {
         </div>
       )}
 
+      {activoId && !activo && (
+        <div className="bg-[#FFFEF7] border-2 border-slate-700 shadow-[3px_3px_0px_0px_#1e293b] p-6 text-center">
+          <p className="font-black text-lg text-slate-800 mb-1 uppercase">Activo no encontrado</p>
+          <p className="text-slate-600 text-sm mb-4">Este equipo no pertenece a tu cuenta o todavia se esta cargando.</p>
+          <a
+            href={`#/ficha/${activoId}`}
+            className="inline-block bg-orange-500 text-white px-5 py-3 font-sketch font-bold uppercase border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b]"
+          >
+            Ver ficha del equipo
+          </a>
+        </div>
+      )}
+
       {activo && (
         <>
           {/* Activo info */}
