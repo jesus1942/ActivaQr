@@ -5,6 +5,7 @@ import { prisma } from '../prisma';
 import { requireAuth, requireSuperadmin, AuthRequest } from '../auth';
 import { crearPreapproval, cancelarPreapproval, mpConfigurado } from '../mercadopago';
 import { enviarEmailSuscripcion } from '../email';
+import { enviarPushAEmpresa } from '../push';
 
 const router = Router();
 
@@ -84,10 +85,29 @@ router.put('/empresas/:id', async (req: AuthRequest, res: Response, next: NextFu
     if (cuit    !== undefined) data.cuit    = cuit;
     if (plan    !== undefined) data.plan    = plan;
     if (estado  !== undefined) data.estado  = estado;
+    const anterior = await prisma.empresa.findUnique({ where: { id: req.params.id } });
     const empresa = await prisma.empresa.update({
       where: { id: req.params.id },
       data,
     });
+
+    if (plan && anterior && plan !== anterior.plan) {
+      enviarPushAEmpresa(empresa.id, {
+        title: 'Plan actualizado',
+        body: `Tu plan fue actualizado a ${plan.toUpperCase()}`,
+        url: '#/configuracion',
+      }).catch(() => {});
+    }
+    if (estado && anterior && estado !== anterior.estado) {
+      enviarPushAEmpresa(empresa.id, {
+        title: estado === 'activa' ? 'Cuenta activada' : 'Cuenta suspendida',
+        body: estado === 'activa'
+          ? 'Tu cuenta en ActivaQR fue reactivada.'
+          : 'Tu cuenta en ActivaQR fue suspendida. Contactanos para mas informacion.',
+        url: '#/',
+      }).catch(() => {});
+    }
+
     res.json(empresa);
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {

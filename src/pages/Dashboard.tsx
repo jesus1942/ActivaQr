@@ -61,10 +61,10 @@ export const Dashboard: React.FC = () => {
     .slice(0, 5);
 
   const statCards = [
-    { label: 'Total Activos', value: totalActivos, icon: Package, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Alertas Activas', value: alertasActivas, icon: AlertTriangle, color: 'text-orange-500', bg: 'bg-orange-50' },
-    { label: 'Mant. Pendientes', value: mantPendientes, icon: Wrench, color: 'text-red-600', bg: 'bg-red-50' },
-    { label: 'Mediciones este mes', value: medicionesEsteMes, icon: ClipboardList, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Total Activos', value: totalActivos, icon: Package, color: 'text-blue-600', bg: 'bg-blue-50', route: '/activos' },
+    { label: 'Alertas Activas', value: alertasActivas, icon: AlertTriangle, color: 'text-orange-500', bg: 'bg-orange-50', route: '/activos' },
+    { label: 'Mant. Pendientes', value: mantPendientes, icon: Wrench, color: 'text-red-600', bg: 'bg-red-50', route: '/mantenimiento' },
+    { label: 'Mediciones este mes', value: medicionesEsteMes, icon: ClipboardList, color: 'text-emerald-600', bg: 'bg-emerald-50', route: '/activos' },
   ];
 
   return (
@@ -76,8 +76,12 @@ export const Dashboard: React.FC = () => {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {statCards.map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className={`bg-[#FFFEF7] border-2 border-slate-700 shadow-[3px_3px_0px_0px_#1e293b] p-4`}>
+        {statCards.map(({ label, value, icon: Icon, color, bg, route }) => (
+          <button
+            key={label}
+            onClick={() => navigate(route)}
+            className="bg-[#FFFEF7] border-2 border-slate-700 shadow-[3px_3px_0px_0px_#1e293b] p-4 text-left w-full hover:shadow-[1px_1px_0px_0px_#1e293b] hover:translate-x-[2px] hover:translate-y-[2px] active:shadow-none active:translate-x-[3px] active:translate-y-[3px] transition-all"
+          >
             <div className="flex justify-between items-start">
               <div>
                 <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">{label}</div>
@@ -87,7 +91,7 @@ export const Dashboard: React.FC = () => {
                 <Icon size={22} className={color} />
               </div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
