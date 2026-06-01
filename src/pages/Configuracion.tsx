@@ -1,6 +1,7 @@
 // v1.1.0
 import React, { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, RotateCcw, Check, AlertTriangle, MessageSquare, ShieldCheck, ShieldOff, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, RotateCcw, Check, AlertTriangle, MessageSquare, ShieldCheck, ShieldOff, ChevronDown, ChevronRight, KeyRound, UserX } from 'lucide-react';
+import { Operador, getOperadores, crearOperador, desactivarOperador, resetPasswordOperador } from '../data/operadoresApi';
 import { useActivos } from '../hooks/useActivos';
 import { useAuth } from '../context/AuthContext';
 import { Sector, TipoActivo, Tecnico } from '../data/types';
@@ -16,13 +17,14 @@ import {
   getCategorias, crearCategoria, eliminarCategoria, agregarParametro,
 } from '../data/categoriasApi';
 
-type Tab = 'sectores' | 'tipos' | 'tecnicos' | 'categorias';
+type Tab = 'sectores' | 'tipos' | 'tecnicos' | 'categorias' | 'operadores';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'sectores', label: 'Sectores' },
   { id: 'tipos', label: 'Tipos de Activo' },
   { id: 'tecnicos', label: 'Técnicos' },
   { id: 'categorias', label: 'Categorías' },
+  { id: 'operadores', label: 'Operadores de campo' },
 ];
 
 const inputCls =
@@ -92,6 +94,7 @@ export const Configuracion: React.FC = () => {
       )}
 
       {tab === 'categorias' && <CategoriasSection />}
+      {tab === 'operadores' && <OperadoresSection />}
 
       {tieneSubActiva && <SeccionSuscripcion />}
       <SeccionAccesoRemoto />
@@ -797,6 +800,219 @@ const CategoriaCard: React.FC<CategoriaCardProps> = ({ cat, expandido, onToggle,
               )}
             </div>
           )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── OPERADORES DE CAMPO ───────────────────────────────────────
+
+const OperadoresSection: React.FC = () => {
+  const [operadores, setOperadores] = useState<Operador[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [form, setForm] = useState({ nombre: '', email: '', password: '' });
+
+  const [resetId, setResetId] = useState<string | null>(null);
+  const [resetPwd, setResetPwd] = useState('');
+  const [resetando, setResetando] = useState(false);
+
+  const cargar = () => {
+    setCargando(true);
+    getOperadores()
+      .then(setOperadores)
+      .catch((e) => setError(e.message))
+      .finally(() => setCargando(false));
+  };
+
+  useEffect(() => { cargar(); }, []);
+
+  const handleCrear = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setGuardando(true);
+    setError(null);
+    try {
+      const nuevo = await crearOperador(form);
+      setOperadores((p) => [...p, nuevo]);
+      setForm({ nombre: '', email: '', password: '' });
+      setAdding(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al crear operador');
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const handleDesactivar = async (id: string, nombre: string) => {
+    if (!window.confirm(`¿Desactivar al operador "${nombre}"?`)) return;
+    setError(null);
+    try {
+      await desactivarOperador(id);
+      setOperadores((p) => p.map((o) => o.id === id ? { ...o, activo: false } : o));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al desactivar');
+    }
+  };
+
+  const handleReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetId) return;
+    setResetando(true);
+    setError(null);
+    try {
+      await resetPasswordOperador(resetId, resetPwd);
+      setResetId(null);
+      setResetPwd('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al resetear contraseña');
+    } finally {
+      setResetando(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {error && (
+        <div className="border-2 border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>
+      )}
+
+      <p className="text-sm text-slate-500">
+        Los operadores de campo pueden iniciar sesión con su email y contraseña para registrar mediciones desde sus celulares.
+      </p>
+
+      {!adding && (
+        <AddButton onClick={() => setAdding(true)} label="Nuevo operador" />
+      )}
+
+      {adding && (
+        <form onSubmit={handleCrear} className="bg-white border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)] p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls}>Nombre</label>
+            <input
+              required
+              value={form.nombre}
+              onChange={(e) => setForm((p) => ({ ...p, nombre: e.target.value }))}
+              className={inputCls}
+              placeholder="Juan Perez"
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Email</label>
+            <input
+              required
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+              className={inputCls}
+              placeholder="operador@empresa.com"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label className={labelCls}>Contrasena (min. 8 caracteres)</label>
+            <input
+              required
+              type="password"
+              minLength={8}
+              value={form.password}
+              onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
+              className={inputCls}
+            />
+          </div>
+          <div className="sm:col-span-2 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => { setAdding(false); setForm({ nombre: '', email: '', password: '' }); }}
+              className="px-4 min-h-[44px] border-2 border-slate-400 font-bold text-slate-600"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={guardando}
+              className="px-4 min-h-[44px] bg-orange-500 text-white border-2 border-slate-800 font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] disabled:opacity-50"
+            >
+              {guardando ? 'Creando...' : 'Crear operador'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Reset password inline form */}
+      {resetId && (
+        <form onSubmit={handleReset} className="bg-amber-50 border-2 border-amber-400 p-4 flex flex-wrap items-end gap-3">
+          <div className="flex-1 min-w-[200px]">
+            <label className={labelCls}>Nueva contrasena para {operadores.find((o) => o.id === resetId)?.nombre}</label>
+            <input
+              required
+              type="password"
+              minLength={8}
+              value={resetPwd}
+              onChange={(e) => setResetPwd(e.target.value)}
+              className={inputCls}
+              autoFocus
+            />
+          </div>
+          <div className="flex gap-2 pb-0.5">
+            <button
+              type="button"
+              onClick={() => { setResetId(null); setResetPwd(''); }}
+              className="px-4 min-h-[44px] border-2 border-slate-400 font-bold text-slate-600 text-sm"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={resetando}
+              className="px-4 min-h-[44px] bg-slate-900 text-white border-2 border-slate-900 font-bold text-sm disabled:opacity-50"
+            >
+              {resetando ? 'Guardando...' : 'Guardar nueva contrasena'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {cargando ? (
+        <p className="text-sm text-slate-400">Cargando operadores...</p>
+      ) : operadores.length === 0 ? (
+        <p className="text-sm text-slate-400 italic">No hay operadores de campo registrados.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {operadores.map((o) => (
+            <Card key={o.id} inactivo={!o.activo}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-bold text-slate-800 truncate">{o.nombre}</div>
+                  <div className="text-xs font-semibold uppercase text-orange-500 tracking-wider">operador</div>
+                  <div className="text-xs text-slate-500 truncate mt-1">{o.email}</div>
+                  {!o.activo && (
+                    <span className="mt-1 inline-block text-xs font-black uppercase bg-red-100 border border-red-300 text-red-600 px-1.5 py-0.5">
+                      Inactivo
+                    </span>
+                  )}
+                </div>
+                {o.activo && (
+                  <div className="flex gap-1.5 flex-shrink-0">
+                    <IconBtn
+                      onClick={() => { setResetId(o.id); setResetPwd(''); }}
+                      title="Resetear contrasena"
+                    >
+                      <KeyRound size={15} />
+                    </IconBtn>
+                    <IconBtn
+                      onClick={() => handleDesactivar(o.id, o.nombre)}
+                      title="Desactivar operador"
+                      danger
+                    >
+                      <UserX size={15} />
+                    </IconBtn>
+                  </div>
+                )}
+              </div>
+            </Card>
+          ))}
         </div>
       )}
     </div>

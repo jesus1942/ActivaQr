@@ -20,6 +20,7 @@ import publicRouter from './routes/public';
 import accesoRemotoRouter from './routes/accesoRemoto';
 import categoriasRouter, { adminCategoriasRouter } from './routes/categorias';
 import suscripcionRouter from './routes/suscripcion';
+import operadoresRouter from './routes/operadores';
 import { requireAuth, requireAuthAndActiveEmpresa, requireSuperadmin } from './auth';
 import { seedCategorias } from './seedCategorias';
 import { seedDemo } from './seedDemo';
@@ -104,6 +105,7 @@ app.use('/api/tareas', requireAuthAndActiveEmpresa, tareasRouter);
 app.use('/api/sync', requireAuthAndActiveEmpresa, syncRouter);
 app.use('/api/categorias', requireAuthAndActiveEmpresa, categoriasRouter);
 app.use('/api/suscripcion', requireAuthAndActiveEmpresa, suscripcionRouter);
+app.use('/api/operadores', requireAuthAndActiveEmpresa, operadoresRouter);
 app.use('/api/admin/categorias-globales', requireAuth, requireSuperadmin, adminCategoriasRouter);
 
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
