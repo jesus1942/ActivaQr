@@ -6,13 +6,27 @@ import { apiFetch } from '../data/auth';
 
 const LOGO = '/ActivaQr/company-logo-hd.png';
 
+const DEMO_EMAIL = 'demo@activaqr.com';
+const DEMO_PASS = 'demo1234';
+
+function isDemoParam() {
+  const hash = window.location.hash; // e.g. #/login?demo=1
+  return hash.includes('demo=1');
+}
+
 export const Login: React.FC = () => {
-  const { login } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { login, logout } = useAuth();
+  const isDemo = isDemoParam();
+  const [email, setEmail] = useState(isDemo ? DEMO_EMAIL : '');
+  const [password, setPassword] = useState(isDemo ? DEMO_PASS : '');
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
   const [vistaForgot, setVistaForgot] = useState(false);
+
+  // Si llega con ?demo=1 limpiar sesión previa
+  React.useEffect(() => {
+    if (isDemo) logout();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotExito, setForgotExito] = useState(false);
   const [forgotError, setForgotError] = useState<string | null>(null);
