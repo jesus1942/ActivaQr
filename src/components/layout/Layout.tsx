@@ -4,12 +4,14 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { PantallaCarga } from '../PantallaCarga';
 import { useCargaRemota } from '../../hooks/useStorage';
+import { DemoBanner } from '../ui/DemoBanner';
 
 export const Layout: React.FC = () => {
   const cargando = useCargaRemota();
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-[#FAFAF7] overflow-hidden">
+      <DemoBanner />
       {cargando && <PantallaCarga />}
       <Sidebar />
       <main className="flex-1 overflow-y-auto">

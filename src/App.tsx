@@ -16,6 +16,7 @@ import { Admin } from './pages/Admin';
 import { Login } from './pages/Login';
 import { FichaPublica } from './pages/FichaPublica';
 import { AprobarAccesoRemoto } from './pages/AprobarAccesoRemoto';
+import { ResetPassword } from './pages/ResetPassword';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 function PantallaBloqueo() {
@@ -92,6 +93,7 @@ function App() {
         <Routes>
           <Route path="/ficha/:id" element={<FichaPublica />} />
           <Route path="/acceso-remoto/aprobar/:token" element={<AprobarAccesoRemoto />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/*" element={<AuthedApp />} />
         </Routes>
       </BrowserRouter>
