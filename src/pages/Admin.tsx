@@ -74,8 +74,8 @@ const ModalWhatsapp: React.FC<{
   const completo = soloDigitos ? `${pais.codigo}${soloDigitos}` : '';
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
-      <div className="bg-white border-2 border-slate-900 shadow-[6px_6px_0px_0px_#1e293b] w-full max-w-sm">
+    <div className="fixed inset-0 z-[60] bg-black/60 flex items-end sm:items-center justify-center p-4 pb-safe">
+      <div className="bg-white border-2 border-slate-900 shadow-[6px_6px_0px_0px_#1e293b] w-full max-w-sm max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between border-b-2 border-slate-900 px-5 py-3 bg-slate-900 text-white">
           <h2 className="font-sketch font-black text-base uppercase tracking-wide">{titulo}</h2>
           <button onClick={onOmitir}><X size={18} /></button>
@@ -105,7 +105,7 @@ const ModalWhatsapp: React.FC<{
               Numero (sin 0, sin codigo de pais)
             </label>
             <div className="flex gap-2 items-center">
-              <span className="border-2 border-slate-300 px-3 h-14 flex items-center font-mono font-black text-slate-700 text-sm bg-slate-50 whitespace-nowrap">
+              <span className="border-2 border-slate-300 px-3 h-11 flex items-center font-mono font-black text-slate-700 text-sm bg-slate-50 whitespace-nowrap">
                 +{pais.codigo}
               </span>
               <input
@@ -114,7 +114,7 @@ const ModalWhatsapp: React.FC<{
                 value={numero}
                 onChange={(e) => setNumero(e.target.value)}
                 placeholder="1112345678"
-                className="flex-1 border-2 border-slate-300 px-4 h-14 text-xl font-mono outline-none focus:border-orange-500 text-center"
+                className="flex-1 border-2 border-slate-300 px-3 h-11 text-base font-mono outline-none focus:border-orange-500 text-center min-w-0"
               />
             </div>
             {preview && (
