@@ -32,11 +32,14 @@ function evaluarMaximo(valor: number, alerta?: number | null, critico?: number |
 }
 
 interface UmbralesActivo {
+  temperaturaMin?: number | null;
   temperaturaAlerta?: number | null;
   temperaturaCritica?: number | null;
   temperaturaMax?: number | null;
+  amperajeNormal?: number | null;
   amperajeAlerta?: number | null;
   amperajeCritico?: number | null;
+  presionNormal?: number | null;
   presionAlerta?: number | null;
   presionCritica?: number | null;
   voltajeMin?: number | null;
@@ -55,6 +58,7 @@ interface ValoresMedicion {
   voltaje?: number | null;
   porcentajeBateria?: number | null;
   nivelToner?: number | null;
+  vibracion?: 'ninguna' | 'leve' | 'moderada' | 'alta' | null;
 }
 
 /**
@@ -69,12 +73,17 @@ export function calcularEstadoAutomatico(
   let estado: NivelAlerta = 'normal';
 
   if (valores.temperatura != null) {
+    // Temperatura alta: alerta/critico/urgente segun umbrales
     estado = peor(estado, evaluarMaximo(
       valores.temperatura,
       umbrales.temperaturaAlerta,
       umbrales.temperaturaCritica,
       umbrales.temperaturaMax,
     ));
+    // Temperatura baja: por debajo del minimo tambien es anormal
+    if (umbrales.temperaturaMin != null && valores.temperatura < umbrales.temperaturaMin) {
+      estado = peor(estado, 'alerta');
+    }
   }
 
   if (valores.amperaje != null) {
@@ -83,6 +92,10 @@ export function calcularEstadoAutomatico(
       umbrales.amperajeAlerta,
       umbrales.amperajeCritico,
     ));
+    // Amperaje en 0 con un valor normal esperado = equipo detenido o falla de sensor
+    if (umbrales.amperajeNormal != null && umbrales.amperajeNormal > 0 && valores.amperaje === 0) {
+      estado = peor(estado, 'alerta');
+    }
   }
 
   if (valores.presion != null) {
@@ -91,9 +104,23 @@ export function calcularEstadoAutomatico(
       umbrales.presionAlerta,
       umbrales.presionCritica,
     ));
+    // Presion en 0 con un valor normal esperado = sin presion, anormal
+    if (umbrales.presionNormal != null && umbrales.presionNormal > 0 && valores.presion === 0) {
+      estado = peor(estado, 'alerta');
+    }
+  }
+
+  // Vibracion: moderada = alerta, alta = critico
+  if (valores.vibracion != null) {
+    if (valores.vibracion === 'alta') estado = peor(estado, 'critico');
+    else if (valores.vibracion === 'moderada') estado = peor(estado, 'alerta');
   }
 
   if (valores.voltaje != null) {
+    // Voltaje en 0 = equipo sin energia o falla, siempre anormal
+    if (valores.voltaje === 0) {
+      estado = peor(estado, 'critico');
+    }
     // Voltaje fuera de rango → alerta; muy fuera → critico
     if (umbrales.voltajeMin != null && valores.voltaje < umbrales.voltajeMin) {
       estado = peor(estado, 'alerta');
