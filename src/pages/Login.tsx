@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { LogIn, Lock, Mail } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { apiFetch } from '../data/auth';
+import { apiFetch, logout as clearSession } from '../data/auth';
 
 const LOGO = '/ActivaQr/company-logo-hd.png';
 
@@ -15,7 +15,7 @@ function isDemoParam() {
 }
 
 export const Login: React.FC = () => {
-  const { login, logout } = useAuth();
+  const { login } = useAuth();
   const isDemo = isDemoParam();
   const [email, setEmail] = useState(isDemo ? DEMO_EMAIL : '');
   const [password, setPassword] = useState(isDemo ? DEMO_PASS : '');
@@ -23,9 +23,9 @@ export const Login: React.FC = () => {
   const [cargando, setCargando] = useState(false);
   const [vistaForgot, setVistaForgot] = useState(false);
 
-  // Si llega con ?demo=1 limpiar sesión previa
+  // Si llega con ?demo=1 limpiar sesión previa sin recargar la página
   React.useEffect(() => {
-    if (isDemo) logout();
+    if (isDemo) clearSession();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotExito, setForgotExito] = useState(false);
