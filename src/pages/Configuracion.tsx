@@ -702,9 +702,9 @@ const CategoriaCard: React.FC<CategoriaCardProps> = ({ cat, expandido, onToggle,
             <p className="text-xs text-slate-400 italic">Sin parámetros definidos.</p>
           ) : (
             cat.parametros.map((p) => (
-              <div key={p.id} className="flex items-center justify-between text-xs text-slate-600 py-0.5 border-b border-slate-100 last:border-0">
-                <span className="font-semibold">{p.nombre}</span>
-                <div className="flex items-center gap-2 text-slate-400">
+              <div key={p.id} className="flex items-center justify-between gap-2 text-xs text-slate-600 py-0.5 border-b border-slate-100 last:border-0">
+                <span className="font-semibold min-w-0 truncate">{p.nombre}</span>
+                <div className="flex items-center gap-2 text-slate-400 flex-shrink-0 flex-wrap justify-end">
                   {p.unidad && <span className="font-mono">{p.unidad}</span>}
                   {p.umbralAlerta != null && <span className="text-amber-600">alerta:{p.umbralAlerta}</span>}
                   {p.umbralCritico != null && <span className="text-red-500">critico:{p.umbralCritico}</span>}

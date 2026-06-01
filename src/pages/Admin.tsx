@@ -402,7 +402,7 @@ export const Admin: React.FC = () => {
                 </span>
               </div>
 
-              <div className="flex gap-3 mt-3 text-xs font-mono text-slate-600">
+              <div className="flex gap-3 mt-3 text-xs font-mono text-slate-600 flex-wrap">
                 <span className="flex items-center gap-1">
                   <Package size={14} /> {emp._count.activos} activos
                 </span>
@@ -432,7 +432,7 @@ export const Admin: React.FC = () => {
                 </p>
               )}
 
-              <div className="flex gap-2 mt-3 pt-3 border-t-2 border-slate-100">
+              <div className="flex gap-2 mt-3 pt-3 border-t-2 border-slate-100 flex-wrap">
                 <button
                   onClick={() => toggleEstado(emp)}
                   disabled={toggling.has(emp.id)}
