@@ -114,12 +114,12 @@ export const Sidebar: React.FC = () => {
             >
               <LogOut size={16} /> Cerrar sesión
             </button>
-            <div className="text-slate-600 text-xs font-mono mt-2">v1.0.0</div>
+            <div className="text-slate-600 text-xs font-mono mt-2">v1.1.0</div>
           </>
         ) : (
           <>
             <div className="text-slate-500 text-xs font-mono">Modo demo (local)</div>
-            <div className="text-slate-600 text-xs font-mono">v1.0.0</div>
+            <div className="text-slate-600 text-xs font-mono">v1.1.0</div>
           </>
         )}
         <a
