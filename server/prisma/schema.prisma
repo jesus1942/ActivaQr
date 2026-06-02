@@ -320,6 +320,11 @@ model Activo {
   intervaloRodamientoHoras  Int?
   proximoMantenimiento      DateTime?
   notas                     String?
+  esItinerante              Boolean      @default(false)
+  locacionBase              String?
+  locacionActual            String?
+  fechaSalida               DateTime?
+  fechaRetorno              DateTime?
   creadoEn                  DateTime     @default(now())
   actualizadoEn             DateTime     @updatedAt
 

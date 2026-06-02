@@ -24,6 +24,11 @@ interface FichaActivo {
   amperajeNormal: number;
   presionNormal: number;
   notas: string;
+  esItinerante?: boolean;
+  locacionBase?: string | null;
+  locacionActual?: string | null;
+  fechaSalida?: string | null;
+  fechaRetorno?: string | null;
   empresa: { id: string; nombre: string; logoUrl?: string | null };
   sector: { nombre: string } | null;
   tipo: { nombre: string } | null;
@@ -155,7 +160,16 @@ export const FichaPublica: React.FC = () => {
           <Fila label="Tel. responsable" value={activo.responsable?.telefono} />
           <Fila label="Horas actuales" value={activo.horasActuales ? `${activo.horasActuales} hs` : undefined} />
           <Fila label="Fecha ingreso" value={activo.fechaIngreso ? activo.fechaIngreso.slice(0, 10) : undefined} />
-          <Fila label="Próximo mant." value={activo.proximoMantenimiento ? activo.proximoMantenimiento.slice(0, 10) : undefined} />
+          <Fila label="Proximo mant." value={activo.proximoMantenimiento ? activo.proximoMantenimiento.slice(0, 10) : undefined} />
+          {activo.esItinerante && (
+            <>
+              <Fila label="Tipo" value="Itinerante" />
+              <Fila label="Locacion base" value={activo.locacionBase ?? undefined} />
+              <Fila label="Locacion actual" value={activo.locacionActual ?? undefined} />
+              <Fila label="Fecha salida" value={activo.fechaSalida ? activo.fechaSalida.slice(0, 10) : undefined} />
+              <Fila label="Fecha retorno est." value={activo.fechaRetorno ? activo.fechaRetorno.slice(0, 10) : undefined} />
+            </>
+          )}
         </div>
 
         {/* Parámetros operativos */}
