@@ -2,8 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Search, Plus, LayoutGrid, List, X, ChevronDown, ChevronUp, Download } from 'lucide-react';
+import { Search, Plus, LayoutGrid, List, X, ChevronDown, ChevronUp, Download, FileDown } from 'lucide-react';
 import { exportarCsv } from '../utils/exportCsv';
+import { exportarResumenActivosPdf } from '../utils/exportPdf';
 import { useActivos } from '../hooks/useActivos';
 import { useAuth } from '../context/AuthContext';
 import { AssetCard } from '../components/ui/AssetCard';
@@ -158,6 +159,14 @@ export const Activos: React.FC = () => {
           <p className="text-slate-500 text-sm mt-1">{filtered.length} activos encontrados</p>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={() => exportarResumenActivosPdf({ activos: filtered, getSectorNombre, getTipoNombre, getTecnicoNombre: (id) => getTecnicoNombre(id ?? '') })}
+            className="flex items-center gap-2 bg-white text-slate-700 px-3 min-h-[44px] font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] transition-all text-sm"
+            title="Exportar lista a PDF"
+          >
+            <FileDown size={15} />
+            <span className="hidden sm:inline">PDF</span>
+          </button>
           <button
             onClick={() => exportarCsv('activos', filtered.map((a) => ({
               Codigo: a.codigo, Nombre: a.nombre, Sector: getSectorNombre(a.sectorId),
