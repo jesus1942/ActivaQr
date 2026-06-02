@@ -327,3 +327,31 @@ ActivaQr/
 ## Licencia
 
 MIT License — Copyright (c) 2024 ActivaQR
+
+---
+
+## Roadmap v2.0 — Proximas versiones
+
+### Seguimiento GPS para activos moviles (Fase 1 — celular)
+- El tecnico responsable queda inscripto en el activo antes de salir
+- El celular del operador envia posicion GPS cada X minutos al backend
+- Historial de recorrido, alertas por zona y velocidad
+- Sin hardware extra — usa el GPS del smartphone
+- Mercado objetivo: flotas de vehiculos, maquinaria vial, embarcaciones, campo petrolero
+
+### Seguimiento GPS (Fase 2 — hardware IoT)
+- Dispositivo GPS + SIM (Teltonika FMB920 o similar, ~USD 80/unidad) conectado al activo
+- Mediciones automaticas sin intervencion humana
+- Conectividad Starlink para zonas sin señal celular (cuencas petroleras, obra vial, Patagonia)
+
+### Mantenimiento predictivo
+- Analisis de tendencias en el historial de mediciones
+- Alerta antes de la falla, no despues
+
+### Mercado objetivo para GPS tracking
+- Vaca Muerta / Neuquen / Rio Negro: campo petrolero no convencional
+- USD 10.000 millones de inversion anual, miles de vehiculos y maquinaria en operacion
+- Las operadoras (YPF, Chevron, Shell) exigen tracking GPS contractualmente a sus contratistas
+- Starlink ya tiene adopcion masiva en el campo petrolero argentino
+- Precio de mercado actual: $38.000–$52.000 ARS/vehiculo/mes (Smarttrack, Vtracking, Ubicar)
+- Oportunidad: contratistas medianos (50–200 vehiculos) sin sistema formal de gestion de flota
