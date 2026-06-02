@@ -15,6 +15,8 @@ import {
   Menu,
   X,
   MessageSquare,
+  BarChart3,
+  ScrollText,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getNotificacionesCliente } from '../../data/accesoRemotoApi';
@@ -24,10 +26,12 @@ const LOGO_DARK  = '/ActivaQr/company-logo1.png';      // claro, para fondo oscu
 
 const navEmpresa = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/indicadores', icon: BarChart3, label: 'Indicadores' },
   { to: '/activos', icon: Package, label: 'Activos' },
   { to: '/medicion', icon: ClipboardList, label: 'Mediciones' },
   { to: '/mantenimiento', icon: Wrench, label: 'Mantenimiento' },
   { to: '/reportes', icon: FileText, label: 'Reportes' },
+  { to: '/auditoria', icon: ScrollText, label: 'Auditoría' },
   { to: '/importar', icon: Upload, label: 'Importar Datos' },
   { to: '/qr', icon: QrCode, label: 'QR / Etiquetas' },
   { to: '/mensajes', icon: MessageSquare, label: 'Mensajes' },
