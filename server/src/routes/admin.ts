@@ -440,6 +440,10 @@ router.delete('/estadisticas', async (_req: AuthRequest, res: Response, next: Ne
 });
 
 // POST /api/admin/seed-demo — recrea la empresa demo si no existe
+router.get('/stripe-status', (_req: AuthRequest, res: Response) => {
+  res.json({ configurado: !!process.env.STRIPE_SECRET_KEY });
+});
+
 router.post('/seed-demo', async (_req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { seedDemo } = await import('../seedDemo');

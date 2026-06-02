@@ -19,6 +19,8 @@ import {
   Globe,
   ChevronDown,
   Download,
+  Search,
+  AlertTriangle,
 } from 'lucide-react';
 import { exportarCsv } from '../utils/exportCsv';
 import {
@@ -357,6 +359,7 @@ const ModalWhatsapp: React.FC<{
 
 export const Admin: React.FC = () => {
   const [empresas, setEmpresas] = useState<EmpresaAdmin[]>([]);
+  const [busqueda, setBusqueda] = useState('');
   const [solicitudes, setSolicitudes] = useState<SolicitudUpgrade[]>([]);
   const [estadisticas, setEstadisticas] = useState<Estadisticas | null>(null);
   const [cargando, setCargando] = useState(true);
@@ -366,6 +369,7 @@ export const Admin: React.FC = () => {
   const [modalResetPass, setModalResetPass] = useState<EmpresaAdmin | null>(null);
   const [expandidas, setExpandidas] = useState<Set<string>>(new Set());
   const [toggling, setToggling] = useState<Set<string>>(new Set());
+  const [stripeOk, setStripeOk] = useState<boolean | null>(null);
 
   const toggleExpand = (id: string) =>
     setExpandidas((prev) => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
@@ -426,6 +430,13 @@ export const Admin: React.FC = () => {
 
   useEffect(() => {
     getEstadisticas().then(setEstadisticas).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    apiFetch('admin/stripe-status')
+      .then((r) => r.json())
+      .then((d) => setStripeOk(!!d?.configurado))
+      .catch(() => setStripeOk(false));
   }, []);
 
   const toggleEstado = async (emp: EmpresaAdmin) => {
@@ -597,6 +608,11 @@ export const Admin: React.FC = () => {
             )}
           </h1>
           <p className="text-slate-500 text-sm mt-1">{empresas.length} empresas registradas</p>
+          {stripeOk === false && (
+            <div className="flex items-center gap-1.5 mt-1 text-xs font-black uppercase tracking-wide text-amber-700 bg-amber-50 border-2 border-amber-400 px-2 py-1 w-fit">
+              <AlertTriangle size={13} /> Stripe no configurado — USD/UYU no disponible
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
           <button
@@ -640,6 +656,18 @@ export const Admin: React.FC = () => {
       </div>
 
       <NotificacionesPush />
+
+      {/* Barra de búsqueda */}
+      <div className="relative">
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+        <input
+          type="search"
+          placeholder="Buscar empresa por nombre, CUIT o email..."
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          className="w-full border-2 border-slate-300 pl-9 pr-4 h-11 text-sm outline-none focus:border-orange-500 bg-white font-medium"
+        />
+      </div>
 
       {estadisticas && (
         <PanelEstadisticas
@@ -699,7 +727,15 @@ export const Admin: React.FC = () => {
         <p className="text-slate-400 py-8 text-center font-sketch text-xl">Cargando…</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {empresas.map((emp) => {
+          {empresas.filter((e) => {
+            if (!busqueda.trim()) return true;
+            const q = busqueda.toLowerCase();
+            return (
+              e.nombre.toLowerCase().includes(q) ||
+              (e.cuit ?? '').includes(q) ||
+              e.usuarios.some((u) => u.email.toLowerCase().includes(q))
+            );
+          }).map((emp) => {
             const abierta = expandidas.has(emp.id);
             return (
             <div
@@ -757,6 +793,9 @@ export const Admin: React.FC = () => {
                     {emp.mpMonto ? ` · $${emp.mpMonto}/mes` : ''}
                   </p>
                 )}
+                <p className="text-[10px] font-mono text-slate-400 mt-1">
+                  Alta: {new Date(emp.creadaEn).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                </p>
               </button>
 
               {/* Panel de operaciones desplegable */}
@@ -796,7 +835,7 @@ export const Admin: React.FC = () => {
                     onClick={() => suscribir(emp)}
                     className="w-full flex items-center gap-2 border-2 border-slate-300 bg-white px-3 py-2 text-sm font-bold hover:border-emerald-600 hover:text-emerald-700 transition-colors"
                   >
-                    <CreditCard size={15} /> Generar suscripcion MP
+                    <CreditCard size={15} /> Generar cobro
                   </button>
 
                   {emp.mpPreapprovalId && emp.mpEstadoSub !== 'cancelled' && (
