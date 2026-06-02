@@ -32,18 +32,6 @@ export const Mantenimiento: React.FC = () => {
   const pendientes = tareas.filter((t) => t.estado === 'pendiente');
   const completadas = tareas.filter((t) => t.estado === 'completado');
 
-  const handleCompletar = (id: string) => {
-    completarTarea(id, format(new Date(), 'yyyy-MM-dd'), obsInput);
-    setCompletingId(null);
-    setObsInput('');
-  };
-
-  const openNew = (preActivoId?: string) => {
-    setEditId(null);
-    setNewTarea({ ...emptyTarea, activoId: preActivoId ?? '' });
-    setShowModal(true);
-  };
-
   const crearTareaRecomendada = (activoId: string, estadoActivo: string) => {
     const tipo = estadoActivo === 'critico' ? 'Revision urgente — estado critico' : 'Revision — estado en alerta';
     addTarea({
@@ -55,6 +43,18 @@ export const Mantenimiento: React.FC = () => {
       observaciones: `Generada automaticamente el ${format(new Date(), 'dd/MM/yyyy')}`,
       estado: 'pendiente',
     } as TareaMantenimiento);
+  };
+
+  const handleCompletar = (id: string) => {
+    completarTarea(id, format(new Date(), 'yyyy-MM-dd'), obsInput);
+    setCompletingId(null);
+    setObsInput('');
+  };
+
+  const openNew = (preActivoId?: string) => {
+    setEditId(null);
+    setNewTarea({ ...emptyTarea, activoId: preActivoId ?? '' });
+    setShowModal(true);
   };
 
   const activosSinTarea = activos.filter((a) =>
