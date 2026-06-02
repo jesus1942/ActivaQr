@@ -18,7 +18,9 @@ import {
   QrCode,
   Globe,
   ChevronDown,
+  Download,
 } from 'lucide-react';
+import { exportarCsv } from '../utils/exportCsv';
 import {
   EmpresaAdmin,
   SolicitudUpgrade,
@@ -344,6 +346,25 @@ export const Admin: React.FC = () => {
             title="Recrear empresa y usuario demo si fueron eliminados"
           >
             Recrear demo
+          </button>
+          <button
+            onClick={() => exportarCsv('empresas', empresas.map((e) => ({
+              Nombre: e.nombre,
+              CUIT: e.cuit ?? '',
+              Plan: e.plan,
+              Estado: e.estado,
+              Activos: e._count.activos,
+              Usuarios: e._count.usuarios,
+              'Admin Email': e.usuarios[0]?.email ?? '',
+              Suscripcion: e.mpEstadoSub ?? '',
+              'Monto Mensual': e.mpMonto ?? '',
+              'Ultimo Pago': e.mpUltimoPago ?? '',
+              'Creada': e.creadaEn,
+            })))}
+            className="flex items-center gap-2 bg-white text-slate-700 px-4 py-2 font-sketch font-bold uppercase border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-sm"
+            title="Exportar lista de empresas a CSV"
+          >
+            <Download size={16} /> CSV
           </button>
           <button
             onClick={() => setModalAbierto(true)}

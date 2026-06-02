@@ -78,10 +78,14 @@ app.post('/api/leads', async (req: Request, res: Response) => {
   } catch (e) {
     console.error('[LEAD] error enviando email:', e);
   }
+  const waNumero = telefono ? telefono.replace(/\D/g, '') : null;
+  const waUrl = waNumero
+    ? `https://wa.me/${waNumero}?text=${encodeURIComponent(`Hola ${nombre}! Te contacto desde ActivaQR en respuesta a tu solicitud.`)}`
+    : null;
   enviarPushASuperadmin({
-    title: 'Nuevo lead',
-    body: nombre + (empresa ? ' - ' + empresa : ''),
-    url: '#/admin',
+    title: `Nuevo lead: ${nombre}${empresa ? ` (${empresa})` : ''}`,
+    body: [email, telefono].filter(Boolean).join(' · '),
+    url: waUrl ?? `mailto:${email}`,
   }).catch((e) => console.error('[LEAD] error push:', e));
   res.json({ ok: true });
 });
