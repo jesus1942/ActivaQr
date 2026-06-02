@@ -46,7 +46,7 @@ export async function crearPreapproval(params: {
       auto_recurring: {
         frequency: 1,
         frequency_type: 'months',
-        transaction_amount: params.monto,
+        transaction_amount: Math.round(params.monto),
         currency_id: 'ARS',
       },
     }),
@@ -109,7 +109,7 @@ export async function crearLinkPago(params: {
     items: [{
       title: params.descripcion,
       quantity: 1,
-      unit_price: params.monto,
+      unit_price: Math.round(params.monto),
       currency_id: 'ARS',
     }],
     back_urls: {
