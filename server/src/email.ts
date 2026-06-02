@@ -173,6 +173,7 @@ export async function enviarEmailLead(lead: LeadDatos): Promise<boolean> {
   await resend.emails.send({
     from,
     to: destino,
+    replyTo: lead.email,
     subject: `Nuevo lead ActivaQR — ${lead.nombre}${lead.empresa ? ` (${lead.empresa})` : ''}`,
     html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/></head>
 <body style="margin:0;padding:0;background:#f1f5f9;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
@@ -187,10 +188,26 @@ export async function enviarEmailLead(lead: LeadDatos): Promise<boolean> {
   <table width="100%" cellpadding="0" cellspacing="0">
     ${fila('Nombre', lead.nombre)}
     ${fila('Empresa', lead.empresa)}
-    ${fila('Email', lead.email)}
+    ${fila('Email', `<a href="mailto:${lead.email}" style="color:#f97316;">${lead.email}</a>`)}
     ${fila('Teléfono', lead.telefono)}
     ${fila('Mensaje', lead.mensaje)}
   </table>
+  <p style="margin:18px 0 8px;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;">Responder directamente</p>
+  <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+    <tr>
+      <td style="padding:0 8px 0 0;">
+        <a href="mailto:${lead.email}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;font-weight:900;font-size:13px;padding:10px 20px;border:2px solid #0f172a;text-transform:uppercase;letter-spacing:1px;">
+          Responder por Email
+        </a>
+      </td>
+      ${lead.telefono ? `<td>
+        <a href="https://wa.me/${lead.telefono.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${lead.nombre}! Te contacto desde ActivaQR en respuesta a tu solicitud de acceso.`)}" style="display:inline-block;background:#22c55e;color:#fff;text-decoration:none;font-weight:900;font-size:13px;padding:10px 20px;border:2px solid #22c55e;text-transform:uppercase;letter-spacing:1px;">
+          WhatsApp
+        </a>
+      </td>` : ''}
+    </tr>
+  </table>
+  <p style="margin:14px 0 0;font-size:11px;color:#94a3b8;">Responder este email va directamente a ${lead.email}</p>
 </td></tr>
 <tr><td style="background:#0f172a;padding:14px 28px;border:3px solid #0f172a;border-top:none;">
   <p style="margin:0;font-size:11px;color:#475569;text-align:center;">© ${new Date().getFullYear()} ActivaQR — Lead capturado desde la landing.</p>
