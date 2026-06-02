@@ -5,6 +5,7 @@ import { es } from 'date-fns/locale';
 import { FileText, Download } from 'lucide-react';
 import { useActivos } from '../hooks/useActivos';
 import { jsPDF } from 'jspdf';
+import { exportarCsv } from '../utils/exportCsv';
 
 export const Reportes: React.FC = () => {
   const { activos, mediciones, getSectorNombre, getTecnicoNombre } = useActivos();
@@ -177,6 +178,28 @@ export const Reportes: React.FC = () => {
               >
                 <Download size={16} />
                 Descargar PDF
+              </button>
+              <button
+                onClick={() => exportarCsv(
+                  `mediciones-${desde}-${hasta}`,
+                  filteredMediciones.map((m) => {
+                    const activo = activos.find((a) => a.id === m.activoId);
+                    return {
+                      Fecha: format(parseISO(m.fecha), 'dd/MM/yyyy HH:mm', { locale: es }),
+                      Codigo: activo?.codigo ?? '', Activo: activo?.nombre ?? '',
+                      Sector: getSectorNombre(activo?.sectorId ?? ''),
+                      Temperatura: m.temperatura ?? '', Amperaje: m.amperaje ?? '',
+                      Presion: m.presion ?? '', Vibracion: m.vibracion,
+                      Voltaje: m.voltaje ?? '', Bateria: m.porcentajeBateria ?? '',
+                      Estado: m.estado, Tecnico: getTecnicoNombre(m.tecnicoId),
+                      Observaciones: m.observaciones ?? '',
+                    };
+                  })
+                )}
+                className="w-full flex items-center justify-center gap-2 border-2 border-slate-800 px-4 py-2.5 font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                <Download size={16} />
+                Exportar CSV
               </button>
             </div>
           </div>
