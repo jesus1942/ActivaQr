@@ -138,8 +138,8 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
     <span class="brand">ActivaQR</span>
     <div class="links">
       <a class="nav-link" href="#features">Funciones</a>
+      <a class="nav-link" href="#casos">Casos de uso</a>
       <a class="nav-link" href="#categorias">Rubros</a>
-      <a class="nav-link" href="#historia">Historia</a>
       <a class="nav-link" href="#vision">Vision</a>
       <a class="nav-link" href="#planes">Planes</a>
       <a class="btn btn-naranja" href="${appUrl}" target="_blank" rel="noopener">Ingresar</a>
@@ -230,6 +230,58 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
       <div class="paso"><div class="n">2</div><div><h3>Pegás el QR</h3><p>Imprimís el código de cada máquina y lo pegás. Listo para escanear desde cualquier celular.</p></div></div>
       <div class="paso"><div class="n">3</div><div><h3>Tu equipo mide</h3><p>El operario escanea, carga la medición y el sistema evalúa el estado contra los umbrales al instante.</p></div></div>
       <div class="paso"><div class="n">4</div><div><h3>Resolvés antes de la falla</h3><p>Las alertas te avisan. Vos intervenís, o pedís soporte remoto. Todo queda registrado y auditable.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="casos" style="background:#f8fafc;border-top:3px solid var(--negro);border-bottom:3px solid var(--negro)">
+  <div class="wrap">
+    <h2 class="titulo">Casos de uso reales</h2>
+    <p class="bajada">Industrias que ya pueden usar ActivaQR hoy, sin adaptaciones.</p>
+    <div class="grid g3" style="margin-top:40px">
+
+      <div class="card" style="border-left:5px solid var(--naranja)">
+        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:8px">Petroleo y gas — Vaca Muerta</p>
+        <h3 style="margin-bottom:10px">Contratistas y empresas de servicios</h3>
+        <p style="color:var(--gris);font-size:14px">Las operadoras exigen trazabilidad de mantenimiento. Con ActivaQR cada camion, bomba o generador tiene su historial auditabe accesible desde el campo con el celular, sin papel ni planillas.</p>
+        <p style="margin-top:14px;font-size:13px;font-weight:700;color:var(--negro)">Activos tipicos: compresores, generadores, autoelevadores, camiones de alta presion</p>
+      </div>
+
+      <div class="card" style="border-left:5px solid var(--naranja)">
+        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:8px">Salud y estetica</p>
+        <h3 style="margin-bottom:10px">Clinicas, hospitales y centros esteticos</h3>
+        <p style="color:var(--gris);font-size:14px">Los equipos medicos y esteticos requieren mantenimiento obligatorio con respaldo documental. El tecnico escanea el QR, carga la revision y queda todo registrado con fecha y firma digital.</p>
+        <p style="margin-top:14px;font-size:13px;font-weight:700;color:var(--negro)">Activos tipicos: HIFU, laser, autoclave, ecografo, UPS, grupos electrogenos</p>
+      </div>
+
+      <div class="card" style="border-left:5px solid var(--naranja)">
+        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:8px">Construccion y obra civil</p>
+        <h3 style="margin-bottom:10px">Empresas constructoras y vial</h3>
+        <p style="color:var(--gris);font-size:14px">Maquinaria pesada moviendose entre obras. Con el modulo itinerante rastrean donde esta cada equipo, cuando salio, cuando vuelve y que mantenimiento le toca antes de la proxima jornada.</p>
+        <p style="margin-top:14px;font-size:13px;font-weight:700;color:var(--negro)">Activos tipicos: retroexcavadoras, motoniveladoras, volquetes, hormigoneras</p>
+      </div>
+
+      <div class="card" style="border-left:5px solid var(--naranja)">
+        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:8px">Industria alimentaria y frigorifica</p>
+        <h3 style="margin-bottom:10px">Plantas de procesamiento y camaras frigorificas</h3>
+        <p style="color:var(--gris);font-size:14px">La cadena de frio exige control de temperatura constante. ActivaQR alerta automaticamente cuando un compresor o camara se sale del rango permitido, antes de comprometer el producto.</p>
+        <p style="margin-top:14px;font-size:13px;font-weight:700;color:var(--negro)">Activos tipicos: compresores de frio, camaras, tuneles de congelado, lineas de proceso</p>
+      </div>
+
+      <div class="card" style="border-left:5px solid var(--naranja)">
+        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:8px">Talleres y metalurgia</p>
+        <h3 style="margin-bottom:10px">Talleres mecanicos, torneria y metalmecanica</h3>
+        <p style="color:var(--gris);font-size:14px">Maquinaria de alta precision que para la produccion si falla. Registro de horas de marcha, lubricaciones y revisiones periodicas. El tecnico sabe que le toca hacer antes de encender la maquina.</p>
+        <p style="margin-top:14px;font-size:13px;font-weight:700;color:var(--negro)">Activos tipicos: tornos CNC, fresadoras, prensas, compresores de aire, soldadoras</p>
+      </div>
+
+      <div class="card" style="border-left:5px solid var(--naranja)">
+        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:8px">Energia y utilities</p>
+        <h3 style="margin-bottom:10px">Plantas de generacion y distribucion electrica</h3>
+        <p style="color:var(--gris);font-size:14px">Grupos electrogenos, tableros y UPS con control de voltaje, temperatura y horas de operacion. Las alertas criticas llegan al responsable antes de que se vaya la luz.</p>
+        <p style="margin-top:14px;font-size:13px;font-weight:700;color:var(--negro)">Activos tipicos: generadores diesel, transformadores, tableros electricos, UPS industriales</p>
+      </div>
+
     </div>
   </div>
 </section>
