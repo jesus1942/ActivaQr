@@ -5,7 +5,7 @@
  * y chatear con un cliente que otorgó permiso.
  */
 import React, { useEffect, useState } from 'react';
-import { Plus, X, ArrowLeft, Activity, CheckCircle } from 'lucide-react';
+import { Plus, X, ArrowLeft, Activity, CheckCircle, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   PermisoAcceso, MensajeRemoto,
@@ -13,6 +13,7 @@ import {
   crearTareaRemota, crearMedicionRemota,
 } from '../data/accesoRemotoApi';
 import { ChatRemoto } from './ChatRemoto';
+import { exportarCsv } from '../utils/exportCsv';
 
 const ESTADO_COLOR: Record<string, string> = {
   normal:        'bg-emerald-50 border-emerald-400 text-emerald-700',
@@ -158,15 +159,56 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
         </div>
 
         {/* Resumen */}
-        <div className="px-5 py-3 border-b-2 border-slate-100 flex gap-4 flex-wrap text-sm">
+        <div className="px-5 py-3 border-b-2 border-slate-100 flex gap-4 flex-wrap text-sm items-center">
           <span className="font-semibold text-slate-600">{activos.length} activos</span>
           {criticos > 0 && <span className="font-black text-red-600">{criticos} críticos</span>}
           {alertas > 0  && <span className="font-black text-amber-600">! {alertas} en alerta</span>}
-          <span className={`ml-auto text-xs font-black uppercase px-2 py-1 border-2 ${
-            permiso.estado === 'activo' ? 'border-emerald-400 text-emerald-700 bg-emerald-50' : 'border-slate-300 text-slate-500'
-          }`}>
-            {permiso.estado}
-          </span>
+          <div className="ml-auto flex items-center gap-2">
+            {activos.length > 0 && (
+              <button
+                onClick={() => exportarCsv(`fichas-${empresaNombre.replace(/\s+/g, '-').toLowerCase()}`, activos.map((a) => ({
+                  Codigo: a.codigo,
+                  Nombre: a.nombre,
+                  Sector: a.sector?.nombre ?? '',
+                  Tipo: a.tipo?.nombre ?? '',
+                  Marca: a.marca ?? '',
+                  Modelo: a.modelo ?? '',
+                  Ubicacion: a.ubicacion ?? '',
+                  Responsable: a.responsable?.nombre ?? '',
+                  Estado: a.estado,
+                  'Estado Operativo': a.estadoOperativo ?? '',
+                  'Fecha Ingreso': a.fechaIngreso ?? '',
+                  'Horas Actuales': a.horasActuales ?? '',
+                  'Temp Min °C': a.temperaturaMin ?? '',
+                  'Temp Max °C': a.temperaturaMax ?? '',
+                  'Temp Alerta °C': a.temperaturaAlerta ?? '',
+                  'Temp Critica °C': a.temperaturaCritica ?? '',
+                  'Amperaje Normal A': a.amperajeNormal ?? '',
+                  'Amperaje Alerta A': a.amperajeAlerta ?? '',
+                  'Amperaje Critico A': a.amperajeCritico ?? '',
+                  'Presion Normal': a.presionNormal ?? '',
+                  'Presion Alerta': a.presionAlerta ?? '',
+                  'Voltaje Min V': a.voltajeMin ?? '',
+                  'Voltaje Max V': a.voltajeMax ?? '',
+                  'Bateria Alerta %': a.bateriaAlerta ?? '',
+                  'Intervalo Medicion h': a.intervaloMedicionHoras ?? '',
+                  'Proximo Mantenimiento': a.proximoMantenimiento ?? '',
+                  Notas: a.notas ?? '',
+                  'Ultima Temp': a.mediciones?.[0]?.temperatura ?? '',
+                  'Ultima Medicion': a.mediciones?.[0] ? format(new Date(a.mediciones[0].fecha), 'dd/MM/yyyy HH:mm') : '',
+                })))}
+                className="flex items-center gap-1.5 border-2 border-slate-300 px-3 py-1.5 text-xs font-bold hover:border-slate-900 transition-colors"
+                title="Exportar fichas tecnicas a CSV"
+              >
+                <Download size={13} /> Exportar fichas
+              </button>
+            )}
+            <span className={`text-xs font-black uppercase px-2 py-1 border-2 ${
+              permiso.estado === 'activo' ? 'border-emerald-400 text-emerald-700 bg-emerald-50' : 'border-slate-300 text-slate-500'
+            }`}>
+              {permiso.estado}
+            </span>
+          </div>
         </div>
 
         {/* Tabs */}
