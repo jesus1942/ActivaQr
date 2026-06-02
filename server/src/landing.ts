@@ -59,12 +59,18 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   .capital-banner p{color:#94a3b8;font-size:16px;max-width:680px;margin:0 auto}
 
   /* HERO */
-  .hero{padding:72px 0 56px;border-bottom:3px solid var(--negro)}
-  .hero .tag{display:inline-block;background:#fff7ed;border:2px solid var(--naranja);color:#ea580c;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:6px 12px;margin-bottom:20px}
-  .hero h1{font-size:clamp(34px,6vw,60px);margin-bottom:20px}
+  .hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;border-bottom:3px solid var(--negro);padding:80px 0 100px;position:relative}
+  .hero .tag{display:inline-block;background:#fff7ed;border:2px solid var(--naranja);color:#ea580c;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:6px 12px;margin-bottom:24px}
+  .hero h1{font-size:clamp(40px,7vw,76px);margin-bottom:24px;line-height:1.0}
   .hero h1 .o{color:var(--naranja)}
-  .hero p.sub{font-size:clamp(16px,2.4vw,21px);color:var(--gris);max-width:620px;margin-bottom:30px}
+  .hero p.sub{font-size:clamp(16px,2.2vw,20px);color:var(--gris);max-width:580px;margin-bottom:36px}
   .hero .acciones{display:flex;gap:14px;flex-wrap:wrap}
+
+  /* SCROLL HINT */
+  .scroll-hint{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;opacity:1;transition:opacity .4s}
+  .scroll-hint span{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:var(--gris-c)}
+  .scroll-arrow{width:28px;height:28px;border-right:3px solid var(--naranja);border-bottom:3px solid var(--naranja);transform:rotate(45deg);animation:bounce 1.4s ease-in-out infinite}
+  @keyframes bounce{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(6px)}}
 
   /* SECCIONES */
   section{padding:60px 0}
@@ -129,6 +135,10 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   /* FOOTER */
   footer{background:var(--negro);color:var(--gris-c);padding:32px 0;text-align:center;font-size:13px}
   footer .brand{font-size:18px;display:block;margin-bottom:8px}
+
+  /* FADE-IN SCROLL */
+  .reveal{opacity:0;transform:translateY(32px);transition:opacity .6s ease,transform .6s ease}
+  .reveal.visible{opacity:1;transform:translateY(0)}
 </style>
 </head>
 <body>
@@ -150,16 +160,20 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
 <header class="hero">
   <div class="wrap">
     <span class="tag">Sin papel. Sin excusas.</span>
-    <h1>Cada máquina de tu planta, un <span class="o">nodo inteligente</span>.</h1>
-    <p class="sub">Pegás un QR en el equipo y cualquier persona con un celular ve su ficha técnica al instante. Tu equipo carga mediciones, recibe alertas automáticas cuando algo se sale de rango y resuelve antes de que se rompa.</p>
+    <h1>Cada máquina de tu planta,<br>un <span class="o">nodo inteligente</span>.</h1>
+    <p class="sub">Pegás un QR en el equipo y cualquier persona con un celular ve su ficha técnica al instante. Alertas automáticas, mantenimientos y soporte remoto. Todo en el celular.</p>
     <div class="acciones">
       <a class="btn btn-naranja" href="#contacto">Quiero suscribirme</a>
       <a class="btn btn-blanco" href="${appUrl}" target="_blank" rel="noopener">Ver la app</a>
     </div>
   </div>
+  <div class="scroll-hint" id="scrollHint">
+    <span>Conocer más</span>
+    <div class="scroll-arrow"></div>
+  </div>
 </header>
 
-<section id="features">
+<section id="features" class="reveal">
   <div class="wrap">
     <h2 class="titulo">Todo lo que necesita el mantenimiento moderno</h2>
     <p class="bajada">Desde el operario en el piso de planta hasta el gerente que mira el tablero. Una sola herramienta, en el celular.</p>
@@ -174,7 +188,7 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   </div>
 </section>
 
-<section class="dif">
+<section class="dif reveal">
   <div class="wrap">
     <h2 class="titulo">Lo que ningún otro hace</h2>
     <p class="bajada">Comparamos contra las soluciones de mantenimiento del mercado local y regional. Estas tres cosas no las tiene nadie más.</p>
@@ -186,7 +200,7 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   </div>
 </section>
 
-<section id="categorias">
+<section id="categorias" class="reveal">
   <div class="wrap">
     <h2 class="titulo">Un rubro para cada equipo</h2>
     <p class="bajada">Plantillas de medición listas para usar, desde estética hasta ingeniería aeroespacial. Y podés crear las tuyas.</p>
@@ -222,7 +236,7 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   </div>
 </section>
 
-<section style="border-top:3px solid var(--negro);background:#fff">
+<section class="reveal" style="border-top:3px solid var(--negro);background:#fff">
   <div class="wrap">
     <h2 class="titulo">Cómo funciona</h2>
     <div class="pasos">
@@ -234,7 +248,7 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   </div>
 </section>
 
-<section id="casos" style="background:#f8fafc;border-top:3px solid var(--negro);border-bottom:3px solid var(--negro)">
+<section id="casos" class="reveal" style="background:#f8fafc;border-top:3px solid var(--negro);border-bottom:3px solid var(--negro)">
   <div class="wrap">
     <h2 class="titulo">Casos de uso reales</h2>
     <p class="bajada">Industrias que ya pueden usar ActivaQR hoy, sin adaptaciones.</p>
@@ -286,7 +300,7 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   </div>
 </section>
 
-<section id="demo" style="background:#fff7ed;border-top:3px solid #0f172a;border-bottom:3px solid #0f172a;padding:64px 0;">
+<section id="demo" class="reveal" style="background:#fff7ed;border-top:3px solid #0f172a;border-bottom:3px solid #0f172a;padding:64px 0;">
   <div class="wrap" style="max-width:700px;margin:0 auto;text-align:center;">
     <p style="font-size:12px;font-weight:800;color:#ea580c;text-transform:uppercase;letter-spacing:2px;margin:0 0 8px;">Acceso de prueba</p>
     <h2 style="font-size:32px;font-weight:900;color:#0f172a;margin:0 0 16px;">Probá la app sin registrarte</h2>
@@ -306,7 +320,7 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   </div>
 </section>
 
-<section id="historia" style="background:#0f172a;border-top:3px solid #0f172a;border-bottom:3px solid #0f172a;padding:64px 0;">
+<section id="historia" class="reveal" style="background:#0f172a;border-top:3px solid #0f172a;border-bottom:3px solid #0f172a;padding:64px 0;">
   <div class="wrap" style="max-width:760px;margin:0 auto;">
     <p style="font-size:12px;font-weight:800;color:#f97316;text-transform:uppercase;letter-spacing:2px;margin:0 0 12px;">La historia detras de ActivaQR</p>
     <h2 style="font-size:clamp(26px,4vw,36px);font-weight:900;color:#fff;margin:0 0 24px;line-height:1.15;">Naci&oacute; en casa, resolviendo un problema real.</h2>
@@ -318,14 +332,14 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   </div>
 </section>
 
-<section class="capital-banner">
+<section class="capital-banner reveal">
   <div class="wrap">
     <h2>Los activos son capital. No solo equipos.</h2>
     <p>Cada máquina, vehículo o herramienta que usás en tu operación representa una inversión. Cuidarlos, medirlos y trazarlos no es un gasto: es proteger el capital de tu empresa y la continuidad del negocio. Lo mismo que hacés con tu equipo humano, tenés que hacerlo con tu capital físico.</p>
   </div>
 </section>
 
-<section id="vision" class="roadmap">
+<section id="vision" class="roadmap reveal">
   <div class="wrap">
     <h2 class="titulo">Hacia donde vamos</h2>
     <p class="bajada">Lo que ves hoy es la base. Esto es lo que se viene: más automatización, más alcance, menos intervención humana para lo rutinario.</p>
@@ -375,7 +389,7 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   </div>
 </section>
 
-<section id="planes">
+<section id="planes" class="reveal">
   <div class="wrap">
     <h2 class="titulo">Planes</h2>
     <p class="bajada">Empezá chico y crecé cuando lo necesites. Todos con débito automático mensual por Mercado Pago.</p>
@@ -483,6 +497,25 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
       btn.disabled = false; btn.textContent = 'Solicitar acceso';
     }
   });
+</script>
+
+<script>
+// Scroll hint: desaparece al bajar
+const hint = document.getElementById('scrollHint');
+if(hint){
+  window.addEventListener('scroll', function(){
+    hint.style.opacity = window.scrollY > 60 ? '0' : '1';
+  }, {passive:true});
+}
+
+// Fade-in reveal al scrollear
+const observer = new IntersectionObserver(function(entries){
+  entries.forEach(function(e){
+    if(e.isIntersecting){ e.target.classList.add('visible'); }
+    else { e.target.classList.remove('visible'); }
+  });
+}, {threshold:0.12});
+document.querySelectorAll('.reveal').forEach(function(el){ observer.observe(el); });
 </script>
 
 </body>
