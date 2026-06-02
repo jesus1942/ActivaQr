@@ -11,9 +11,12 @@ import { TareaMantenimiento } from '../data/types';
 const emptyTarea = {
   activoId: '',
   tipo: '',
+  prioridad: 'media' as 'baja' | 'media' | 'alta',
   fechaProgramada: format(new Date(), 'yyyy-MM-dd'),
   responsableId: '',
   observaciones: '',
+  materiales: '',
+  horasTrabajo: null as number | null,
 };
 
 export const Mantenimiento: React.FC = () => {
@@ -67,9 +70,12 @@ export const Mantenimiento: React.FC = () => {
     setNewTarea({
       activoId: t.activoId,
       tipo: t.tipo,
+      prioridad: t.prioridad ?? 'media',
       fechaProgramada: t.fechaProgramada,
       responsableId: t.responsableId,
       observaciones: t.observaciones,
+      materiales: t.materiales ?? '',
+      horasTrabajo: t.horasTrabajo ?? null,
     });
     setShowModal(true);
   };
@@ -101,9 +107,17 @@ export const Mantenimiento: React.FC = () => {
         <div className="flex justify-between items-start gap-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
+              {tarea.numero != null && (
+                <span className="font-mono font-black text-xs bg-slate-900 text-white px-1.5 py-0.5">OT-{String(tarea.numero).padStart(5, '0')}</span>
+              )}
               <span className="font-mono font-black text-sm text-slate-800">{activo?.codigo || 'N/A'}</span>
               <span className="text-slate-500 text-xs">·</span>
               <span className="text-sm font-semibold text-slate-700 break-words">{activo?.nombre}</span>
+              {tarea.prioridad && tarea.prioridad !== 'media' && (
+                <span className={`text-[10px] font-black uppercase px-1.5 py-0.5 border ${tarea.prioridad === 'alta' ? 'bg-red-100 text-red-700 border-red-300' : 'bg-slate-100 text-slate-500 border-slate-300'}`}>
+                  {tarea.prioridad}
+                </span>
+              )}
             </div>
             <div className="font-bold text-slate-900">{tarea.tipo}</div>
             <div className="text-xs text-slate-500 mt-1">{activo ? getSectorNombre(activo.sectorId) : ''}</div>
@@ -132,6 +146,12 @@ export const Mantenimiento: React.FC = () => {
         </div>
         {tarea.observaciones && (
           <div className="mt-2 text-xs text-slate-500 bg-slate-50 p-2 border border-slate-200">{tarea.observaciones}</div>
+        )}
+        {(tarea.materiales || tarea.horasTrabajo != null) && (
+          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+            {tarea.materiales && <span><strong className="text-slate-700">Materiales:</strong> {tarea.materiales}</span>}
+            {tarea.horasTrabajo != null && <span><strong className="text-slate-700">Horas:</strong> {tarea.horasTrabajo}</span>}
+          </div>
         )}
         {tarea.fechaRealizada && (
           <div className="mt-1 text-xs text-emerald-600 font-semibold">
@@ -353,6 +373,42 @@ export const Mantenimiento: React.FC = () => {
                     <option key={t.id} value={t.id}>{t.nombre}</option>
                   ))}
                 </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Prioridad</label>
+                  <select
+                    value={newTarea.prioridad}
+                    onChange={(e) => setNewTarea((p) => ({ ...p, prioridad: e.target.value as 'baja' | 'media' | 'alta' }))}
+                    className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none"
+                  >
+                    <option value="baja">Baja</option>
+                    <option value="media">Media</option>
+                    <option value="alta">Alta</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Horas de trabajo</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={newTarea.horasTrabajo ?? ''}
+                    onChange={(e) => setNewTarea((p) => ({ ...p, horasTrabajo: e.target.value === '' ? null : Number(e.target.value) }))}
+                    className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none"
+                    placeholder="Ej: 2.5"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Materiales utilizados</label>
+                <textarea
+                  value={newTarea.materiales ?? ''}
+                  onChange={(e) => setNewTarea((p) => ({ ...p, materiales: e.target.value }))}
+                  rows={2}
+                  className="w-full border-2 border-slate-300 px-3 py-1.5 text-sm outline-none"
+                  placeholder="Ej: 2 filtros, 5L aceite 15W40..."
+                />
               </div>
               <div>
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Observaciones</label>

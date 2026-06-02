@@ -12,7 +12,9 @@ import { useActivos } from '../hooks/useActivos';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { EstadoOperativoBadge, ESTADOS_OPERATIVOS } from '../components/ui/EstadoOperativoBadge';
 import { ValueGauge } from '../components/ui/ValueGauge';
+import { DocumentosActivo } from '../components/DocumentosActivo';
 import { EstadoOperativo } from '../data/types';
+import { API_URL } from '../data/auth';
 
 export const ActivoDetalle: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -205,6 +207,9 @@ export const ActivoDetalle: React.FC = () => {
               Tomar Medición
             </button>
           </div>
+
+          {/* Documentación (solo en modo remoto/backend) */}
+          {API_URL && <DocumentosActivo activoId={activo.id} />}
 
           {/* Maintenance history */}
           <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
