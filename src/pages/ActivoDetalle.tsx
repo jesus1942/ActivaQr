@@ -7,7 +7,8 @@ import { es } from 'date-fns/locale';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { ArrowLeft, Printer, ClipboardList, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Printer, ClipboardList, Pencil, Trash2, FileDown } from 'lucide-react';
+import { exportarFichaActivoPdf } from '../utils/exportPdf';
 import { useActivos } from '../hooks/useActivos';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { EstadoOperativoBadge, ESTADOS_OPERATIVOS } from '../components/ui/EstadoOperativoBadge';
@@ -203,6 +204,20 @@ export const ActivoDetalle: React.FC = () => {
             >
               <Printer size={16} />
               Imprimir Etiqueta
+            </button>
+            <button
+              onClick={() => exportarFichaActivoPdf({
+                activo,
+                mediciones: last10,
+                tareas: activoTareas,
+                sectorNombre: getSectorNombre(activo.sectorId),
+                tipoNombre: getTipoNombre(activo.tipoId),
+                responsableNombre: getTecnicoNombre(activo.responsableId ?? ''),
+              })}
+              className="w-full flex items-center justify-center gap-2 border-2 border-slate-800 bg-white px-4 py-2.5 font-bold text-slate-700 hover:bg-slate-50 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] transition-colors mb-2"
+            >
+              <FileDown size={16} />
+              Descargar Ficha PDF
             </button>
             <button
               onClick={() => navigate(`/medicion/${activo.id}`)}
