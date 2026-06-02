@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Plus, CheckCircle, X, AlertTriangle, Clock, Pencil, Trash2 } from 'lucide-react';
+import { Plus, CheckCircle, X, AlertTriangle, Clock, Pencil, Trash2, Download } from 'lucide-react';
+import { exportarCsv } from '../utils/exportCsv';
 import { useActivos } from '../hooks/useActivos';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { TareaMantenimiento } from '../data/types';
@@ -163,14 +164,34 @@ export const Mantenimiento: React.FC = () => {
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 uppercase tracking-tight">Mantenimiento</h1>
           <p className="text-slate-500 text-sm mt-1">{vencidas.length} vencidas · {pendientes.length} pendientes</p>
         </div>
-        <button
-          onClick={openNew}
-          className="flex items-center gap-2 bg-orange-500 text-white px-4 min-h-[44px] font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] transition-all"
-        >
-          <Plus size={16} />
-          <span className="hidden sm:inline">Nueva Tarea</span>
-          <span className="sm:hidden">Nueva</span>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => exportarCsv('tareas', tareas.map((t) => {
+              const activo = activos.find((a) => a.id === t.activoId);
+              return {
+                Activo: activo?.codigo ?? '', Nombre: activo?.nombre ?? '',
+                Tipo: t.tipo, Estado: t.estado,
+                'Fecha Programada': t.fechaProgramada,
+                'Fecha Realizada': t.fechaRealizada ? format(parseISO(t.fechaRealizada), 'dd/MM/yyyy', { locale: es }) : '',
+                Responsable: getTecnicoNombre(t.responsableId),
+                Observaciones: t.observaciones,
+              };
+            }))}
+            className="flex items-center gap-2 bg-white text-slate-700 px-3 min-h-[44px] font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] transition-all text-sm"
+            title="Exportar lista a CSV"
+          >
+            <Download size={15} />
+            <span className="hidden sm:inline">CSV</span>
+          </button>
+          <button
+            onClick={openNew}
+            className="flex items-center gap-2 bg-orange-500 text-white px-4 min-h-[44px] font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] transition-all"
+          >
+            <Plus size={16} />
+            <span className="hidden sm:inline">Nueva Tarea</span>
+            <span className="sm:hidden">Nueva</span>
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

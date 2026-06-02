@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Search, Plus, LayoutGrid, List, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Plus, LayoutGrid, List, X, ChevronDown, ChevronUp, Download } from 'lucide-react';
+import { exportarCsv } from '../utils/exportCsv';
 import { useActivos } from '../hooks/useActivos';
 import { useAuth } from '../context/AuthContext';
 import { AssetCard } from '../components/ui/AssetCard';
@@ -150,14 +151,31 @@ export const Activos: React.FC = () => {
           <h1 className="font-sketch text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 uppercase tracking-tight">Activos</h1>
           <p className="text-slate-500 text-sm mt-1">{filtered.length} activos encontrados</p>
         </div>
-        <button
-          onClick={openNew}
-          className="flex items-center gap-2 bg-orange-500 text-white px-4 min-h-[44px] font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] transition-all"
-        >
-          <Plus size={16} />
-          <span className="hidden sm:inline">Nuevo Activo</span>
-          <span className="sm:hidden">Nuevo</span>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => exportarCsv('activos', filtered.map((a) => ({
+              Codigo: a.codigo, Nombre: a.nombre, Sector: getSectorNombre(a.sectorId),
+              Tipo: getTipoNombre(a.tipoId), Marca: a.marca ?? '', Modelo: a.modelo ?? '',
+              Estado: a.estado, 'Estado Operativo': a.estadoOperativo,
+              'Fecha Ingreso': a.fechaIngreso, 'Horas Actuales': a.horasActuales,
+              Responsable: getTecnicoNombre(a.responsableId ?? null),
+              Ubicacion: a.ubicacion ?? '', Notas: a.notas ?? '',
+            })))}
+            className="flex items-center gap-2 bg-white text-slate-700 px-3 min-h-[44px] font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] transition-all text-sm"
+            title="Exportar lista a CSV"
+          >
+            <Download size={15} />
+            <span className="hidden sm:inline">CSV</span>
+          </button>
+          <button
+            onClick={openNew}
+            className="flex items-center gap-2 bg-orange-500 text-white px-4 min-h-[44px] font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] transition-all"
+          >
+            <Plus size={16} />
+            <span className="hidden sm:inline">Nuevo Activo</span>
+            <span className="sm:hidden">Nuevo</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
