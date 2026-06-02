@@ -3,6 +3,16 @@
 ## Que es
 SaaS multi-tenant de gestion de activos industriales con QR. Cada empresa carga sus equipos, les pega un QR fisico, y desde ese QR cualquier persona ve la ficha tecnica publica sin login. El equipo tecnico carga mediciones, el sistema evalua alertas automaticamente, y hay soporte remoto real con chat de fotos/audio.
 
+## Features principales (v1.1+)
+- Ficha publica QR con visibilidad configurable por activo (campo `visibilidadPublica` JSON; defaults seguros ocultan mediciones/responsable/historial)
+- Indicadores / dashboard ejecutivo (`/api/kpis`): disponibilidad, MTTR, MTBF, cumplimiento, equipos con mas fallas, alertas por sector, tendencia de fallas, mantenimiento predictivo (tendencia de parametros)
+- Auditoria (`/api/auditoria`, helper `auditoria.ts`): trazabilidad de crear/editar/eliminar/cerrar/medicion/login/acceso_remoto
+- Ordenes de trabajo: `TareaMantenimiento` extendido con numero correlativo (OT-NNNNN), prioridad, materiales, horasTrabajo, cerradaPor, fotos
+- Gestion documental por activo (`/api/documentos`, modelo `Documento`): PDF/planos/manuales, allowlist de MIME
+- Permisos: requireAdmin en operaciones destructivas (operador no borra activos). Helper frontend `data/permisos.ts`
+- Pagos multi-moneda: ARS via Mercado Pago, USD/UYU via Stripe (`server/src/stripe.ts`, requiere STRIPE_SECRET_KEY)
+- Seguridad: rate limiter global 300/min + auth limiter, validacion de MIME en adjuntos
+
 ## Stack
 - **Frontend:** React 18 + TypeScript + Vite + Tailwind CSS, desplegado en GitHub Pages
 - **Backend:** Node.js + Express + TypeScript, desplegado en Railway
