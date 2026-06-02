@@ -749,9 +749,41 @@ export const Medicion: React.FC = () => {
       )}
 
       {!activo && !activoId && (
-        <div className="text-center text-slate-400 py-12">
-          <ClipboardList size={48} className="mx-auto mb-3 opacity-30" />
-          <p className="font-sketch text-2xl">Escaneá un código QR o buscá por código</p>
+        <div className="mt-6 space-y-4">
+          <div className="bg-slate-900 border-2 border-slate-900 shadow-[4px_4px_0px_0px_#f97316] p-6 text-white">
+            <p className="text-xs font-black uppercase tracking-widest text-orange-400 mb-2">Como registrar</p>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <span className="bg-orange-500 text-white font-black text-sm w-7 h-7 flex items-center justify-center border-2 border-white flex-shrink-0">1</span>
+                <div>
+                  <p className="font-black text-sm uppercase tracking-wide">Escanear QR</p>
+                  <p className="text-slate-400 text-xs mt-0.5">Toca el boton de camara y apunta al codigo QR del equipo</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="bg-orange-500 text-white font-black text-sm w-7 h-7 flex items-center justify-center border-2 border-white flex-shrink-0">2</span>
+                <div>
+                  <p className="font-black text-sm uppercase tracking-wide">O buscar por codigo</p>
+                  <p className="text-slate-400 text-xs mt-0.5">Escribe el codigo del activo, ej: HOR-MOT-001</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="bg-orange-500 text-white font-black text-sm w-7 h-7 flex items-center justify-center border-2 border-white flex-shrink-0">3</span>
+                <div>
+                  <p className="font-black text-sm uppercase tracking-wide">Cargar medicion</p>
+                  <p className="text-slate-400 text-xs mt-0.5">Completa los valores y confirma. El sistema evalua alertas automaticamente</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setEscaneando(true)}
+            className="w-full flex items-center justify-center gap-3 bg-orange-500 text-white h-16 font-sketch font-black text-xl uppercase border-2 border-slate-900 shadow-[4px_4px_0px_0px_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#1e293b] transition-all"
+          >
+            <Camera size={24} />
+            Escanear QR
+          </button>
         </div>
       )}
     </div>
