@@ -241,10 +241,10 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
     <div class="grid g3" style="margin-top:40px">
 
       <div class="card" style="border-left:5px solid var(--naranja)">
-        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:8px">Petroleo y gas — Vaca Muerta</p>
+        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:8px">Petroleo y gas</p>
         <h3 style="margin-bottom:10px">Contratistas y empresas de servicios</h3>
-        <p style="color:var(--gris);font-size:14px">Las operadoras exigen trazabilidad de mantenimiento. Con ActivaQR cada camion, bomba o generador tiene su historial auditabe accesible desde el campo con el celular, sin papel ni planillas.</p>
-        <p style="margin-top:14px;font-size:13px;font-weight:700;color:var(--negro)">Activos tipicos: compresores, generadores, autoelevadores, camiones de alta presion</p>
+        <p style="color:var(--gris);font-size:14px">Las operadoras exigen trazabilidad de mantenimiento. Con ActivaQR cada equipo tiene su historial auditable accesible desde el campo con el celular, sin papel ni planillas.</p>
+        <p style="margin-top:14px;font-size:13px;font-weight:700;color:var(--negro)">Activos tipicos: compresores, generadores, autoelevadores, equipos de alta presion</p>
       </div>
 
       <div class="card" style="border-left:5px solid var(--naranja)">
