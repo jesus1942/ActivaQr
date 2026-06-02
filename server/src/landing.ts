@@ -396,7 +396,7 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
         <h3>Empresa</h3>
         <p class="precio">El más elegido</p>
         <ul>
-          <li>Hasta 50 activos</li>
+          <li>Hasta 100 activos</li>
           <li>5 técnicos</li>
           <li>Ficha QR pública siempre activa</li>
           <li>Soporte remoto incluido</li>
@@ -408,7 +408,7 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
         <h3>Industrial</h3>
         <p class="precio">Sin límites</p>
         <ul>
-          <li>Activos ilimitados</li>
+          <li>Mas de 500 activos</li>
           <li>Técnicos ilimitados</li>
           <li>Soporte prioritario</li>
           <li>Todo lo de Empresa</li>

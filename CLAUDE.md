@@ -29,7 +29,7 @@ Jesus (chucky9425@gmail.com, WhatsApp: +5492804018359). Autodidacta de Neuquen, 
 ## Arquitectura multi-tenant
 - Cada query al backend filtra por empresaId del JWT
 - Roles: superadmin (Jesus), admin (dueno de empresa), operador
-- Planes: inicial (10 activos), empresa (50 activos), industrial (ilimitado)
+- Planes: inicial (10 activos), empresa (hasta 100 activos), industrial (mas de 500 activos)
 
 ## API
 - `apiFetch(path)` — el path NO incluye 'api/' prefix
