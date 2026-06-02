@@ -91,3 +91,45 @@ export async function cancelarPreapproval(id: string): Promise<void> {
     throw new Error(data);
   }
 }
+
+/**
+ * Crea un link de pago único (preference) que acepta cualquier medio:
+ * tarjeta, Prex, transferencia, billeteras, etc.
+ * No requiere que el pagador tenga cuenta MP.
+ */
+export async function crearLinkPago(params: {
+  empresaId: string;
+  monto: number;
+  descripcion: string;
+  backUrl: string;
+  payerEmail?: string;
+}): Promise<{ id: string; init_point: string }> {
+  const body: any = {
+    external_reference: params.empresaId,
+    items: [{
+      title: params.descripcion,
+      quantity: 1,
+      unit_price: params.monto,
+      currency_id: 'ARS',
+    }],
+    back_urls: {
+      success: params.backUrl,
+      failure: params.backUrl,
+      pending: params.backUrl,
+    },
+    auto_return: 'approved',
+  };
+  if (params.payerEmail) body.payer = { email: params.payerEmail };
+
+  const res = await fetch(`${MP_API}/checkout/preferences`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify(body),
+  });
+  const data = (await res.json()) as any;
+  if (!res.ok) {
+    console.error('[MP crearLinkPago] error:', JSON.stringify(data));
+    throw new Error(data?.message || 'No se pudo generar el link de pago.');
+  }
+  return { id: data.id, init_point: data.init_point };
+}
