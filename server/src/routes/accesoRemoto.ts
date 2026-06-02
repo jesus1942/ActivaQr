@@ -5,6 +5,7 @@
  */
 import { Router, Response, NextFunction } from 'express';
 import { randomBytes } from 'crypto';
+import rateLimit from 'express-rate-limit';
 import { prisma } from '../prisma';
 import { requireAuth, requireSuperadmin, AuthRequest } from '../auth';
 import { enviarEmailAccesoRemoto } from '../email';
@@ -13,6 +14,14 @@ import { enviarPushASuperadmin, enviarPushAEmpresa } from '../push';
 import { registrarAuditoria } from '../auditoria';
 
 const MAX_ADJUNTO = 8_000_000; // ~6MB en base64
+
+const aprobacionLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos. Esperá un minuto.' },
+});
 
 const router = Router();
 
@@ -398,6 +407,7 @@ router.get(
 // POST /api/acceso-remoto/aprobar/:token — cliente aprueba via link
 router.post(
   '/aprobar/:token',
+  aprobacionLimiter,
   async (req, res: Response, next: NextFunction) => {
     try {
       const permiso = await prisma.permisoAccesoRemoto.findUnique({ where: { token: req.params.token } });

@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { createHmac, timingSafeEqual } from 'crypto';
 import { prisma } from '../prisma';
 import { obtenerPreapproval } from '../mercadopago';
 
@@ -19,6 +20,27 @@ router.post('/mercadopago', async (req: Request, res: Response) => {
   res.sendStatus(200); // responder rápido; procesamos después
 
   try {
+    // Verificar firma HMAC de Mercado Pago si el secret está configurado.
+    const webhookSecret = process.env.MP_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      const xSignature = req.headers['x-signature'] as string | undefined;
+      const xRequestId = req.headers['x-request-id'] as string | undefined;
+      const dataId = (req.query['data.id'] as string) || req.body?.data?.id;
+      if (!xSignature || !xRequestId) return;
+      // Formato esperado: "ts=<timestamp>,v1=<hash>"
+      const parts = Object.fromEntries(xSignature.split(',').map((p) => p.split('=')));
+      const ts = parts['ts'];
+      const v1 = parts['v1'];
+      if (!ts || !v1) return;
+      const manifest = `id:${dataId ?? ''};request-id:${xRequestId};ts:${ts};`;
+      const expected = createHmac('sha256', webhookSecret).update(manifest).digest('hex');
+      try {
+        if (!timingSafeEqual(Buffer.from(v1), Buffer.from(expected))) return;
+      } catch {
+        return; // buffers de distinto largo — firma inválida
+      }
+    }
+
     const tipo = req.query.type || req.query.topic || req.body?.type;
     const id =
       (req.query['data.id'] as string) ||

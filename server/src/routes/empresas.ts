@@ -1,24 +1,34 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../prisma';
-import { requireAuth, AuthRequest } from '../auth';
+import { requireAuth, requireSuperadmin, AuthRequest } from '../auth';
 import { cancelarPreapproval, mpConfigurado } from '../mercadopago';
 
 const router = Router();
 
-// GET /api/empresas  — listar todas
-router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
+// GET /api/empresas — solo superadmin lista todas; admin ve solo la suya
+router.get('/', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const empresas = await prisma.empresa.findMany({ orderBy: { creadaEn: 'asc' } });
-    res.json(empresas);
+    if (req.auth?.rol === 'superadmin') {
+      const empresas = await prisma.empresa.findMany({ orderBy: { creadaEn: 'asc' } });
+      return res.json(empresas);
+    }
+    if (req.auth?.empresaId) {
+      const empresa = await prisma.empresa.findUnique({ where: { id: req.auth.empresaId } });
+      return res.json(empresa ? [empresa] : []);
+    }
+    return res.status(403).json({ error: 'No autorizado.' });
   } catch (err) {
     next(err);
   }
 });
 
-// GET /api/empresas/:id
-router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
+// GET /api/empresas/:id — superadmin o el propio tenant
+router.get('/:id', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    if (req.auth?.rol !== 'superadmin' && req.auth?.empresaId !== req.params.id) {
+      return res.status(403).json({ error: 'No autorizado.' });
+    }
     const empresa = await prisma.empresa.findUnique({ where: { id: req.params.id } });
     if (!empresa) return res.status(404).json({ error: 'Empresa no encontrada' });
     res.json(empresa);
@@ -27,8 +37,8 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// POST /api/empresas
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+// POST /api/empresas — solo superadmin
+router.post('/', requireAuth, requireSuperadmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { nombre, cuit, logoUrl, plan } = req.body ?? {};
     if (!nombre || typeof nombre !== 'string') {
@@ -43,8 +53,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// PUT /api/empresas/:id
-router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
+// PUT /api/empresas/:id — solo superadmin
+router.put('/:id', requireAuth, requireSuperadmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { nombre, cuit, logoUrl, plan } = req.body ?? {};
     const empresa = await prisma.empresa.update({

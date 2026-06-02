@@ -145,9 +145,11 @@ app.use('/api/push', pushRouter);
 app.use('/api/admin/categorias-globales', requireAuth, requireSuperadmin, adminCategoriasRouter);
 
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  console.error(err);
+  const isProd = process.env.NODE_ENV === 'production';
+  console.error('[ERROR]', new Date().toISOString(), err?.message, isProd ? '' : err?.stack);
   const status = err?.status && Number.isInteger(err.status) ? err.status : 500;
-  res.status(status).json({ error: err?.message || 'Error interno del servidor' });
+  const message = isProd ? 'Error interno del servidor' : (err?.message || 'Error interno del servidor');
+  res.status(status).json({ error: message });
 });
 
 const PORT = Number(process.env.PORT) || 3001;

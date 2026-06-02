@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../prisma';
 import { resolveEmpresaId } from '../tenant';
 import { auditar } from '../auditoria';
-import { AuthRequest } from '../auth';
+import { AuthRequest, requireAdmin } from '../auth';
 
 const router = Router();
 
@@ -146,8 +146,8 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// DELETE /api/tareas/:id
-router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+// DELETE /api/tareas/:id — solo admin (operador no puede borrar OTs)
+router.delete('/:id', requireAdmin as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
     const existing = await prisma.tareaMantenimiento.findFirst({
