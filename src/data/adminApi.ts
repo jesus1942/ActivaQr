@@ -16,6 +16,8 @@ export interface EmpresaAdmin {
   usuarios: { id: string; nombre: string; email: string; activo: boolean; ultimoAcceso: string | null }[];
 }
 
+const JSON_HEADERS = { 'Content-Type': 'application/json' };
+
 async function parse(res: Response) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data?.error || 'Error en la operación.');
@@ -34,14 +36,14 @@ export async function crearEmpresa(payload: {
   adminEmail: string;
   adminPassword: string;
 }): Promise<EmpresaAdmin> {
-  return parse(await apiFetch('admin/empresas', { method: 'POST', body: JSON.stringify(payload) }));
+  return parse(await apiFetch('admin/empresas', { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(payload) }));
 }
 
 export async function actualizarEmpresa(
   id: string,
   payload: Partial<{ nombre: string; cuit: string; plan: string; estado: string }>
 ): Promise<EmpresaAdmin> {
-  return parse(await apiFetch(`admin/empresas/${id}`, { method: 'PUT', body: JSON.stringify(payload) }));
+  return parse(await apiFetch(`admin/empresas/${id}`, { method: 'PUT', headers: JSON_HEADERS, body: JSON.stringify(payload) }));
 }
 
 export async function eliminarEmpresa(id: string): Promise<void> {
@@ -52,6 +54,7 @@ export async function resetPassword(id: string, password: string): Promise<void>
   await parse(
     await apiFetch(`admin/empresas/${id}/reset-password`, {
       method: 'POST',
+      headers: JSON_HEADERS,
       body: JSON.stringify({ password }),
     })
   );
@@ -61,7 +64,6 @@ export async function cancelarSuscripcion(id: string): Promise<void> {
   await parse(await apiFetch(`admin/empresas/${id}/suscripcion`, { method: 'DELETE' }));
 }
 
-/** El cliente cancela su propia suscripción (no requiere ser superadmin). */
 export async function cancelarMiSuscripcion(): Promise<void> {
   await parse(await apiFetch('empresas/mi-suscripcion', { method: 'DELETE' }));
 }
@@ -75,7 +77,7 @@ export interface SolicitudUpgrade {
 }
 
 export async function solicitarUpgrade(plan: string): Promise<void> {
-  await parse(await apiFetch('suscripcion/solicitar-upgrade', { method: 'POST', body: JSON.stringify({ plan }) }));
+  await parse(await apiFetch('suscripcion/solicitar-upgrade', { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ plan }) }));
 }
 
 export async function getSolicitudesUpgrade(): Promise<SolicitudUpgrade[]> {
@@ -112,6 +114,7 @@ export async function generarSuscripcion(
   return parse(
     await apiFetch(`admin/empresas/${id}/suscripcion`, {
       method: 'POST',
+      headers: JSON_HEADERS,
       body: JSON.stringify({ monto, payerEmailOverride }),
     })
   );
