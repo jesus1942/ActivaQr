@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { API_URL, getToken, getUsuario } from '../data/auth';
 import { EstadoOperativoBadge } from '../components/ui/EstadoOperativoBadge';
 import { EstadoOperativo } from '../data/types';
+import { ArrowLeft, LayoutDashboard } from 'lucide-react';
 
 interface FichaActivo {
   id: string;
@@ -117,6 +118,26 @@ export const FichaPublica: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-100 py-6 px-4">
       <div className="max-w-md mx-auto space-y-4">
+
+        {/* Nav bar */}
+        <div className="flex items-center justify-between gap-2">
+          <button
+            onClick={() => window.history.length > 1 ? window.history.back() : undefined}
+            className="flex items-center gap-1.5 bg-white border-2 border-slate-900 shadow-[2px_2px_0px_0px_#1e293b] px-3 py-2 text-xs font-black uppercase tracking-wider hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_#1e293b] active:shadow-none transition-all"
+          >
+            <ArrowLeft size={14} />
+            Volver
+          </button>
+          {usuarioLogueado && (
+            <a
+              href="#/activos"
+              className="flex items-center gap-1.5 bg-slate-900 text-white border-2 border-slate-900 shadow-[2px_2px_0px_0px_#1e293b] px-3 py-2 text-xs font-black uppercase tracking-wider hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_#1e293b] active:shadow-none transition-all"
+            >
+              <LayoutDashboard size={14} />
+              Panel
+            </a>
+          )}
+        </div>
 
         {/* Header empresa */}
         <div className="bg-slate-900 text-white px-5 py-4 border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] flex items-center gap-3">
