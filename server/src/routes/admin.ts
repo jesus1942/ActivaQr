@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../prisma';
 import { requireAuth, requireSuperadmin, AuthRequest } from '../auth';
-import { crearPreapproval, cancelarPreapproval, mpConfigurado } from '../mercadopago';
+import { crearPreapproval, cancelarPreapproval, crearLinkPago, mpConfigurado } from '../mercadopago';
 import { enviarEmailSuscripcion } from '../email';
 import { enviarPushAEmpresa } from '../push';
 
@@ -203,6 +203,33 @@ router.post('/empresas/:id/suscripcion', async (req: AuthRequest, res: Response,
     }).catch(() => {}); // silencioso si falla el email
 
     res.json({ initPoint: pre.init_point, preapprovalId: pre.id, emailEnviado: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/admin/empresas/:id/link-pago — link de pago único, acepta cualquier medio
+router.post('/empresas/:id/link-pago', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!mpConfigurado()) {
+      return res.status(503).json({ error: 'Mercado Pago no configurado. Falta MP_ACCESS_TOKEN.' });
+    }
+    const { monto, descripcion } = req.body ?? {};
+    const montoNum = Number(monto);
+    if (!montoNum || montoNum <= 0) return res.status(400).json({ error: 'Indicá un monto válido.' });
+
+    const empresa = await prisma.empresa.findUnique({
+      where: { id: req.params.id },
+      include: { usuarios: { where: { rol: 'admin' }, take: 1 } },
+    });
+    if (!empresa) return res.status(404).json({ error: 'Empresa no encontrada.' });
+
+    const backUrl = process.env.MP_BACK_URL || 'https://jesus1942.github.io/ActivaQr/';
+    const desc = descripcion || `Pago ActivaQR — ${empresa.nombre}`;
+    const payerEmail = empresa.usuarios[0]?.email;
+
+    const link = await crearLinkPago({ empresaId: empresa.id, monto: montoNum, descripcion: desc, backUrl, payerEmail });
+    res.json({ initPoint: link.init_point, preferenceId: link.id });
   } catch (err) {
     next(err);
   }

@@ -49,6 +49,178 @@ import { apiFetch } from '../data/auth';
 
 const PLANES = ['inicial', 'empresa', 'industrial'] as const;
 
+// ── Shared modal shell ─────────────────────────────────────────────────────────
+const Modal: React.FC<{ titulo: string; icono?: React.ReactNode; onClose: () => void; children: React.ReactNode; maxW?: string }> = ({
+  titulo, icono, onClose, children, maxW = 'max-w-md',
+}) => (
+  <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-4 pb-safe" onClick={onClose}>
+    <div
+      className={`bg-white border-2 border-slate-900 shadow-[6px_6px_0px_0px_#1e293b] w-full ${maxW} max-h-[92vh] overflow-y-auto`}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="flex items-center justify-between bg-slate-900 text-white px-5 py-4 sticky top-0">
+        <h2 className="font-sketch font-black text-base uppercase tracking-wide flex items-center gap-2">
+          {icono}{titulo}
+        </h2>
+        <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors"><X size={20} /></button>
+      </div>
+      <div className="p-5">{children}</div>
+    </div>
+  </div>
+);
+
+// ── Campo helper ───────────────────────────────────────────────────────────────
+const Field: React.FC<{ label: string; hint?: string; children: React.ReactNode }> = ({ label, hint, children }) => (
+  <div>
+    <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-1">{label}</label>
+    {children}
+    {hint && <p className="text-xs text-slate-400 mt-1">{hint}</p>}
+  </div>
+);
+
+const inputCls = "w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500 bg-white font-medium";
+const btnPrimary = "w-full bg-orange-500 text-white h-12 font-sketch font-black uppercase tracking-wide border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all disabled:opacity-40 disabled:pointer-events-none";
+const btnSecondary = "w-full h-12 border-2 border-slate-400 text-sm font-bold text-slate-600 hover:border-slate-800 transition-colors";
+
+// ── Modal cobro ────────────────────────────────────────────────────────────────
+const ModalCobro: React.FC<{
+  empresa: EmpresaAdmin;
+  onClose: () => void;
+  onSuscripcion: (monto: number, emailOverride?: string) => Promise<void>;
+  onLinkPago: (monto: number, descripcion: string) => Promise<void>;
+}> = ({ empresa, onClose, onSuscripcion, onLinkPago }) => {
+  const [modo, setModo] = useState<'suscripcion' | 'unico'>('suscripcion');
+  const [monto, setMonto] = useState('');
+  const [emailOverride, setEmailOverride] = useState('');
+  const [descripcion, setDescripcion] = useState(`Pago ActivaQR — ${empresa.nombre}`);
+  const [cargando, setCargando] = useState(false);
+  const [err, setErr] = useState('');
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!monto || Number(monto) <= 0) { setErr('Ingresá un monto válido.'); return; }
+    setErr(''); setCargando(true);
+    try {
+      if (modo === 'suscripcion') await onSuscripcion(Number(monto), emailOverride || undefined);
+      else await onLinkPago(Number(monto), descripcion);
+      onClose();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Error al generar el cobro.');
+    } finally { setCargando(false); }
+  };
+
+  return (
+    <Modal titulo="Generar cobro" icono={<CreditCard size={16} />} onClose={onClose}>
+      {/* Selector de modo */}
+      <div className="flex gap-0 mb-6 border-2 border-slate-900">
+        <button
+          onClick={() => setModo('suscripcion')}
+          className={`flex-1 py-3 text-xs font-black uppercase tracking-wide transition-colors ${modo === 'suscripcion' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+        >
+          Suscripcion mensual
+        </button>
+        <button
+          onClick={() => setModo('unico')}
+          className={`flex-1 py-3 text-xs font-black uppercase tracking-wide border-l-2 border-slate-900 transition-colors ${modo === 'unico' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+        >
+          Pago unico
+        </button>
+      </div>
+
+      <form onSubmit={submit} className="space-y-4">
+        <div className="bg-slate-50 border-2 border-slate-200 px-4 py-3 mb-2">
+          <p className="text-xs text-slate-500 font-semibold">
+            {modo === 'suscripcion'
+              ? 'Genera un link de suscripcion recurrente mensual por Mercado Pago. El cliente debe tener cuenta MP.'
+              : 'Genera un link de pago unico. Acepta tarjeta, Prex, transferencia y cualquier medio — sin cuenta MP.'}
+          </p>
+        </div>
+
+        <Field label="Monto (ARS)" hint={modo === 'suscripcion' ? 'Se debitará automáticamente cada mes' : 'Pago por única vez'}>
+          <input
+            type="number"
+            min="1"
+            required
+            value={monto}
+            onChange={(e) => setMonto(e.target.value)}
+            placeholder="Ej: 15000"
+            className={inputCls}
+            autoFocus
+          />
+        </Field>
+
+        {modo === 'suscripcion' && (
+          <Field label="Email MP del cliente (opcional)" hint="Solo necesario si el email registrado no tiene cuenta MP">
+            <input
+              type="email"
+              value={emailOverride}
+              onChange={(e) => setEmailOverride(e.target.value)}
+              placeholder={empresa.usuarios[0]?.email ?? 'cliente@mail.com'}
+              className={inputCls}
+            />
+          </Field>
+        )}
+
+        {modo === 'unico' && (
+          <Field label="Descripcion del pago">
+            <input
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              className={inputCls}
+            />
+          </Field>
+        )}
+
+        {err && <p className="text-xs font-bold text-red-600 bg-red-50 border-2 border-red-200 px-3 py-2">{err}</p>}
+
+        <button type="submit" disabled={cargando} className={btnPrimary}>
+          {cargando ? 'Generando...' : 'Generar link de cobro'}
+        </button>
+        <button type="button" onClick={onClose} className={btnSecondary}>Cancelar</button>
+      </form>
+    </Modal>
+  );
+};
+
+// ── Modal reset password ───────────────────────────────────────────────────────
+const ModalResetPass: React.FC<{ empresa: EmpresaAdmin; onClose: () => void; onConfirm: (pass: string) => Promise<void> }> = ({
+  empresa, onClose, onConfirm,
+}) => {
+  const [pass, setPass] = useState('');
+  const [cargando, setCargando] = useState(false);
+  const [err, setErr] = useState('');
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pass.length < 6) { setErr('La contraseña debe tener al menos 6 caracteres.'); return; }
+    setErr(''); setCargando(true);
+    try { await onConfirm(pass); onClose(); }
+    catch (e) { setErr(e instanceof Error ? e.message : 'Error.'); }
+    finally { setCargando(false); }
+  };
+
+  return (
+    <Modal titulo="Resetear contraseña" icono={<KeyRound size={16} />} onClose={onClose}>
+      <p className="text-sm text-slate-600 mb-5">Nueva contraseña para el administrador de <strong>{empresa.nombre}</strong>.</p>
+      <form onSubmit={submit} className="space-y-4">
+        <Field label="Nueva contraseña">
+          <input
+            type="text"
+            autoFocus
+            value={pass}
+            onChange={(e) => setPass(e.target.value)}
+            placeholder="Min. 6 caracteres"
+            className={inputCls + ' font-mono'}
+          />
+        </Field>
+        {err && <p className="text-xs font-bold text-red-600 bg-red-50 border-2 border-red-200 px-3 py-2">{err}</p>}
+        <button type="submit" disabled={cargando} className={btnPrimary}>{cargando ? 'Guardando...' : 'Actualizar contraseña'}</button>
+        <button type="button" onClick={onClose} className={btnSecondary}>Cancelar</button>
+      </form>
+    </Modal>
+  );
+};
+
 // ── Modal selector de WhatsApp ────────────────────────────────────────────────
 const CODIGOS_PAIS = [
   { codigo: '54',  bandera: 'AR', nombre: 'Argentina' },
@@ -66,11 +238,12 @@ const CODIGOS_PAIS = [
 const ModalWhatsapp: React.FC<{
   titulo: string;
   nombreEmpresa: string;
+  numeroPreset?: string;
   onConfirm: (numeroCompleto: string) => void;
   onOmitir: () => void;
-}> = ({ titulo, nombreEmpresa, onConfirm, onOmitir }) => {
+}> = ({ titulo, nombreEmpresa, numeroPreset, onConfirm, onOmitir }) => {
   const [pais, setPais] = useState(CODIGOS_PAIS[0]);
-  const [numero, setNumero] = useState('');
+  const [numero, setNumero] = useState(numeroPreset ?? '');
 
   const soloDigitos = numero.replace(/\D/g, '');
   const preview = soloDigitos ? `+${pais.codigo} ${soloDigitos}` : '';
@@ -155,6 +328,8 @@ export const Admin: React.FC = () => {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [modalCobro, setModalCobro] = useState<EmpresaAdmin | null>(null);
+  const [modalResetPass, setModalResetPass] = useState<EmpresaAdmin | null>(null);
   const [expandidas, setExpandidas] = useState<Set<string>>(new Set());
   const [toggling, setToggling] = useState<Set<string>>(new Set());
 
@@ -178,6 +353,7 @@ export const Admin: React.FC = () => {
     titulo: string;
     nombreEmpresa: string;
     mensaje: string;
+    numeroPreset?: string;
     onDone: (waAbierto: boolean) => void;
   } | null>(null);
 
@@ -245,40 +421,58 @@ export const Admin: React.FC = () => {
     cargar();
   };
 
-  const resetear = async (emp: EmpresaAdmin) => {
-    const pass = prompt(`Nueva contraseña para el administrador de "${emp.nombre}":`);
-    if (!pass) return;
-    await resetPassword(emp.id, pass);
-    alert('Contraseña actualizada.');
+  const resetear = (emp: EmpresaAdmin) => setModalResetPass(emp);
+
+  const confirmarResetPass = async (pass: string) => {
+    if (!modalResetPass) return;
+    await resetPassword(modalResetPass.id, pass);
   };
 
-  const suscribir = async (emp: EmpresaAdmin) => {
-    const monto = prompt(`Monto mensual de la suscripción para "${emp.nombre}" (ARS):`);
-    if (!monto) return;
-    const payerEmailOverride = prompt(
-      'Email del comprador para MP (dejá vacío en producción, usá email de cuenta de prueba MP en testing):'
-    ) || undefined;
-    try {
-      const res = await generarSuscripcion(emp.id, Number(monto), payerEmailOverride);
-      const initPoint = res.initPoint;
-      await navigator.clipboard?.writeText(initPoint).catch(() => {});
+  const suscribir = (emp: EmpresaAdmin) => setModalCobro(emp);
 
-      const mensajeWa = `Hola! Te enviamos el link para activar tu suscripción en *ActivaQR*:\n\n${initPoint}\n\nCualquier consulta estamos a disposición.`;
-      const emailEnviado = !!(res as { emailEnviado?: boolean }).emailEnviado;
+  const handleSuscripcion = async (monto: number, emailOverride?: string) => {
+    if (!modalCobro) return;
+    const res = await generarSuscripcion(modalCobro.id, monto, emailOverride);
+    const initPoint = res.initPoint;
+    await navigator.clipboard?.writeText(initPoint).catch(() => {});
+    const mensajeWa = `Hola! Te enviamos el link para activar tu suscripcion en *ActivaQR*:\n\n${initPoint}\n\nCualquier consulta estamos a disposicion.`;
+    const emailEnviado = !!(res as { emailEnviado?: boolean }).emailEnviado;
+    setModalCobro(null);
+    setModalWa({
+      titulo: 'Enviar link por WhatsApp',
+      nombreEmpresa: modalCobro.nombre,
+      mensaje: mensajeWa,
+      onDone: (waEnviado) => {
+        setModalWa(null);
+        setResultadoSub({ empresaNombre: modalCobro.nombre, link: initPoint, emailEnviado, waEnviado });
+        cargar();
+      },
+    });
+  };
 
-      setModalWa({
-        titulo: 'Enviar link por WhatsApp',
-        nombreEmpresa: emp.nombre,
-        mensaje: mensajeWa,
-        onDone: (waEnviado) => {
-          setModalWa(null);
-          setResultadoSub({ empresaNombre: emp.nombre, link: initPoint, emailEnviado, waEnviado });
-          cargar();
-        },
-      });
-    } catch (e) {
-      alert(e instanceof Error ? e.message : 'No se pudo generar la suscripción.');
-    }
+  const handleLinkPago = async (monto: number, descripcion: string) => {
+    if (!modalCobro) return;
+    const res = await apiFetch(`admin/empresas/${modalCobro.id}/link-pago`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ monto, descripcion }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error generando link');
+    const initPoint = data.initPoint;
+    await navigator.clipboard?.writeText(initPoint).catch(() => {});
+    const mensajeWa = `Hola! Te enviamos el link para realizar el pago de *ActivaQR*:\n\n${initPoint}\n\nPodés pagar con tarjeta, Prex o cualquier medio disponible.`;
+    setModalCobro(null);
+    setModalWa({
+      titulo: 'Enviar link por WhatsApp',
+      nombreEmpresa: modalCobro.nombre,
+      mensaje: mensajeWa,
+      onDone: (waEnviado) => {
+        setModalWa(null);
+        setResultadoSub({ empresaNombre: modalCobro.nombre, link: initPoint, emailEnviado: false, waEnviado });
+        cargar();
+      },
+    });
   };
 
   const cancelar = async (emp: EmpresaAdmin) => {
@@ -624,14 +818,32 @@ export const Admin: React.FC = () => {
         <ModalWhatsapp
           titulo={modalWa.titulo}
           nombreEmpresa={modalWa.nombreEmpresa}
+          numeroPreset={modalWa.numeroPreset}
           onConfirm={(numero) => {
-            window.open(
-              `https://web.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(modalWa.mensaje)}`,
-              '_blank'
-            );
+            const texto = encodeURIComponent(modalWa.mensaje);
+            const esMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            const url = esMobile
+              ? `whatsapp://send?phone=${numero}&text=${texto}`
+              : `https://web.whatsapp.com/send?phone=${numero}&text=${texto}`;
+            window.open(url, '_blank');
             modalWa.onDone(true);
           }}
           onOmitir={() => modalWa.onDone(false)}
+        />
+      )}
+      {modalCobro && (
+        <ModalCobro
+          empresa={modalCobro}
+          onClose={() => setModalCobro(null)}
+          onSuscripcion={handleSuscripcion}
+          onLinkPago={handleLinkPago}
+        />
+      )}
+      {modalResetPass && (
+        <ModalResetPass
+          empresa={modalResetPass}
+          onClose={() => setModalResetPass(null)}
+          onConfirm={confirmarResetPass}
         />
       )}
     </div>
@@ -760,161 +972,65 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
   );
 };
 
-const ModalResultadoSuscripcion: React.FC<{
-  empresaNombre: string;
-  link: string;
-  emailEnviado: boolean;
-  waEnviado: boolean;
-  onClose: () => void;
-}> = ({ empresaNombre, link, emailEnviado, waEnviado, onClose }) => (
-  <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-    <div className="bg-white border-2 border-slate-900 shadow-[6px_6px_0px_0px_#1e293b] w-full max-w-md">
-      <div className="flex items-center justify-between border-b-2 border-slate-900 px-5 py-3 bg-slate-900 text-white">
-        <h2 className="font-sketch font-black text-lg uppercase tracking-wide flex items-center gap-2">
-          <CreditCard size={18} /> Link generado
-        </h2>
-        <button onClick={onClose}><X size={20} /></button>
-      </div>
+// ── Shared link result row ─────────────────────────────────────────────────────
+const EstadoRow: React.FC<{ ok: boolean; textoOk: string; textoNo: string }> = ({ ok, textoOk, textoNo }) => (
+  <div className="flex items-center gap-3 px-4 py-3">
+    <span className={`w-6 h-6 flex items-center justify-center text-xs font-black border-2 flex-shrink-0 ${ok ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-amber-50 border-amber-300 text-amber-600'}`}>
+      {ok ? '✓' : '!'}
+    </span>
+    <span className="text-sm font-semibold text-slate-700">{ok ? textoOk : textoNo}</span>
+  </div>
+);
 
-      <div className="p-5 space-y-4">
-        <p className="text-sm text-slate-700">
-          El link de suscripción para <strong>{empresaNombre}</strong> fue generado y copiado al portapapeles.
-        </p>
-
-        {/* Estado de envíos */}
-        <div className="border-2 border-slate-200 divide-y-2 divide-slate-200">
-          <div className="flex items-center gap-3 px-4 py-3">
-            <span className={`w-5 h-5 flex items-center justify-center text-xs font-black border-2 ${waEnviado ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-slate-100 border-slate-300 text-slate-400'}`}>
-              {waEnviado ? '✓' : '–'}
-            </span>
-            <span className="text-sm font-semibold text-slate-700">
-              WhatsApp Web {waEnviado ? 'abierto con mensaje listo' : 'no enviado'}
-            </span>
-          </div>
-          <div className="flex items-center gap-3 px-4 py-3">
-            <span className={`w-5 h-5 flex items-center justify-center text-xs font-black border-2 ${emailEnviado ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-amber-50 border-amber-300 text-amber-600'}`}>
-              {emailEnviado ? '✓' : '!'}
-            </span>
-            <span className="text-sm font-semibold text-slate-700">
-              {emailEnviado
-                ? 'Email enviado automáticamente'
-                : 'Email no enviado (RESEND_API_KEY no configurada)'}
-            </span>
-          </div>
-        </div>
-
-        {/* Link copiable */}
-        <div>
-          <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-1">Link de pago</p>
-          <div className="flex gap-2">
-            <input
-              readOnly
-              value={link}
-              className="flex-1 border-2 border-slate-300 px-3 py-2 text-xs font-mono truncate outline-none"
-              onFocus={(e) => e.target.select()}
-            />
-            <button
-              onClick={() => navigator.clipboard?.writeText(link)}
-              className="border-2 border-slate-900 px-3 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 transition-colors whitespace-nowrap"
-            >
-              Copiar
-            </button>
-          </div>
-        </div>
-
-        <div className="flex justify-end pt-2">
-          <button
-            onClick={onClose}
-            className="px-5 py-2 bg-orange-500 text-white border-2 border-slate-900 font-black uppercase tracking-wide shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
-          >
-            Listo
-          </button>
-        </div>
-      </div>
+const LinkCopiable: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div>
+    <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">{label}</p>
+    <div className="flex gap-2">
+      <input readOnly value={value} className="flex-1 border-2 border-slate-300 px-3 py-2 text-xs font-mono truncate outline-none bg-slate-50" onFocus={(e) => e.target.select()} />
+      <button onClick={() => navigator.clipboard?.writeText(value)} className="border-2 border-slate-900 px-4 text-xs font-black bg-white hover:bg-slate-100 transition-colors whitespace-nowrap">
+        Copiar
+      </button>
     </div>
   </div>
 );
 
-const ModalResultadoRemoto: React.FC<{
-  empresaNombre: string;
-  link: string;
-  emailEnviado: boolean;
-  waAbierto: boolean;
-  onClose: () => void;
-}> = ({ empresaNombre, link, emailEnviado, waAbierto, onClose }) => (
-  <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-    <div className="bg-white border-2 border-slate-900 shadow-[6px_6px_0px_0px_#1e293b] w-full max-w-md">
-      <div className="flex items-center justify-between border-b-2 border-slate-900 px-5 py-3 bg-slate-900 text-white">
-        <h2 className="font-sketch font-black text-lg uppercase tracking-wide flex items-center gap-2">
-          <MonitorSmartphone size={18} /> Solicitud enviada
-        </h2>
-        <button onClick={onClose}><X size={20} /></button>
+const ModalResultadoSuscripcion: React.FC<{
+  empresaNombre: string; link: string; emailEnviado: boolean; waEnviado: boolean; onClose: () => void;
+}> = ({ empresaNombre, link, emailEnviado, waEnviado, onClose }) => (
+  <Modal titulo="Link generado" icono={<CreditCard size={16} />} onClose={onClose}>
+    <div className="space-y-4">
+      <p className="text-sm text-slate-600">Link para <strong className="text-slate-900">{empresaNombre}</strong> copiado al portapapeles.</p>
+      <div className="border-2 border-slate-200 divide-y-2 divide-slate-200">
+        <EstadoRow ok={waEnviado} textoOk="WhatsApp abierto con el mensaje listo" textoNo="WhatsApp no enviado" />
+        <EstadoRow ok={emailEnviado} textoOk="Email enviado automaticamente" textoNo="Email no enviado (sin RESEND_API_KEY)" />
       </div>
-
-      <div className="p-5 space-y-4">
-        <p className="text-sm text-slate-700">
-          Se generó la solicitud de acceso remoto para <strong>{empresaNombre}</strong>.
-          El cliente debe aprobar el acceso desde el link que le enviaste.
-        </p>
-
-        <div className="border-2 border-slate-200 divide-y-2 divide-slate-200">
-          <div className="flex items-center gap-3 px-4 py-3">
-            <span className={`w-5 h-5 flex items-center justify-center text-xs font-black border-2 ${waAbierto ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-amber-50 border-amber-300 text-amber-600'}`}>
-              {waAbierto ? '✓' : '!'}
-            </span>
-            <span className="text-sm font-semibold text-slate-700">
-              {waAbierto
-                ? 'WhatsApp Web abierto con mensaje listo'
-                : 'WhatsApp bloqueado por el navegador — copiá el link manualmente'}
-            </span>
-          </div>
-          <div className="flex items-center gap-3 px-4 py-3">
-            <span className={`w-5 h-5 flex items-center justify-center text-xs font-black border-2 ${emailEnviado ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-amber-50 border-amber-300 text-amber-600'}`}>
-              {emailEnviado ? '✓' : '!'}
-            </span>
-            <span className="text-sm font-semibold text-slate-700">
-              {emailEnviado
-                ? 'Email de aprobación enviado automáticamente'
-                : 'Email no enviado (RESEND_API_KEY no configurada)'}
-            </span>
-          </div>
-        </div>
-
-        <div>
-          <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-1">Link de aprobación para el cliente</p>
-          <div className="flex gap-2">
-            <input
-              readOnly
-              value={link}
-              className="flex-1 border-2 border-slate-300 px-3 py-2 text-xs font-mono truncate outline-none"
-              onFocus={(e) => e.target.select()}
-            />
-            <button
-              onClick={() => navigator.clipboard?.writeText(link)}
-              className="border-2 border-slate-900 px-3 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 transition-colors whitespace-nowrap"
-            >
-              Copiar
-            </button>
-          </div>
-        </div>
-
-        {!waAbierto && (
-          <div className="bg-amber-50 border-2 border-amber-300 px-3 py-2 text-xs text-amber-800 font-semibold">
-            El navegador bloqueó la ventana de WhatsApp. Copiá el link de arriba y envialo manualmente.
-          </div>
-        )}
-
-        <div className="flex justify-end pt-2">
-          <button
-            onClick={onClose}
-            className="px-5 py-2 bg-orange-500 text-white border-2 border-slate-900 font-black uppercase tracking-wide shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
-          >
-            Listo
-          </button>
-        </div>
-      </div>
+      <LinkCopiable label="Link de pago" value={link} />
+      <button onClick={onClose} className={btnPrimary}>Listo</button>
     </div>
-  </div>
+  </Modal>
+);
+
+const ModalResultadoRemoto: React.FC<{
+  empresaNombre: string; link: string; emailEnviado: boolean; waAbierto: boolean; onClose: () => void;
+}> = ({ empresaNombre, link, emailEnviado, waAbierto, onClose }) => (
+  <Modal titulo="Solicitud enviada" icono={<MonitorSmartphone size={16} />} onClose={onClose}>
+    <div className="space-y-4">
+      <p className="text-sm text-slate-600">
+        Solicitud de acceso remoto para <strong className="text-slate-900">{empresaNombre}</strong>. El cliente debe aprobar desde el link.
+      </p>
+      <div className="border-2 border-slate-200 divide-y-2 divide-slate-200">
+        <EstadoRow ok={waAbierto} textoOk="WhatsApp abierto con mensaje listo" textoNo="WhatsApp bloqueado — copiá el link manualmente" />
+        <EstadoRow ok={emailEnviado} textoOk="Email de aprobacion enviado" textoNo="Email no enviado (sin RESEND_API_KEY)" />
+      </div>
+      <LinkCopiable label="Link de aprobacion para el cliente" value={link} />
+      {!waAbierto && (
+        <div className="bg-amber-50 border-2 border-amber-300 px-3 py-2 text-xs text-amber-800 font-semibold">
+          Copiá el link de arriba y envialo manualmente por WhatsApp.
+        </div>
+      )}
+      <button onClick={onClose} className={btnPrimary}>Listo</button>
+    </div>
+  </Modal>
 );
 
 const PLAN_LABEL: Record<string, string> = { inicial: 'Inicial', empresa: 'Empresa', industrial: 'Industrial' };
