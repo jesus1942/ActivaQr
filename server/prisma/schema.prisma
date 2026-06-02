@@ -337,6 +337,7 @@ model Activo {
 
   mediciones Medicion[]
   tareas     TareaMantenimiento[]
+  documentos Documento[]
 
   @@unique([empresaId, codigo])
   @@index([empresaId])
@@ -398,14 +399,50 @@ model TareaMantenimiento {
   id              String      @id @default(uuid())
   activoId        String
   responsableId   String?
+  numero          Int?
   tipo            String
+  prioridad       String      @default("media")
   fechaProgramada DateTime
   fechaRealizada  DateTime?
   estado          EstadoTarea @default(pendiente)
   observaciones   String?
+  materiales      String?     @db.Text
+  horasTrabajo    Float?
+  cerradaPor      String?
+  fotos           Json?
 
   activo      Activo   @relation(fields: [activoId], references: [id], onDelete: Cascade)
   responsable Tecnico? @relation(fields: [responsableId], references: [id], onDelete: SetNull)
+
+  @@index([activoId])
+}
+
+model RegistroAuditoria {
+  id            String   @id @default(uuid())
+  empresaId     String?
+  usuarioId     String?
+  usuarioNombre String
+  usuarioRol    String?
+  accion        String
+  entidad       String
+  entidadId     String?
+  detalle       String?  @db.Text
+  creadoEn      DateTime @default(now())
+
+  @@index([empresaId])
+  @@index([entidad])
+  @@index([creadoEn])
+}
+
+model Documento {
+  id       String   @id @default(uuid())
+  activoId String
+  nombre   String
+  tipo     String   @default("otro")
+  url      String   @db.Text
+  creadoEn DateTime @default(now())
+
+  activo Activo @relation(fields: [activoId], references: [id], onDelete: Cascade)
 
   @@index([activoId])
 }

@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { prisma } from '../prisma';
 import { firmarToken, requireAuth, AuthRequest, DEMO_TOKEN_TTL } from '../auth';
 import { enviarEmailResetPassword } from '../email';
+import { registrarAuditoria } from '../auditoria';
 
 const router = Router();
 
@@ -42,6 +43,16 @@ router.post('/login', async (req, res: Response, next: NextFunction) => {
     await prisma.usuario.update({
       where: { id: usuario.id },
       data: { ultimoAcceso: new Date() },
+    });
+
+    void registrarAuditoria({
+      empresaId: usuario.empresaId,
+      usuarioId: usuario.id,
+      usuarioNombre: usuario.email,
+      usuarioRol: usuario.rol,
+      accion: 'login',
+      entidad: 'sesion',
+      entidadId: usuario.id,
     });
 
     const isDemo = usuario.email === 'demo@activaqr.com';

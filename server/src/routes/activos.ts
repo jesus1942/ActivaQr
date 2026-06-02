@@ -3,6 +3,8 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../prisma';
 import { resolveEmpresaId } from '../tenant';
 import { getLimite } from '../planLimits';
+import { auditar } from '../auditoria';
+import { AuthRequest } from '../auth';
 
 const router = Router();
 
@@ -205,6 +207,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       data: { ...data, empresaId },
       include: includeRelaciones,
     });
+    void auditar(req as AuthRequest, 'crear', 'activo', activo.id, `Activo ${activo.codigo} — ${activo.nombre}`);
     res.status(201).json(activo);
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
@@ -231,6 +234,7 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
       data,
       include: includeRelaciones,
     });
+    void auditar(req as AuthRequest, 'editar', 'activo', activo.id, `Activo ${activo.codigo} — ${activo.nombre}`);
     res.json(activo);
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
@@ -252,6 +256,7 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
     if (!existing) return res.status(404).json({ error: 'Activo no encontrado' });
 
     await prisma.activo.delete({ where: { id: req.params.id } });
+    void auditar(req as AuthRequest, 'eliminar', 'activo', existing.id, `Activo ${existing.codigo} — ${existing.nombre}`);
     res.json({ ok: true });
   } catch (err) {
     next(err);

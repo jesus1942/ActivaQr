@@ -167,8 +167,8 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
 <header class="hero">
   <div class="wrap">
     <span class="tag">Sin papel. Sin excusas.</span>
-    <h1>Cada máquina de tu planta,<br>un <span class="o">nodo inteligente</span>.</h1>
-    <p class="sub">Pegás un QR en el equipo y cualquier persona con un celular ve su ficha técnica al instante. Alertas automáticas, mantenimientos y soporte remoto. Todo en el celular.</p>
+    <h1>Detectá las fallas<br>antes de que <span class="o">paren tu producción</span>.</h1>
+    <p class="sub">Pegás un QR en cada equipo y convertís el mantenimiento en datos. Anticipás roturas, reducís costos de reparación y aumentás la disponibilidad de tu planta. Todo desde el celular, sin instalar nada.</p>
     <div class="acciones">
       <a class="btn btn-naranja" href="#contacto">Quiero suscribirme</a>
       <a class="btn btn-blanco" href="${appUrl}" target="_blank" rel="noopener">Ver la app</a>
@@ -182,15 +182,15 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
 
 <section id="features" class="reveal">
   <div class="wrap">
-    <h2 class="titulo">Todo lo que necesita el mantenimiento moderno</h2>
+    <h2 class="titulo">Menos paradas. Menos costos. Más control.</h2>
     <p class="bajada">Desde el operario en el piso de planta hasta el gerente que mira el tablero. Una sola herramienta, en el celular.</p>
     <div class="grid g3">
-      <div class="card"><p class="num">01</p><h3>Ficha pública por QR</h3><p>Escaneás el QR de la máquina y ves estado, última medición, valores de referencia y responsable. Sin app, sin login.</p></div>
-      <div class="card"><p class="num">02</p><h3>Alertas automáticas</h3><p>Definís umbrales por equipo. Cuando una medición los supera, el activo cambia de estado solo: normal, alerta, crítico o urgente.</p></div>
-      <div class="card"><p class="num">03</p><h3>Parámetros por rubro</h3><p>Un motor diesel no se mide igual que un equipo de estética. Cada categoría trae sus propios parámetros y umbrales listos.</p></div>
-      <div class="card"><p class="num">04</p><h3>Mantenimientos</h3><p>Preventivos y correctivos por activo, con técnicos asignados, fechas y tareas vencidas marcadas automáticamente.</p></div>
-      <div class="card"><p class="num">05</p><h3>Soporte remoto real</h3><p>Nuestro equipo puede entrar, ver tus activos y registrar mediciones por vos. Con chat de fotos y audio. Siempre con tu permiso.</p></div>
-      <div class="card"><p class="num">06</p><h3>Reportes y QR</h3><p>Generá reportes en PDF por activo, sector o planta completa. Imprimí los códigos QR de cada equipo.</p></div>
+      <div class="card"><p class="num">01</p><h3>Toda la ficha en un escaneo</h3><p>Escaneás el QR de la máquina y ves estado, última medición, valores de referencia y responsable. Sin app, sin login.</p></div>
+      <div class="card"><p class="num">02</p><h3>Avisos antes de la falla costosa</h3><p>Definís umbrales por equipo. Cuando una medición los supera, el activo cambia de estado solo: normal, alerta, crítico o urgente.</p></div>
+      <div class="card"><p class="num">03</p><h3>Listo para tu rubro</h3><p>Un motor diesel no se mide igual que un equipo de estética. Cada categoría trae sus propios parámetros y umbrales listos.</p></div>
+      <div class="card"><p class="num">04</p><h3>Órdenes de trabajo y cumplimiento</h3><p>Preventivos y correctivos por activo, con técnicos asignados, materiales, horas y tareas vencidas marcadas automáticamente.</p></div>
+      <div class="card"><p class="num">05</p><h3>Soporte que entra por vos</h3><p>Nuestro equipo puede entrar, ver tus activos y registrar mediciones por vos. Con chat de fotos y audio. Siempre con tu permiso.</p></div>
+      <div class="card"><p class="num">06</p><h3>Indicadores para decidir</h3><p>Tablero ejecutivo con disponibilidad, equipos más críticos, tendencia de fallas y mantenimiento predictivo. Reportes y QR en PDF.</p></div>
     </div>
   </div>
 </section>

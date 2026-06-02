@@ -3,6 +3,8 @@ import { prisma } from '../prisma';
 import { resolveEmpresaId } from '../tenant';
 import { calcularEstadoAutomatico, estadoMedicionAActivo } from '../alertas';
 import { enviarPushAEmpresa } from '../push';
+import { auditar } from '../auditoria';
+import { AuthRequest } from '../auth';
 
 const router = Router();
 
@@ -165,6 +167,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       ).catch((e) => console.error('[medicion] error push:', e));
     }
 
+    void auditar(req as AuthRequest, 'medicion', 'medicion', medicion.id, `Medicion en ${activo.codigo} — estado ${estadoFinal}`);
     res.status(201).json(medicion);
   } catch (err) {
     next(err);
