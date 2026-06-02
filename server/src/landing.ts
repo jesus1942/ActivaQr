@@ -66,6 +66,13 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   .hero p.sub{font-size:clamp(16px,2.2vw,20px);color:var(--gris);max-width:580px;margin-bottom:36px}
   .hero .acciones{display:flex;gap:14px;flex-wrap:wrap}
 
+  /* HERO — animacion de entrada al cargar */
+  @keyframes heroIn{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+  .hero .tag{animation:heroIn .5s ease both}
+  .hero h1{animation:heroIn .6s .1s ease both}
+  .hero p.sub{animation:heroIn .6s .22s ease both}
+  .hero .acciones{animation:heroIn .6s .34s ease both}
+
   /* SCROLL HINT */
   .scroll-hint{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;opacity:1;transition:opacity .4s}
   .scroll-hint span{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:var(--gris-c)}
