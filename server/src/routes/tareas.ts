@@ -1,8 +1,20 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../prisma';
 import { resolveEmpresaId } from '../tenant';
+import { auditar } from '../auditoria';
+import { AuthRequest } from '../auth';
 
 const router = Router();
+
+// Calcula el próximo número de orden de trabajo (correlativo por empresa).
+async function proximoNumeroOT(empresaId: string): Promise<number> {
+  const ultima = await prisma.tareaMantenimiento.findFirst({
+    where: { activo: { empresaId }, numero: { not: null } },
+    orderBy: { numero: 'desc' },
+    select: { numero: true },
+  });
+  return (ultima?.numero ?? 0) + 1;
+}
 
 // GET /api/tareas?activoId=&estado=
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
@@ -36,10 +48,14 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       activoId,
       responsableId,
       tipo,
+      prioridad,
       fechaProgramada,
       fechaRealizada,
       estado,
       observaciones,
+      materiales,
+      horasTrabajo,
+      fotos,
     } = req.body ?? {};
 
     if (!activoId || !tipo || !fechaProgramada) {
@@ -53,18 +69,25 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     });
     if (!activo) return res.status(404).json({ error: 'Activo no encontrado' });
 
+    const numero = await proximoNumeroOT(empresaId);
     const tarea = await prisma.tareaMantenimiento.create({
       data: {
         activoId,
         responsableId,
+        numero,
         tipo,
+        prioridad: ['baja', 'media', 'alta'].includes(prioridad) ? prioridad : 'media',
         fechaProgramada: new Date(fechaProgramada),
         fechaRealizada: fechaRealizada ? new Date(fechaRealizada) : null,
         estado,
         observaciones,
+        materiales: materiales ?? null,
+        horasTrabajo: typeof horasTrabajo === 'number' ? horasTrabajo : null,
+        fotos: Array.isArray(fotos) ? fotos : undefined,
       },
       include: { responsable: true },
     });
+    void auditar(req as AuthRequest, 'crear', 'orden_trabajo', tarea.id, `OT-${String(numero).padStart(5, '0')} en ${activo.codigo}`);
     res.status(201).json(tarea);
   } catch (err) {
     next(err);
@@ -83,13 +106,20 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
     const {
       responsableId,
       tipo,
+      prioridad,
       fechaProgramada,
       fechaRealizada,
       estado,
       observaciones,
+      materiales,
+      horasTrabajo,
+      fotos,
     } = req.body ?? {};
 
-    const data: any = { responsableId, tipo, estado, observaciones };
+    const data: any = { responsableId, tipo, estado, observaciones, materiales };
+    if (['baja', 'media', 'alta'].includes(prioridad)) data.prioridad = prioridad;
+    if (typeof horasTrabajo === 'number') data.horasTrabajo = horasTrabajo;
+    if (Array.isArray(fotos)) data.fotos = fotos;
     if (fechaProgramada !== undefined) data.fechaProgramada = new Date(fechaProgramada);
     if (fechaRealizada !== undefined) {
       data.fechaRealizada = fechaRealizada ? new Date(fechaRealizada) : null;
@@ -98,6 +128,7 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
     // Si se marca como completada y no se pasó fecha, usar la actual.
     if (estado === 'completado' && fechaRealizada === undefined && !existing.fechaRealizada) {
       data.fechaRealizada = new Date();
+      data.cerradaPor = (req as AuthRequest).auth?.email ?? null;
     }
 
     Object.keys(data).forEach((k) => data[k] === undefined && delete data[k]);
@@ -107,6 +138,8 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
       data,
       include: { responsable: true },
     });
+    const accion = estado === 'completado' ? 'cerrar' : 'editar';
+    void auditar(req as AuthRequest, accion, 'orden_trabajo', tarea.id, tarea.numero ? `OT-${String(tarea.numero).padStart(5, '0')}` : tarea.tipo);
     res.json(tarea);
   } catch (err) {
     next(err);
@@ -123,6 +156,7 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
     if (!existing) return res.status(404).json({ error: 'Tarea no encontrada' });
 
     await prisma.tareaMantenimiento.delete({ where: { id: req.params.id } });
+    void auditar(req as AuthRequest, 'eliminar', 'orden_trabajo', existing.id, existing.numero ? `OT-${String(existing.numero).padStart(5, '0')}` : existing.tipo);
     res.json({ ok: true });
   } catch (err) {
     next(err);
