@@ -38,7 +38,29 @@ export const Mantenimiento: React.FC = () => {
     setObsInput('');
   };
 
-  const openNew = () => { setEditId(null); setNewTarea(emptyTarea); setShowModal(true); };
+  const openNew = (preActivoId?: string) => {
+    setEditId(null);
+    setNewTarea({ ...emptyTarea, activoId: preActivoId ?? '' });
+    setShowModal(true);
+  };
+
+  const crearTareaRecomendada = (activoId: string, estadoActivo: string) => {
+    const tipo = estadoActivo === 'critico' ? 'Revision urgente — estado critico' : 'Revision — estado en alerta';
+    addTarea({
+      id: `tar-${Date.now()}`,
+      activoId,
+      tipo,
+      fechaProgramada: format(new Date(), 'yyyy-MM-dd'),
+      responsableId: '',
+      observaciones: `Generada automaticamente el ${format(new Date(), 'dd/MM/yyyy')}`,
+      estado: 'pendiente',
+    } as TareaMantenimiento);
+  };
+
+  const activosSinTarea = activos.filter((a) =>
+    (a.estado === 'critico' || a.estado === 'alerta') &&
+    !tareas.some((t) => t.activoId === a.id && (t.estado === 'pendiente' || t.estado === 'vencido'))
+  );
 
   const openEdit = (t: TareaMantenimiento) => {
     setEditId(t.id);
@@ -184,7 +206,7 @@ export const Mantenimiento: React.FC = () => {
             <span className="hidden sm:inline">CSV</span>
           </button>
           <button
-            onClick={openNew}
+            onClick={() => openNew()}
             className="flex items-center gap-2 bg-orange-500 text-white px-4 min-h-[44px] font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] transition-all"
           >
             <Plus size={16} />
@@ -193,6 +215,43 @@ export const Mantenimiento: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {activosSinTarea.length > 0 && (
+        <div className="mb-8 bg-amber-50 border-2 border-amber-500 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)] p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle size={18} className="text-amber-600" />
+            <h2 className="font-black text-amber-700 uppercase tracking-wide">
+              RECOMENDADOS ({activosSinTarea.length})
+            </h2>
+            <span className="text-xs text-amber-600 font-semibold hidden sm:inline">— activos con alerta sin tarea asignada</span>
+          </div>
+          <div className="space-y-2">
+            {activosSinTarea.map((a) => (
+              <div
+                key={a.id}
+                className={`flex items-center justify-between gap-3 p-3 border-2 bg-white ${a.estado === 'critico' ? 'border-red-400' : 'border-amber-300'}`}
+              >
+                <div className="flex-1 min-w-0">
+                  <span className="font-mono font-black text-sm text-slate-800">{a.codigo}</span>
+                  <span className="text-slate-500 text-xs mx-2">·</span>
+                  <span className="text-sm font-semibold text-slate-700">{a.nombre}</span>
+                  <div className="text-xs text-slate-500 mt-0.5">{getSectorNombre(a.sectorId)}</div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <StatusBadge estado={a.estado as any} size="sm" />
+                  <button
+                    onClick={() => crearTareaRecomendada(a.id, a.estado)}
+                    className="flex items-center gap-1.5 bg-orange-500 text-white px-3 py-1.5 text-xs font-black border-2 border-slate-800 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.6)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,0.6)] transition-all whitespace-nowrap"
+                  >
+                    <Plus size={13} />
+                    Crear tarea
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Vencidas */}
