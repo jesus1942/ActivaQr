@@ -60,6 +60,35 @@ export async function resetPassword(id: string, password: string): Promise<void>
   );
 }
 
+export async function generarStripeSubscripcion(
+  id: string,
+  monto: number,
+  moneda: 'usd' | 'uyu'
+): Promise<{ sessionUrl: string; sessionId: string }> {
+  return parse(
+    await apiFetch(`admin/empresas/${id}/stripe-suscripcion`, {
+      method: 'POST',
+      headers: JSON_HEADERS,
+      body: JSON.stringify({ monto, moneda }),
+    })
+  );
+}
+
+export async function generarStripeLinkPago(
+  id: string,
+  monto: number,
+  moneda: 'usd' | 'uyu',
+  descripcion: string
+): Promise<{ sessionUrl: string; sessionId: string }> {
+  return parse(
+    await apiFetch(`admin/empresas/${id}/stripe-link-pago`, {
+      method: 'POST',
+      headers: JSON_HEADERS,
+      body: JSON.stringify({ monto, moneda, descripcion }),
+    })
+  );
+}
+
 export async function cancelarSuscripcion(id: string): Promise<void> {
   await parse(await apiFetch(`admin/empresas/${id}/suscripcion`, { method: 'DELETE' }));
 }

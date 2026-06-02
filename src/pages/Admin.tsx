@@ -34,6 +34,8 @@ import {
   resetPassword,
   generarSuscripcion,
   cancelarSuscripcion,
+  generarStripeSubscripcion,
+  generarStripeLinkPago,
   getSolicitudesUpgrade,
   descartarSolicitud,
 } from '../data/adminApi';
@@ -83,12 +85,17 @@ const btnPrimary = "w-full bg-orange-500 text-white h-12 font-sketch font-black 
 const btnSecondary = "w-full h-12 border-2 border-slate-400 text-sm font-bold text-slate-600 hover:border-slate-800 transition-colors";
 
 // ── Modal cobro ────────────────────────────────────────────────────────────────
+type Moneda = 'ARS' | 'USD' | 'UYU';
+
 const ModalCobro: React.FC<{
   empresa: EmpresaAdmin;
   onClose: () => void;
   onSuscripcion: (monto: number, emailOverride?: string) => Promise<void>;
   onLinkPago: (monto: number, descripcion: string) => Promise<void>;
-}> = ({ empresa, onClose, onSuscripcion, onLinkPago }) => {
+  onStripeSuscripcion: (monto: number, moneda: 'usd' | 'uyu') => Promise<void>;
+  onStripeLinkPago: (monto: number, moneda: 'usd' | 'uyu', descripcion: string) => Promise<void>;
+}> = ({ empresa, onClose, onSuscripcion, onLinkPago, onStripeSuscripcion, onStripeLinkPago }) => {
+  const [moneda, setMoneda] = useState<Moneda>('ARS');
   const [modo, setModo] = useState<'suscripcion' | 'unico'>('suscripcion');
   const [monto, setMonto] = useState('');
   const [emailOverride, setEmailOverride] = useState('');
@@ -101,27 +108,58 @@ const ModalCobro: React.FC<{
     if (!monto || Number(monto) <= 0) { setErr('Ingresá un monto válido.'); return; }
     setErr(''); setCargando(true);
     try {
-      if (modo === 'suscripcion') await onSuscripcion(Number(monto), emailOverride || undefined);
-      else await onLinkPago(Number(monto), descripcion);
+      if (moneda === 'ARS') {
+        if (modo === 'suscripcion') await onSuscripcion(Number(monto), emailOverride || undefined);
+        else await onLinkPago(Number(monto), descripcion);
+      } else {
+        const m = moneda.toLowerCase() as 'usd' | 'uyu';
+        if (modo === 'suscripcion') await onStripeSuscripcion(Number(monto), m);
+        else await onStripeLinkPago(Number(monto), m, descripcion);
+      }
       onClose();
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Error al generar el cobro.');
     } finally { setCargando(false); }
   };
 
+  const esStripe = moneda !== 'ARS';
+  const infoTexto = esStripe
+    ? modo === 'suscripcion'
+      ? `Genera un link de suscripcion mensual por Stripe (${moneda}). Acepta tarjetas internacionales.`
+      : `Genera un link de pago unico por Stripe (${moneda}). Acepta tarjetas internacionales.`
+    : modo === 'suscripcion'
+      ? 'Genera un link de suscripcion recurrente mensual por Mercado Pago. El cliente debe tener cuenta MP.'
+      : 'Genera un link de pago unico. Acepta tarjeta, Prex, transferencia y cualquier medio — sin cuenta MP.';
+
   return (
     <Modal titulo="Generar cobro" icono={<CreditCard size={16} />} onClose={onClose}>
+      {/* Selector de moneda */}
+      <div className="flex gap-0 mb-4 border-2 border-slate-900">
+        {(['ARS', 'USD', 'UYU'] as Moneda[]).map((m, i) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setMoneda(m)}
+            className={`flex-1 py-2 text-xs font-black uppercase tracking-wide transition-colors ${i > 0 ? 'border-l-2 border-slate-900' : ''} ${moneda === m ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+          >
+            {m}
+          </button>
+        ))}
+      </div>
+
       {/* Selector de modo */}
       <div className="flex gap-0 mb-6 border-2 border-slate-900">
         <button
+          type="button"
           onClick={() => setModo('suscripcion')}
-          className={`flex-1 py-3 text-xs font-black uppercase tracking-wide transition-colors ${modo === 'suscripcion' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+          className={`flex-1 py-3 text-xs font-black uppercase tracking-wide transition-colors ${modo === 'suscripcion' ? 'bg-orange-500 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
         >
           Suscripcion mensual
         </button>
         <button
+          type="button"
           onClick={() => setModo('unico')}
-          className={`flex-1 py-3 text-xs font-black uppercase tracking-wide border-l-2 border-slate-900 transition-colors ${modo === 'unico' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+          className={`flex-1 py-3 text-xs font-black uppercase tracking-wide border-l-2 border-slate-900 transition-colors ${modo === 'unico' ? 'bg-orange-500 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
         >
           Pago unico
         </button>
@@ -129,27 +167,23 @@ const ModalCobro: React.FC<{
 
       <form onSubmit={submit} className="space-y-4">
         <div className="bg-slate-50 border-2 border-slate-200 px-4 py-3 mb-2">
-          <p className="text-xs text-slate-500 font-semibold">
-            {modo === 'suscripcion'
-              ? 'Genera un link de suscripcion recurrente mensual por Mercado Pago. El cliente debe tener cuenta MP.'
-              : 'Genera un link de pago unico. Acepta tarjeta, Prex, transferencia y cualquier medio — sin cuenta MP.'}
-          </p>
+          <p className="text-xs text-slate-500 font-semibold">{infoTexto}</p>
         </div>
 
-        <Field label="Monto (ARS)" hint={modo === 'suscripcion' ? 'Se debitará automáticamente cada mes' : 'Pago por única vez'}>
+        <Field label={`Monto (${moneda})`} hint={modo === 'suscripcion' ? 'Se debitará automáticamente cada mes' : 'Pago por única vez'}>
           <input
             type="number"
             min="1"
             required
             value={monto}
             onChange={(e) => setMonto(e.target.value)}
-            placeholder="Ej: 15000"
+            placeholder={moneda === 'ARS' ? 'Ej: 15000' : 'Ej: 50'}
             className={inputCls}
             autoFocus
           />
         </Field>
 
-        {modo === 'suscripcion' && (
+        {moneda === 'ARS' && modo === 'suscripcion' && (
           <Field label="Email MP del cliente (opcional)" hint="Solo necesario si el email registrado no tiene cuenta MP">
             <input
               type="email"
@@ -470,6 +504,42 @@ export const Admin: React.FC = () => {
       onDone: (waEnviado) => {
         setModalWa(null);
         setResultadoSub({ empresaNombre: modalCobro.nombre, link: initPoint, emailEnviado: false, waEnviado });
+        cargar();
+      },
+    });
+  };
+
+  const handleStripeSubscripcion = async (monto: number, moneda: 'usd' | 'uyu') => {
+    if (!modalCobro) return;
+    const res = await generarStripeSubscripcion(modalCobro.id, monto, moneda);
+    await navigator.clipboard?.writeText(res.sessionUrl).catch(() => {});
+    const mensajeWa = `Hola! Te enviamos el link para activar tu suscripcion en *ActivaQR*:\n\n${res.sessionUrl}\n\nPodés pagar con tarjeta internacional.`;
+    setModalCobro(null);
+    setModalWa({
+      titulo: 'Enviar link por WhatsApp',
+      nombreEmpresa: modalCobro.nombre,
+      mensaje: mensajeWa,
+      onDone: (waEnviado) => {
+        setModalWa(null);
+        setResultadoSub({ empresaNombre: modalCobro.nombre, link: res.sessionUrl, emailEnviado: false, waEnviado });
+        cargar();
+      },
+    });
+  };
+
+  const handleStripeLinkPago = async (monto: number, moneda: 'usd' | 'uyu', descripcion: string) => {
+    if (!modalCobro) return;
+    const res = await generarStripeLinkPago(modalCobro.id, monto, moneda, descripcion);
+    await navigator.clipboard?.writeText(res.sessionUrl).catch(() => {});
+    const mensajeWa = `Hola! Te enviamos el link para realizar el pago de *ActivaQR*:\n\n${res.sessionUrl}\n\nPodés pagar con tarjeta internacional.`;
+    setModalCobro(null);
+    setModalWa({
+      titulo: 'Enviar link por WhatsApp',
+      nombreEmpresa: modalCobro.nombre,
+      mensaje: mensajeWa,
+      onDone: (waEnviado) => {
+        setModalWa(null);
+        setResultadoSub({ empresaNombre: modalCobro.nombre, link: res.sessionUrl, emailEnviado: false, waEnviado });
         cargar();
       },
     });
@@ -837,6 +907,8 @@ export const Admin: React.FC = () => {
           onClose={() => setModalCobro(null)}
           onSuscripcion={handleSuscripcion}
           onLinkPago={handleLinkPago}
+          onStripeSuscripcion={handleStripeSubscripcion}
+          onStripeLinkPago={handleStripeLinkPago}
         />
       )}
       {modalResetPass && (
