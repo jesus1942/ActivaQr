@@ -2,6 +2,8 @@
 import { HashRouter as BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
 import { Dashboard } from './pages/Dashboard';
+import { Indicadores } from './pages/Indicadores';
+import { Auditoria } from './pages/Auditoria';
 import { Activos } from './pages/Activos';
 import { ActivoDetalle } from './pages/ActivoDetalle';
 import { Medicion } from './pages/Medicion';
@@ -72,6 +74,8 @@ function AuthedApp() {
         ) : (
           <>
             <Route index element={<Dashboard />} />
+            <Route path="indicadores" element={<Indicadores />} />
+            <Route path="auditoria" element={<Auditoria />} />
             <Route path="activos" element={<Activos />} />
             <Route path="activos/:id" element={<ActivoDetalle />} />
             <Route path="medicion" element={<Medicion />} />
