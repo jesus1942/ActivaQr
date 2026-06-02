@@ -64,6 +64,13 @@ export const ActivoDetalle: React.FC = () => {
     { label: 'Intervalo Medición', value: `${activo.intervaloMedicionHoras} hs` },
     { label: 'Intervalo Lubricación', value: activo.intervaloLubricacionHoras ? `${activo.intervaloLubricacionHoras} hs` : 'N/A' },
     { label: 'Prox. Mantenimiento', value: format(parseISO(activo.proximoMantenimiento), 'dd/MM/yyyy', { locale: es }) },
+    { label: 'Tipo de desplazamiento', value: activo.esItinerante ? 'Itinerante' : 'Estatico' },
+    ...(activo.esItinerante ? [
+      { label: 'Locacion base', value: activo.locacionBase ?? undefined },
+      { label: 'Locacion actual', value: activo.locacionActual ?? undefined },
+      { label: 'Fecha salida', value: activo.fechaSalida ? activo.fechaSalida.slice(0, 10) : undefined },
+      { label: 'Fecha retorno est.', value: activo.fechaRetorno ? activo.fechaRetorno.slice(0, 10) : undefined },
+    ] : []),
   ];
 
   return (
