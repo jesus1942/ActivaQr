@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { AssetCard } from '../components/ui/AssetCard';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { ESTADOS_OPERATIVOS } from '../components/ui/EstadoOperativoBadge';
-import { Activo, EstadoActivo, EstadoOperativo } from '../data/types';
+import { Activo, EstadoActivo, EstadoOperativo, ClaveVisibilidad, VISIBILIDAD_DEFAULT, VISIBILIDAD_LABELS } from '../data/types';
 
 const LIMITES_ACTIVOS: Record<string, number | null> = {
   inicial:    10,
@@ -79,6 +79,7 @@ export const Activos: React.FC = () => {
     locacionActual: '',
     fechaSalida: '',
     fechaRetorno: '',
+    visibilidadPublica: { ...VISIBILIDAD_DEFAULT },
   };
 
   const [search, setSearch] = useState('');
@@ -122,7 +123,7 @@ export const Activos: React.FC = () => {
     const { id, ...rest } = a;
     void id;
     setEditId(a.id);
-    setForm(rest);
+    setForm({ ...rest, visibilidadPublica: rest.visibilidadPublica ?? { ...VISIBILIDAD_DEFAULT } });
     setShowModal(true);
   };
 
@@ -444,6 +445,36 @@ export const Activos: React.FC = () => {
                   </div>
                 </>
               )}
+
+              {/* Visibilidad en la ficha pública (QR) */}
+              <div className="sm:col-span-2 border-2 border-slate-200 p-4">
+                <p className="text-sm font-black uppercase tracking-wider text-slate-700 mb-1">Visibilidad en el QR publico</p>
+                <p className="text-xs text-slate-500 mb-3">Eleg&iacute; qu&eacute; informaci&oacute;n ve cualquier persona que escanee el QR sin login.</p>
+                <div className="grid sm:grid-cols-2 gap-2">
+                  {(Object.keys(VISIBILIDAD_LABELS) as ClaveVisibilidad[]).map((clave) => {
+                    const vis = form.visibilidadPublica ?? VISIBILIDAD_DEFAULT;
+                    return (
+                      <label key={clave} className="flex items-center gap-3 cursor-pointer border-2 border-slate-200 px-3 py-2 hover:border-slate-400 transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={!!vis[clave]}
+                          onChange={(e) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              visibilidadPublica: {
+                                ...(prev.visibilidadPublica ?? VISIBILIDAD_DEFAULT),
+                                [clave]: e.target.checked,
+                              },
+                            }))
+                          }
+                          className="w-4 h-4 accent-orange-500 border-2 border-slate-800"
+                        />
+                        <span className="text-xs font-bold text-slate-700">{VISIBILIDAD_LABELS[clave]}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
 
               {/* Parámetros de medición */}
               <ParametrosMedicion form={form} setForm={setForm} />

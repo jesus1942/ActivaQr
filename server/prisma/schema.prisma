@@ -320,6 +320,7 @@ model Activo {
   intervaloRodamientoHoras  Int?
   proximoMantenimiento      DateTime?
   notas                     String?
+  visibilidadPublica        Json?
   esItinerante              Boolean      @default(false)
   locacionBase              String?
   locacionActual            String?
