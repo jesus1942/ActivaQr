@@ -4,7 +4,7 @@ import { resolveEmpresaId } from '../tenant';
 import { calcularEstadoAutomatico, estadoMedicionAActivo } from '../alertas';
 import { enviarPushAEmpresa } from '../push';
 import { auditar } from '../auditoria';
-import { AuthRequest } from '../auth';
+import { AuthRequest, requireAdmin } from '../auth';
 
 const router = Router();
 
@@ -174,8 +174,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// DELETE /api/mediciones/:id
-router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+// DELETE /api/mediciones/:id — solo admin (operador no puede borrar historial)
+router.delete('/:id', requireAdmin as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
     const existing = await prisma.medicion.findFirst({

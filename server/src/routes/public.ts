@@ -17,7 +17,7 @@ router.get('/activos/:id', async (req: Request, res: Response, next: NextFunctio
     const activo = await prisma.activo.findUnique({
       where: { id: req.params.id },
       include: {
-        empresa: { select: { id: true, nombre: true, logoUrl: true, estado: true, plan: true } },
+        empresa: { select: { id: true, nombre: true, logoUrl: true, estado: true, plan: true } }, // estado/plan solo para chequeo interno, no se devuelven al cliente
         sector: { select: { nombre: true } },
         tipo: { select: { nombre: true } },
         responsable: { select: { nombre: true, email: true, telefono: true } },
@@ -40,7 +40,13 @@ router.get('/activos/:id', async (req: Request, res: Response, next: NextFunctio
       });
     }
 
-    res.json(aplicarVisibilidad(activo));
+    const payload = aplicarVisibilidad(activo) as any;
+    // No exponer metadatos de suscripción ni plan al público
+    if (payload.empresa) {
+      delete payload.empresa.estado;
+      delete payload.empresa.plan;
+    }
+    res.json(payload);
   } catch (err) {
     next(err);
   }
