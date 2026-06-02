@@ -408,7 +408,7 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
         <h3>Industrial</h3>
         <p class="precio">Sin límites</p>
         <ul>
-          <li>Mas de 500 activos</li>
+          <li>Activos ilimitados</li>
           <li>Técnicos ilimitados</li>
           <li>Soporte prioritario</li>
           <li>Todo lo de Empresa</li>
