@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../prisma';
 import { requireAuth, requireSuperadmin, AuthRequest } from '../auth';
 import { crearPreapproval, cancelarPreapproval, crearLinkPago, mpConfigurado } from '../mercadopago';
+import { stripeConfigurado, crearStripeSubscripcion, crearStripePagoUnico } from '../stripe';
 import { enviarEmailSuscripcion } from '../email';
 import { enviarPushAEmpresa } from '../push';
 
@@ -230,6 +231,57 @@ router.post('/empresas/:id/link-pago', async (req: AuthRequest, res: Response, n
 
     const link = await crearLinkPago({ empresaId: empresa.id, monto: montoNum, descripcion: desc, backUrl, payerEmail });
     res.json({ initPoint: link.init_point, preferenceId: link.id });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/admin/empresas/:id/stripe-suscripcion — suscripción mensual vía Stripe (USD/UYU)
+router.post('/empresas/:id/stripe-suscripcion', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!stripeConfigurado()) return res.status(503).json({ error: 'Stripe no está configurado. Falta la variable STRIPE_SECRET_KEY.' });
+
+    const { monto, moneda } = req.body ?? {};
+    const montoNum = Number(monto);
+    if (!montoNum || montoNum <= 0) return res.status(400).json({ error: 'Indicá un monto válido.' });
+    if (!['usd', 'uyu'].includes(moneda)) return res.status(400).json({ error: 'Moneda inválida. Usá usd o uyu.' });
+
+    const empresa = await prisma.empresa.findUnique({ where: { id: req.params.id } });
+    if (!empresa) return res.status(404).json({ error: 'Empresa no encontrada.' });
+
+    const backUrl = process.env.APP_PUBLIC_URL || 'https://jesus1942.github.io/ActivaQr/';
+    const result = await crearStripeSubscripcion({
+      empresaId: empresa.id,
+      monto: montoNum,
+      moneda: moneda as 'usd' | 'uyu',
+      razon: `Suscripción ActivaQR — ${empresa.nombre}`,
+      backUrl,
+    });
+
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/admin/empresas/:id/stripe-link-pago — pago único vía Stripe (USD/UYU)
+router.post('/empresas/:id/stripe-link-pago', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!stripeConfigurado()) return res.status(503).json({ error: 'Stripe no está configurado. Falta la variable STRIPE_SECRET_KEY.' });
+
+    const { monto, moneda, descripcion } = req.body ?? {};
+    const montoNum = Number(monto);
+    if (!montoNum || montoNum <= 0) return res.status(400).json({ error: 'Indicá un monto válido.' });
+    if (!['usd', 'uyu'].includes(moneda)) return res.status(400).json({ error: 'Moneda inválida. Usá usd o uyu.' });
+
+    const empresa = await prisma.empresa.findUnique({ where: { id: req.params.id } });
+    if (!empresa) return res.status(404).json({ error: 'Empresa no encontrada.' });
+
+    const backUrl = process.env.APP_PUBLIC_URL || 'https://jesus1942.github.io/ActivaQr/';
+    const desc = descripcion || `Pago ActivaQR — ${empresa.nombre}`;
+    const result = await crearStripePagoUnico({ empresaId: empresa.id, monto: montoNum, moneda: moneda as 'usd' | 'uyu', descripcion: desc, backUrl });
+
+    res.json(result);
   } catch (err) {
     next(err);
   }
