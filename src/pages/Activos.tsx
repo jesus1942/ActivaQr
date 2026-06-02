@@ -74,6 +74,11 @@ export const Activos: React.FC = () => {
     intervaloRodamientoHoras: 500,
     proximoMantenimiento: format(new Date(), 'yyyy-MM-dd'),
     notas: '',
+    esItinerante: false,
+    locacionBase: '',
+    locacionActual: '',
+    fechaSalida: '',
+    fechaRetorno: '',
   };
 
   const [search, setSearch] = useState('');
@@ -384,6 +389,61 @@ export const Activos: React.FC = () => {
                   className="w-full border-2 border-slate-300 px-3 py-2 text-sm outline-none focus:border-orange-500"
                 />
               </div>
+
+              {/* Activo itinerante */}
+              <div className="sm:col-span-2">
+                <label className="flex items-center gap-3 cursor-pointer border-2 border-slate-200 px-4 py-3 hover:border-slate-400 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={!!form.esItinerante}
+                    onChange={(e) => setForm((prev) => ({ ...prev, esItinerante: e.target.checked }))}
+                    className="w-4 h-4 accent-orange-500 border-2 border-slate-800"
+                  />
+                  <span className="text-sm font-black uppercase tracking-wider text-slate-700">
+                    Activo itinerante (se traslada entre ubicaciones)
+                  </span>
+                </label>
+              </div>
+              {form.esItinerante && (
+                <>
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Locacion base (donde se guarda normalmente)</label>
+                    <input
+                      type="text"
+                      value={form.locacionBase ?? ''}
+                      onChange={(e) => setForm((prev) => ({ ...prev, locacionBase: e.target.value }))}
+                      className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Locacion actual</label>
+                    <input
+                      type="text"
+                      value={form.locacionActual ?? ''}
+                      onChange={(e) => setForm((prev) => ({ ...prev, locacionActual: e.target.value }))}
+                      className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Fecha de salida</label>
+                    <input
+                      type="date"
+                      value={form.fechaSalida ?? ''}
+                      onChange={(e) => setForm((prev) => ({ ...prev, fechaSalida: e.target.value }))}
+                      className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Fecha de retorno estimada</label>
+                    <input
+                      type="date"
+                      value={form.fechaRetorno ?? ''}
+                      onChange={(e) => setForm((prev) => ({ ...prev, fechaRetorno: e.target.value }))}
+                      className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
+                    />
+                  </div>
+                </>
+              )}
 
               {/* Parámetros de medición */}
               <ParametrosMedicion form={form} setForm={setForm} />
