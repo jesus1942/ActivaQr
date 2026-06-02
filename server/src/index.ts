@@ -52,6 +52,17 @@ app.use(cors({
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: 'Demasiados intentos. Intentá en 15 minutos.' } });
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/auth/reset-password', authLimiter);
+
+// Límite global generoso contra abuso automatizado (no afecta el uso normal).
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes. Esperá un momento.' },
+});
+app.use('/api/', apiLimiter);
 
 app.use(express.json({ limit: '10mb' }));
 
