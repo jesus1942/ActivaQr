@@ -10,6 +10,7 @@ import { Package, AlertTriangle, Wrench, ClipboardList } from 'lucide-react';
 import { useActivos } from '../hooks/useActivos';
 import { AlertBanner } from '../components/ui/AlertBanner';
 import { StatusBadge } from '../components/ui/StatusBadge';
+import { OnboardingTour } from '../components/OnboardingTour';
 
 export const Dashboard: React.FC = () => {
   const { activos, mediciones, tareas, getSectorNombre, getTecnicoNombre } = useActivos();
@@ -177,6 +178,7 @@ export const Dashboard: React.FC = () => {
           </table>
         </div>
       </div>
+      <OnboardingTour />
     </div>
   );
 };

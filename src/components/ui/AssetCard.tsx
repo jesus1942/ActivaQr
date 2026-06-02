@@ -44,8 +44,16 @@ export const AssetCard: React.FC<AssetCardProps> = ({ activo, lastMedicion, sect
           {sectorNombre}
         </span>
       </div>
-      <div className="mb-3">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <EstadoOperativoBadge estado={activo.estadoOperativo ?? 'operativo'} size="sm" />
+        {activo.esItinerante && (
+          <div className="flex items-center gap-1.5">
+            <span className="border-2 border-blue-400 text-blue-700 bg-blue-50 text-xs font-black uppercase px-1.5 py-0.5">ITINERANTE</span>
+            {activo.locacionActual && (
+              <span className="text-xs text-blue-600">En: {activo.locacionActual}</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Code & Name */}

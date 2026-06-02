@@ -71,6 +71,11 @@ export interface Activo {
   intervaloRodamientoHoras: number;
   proximoMantenimiento: string;
   notas: string;
+  esItinerante?: boolean;
+  locacionBase?: string | null;
+  locacionActual?: string | null;
+  fechaSalida?: string | null;
+  fechaRetorno?: string | null;
 }
 
 export interface Medicion {
