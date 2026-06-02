@@ -4,7 +4,7 @@ import { prisma } from '../prisma';
 import { resolveEmpresaId } from '../tenant';
 import { getLimite } from '../planLimits';
 import { auditar } from '../auditoria';
-import { AuthRequest } from '../auth';
+import { AuthRequest, requireAdmin } from '../auth';
 
 const router = Router();
 
@@ -246,8 +246,8 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// DELETE /api/activos/:id
-router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+// DELETE /api/activos/:id — solo admin (no operador)
+router.delete('/:id', requireAdmin as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
     const existing = await prisma.activo.findFirst({

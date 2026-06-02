@@ -95,3 +95,14 @@ export function requireSuperadmin(req: AuthRequest, res: Response, next: NextFun
   }
   next();
 }
+
+/**
+ * Middleware: exige rol admin (dueño de empresa) o superadmin.
+ * Las operaciones destructivas o de configuración quedan fuera del alcance del operador.
+ */
+export function requireAdmin(req: AuthRequest, res: Response, next: NextFunction) {
+  if (req.auth?.rol !== 'admin' && req.auth?.rol !== 'superadmin') {
+    return res.status(403).json({ error: 'Acción reservada al administrador de la empresa.' });
+  }
+  next();
+}

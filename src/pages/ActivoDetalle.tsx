@@ -15,10 +15,13 @@ import { ValueGauge } from '../components/ui/ValueGauge';
 import { DocumentosActivo } from '../components/DocumentosActivo';
 import { EstadoOperativo } from '../data/types';
 import { API_URL } from '../data/auth';
+import { useAuth } from '../context/AuthContext';
+import { puedeEliminarActivos } from '../data/permisos';
 
 export const ActivoDetalle: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { usuario } = useAuth();
   const {
     activos, mediciones, tareas,
     deleteActivo, deleteMedicion, updateActivo,
@@ -112,13 +115,15 @@ export const ActivoDetalle: React.FC = () => {
             <Pencil size={15} />
             Editar
           </button>
-          <button
-            onClick={handleDelete}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border-2 border-red-600 text-red-600 px-3 min-h-[44px] font-bold hover:bg-red-50 transition-colors"
-          >
-            <Trash2 size={15} />
-            Eliminar
-          </button>
+          {puedeEliminarActivos(usuario?.rol) && (
+            <button
+              onClick={handleDelete}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border-2 border-red-600 text-red-600 px-3 min-h-[44px] font-bold hover:bg-red-50 transition-colors"
+            >
+              <Trash2 size={15} />
+              Eliminar
+            </button>
+          )}
         </div>
       </div>
 
