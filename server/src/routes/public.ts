@@ -4,6 +4,7 @@
  */
 import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../prisma';
+import { aplicarVisibilidad } from '../visibilidad';
 
 const router = Router();
 
@@ -39,7 +40,7 @@ router.get('/activos/:id', async (req: Request, res: Response, next: NextFunctio
       });
     }
 
-    res.json(activo);
+    res.json(aplicarVisibilidad(activo));
   } catch (err) {
     next(err);
   }

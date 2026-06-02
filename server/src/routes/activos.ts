@@ -46,6 +46,7 @@ function pickActivoData(body: any) {
     intervaloRodamientoHoras,
     proximoMantenimiento,
     notas,
+    visibilidadPublica,
   } = body ?? {};
 
   const data: any = {
@@ -82,6 +83,10 @@ function pickActivoData(body: any) {
     intervaloRodamientoHoras,
     notas,
   };
+
+  if (visibilidadPublica !== undefined && visibilidadPublica !== null && typeof visibilidadPublica === 'object') {
+    data.visibilidadPublica = visibilidadPublica;
+  }
 
   // Estado operativo: solo persistir si es un valor válido.
   if (estadoOperativo !== undefined) {

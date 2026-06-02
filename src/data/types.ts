@@ -76,7 +76,42 @@ export interface Activo {
   locacionActual?: string | null;
   fechaSalida?: string | null;
   fechaRetorno?: string | null;
+  visibilidadPublica?: VisibilidadPublica | null;
 }
+
+export type ClaveVisibilidad =
+  | 'identidad'
+  | 'ubicacion'
+  | 'estado'
+  | 'parametros'
+  | 'mediciones'
+  | 'responsable'
+  | 'mantenimiento'
+  | 'notas';
+
+export type VisibilidadPublica = Record<ClaveVisibilidad, boolean>;
+
+export const VISIBILIDAD_DEFAULT: VisibilidadPublica = {
+  identidad: true,
+  ubicacion: true,
+  estado: true,
+  parametros: false,
+  mediciones: false,
+  responsable: false,
+  mantenimiento: false,
+  notas: true,
+};
+
+export const VISIBILIDAD_LABELS: Record<ClaveVisibilidad, string> = {
+  identidad: 'Identidad (codigo, nombre, marca, modelo, tipo)',
+  ubicacion: 'Ubicacion y sector',
+  estado: 'Estado del activo y operativo',
+  parametros: 'Parametros operativos (rangos)',
+  mediciones: 'Ultima medicion',
+  responsable: 'Responsable asignado',
+  mantenimiento: 'Proximo mantenimiento',
+  notas: 'Notas',
+};
 
 export interface Medicion {
   id: string;

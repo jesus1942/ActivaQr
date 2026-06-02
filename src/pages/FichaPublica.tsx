@@ -162,16 +162,20 @@ export const FichaPublica: React.FC = () => {
                 <p className="text-sm text-slate-500 mt-1">{activo.tipo.nombre}</p>
               )}
             </div>
-            <span className={`text-xs font-black uppercase px-2 py-1 border-2 whitespace-nowrap ${estadoColor}`}>
-              {activo.estado}
-            </span>
+            {activo.estado && (
+              <span className={`text-xs font-black uppercase px-2 py-1 border-2 whitespace-nowrap ${estadoColor}`}>
+                {activo.estado}
+              </span>
+            )}
           </div>
 
           {/* Estado operativo — visible para el visitante que escanea el QR */}
-          <div className="mb-4 -mt-1">
-            <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-1.5">Estado operativo</p>
-            <EstadoOperativoBadge estado={activo.estadoOperativo ?? 'operativo'} size="lg" />
-          </div>
+          {activo.estadoOperativo && (
+            <div className="mb-4 -mt-1">
+              <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-1.5">Estado operativo</p>
+              <EstadoOperativoBadge estado={activo.estadoOperativo} size="lg" />
+            </div>
+          )}
 
           <Fila label="Marca"     value={activo.marca} />
           <Fila label="Modelo"    value={activo.modelo} />
