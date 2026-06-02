@@ -10,6 +10,7 @@ import { requireAuth, requireSuperadmin, AuthRequest } from '../auth';
 import { enviarEmailAccesoRemoto } from '../email';
 import { calcularEstadoAutomatico, estadoMedicionAActivo } from '../alertas';
 import { enviarPushASuperadmin, enviarPushAEmpresa } from '../push';
+import { registrarAuditoria } from '../auditoria';
 
 const MAX_ADJUNTO = 8_000_000; // ~6MB en base64
 
@@ -238,6 +239,23 @@ router.post(
         await prisma.activo.update({ where: { id: activoId }, data: { estado: nuevoEstadoActivo } });
       }
 
+      void registrarAuditoria({
+        empresaId: req.params.id,
+        usuarioId: req.auth?.userId ?? null,
+        usuarioNombre: req.auth?.email ?? 'soporte',
+        usuarioRol: 'soporte_remoto',
+        accion: 'acceso_remoto',
+        entidad: 'medicion',
+        entidadId: medicion.id,
+        detalle: `Soporte registró medición remota en ${activo.codigo} (${estadoMedicion})`,
+      });
+      // Notificar al cliente que soporte intervino.
+      enviarPushAEmpresa(
+        req.params.id,
+        { title: 'Intervención de soporte', body: `Se registró una medición en ${activo.nombre}`, url: '#/activos/' + activo.id },
+        ['admin', 'operador'],
+      ).catch(() => {});
+
       res.status(201).json(medicion);
     } catch (err) { next(err); }
   }
@@ -259,6 +277,21 @@ router.post(
       const tarea = await prisma.tareaMantenimiento.create({
         data: { activoId, tipo, fechaProgramada: new Date(fechaProgramada), observaciones, estado: 'pendiente' },
       });
+      void registrarAuditoria({
+        empresaId: req.params.id,
+        usuarioId: req.auth?.userId ?? null,
+        usuarioNombre: req.auth?.email ?? 'soporte',
+        usuarioRol: 'soporte_remoto',
+        accion: 'acceso_remoto',
+        entidad: 'orden_trabajo',
+        entidadId: tarea.id,
+        detalle: `Soporte creó tarea remota: ${tipo}`,
+      });
+      enviarPushAEmpresa(
+        req.params.id,
+        { title: 'Intervención de soporte', body: `Se creó una tarea: ${tipo}`, url: '#/mantenimiento' },
+        ['admin', 'operador'],
+      ).catch(() => {});
       res.status(201).json(tarea);
     } catch (err) { next(err); }
   }

@@ -9,6 +9,25 @@ const router = Router();
 const TIPOS = ['manual', 'plano', 'ficha', 'certificado', 'protocolo', 'foto', 'otro'];
 const MAX_BYTES = 8_000_000; // ~6MB reales en base64
 
+// MIME types permitidos para adjuntos (data URLs). Bloquea ejecutables/HTML.
+const MIME_PERMITIDOS = [
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+];
+
+function urlPermitida(url: string): boolean {
+  // Links externos http(s) se permiten; data URLs deben tener un MIME de la allowlist.
+  if (/^https?:\/\//i.test(url)) return true;
+  const m = url.match(/^data:([^;,]+)[;,]/i);
+  return !!m && MIME_PERMITIDOS.includes(m[1].toLowerCase());
+}
+
 // GET /api/documentos?activoId=
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -39,6 +58,9 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     }
     if (typeof url === 'string' && url.length > MAX_BYTES) {
       return res.status(413).json({ error: 'El archivo supera el tamaño maximo (6MB).' });
+    }
+    if (typeof url !== 'string' || !urlPermitida(url)) {
+      return res.status(415).json({ error: 'Tipo de archivo no permitido. Solo PDF, imágenes, Word o Excel.' });
     }
 
     const activo = await prisma.activo.findFirst({ where: { id: activoId, empresaId } });
