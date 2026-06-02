@@ -54,7 +54,8 @@ export async function crearPreapproval(params: {
 
   const data = (await res.json()) as any;
   if (!res.ok) {
-    throw new Error(data?.message || 'No se pudo crear la suscripción en Mercado Pago.');
+    console.error('[MP crearPreapproval] error:', JSON.stringify(data));
+    throw new Error(data?.message || data?.cause?.[0]?.description || 'No se pudo crear la suscripción en Mercado Pago.');
   }
   return { id: data.id, init_point: data.init_point, status: data.status };
 }
