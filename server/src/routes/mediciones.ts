@@ -129,6 +129,29 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       await prisma.activo.update({ where: { id: activoId }, data });
     }
 
+    // Crear tarea de mantenimiento automática cuando el activo escala a crítico o alerta,
+    // pero solo si no hay ninguna tarea pendiente o vencida para ese activo.
+    if (nuevoEstado === 'critico' || nuevoEstado === 'alerta') {
+      const tareaExistente = await prisma.tareaMantenimiento.findFirst({
+        where: { activoId, estado: { in: ['pendiente', 'vencido'] } },
+      });
+      if (!tareaExistente) {
+        const tipoTarea = nuevoEstado === 'critico'
+          ? 'Revision urgente — estado critico'
+          : 'Revision — estado en alerta';
+        await prisma.tareaMantenimiento.create({
+          data: {
+            activoId,
+            tipo: tipoTarea,
+            fechaProgramada: new Date(),
+            estado: 'pendiente',
+            responsableId: activo.responsableId ?? null,
+            observaciones: `Generada automaticamente por medicion del ${new Date().toISOString().slice(0, 10)}`,
+          },
+        });
+      }
+    }
+
     // Notificar push cuando el activo escala a crítico o alerta.
     if (nuevoEstado === 'critico' || nuevoEstado === 'alerta') {
       enviarPushAEmpresa(
