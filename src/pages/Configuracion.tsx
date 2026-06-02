@@ -1329,6 +1329,18 @@ const SeccionAccesoRemoto: React.FC = () => {
           )}
         </div>
       )}
+
+      <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-5">
+        <h2 className="font-sketch text-xl font-black uppercase tracking-wide text-slate-900 mb-3">Guia de inicio</h2>
+        <p className="text-sm text-slate-500 mb-4">Revive el tour de bienvenida que aparece al usar la app por primera vez.</p>
+        <button
+          onClick={() => { localStorage.removeItem('activaqr_tour_done'); window.location.reload(); }}
+          className="flex items-center gap-2 bg-white text-slate-700 px-4 py-2 font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] transition-all text-sm"
+        >
+          <RotateCcw size={15} />
+          Reactivar guia de inicio
+        </button>
+      </div>
     </div>
   );
 };
