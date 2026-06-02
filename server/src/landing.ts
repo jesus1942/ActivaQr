@@ -43,6 +43,21 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   nav .btn:hover{box-shadow:4px 4px 0 var(--naranja)}
   @media(max-width:720px){nav .links a.nav-link{display:none}}
 
+  /* ROADMAP */
+  .roadmap{background:#fff;border-top:3px solid var(--negro);border-bottom:3px solid var(--negro)}
+  .roadmap .fase{display:flex;gap:0;flex-direction:column}
+  .roadmap .fase-item{display:flex;gap:20px;padding:22px 0;border-bottom:2px solid #e2e8f0;align-items:flex-start}
+  .roadmap .fase-item:last-child{border-bottom:none}
+  .roadmap .fase-badge{flex-shrink:0;background:var(--negro);color:var(--naranja);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;padding:6px 12px;border:2px solid var(--negro);white-space:nowrap;margin-top:3px}
+  .roadmap .fase-badge.activo{background:var(--naranja);color:#fff;border-color:var(--negro)}
+  .roadmap .fase-badge.proximo{background:#fff;color:var(--negro);border-color:var(--negro)}
+  .roadmap .fase-badge.futuro{background:#f1f5f9;color:var(--gris);border-color:#cbd5e1}
+  .roadmap .fase-content h3{font-size:17px;margin-bottom:5px}
+  .roadmap .fase-content p{color:var(--gris);font-size:15px;line-height:1.6}
+  .capital-banner{background:var(--negro);color:#fff;padding:48px 0;border-top:3px solid var(--negro);border-bottom:3px solid var(--negro);text-align:center}
+  .capital-banner h2{font-size:clamp(22px,4vw,36px);color:#fff;margin-bottom:14px}
+  .capital-banner p{color:#94a3b8;font-size:16px;max-width:680px;margin:0 auto}
+
   /* HERO */
   .hero{padding:72px 0 56px;border-bottom:3px solid var(--negro)}
   .hero .tag{display:inline-block;background:#fff7ed;border:2px solid var(--naranja);color:#ea580c;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:6px 12px;margin-bottom:20px}
@@ -125,6 +140,7 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
       <a class="nav-link" href="#features">Funciones</a>
       <a class="nav-link" href="#categorias">Rubros</a>
       <a class="nav-link" href="#historia">Historia</a>
+      <a class="nav-link" href="#vision">Vision</a>
       <a class="nav-link" href="#planes">Planes</a>
       <a class="btn btn-naranja" href="${appUrl}" target="_blank" rel="noopener">Ingresar</a>
     </div>
@@ -246,6 +262,63 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
       <p style="margin:0 0 18px;">No vengo de una gran empresa de software. Soy autodidacta: aprend&iacute; a programar resolviendo problemas concretos de la vida cotidiana, esos que uno vive todos los d&iacute;as y que nadie termina de solucionar bien.</p>
       <p style="margin:0 0 18px;">ActivaQR empez&oacute; con una idea simple que surgi&oacute; en casa: proteger los equipos con los que trabajo a diario. Saber en qu&eacute; estado est&aacute;n, cu&aacute;ndo necesitan mantenimiento, y poder identificarlos al instante con solo escanear un c&oacute;digo. Que cualquiera que pase al lado de una m&aacute;quina sepa qu&eacute; es y c&oacute;mo est&aacute;, sin papeles ni planillas perdidas.</p>
       <p style="margin:0;">De esa necesidad real, entre el taller y el teclado, naci&oacute; esta plataforma. Hoy la comparto con vos porque creo que el mismo problema que ten&iacute;a yo, lo tienen muchos.</p>
+    </div>
+  </div>
+</section>
+
+<section class="capital-banner">
+  <div class="wrap">
+    <h2>Los activos son capital. No solo equipos.</h2>
+    <p>Cada máquina, vehículo o herramienta que usás en tu operación representa una inversión. Cuidarlos, medirlos y trazarlos no es un gasto: es proteger el capital de tu empresa y la continuidad del negocio. Lo mismo que hacés con tu equipo humano, tenés que hacerlo con tu capital físico.</p>
+  </div>
+</section>
+
+<section id="vision" class="roadmap">
+  <div class="wrap">
+    <h2 class="titulo">Hacia donde vamos</h2>
+    <p class="bajada">Lo que ves hoy es la base. Esto es lo que se viene: más automatización, más alcance, menos intervención humana para lo rutinario.</p>
+    <div class="fase">
+
+      <div class="fase-item">
+        <span class="fase-badge activo">Hoy disponible</span>
+        <div class="fase-content">
+          <h3>Gestion completa de activos con QR</h3>
+          <p>Ficha pública por QR sin login, mediciones con alertas automáticas, mantenimientos preventivos, soporte remoto con chat de fotos y audio, reportes en PDF y exportación CSV. Multi-empresa, multi-sede, multi-técnico.</p>
+        </div>
+      </div>
+
+      <div class="fase-item">
+        <span class="fase-badge proximo">Proximo</span>
+        <div class="fase-content">
+          <h3>Seguimiento GPS para activos moviles</h3>
+          <p>Flotas de vehículos, maquinaria vial, embarcaciones y equipos de campo. El técnico responsable queda inscripto en el activo antes de salir. Historial de recorrido, alertas por zona y velocidad. Conectividad celular en zonas urbanas e industriales.</p>
+        </div>
+      </div>
+
+      <div class="fase-item">
+        <span class="fase-badge proximo">Proximo</span>
+        <div class="fase-content">
+          <h3>Integracion con sensores IoT</h3>
+          <p>Mediciones automáticas sin intervención humana. Dispositivos de bajo costo conectados al activo que mandan temperatura, vibración y amperaje al sistema cada pocos segundos. Sin depender de que alguien lo registre manualmente.</p>
+        </div>
+      </div>
+
+      <div class="fase-item">
+        <span class="fase-badge futuro">En el horizonte</span>
+        <div class="fase-content">
+          <h3>Cobertura en zonas sin señal — Starlink</h3>
+          <p>Para operaciones en campo abierto, cuencas petroleras, obra vial en ruta y embarcaciones. Integración con antenas Starlink itinerantes para garantizar que ningún activo quede fuera de monitoreo, sin importar dónde esté.</p>
+        </div>
+      </div>
+
+      <div class="fase-item">
+        <span class="fase-badge futuro">En el horizonte</span>
+        <div class="fase-content">
+          <h3>Mantenimiento predictivo con analisis de tendencias</h3>
+          <p>Cuando acumulás suficiente historia de mediciones, el sistema empieza a ver patrones. Una temperatura que sube 2 grados por semana durante un mes no es normal. La alerta llega antes de que falle, no después.</p>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
