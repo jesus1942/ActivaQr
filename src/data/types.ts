@@ -135,10 +135,16 @@ export interface Medicion {
 export interface TareaMantenimiento {
   id: string;
   activoId: string;
+  numero?: number | null;
   tipo: string;
+  prioridad?: 'baja' | 'media' | 'alta';
   fechaProgramada: string;
   fechaRealizada?: string;
   estado: 'pendiente' | 'completado' | 'vencido';
   responsableId: string;
   observaciones: string;
+  materiales?: string | null;
+  horasTrabajo?: number | null;
+  cerradaPor?: string | null;
+  fotos?: string[] | null;
 }
