@@ -1050,7 +1050,7 @@ const SeccionTelegram: React.FC = () => {
     }
   };
 
-  const BOT_NAME = import.meta.env.VITE_TELEGRAM_BOT_NAME || 'ActivaQRBot';
+  const BOT_NAME = import.meta.env.VITE_TELEGRAM_BOT_NAME || 'activaqr_bot';
 
   return (
     <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_#1e293b] p-5 mb-6">
