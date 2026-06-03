@@ -228,8 +228,9 @@ export const Login: React.FC = () => {
             <div className="mt-4 border-t-2 border-slate-200 pt-4">
               {forgotExito ? (
                 <div className="space-y-2">
-                  <div className="bg-green-50 border-2 border-green-300 text-green-700 text-sm px-3 py-2 font-semibold">
-                    Revisa tu email, te enviamos las instrucciones.
+                  <div className="bg-green-50 border-2 border-green-300 text-green-700 text-sm px-3 py-3 font-semibold space-y-1">
+                    <p>Solicitud recibida.</p>
+                    <p className="font-normal text-xs">Si tenés Telegram configurado, te llega el link ahí en segundos. Si no, te avisamos por otro medio.</p>
                   </div>
                   <button onClick={() => { setVistaForgot(false); setForgotExito(false); }} className="text-xs text-slate-500 underline hover:text-orange-500">
                     Volver al login
