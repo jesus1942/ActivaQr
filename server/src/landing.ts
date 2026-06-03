@@ -173,8 +173,8 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
     <h1>Detectá las fallas<br>antes de que <span class="o">paren tu producción</span>.</h1>
     <p class="sub">Pegás un QR en cada equipo y convertís el mantenimiento en datos. Anticipás roturas, reducís costos de reparación y aumentás la disponibilidad de tu planta. Todo desde el celular, sin instalar nada.</p>
     <div class="acciones">
-      <a class="btn btn-naranja" href="#contacto">Quiero suscribirme</a>
-      <a class="btn btn-blanco" href="${appUrl}" target="_blank" rel="noopener">Ver la app</a>
+      <a class="btn btn-naranja" href="${appUrl}#/login?registro=1" target="_blank" rel="noopener">Probar gratis 14 días</a>
+      <a class="btn btn-blanco" href="#contacto">Quiero suscribirme</a>
     </div>
   </div>
   <div class="scroll-hint" id="scrollHint">

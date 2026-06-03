@@ -5,6 +5,7 @@ import { Sidebar } from './Sidebar';
 import { PantallaCarga } from '../PantallaCarga';
 import { useCargaRemota } from '../../hooks/useStorage';
 import { DemoBanner } from '../ui/DemoBanner';
+import { TrialBanner } from '../TrialUI';
 
 export const Layout: React.FC = () => {
   const cargando = useCargaRemota();
@@ -17,6 +18,7 @@ export const Layout: React.FC = () => {
       <main className="flex-1 overflow-y-auto">
         {/* Spacer for mobile fixed header (incluye safe-area de la barra de estado) */}
         <div className="md:hidden h-safe-header" />
+        <TrialBanner />
         <div className="p-4 md:p-8 min-h-full">
           <Outlet />
         </div>

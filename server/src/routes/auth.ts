@@ -5,8 +5,100 @@ import { prisma } from '../prisma';
 import { firmarToken, requireAuth, AuthRequest, DEMO_TOKEN_TTL } from '../auth';
 import { enviarEmailResetPassword } from '../email';
 import { registrarAuditoria } from '../auditoria';
+import { faseTrial } from '../trial';
 
 const router = Router();
+
+const TRIAL_DIAS = 14;
+const TRIAL_LECTURA_DIAS = 14; // 14 días más de solo-lectura tras vencer
+
+// POST /api/auth/registro — alta autogestionada con free trial de 14 días
+router.post('/registro', async (req, res: Response, next: NextFunction) => {
+  try {
+    const { empresaNombre, nombre, email, password, telefono } = req.body ?? {};
+    if (!empresaNombre || !nombre || !email || !password) {
+      return res.status(400).json({ error: 'Faltan datos: empresa, nombre, email y contraseña.' });
+    }
+    if (String(password).length < 8) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres.' });
+    }
+    const emailNorm = String(email).toLowerCase().trim();
+    const existente = await prisma.usuario.findUnique({ where: { email: emailNorm } });
+    if (existente) {
+      return res.status(409).json({ error: 'Ya existe una cuenta con ese email. Iniciá sesión.' });
+    }
+
+    const ahora = new Date();
+    const trialFin = new Date(ahora.getTime() + TRIAL_DIAS * 24 * 60 * 60 * 1000);
+    const trialLecturaFin = new Date(trialFin.getTime() + TRIAL_LECTURA_DIAS * 24 * 60 * 60 * 1000);
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const empresa = await prisma.empresa.create({
+      data: {
+        nombre: String(empresaNombre).trim(),
+        plan: 'inicial',
+        estado: 'activa',
+        esTrial: true,
+        trialFin,
+        trialLecturaFin,
+        usuarios: {
+          create: {
+            nombre: String(nombre).trim(),
+            email: emailNorm,
+            telefono: telefono ? String(telefono).trim() : null,
+            passwordHash,
+            rol: 'admin',
+            activo: true,
+          },
+        },
+      },
+      include: { usuarios: true },
+    });
+
+    const usuario = empresa.usuarios[0];
+    void registrarAuditoria({
+      empresaId: empresa.id,
+      usuarioId: usuario.id,
+      usuarioNombre: usuario.email,
+      usuarioRol: usuario.rol,
+      accion: 'crear',
+      entidad: 'empresa',
+      entidadId: empresa.id,
+      detalle: 'alta trial autogestionada',
+    });
+
+    const token = firmarToken({
+      userId: usuario.id,
+      email: usuario.email,
+      rol: usuario.rol,
+      empresaId: empresa.id,
+    });
+
+    res.status(201).json({
+      token,
+      usuario: {
+        id: usuario.id,
+        nombre: usuario.nombre,
+        email: usuario.email,
+        rol: usuario.rol,
+        empresaId: empresa.id,
+        empresa: {
+          id: empresa.id,
+          nombre: empresa.nombre,
+          logoUrl: empresa.logoUrl,
+          plan: empresa.plan,
+          estado: empresa.estado,
+          esTrial: true,
+          trialFin: empresa.trialFin,
+          trialLecturaFin: empresa.trialLecturaFin,
+          fase: 'activo',
+        },
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
 
 // POST /api/auth/login
 router.post('/login', async (req, res: Response, next: NextFunction) => {
@@ -72,7 +164,17 @@ router.post('/login', async (req, res: Response, next: NextFunction) => {
         rol: usuario.rol,
         empresaId: usuario.empresaId,
         empresa: usuario.empresa
-          ? { id: usuario.empresa.id, nombre: usuario.empresa.nombre, logoUrl: usuario.empresa.logoUrl, plan: usuario.empresa.plan }
+          ? {
+              id: usuario.empresa.id,
+              nombre: usuario.empresa.nombre,
+              logoUrl: usuario.empresa.logoUrl,
+              plan: usuario.empresa.plan,
+              estado: usuario.empresa.estado,
+              esTrial: usuario.empresa.esTrial,
+              trialFin: usuario.empresa.trialFin,
+              trialLecturaFin: usuario.empresa.trialLecturaFin,
+              fase: faseTrial(usuario.empresa),
+            }
           : null,
       },
     });
@@ -96,7 +198,18 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: Response, next: Nex
       rol: usuario.rol,
       empresaId: usuario.empresaId,
       empresa: usuario.empresa
-        ? { id: usuario.empresa.id, nombre: usuario.empresa.nombre, logoUrl: usuario.empresa.logoUrl, estado: usuario.empresa.estado, plan: usuario.empresa.plan, mpEstadoSub: usuario.empresa.mpEstadoSub ?? null }
+        ? {
+            id: usuario.empresa.id,
+            nombre: usuario.empresa.nombre,
+            logoUrl: usuario.empresa.logoUrl,
+            estado: usuario.empresa.estado,
+            plan: usuario.empresa.plan,
+            mpEstadoSub: usuario.empresa.mpEstadoSub ?? null,
+            esTrial: usuario.empresa.esTrial,
+            trialFin: usuario.empresa.trialFin,
+            trialLecturaFin: usuario.empresa.trialLecturaFin,
+            fase: faseTrial(usuario.empresa),
+          }
         : null,
     });
   } catch (err) {

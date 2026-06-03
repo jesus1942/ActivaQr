@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma } from './prisma';
+import { faseTrial } from './trial';
 
 const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? (() => { throw new Error('JWT_SECRET is required in production'); })() : 'activaqr-dev-secret-local');
 export const TOKEN_TTL = '7d';
@@ -73,7 +74,10 @@ export function requireAuthAndActiveEmpresa(
 
   // Verificar estado de la empresa en DB (sin caché, tiempo real).
   prisma.empresa
-    .findUnique({ where: { id: payload.empresaId }, select: { estado: true } })
+    .findUnique({
+      where: { id: payload.empresaId },
+      select: { estado: true, esTrial: true, trialFin: true, trialLecturaFin: true },
+    })
     .then((empresa) => {
       if (!empresa || empresa.estado === 'suspendida') {
         return res.status(403).json({
@@ -81,6 +85,22 @@ export function requireAuthAndActiveEmpresa(
           error: 'Tu suscripción está suspendida. Contactá al administrador.',
         });
       }
+
+      // Fases del trial autogestionado.
+      const fase = faseTrial(empresa);
+      if (fase === 'vencido') {
+        return res.status(403).json({
+          code: 'trial_vencido',
+          error: 'Tu período de prueba terminó. Suscribite para seguir usando ActivaQR.',
+        });
+      }
+      if (fase === 'lectura' && req.method !== 'GET' && req.method !== 'HEAD') {
+        return res.status(403).json({
+          code: 'trial_lectura',
+          error: 'Tu prueba está en modo solo lectura. Suscribite para volver a cargar datos.',
+        });
+      }
+
       next();
     })
     .catch(next);

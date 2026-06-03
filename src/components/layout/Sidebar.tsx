@@ -17,6 +17,7 @@ import {
   MessageSquare,
   BarChart3,
   ScrollText,
+  LineChart,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getNotificacionesCliente } from '../../data/accesoRemotoApi';
@@ -40,6 +41,7 @@ const navEmpresa = [
 
 const navSuperadmin = [
   { to: '/', icon: Building2, label: 'Empresas' },
+  { to: '/analitica', icon: LineChart, label: 'Analítica' },
   { to: '/mensajes', icon: MessageSquare, label: 'Mensajes' },
 ];
 
