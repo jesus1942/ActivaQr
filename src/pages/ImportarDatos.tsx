@@ -1,6 +1,6 @@
 // v1.1.0
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Upload, FileText, CheckCircle, AlertTriangle, Download } from 'lucide-react';
 import { useActivos } from '../hooks/useActivos';
 import { format } from 'date-fns';
 
@@ -136,6 +136,22 @@ export const ImportarDatos: React.FC = () => {
 MOT-XXX-001,Motor de Ejemplo,motor,Planta,WEG,W22 5CV,Juan García,Sector B
 COM-XXX-001,Compresor Ejemplo,compresor,Taller,Schulz,CSL 10,Pedro López,Taller Norte`;
 
+  const descargarPlantilla = () => {
+    const filas = [
+      'codigo,nombre,tipo,sector,marca,modelo,responsable,ubicacion',
+      'MOT-001,Motor Principal,motor,Planta,WEG,W22 5CV,Juan García,Sector A',
+      'COM-001,Compresor Norte,compresor,Taller,Schulz,CSL 10,Pedro López,Taller Norte',
+      'BOM-001,Bomba Hidráulica,bomba,Planta,Grundfos,CM 5,María Torres,Sala de Bombas',
+    ].join('\n');
+    const blob = new Blob([filas], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'plantilla_activos.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div>
       <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 uppercase tracking-tight mb-2">Importar Datos</h1>
@@ -184,9 +200,18 @@ COM-XXX-001,Compresor Ejemplo,compresor,Taller,Schulz,CSL 10,Pedro López,Taller
 
       {/* CSV Format instructions */}
       <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4 mb-6">
-        <div className="flex items-center gap-2 mb-3">
-          <FileText size={16} className="text-slate-600" />
-          <h2 className="text-sm font-black uppercase tracking-wider text-slate-700">Formato del Archivo CSV</h2>
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2">
+            <FileText size={16} className="text-slate-600" />
+            <h2 className="text-sm font-black uppercase tracking-wider text-slate-700">Formato del Archivo CSV</h2>
+          </div>
+          <button
+            onClick={descargarPlantilla}
+            className="flex items-center gap-2 bg-slate-900 text-white px-3 py-1.5 text-xs font-bold border-2 border-slate-900 shadow-[3px_3px_0px_0px_#f97316] hover:bg-slate-700 transition-colors"
+          >
+            <Download size={13} />
+            Descargar plantilla
+          </button>
         </div>
         <p className="text-sm text-slate-600 mb-3">El archivo debe tener las siguientes columnas (separadas por comas):</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
