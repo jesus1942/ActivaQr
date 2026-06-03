@@ -374,6 +374,7 @@ router.get('/estadisticas', async (_req: AuthRequest, res: Response, next: NextF
       fichasSemana,
       fichasTotal,
       topGrupos,
+      topCiudadesRaw,
     ] = await Promise.all([
       prisma.visita.count({ where: { tipo: 'landing', creadoEn: { gte: hace24h } } }),
       prisma.visita.count({ where: { tipo: 'landing', creadoEn: { gte: hace7d } } }),
@@ -386,6 +387,13 @@ router.get('/estadisticas', async (_req: AuthRequest, res: Response, next: NextF
         where: { tipo: 'ficha', activoId: { not: null } },
         _count: { activoId: true },
         orderBy: { _count: { activoId: 'desc' } },
+        take: 10,
+      }),
+      prisma.visita.groupBy({
+        by: ['ciudad', 'pais'],
+        where: { ciudad: { not: null } },
+        _count: { ciudad: true },
+        orderBy: { _count: { ciudad: 'desc' } },
         take: 10,
       }),
     ]);
@@ -416,6 +424,23 @@ router.get('/estadisticas', async (_req: AuthRequest, res: Response, next: NextF
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
 
+    const topCiudades = topCiudadesRaw
+      .filter((c) => c.ciudad)
+      .map((c) => ({ ciudad: c.ciudad!, pais: c.pais ?? '', visitas: c._count.ciudad }));
+
+    // Detectar dispositivos desde userAgent de todas las visitas recientes
+    const visitasUa = await prisma.visita.findMany({
+      where: { userAgent: { not: null } },
+      select: { userAgent: true },
+    });
+    const dispositivos = { mobile: 0, tablet: 0, desktop: 0 };
+    visitasUa.forEach(({ userAgent }) => {
+      const ua = userAgent?.toLowerCase() ?? '';
+      if (/tablet|ipad/.test(ua)) dispositivos.tablet++;
+      else if (/mobile|android|iphone/.test(ua)) dispositivos.mobile++;
+      else dispositivos.desktop++;
+    });
+
     res.json({
       landingHoy,
       landingSemana,
@@ -424,6 +449,8 @@ router.get('/estadisticas', async (_req: AuthRequest, res: Response, next: NextF
       fichasSemana,
       fichasTotal,
       topFichas,
+      topCiudades,
+      dispositivos,
     });
   } catch (err) {
     next(err);

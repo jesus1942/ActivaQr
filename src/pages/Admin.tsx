@@ -21,6 +21,10 @@ import {
   Download,
   Search,
   AlertTriangle,
+  MapPin,
+  Smartphone,
+  Monitor,
+  Tablet,
 } from 'lucide-react';
 import { exportarCsv } from '../utils/exportCsv';
 import {
@@ -1282,6 +1286,45 @@ const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReiniciar: () 
           </div>
         )}
       </div>
+
+      {estadisticas.topCiudades?.length > 0 && (
+        <div>
+          <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+            <MapPin size={14} /> Ciudades de origen
+          </p>
+          <div className="space-y-1.5">
+            {estadisticas.topCiudades.map((c) => (
+              <div key={c.ciudad} className="flex items-center justify-between gap-2 bg-white border-2 border-slate-200 px-3 py-1.5">
+                <span className="text-sm font-semibold text-slate-800">{c.ciudad} <span className="text-slate-400 font-normal text-xs">{c.pais}</span></span>
+                <span className="font-black text-slate-900 text-sm">{c.visitas}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {estadisticas.dispositivos && (
+        <div>
+          <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Dispositivos</p>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-white border-2 border-slate-900 shadow-[2px_2px_0px_0px_#1e293b] p-2.5 flex flex-col items-center gap-1">
+              <Smartphone size={16} className="text-orange-500" />
+              <span className="font-black text-xl text-slate-900">{estadisticas.dispositivos.mobile}</span>
+              <span className="text-[10px] font-black uppercase text-slate-500">Celular</span>
+            </div>
+            <div className="bg-white border-2 border-slate-900 shadow-[2px_2px_0px_0px_#1e293b] p-2.5 flex flex-col items-center gap-1">
+              <Monitor size={16} className="text-orange-500" />
+              <span className="font-black text-xl text-slate-900">{estadisticas.dispositivos.desktop}</span>
+              <span className="text-[10px] font-black uppercase text-slate-500">Desktop</span>
+            </div>
+            <div className="bg-white border-2 border-slate-900 shadow-[2px_2px_0px_0px_#1e293b] p-2.5 flex flex-col items-center gap-1">
+              <Tablet size={16} className="text-orange-500" />
+              <span className="font-black text-xl text-slate-900">{estadisticas.dispositivos.tablet}</span>
+              <span className="text-[10px] font-black uppercase text-slate-500">Tablet</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

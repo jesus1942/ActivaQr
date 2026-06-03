@@ -126,6 +126,8 @@ export interface Estadisticas {
   fichasSemana: number;
   fichasTotal: number;
   topFichas: { activoId: string; nombre: string; codigo: string; empresa: string; visitas: number }[];
+  topCiudades: { ciudad: string; pais: string; visitas: number }[];
+  dispositivos: { mobile: number; tablet: number; desktop: number };
 }
 
 export async function getEstadisticas(): Promise<Estadisticas> {

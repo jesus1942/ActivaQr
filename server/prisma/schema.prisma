@@ -389,6 +389,8 @@ model Visita {
   referer   String?
   userAgent String?  @db.Text
   pais      String?
+  ciudad    String?
+  ip        String?
   creadoEn  DateTime @default(now())
 
   @@index([tipo])
