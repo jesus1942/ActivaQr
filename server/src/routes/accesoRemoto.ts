@@ -504,4 +504,62 @@ router.post(
   }
 );
 
+// GET /api/admin/empresas/:id/personal-remoto — técnicos y usuarios de la empresa
+router.get(
+  '/empresas/:id/personal-remoto',
+  requireAuth, requireSuperadmin,
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const p = await prisma.permisoAccesoRemoto.findUnique({ where: { empresaId: req.params.id } });
+      if (!p || p.estado !== 'activo') return res.status(403).json({ error: 'Sin permiso activo.' });
+
+      // Técnicos (modelo Tecnico — los que hacen mediciones en campo)
+      const tecnicos = await prisma.tecnico.findMany({
+        where: { empresaId: req.params.id },
+        select: {
+          id: true, nombre: true, rol: true, email: true, telefono: true, activo: true,
+          _count: { select: { mediciones: true, tareas: true } },
+        },
+        orderBy: { nombre: 'asc' },
+      });
+
+      // Usuarios (login — admins y operadores)
+      const usuarios = await prisma.usuario.findMany({
+        where: { empresaId: req.params.id },
+        select: {
+          id: true, nombre: true, rol: true, email: true, activo: true, ultimoAcceso: true,
+          // nunca exponer: passwordHash, resetToken, resetTokenExpiry
+        },
+        orderBy: { nombre: 'asc' },
+      });
+
+      res.json({ tecnicos, usuarios });
+    } catch (err) { next(err); }
+  }
+);
+
+// GET /api/admin/empresas/:id/actividad-remoto — registro de auditoría reciente
+router.get(
+  '/empresas/:id/actividad-remoto',
+  requireAuth, requireSuperadmin,
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const p = await prisma.permisoAccesoRemoto.findUnique({ where: { empresaId: req.params.id } });
+      if (!p || p.estado !== 'activo') return res.status(403).json({ error: 'Sin permiso activo.' });
+
+      const registros = await prisma.registroAuditoria.findMany({
+        where: { empresaId: req.params.id },
+        orderBy: { creadoEn: 'desc' },
+        take: 60,
+        select: {
+          id: true, accion: true, entidad: true, entidadId: true,
+          detalle: true, usuarioNombre: true, creadoEn: true,
+        },
+      });
+
+      res.json(registros);
+    } catch (err) { next(err); }
+  }
+);
+
 export default router;

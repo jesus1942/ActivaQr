@@ -104,6 +104,31 @@ export async function crearMedicionRemota(
   }));
 }
 
+export interface PersonalRemoto {
+  tecnicos: {
+    id: string; nombre: string; rol: string; email: string | null;
+    telefono: string | null; activo: boolean;
+    _count: { mediciones: number; tareas: number };
+  }[];
+  usuarios: {
+    id: string; nombre: string; rol: string; email: string;
+    activo: boolean; ultimoAcceso: string | null;
+  }[];
+}
+
+export interface ActividadRemoto {
+  id: string; accion: string; entidad: string; entidadId: string | null;
+  detalle: string | null; usuarioNombre: string | null; creadoEn: string;
+}
+
+export async function getPersonalRemoto(empresaId: string): Promise<PersonalRemoto> {
+  return parse(await apiFetch(`admin/empresas/${empresaId}/personal-remoto`));
+}
+
+export async function getActividadRemoto(empresaId: string): Promise<ActividadRemoto[]> {
+  return parse(await apiFetch(`admin/empresas/${empresaId}/actividad-remoto`));
+}
+
 // ── Cliente ───────────────────────────────────────────────────────────────────
 
 export async function getSolicitudCliente(): Promise<PermisoAcceso | null> {
