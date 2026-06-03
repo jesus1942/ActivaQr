@@ -18,6 +18,7 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ActivaQR — Gestión de activos industriales con QR</title>
 <meta name="description" content="Convertí cada máquina de tu planta en un nodo inteligente. Ficha pública por QR, alertas automáticas, soporte remoto. Sin papel, sin excusas." />
+<link rel="icon" type="image/png" href="https://jesus1942.github.io/ActivaQr/favicon.png" />
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   :root{--naranja:#f97316;--negro:#0f172a;--gris:#475569;--gris-c:#94a3b8;--fondo:#f1f5f9}
@@ -153,7 +154,7 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
 
 <nav>
   <div class="wrap">
-    <span class="brand">ActivaQR</span>
+    <a class="brand" href="#" style="text-decoration:none">ActivaQR</a>
     <div class="links">
       <a class="nav-link" href="#features">Funciones</a>
       <a class="nav-link" href="#casos">Casos de uso</a>
