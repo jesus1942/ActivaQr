@@ -111,7 +111,7 @@ export function SplashScreen({ onDone }: { onDone: () => void }) {
 
       // Bloque título con sombra dorada (brutalista)
       const boxW = Math.min(w - 48, 320);
-      const boxH = 110;
+      const boxH = 130;
       const boxX = cx - boxW / 2;
       const boxY = cy - boxH / 2 + h * 0.06;
 
@@ -136,7 +136,15 @@ export function SplashScreen({ onDone }: { onDone: () => void }) {
       // Subtítulo
       ctx.font = `700 ${Math.min(13, boxW * 0.042)}px Arial, sans-serif`;
       ctx.fillStyle = 'rgba(255,255,255,0.75)';
-      ctx.fillText('ACTIVOS BAJO CONTROL', cx, boxY + boxH * 0.72);
+      ctx.fillText('ACTIVOS BAJO CONTROL', cx, boxY + boxH * 0.62);
+
+      // Vamos Argentina
+      ctx.font = `900 ${Math.min(17, boxW * 0.055)}px 'Arial Black', Arial, sans-serif`;
+      ctx.fillStyle = '#74c9ff';
+      ctx.shadowColor = 'rgba(0,0,0,0.5)';
+      ctx.shadowBlur = 6;
+      ctx.fillText('VAMOS ARGENTINA', cx, boxY + boxH * 0.88);
+      ctx.shadowBlur = 0;
 
       // Barra de carga
       const barW = boxW;
