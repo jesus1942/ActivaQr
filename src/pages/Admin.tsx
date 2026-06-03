@@ -579,12 +579,14 @@ export const Admin: React.FC = () => {
       const { permiso: nuevo, linkAprobacion, emailEnviado } = await solicitarAccesoRemoto(emp.id, costo);
       setPermisos((prev) => ({ ...prev, [emp.id]: nuevo }));
 
-      const msgRemoto = `Hola! Te enviamos una solicitud de acceso remoto de soporte desde *ActivaQR*.\nAprobá el acceso desde este link:\n\n${linkAprobacion}`;
+      const msgRemoto = `Hola! Te enviamos una solicitud de acceso remoto de soporte desde *ActivaQR*.\nAprobá el acceso desde este link:\n\n${linkAprobacion}\n\nTambién podés aprobarlo directamente desde la sección *Mensajes* en la app.`;
 
+      const telefonoCliente = emp.usuarios[0]?.telefono ?? undefined;
       setModalWa({
         titulo: 'Enviar solicitud por WhatsApp',
         nombreEmpresa: emp.nombre,
         mensaje: msgRemoto,
+        numeroPreset: telefonoCliente,
         onDone: (waAbierto) => {
           setModalWa(null);
           setResultadoRemoto({ empresaNombre: emp.nombre, link: linkAprobacion, emailEnviado, waAbierto });
@@ -781,6 +783,9 @@ export const Admin: React.FC = () => {
                 {emp.usuarios[0] && (
                   <p className="text-xs text-slate-500 mt-1 font-mono truncate">
                     {emp.usuarios[0].email}
+                    {emp.usuarios[0].telefono && (
+                      <span className="ml-2 text-slate-400">· {emp.usuarios[0].telefono}</span>
+                    )}
                   </p>
                 )}
 
@@ -972,6 +977,7 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
     adminNombre: '',
     adminEmail: '',
     adminPassword: '',
+    adminTelefono: '',
   });
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
@@ -1049,6 +1055,15 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
                 required
                 value={form.adminPassword}
                 onChange={(e) => set('adminPassword', e.target.value)}
+                className="campo font-mono"
+              />
+            </Campo>
+            <Campo label="Telefono (WhatsApp)">
+              <input
+                type="tel"
+                value={form.adminTelefono}
+                onChange={(e) => set('adminTelefono', e.target.value)}
+                placeholder="Ej: 2995012345 (sin 0, sin 15)"
                 className="campo font-mono"
               />
             </Campo>

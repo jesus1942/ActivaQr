@@ -13,7 +13,7 @@ export interface EmpresaAdmin {
   mpMonto?: number | null;
   mpUltimoPago?: string | null;
   _count: { activos: number; usuarios: number };
-  usuarios: { id: string; nombre: string; email: string; activo: boolean; ultimoAcceso: string | null }[];
+  usuarios: { id: string; nombre: string; email: string; telefono: string | null; activo: boolean; ultimoAcceso: string | null }[];
 }
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
@@ -35,6 +35,7 @@ export async function crearEmpresa(payload: {
   adminNombre?: string;
   adminEmail: string;
   adminPassword: string;
+  adminTelefono?: string;
 }): Promise<EmpresaAdmin> {
   return parse(await apiFetch('admin/empresas', { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(payload) }));
 }
