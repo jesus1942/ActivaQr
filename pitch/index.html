@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ActivaQR — Guía de reunión</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--naranja:#f97316;--negro:#0f172a;--gris:#475569;--fondo:#f1f5f9}
+  body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:var(--fondo);color:var(--negro);line-height:1.6;padding-bottom:60px}
+  .top{background:var(--negro);color:#fff;padding:24px 20px 20px;border-bottom:4px solid var(--naranja)}
+  .top h1{font-size:28px;font-weight:900;text-transform:uppercase;letter-spacing:-1px}
+  .top p{color:#94a3b8;font-size:13px;margin-top:4px}
+  .wrap{max-width:680px;margin:0 auto;padding:0 16px}
+  .seccion{margin-top:28px}
+  .seccion-titulo{background:var(--negro);color:var(--naranja);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:2px;padding:6px 12px;display:inline-block;margin-bottom:12px}
+  .card{background:#fff;border:2px solid var(--negro);box-shadow:4px 4px 0 var(--negro);padding:16px;margin-bottom:12px}
+  .card h3{font-size:15px;font-weight:900;text-transform:uppercase;margin-bottom:6px;color:var(--negro)}
+  .card p, .card li{font-size:14px;color:var(--gris);margin-bottom:4px}
+  .card ul{padding-left:18px}
+  .card li{margin-bottom:3px}
+  .pregunta{background:#fff;border-left:4px solid var(--naranja);border:2px solid var(--negro);box-shadow:4px 4px 0 var(--negro);padding:16px;margin-bottom:14px}
+  .pregunta .q{font-weight:900;font-size:14px;color:var(--negro);margin-bottom:8px}
+  .pregunta .q::before{content:'"';color:var(--naranja)}
+  .pregunta .q::after{content:'"';color:var(--naranja)}
+  .pregunta .r{font-size:14px;color:#334155;background:#f8fafc;border-left:3px solid var(--naranja);padding:10px 12px;margin-top:6px;line-height:1.6}
+  .paso{background:#fff;border:2px solid var(--negro);box-shadow:4px 4px 0 var(--negro);padding:14px 16px;margin-bottom:10px;display:flex;gap:14px;align-items:flex-start}
+  .paso .num{background:var(--naranja);color:#fff;font-weight:900;font-size:16px;min-width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:2px solid var(--negro);flex-shrink:0}
+  .paso .contenido h3{font-size:14px;font-weight:900;text-transform:uppercase;margin-bottom:4px}
+  .paso .contenido p{font-size:13px;color:var(--gris)}
+  .paso .contenido .frase{font-size:13px;color:#1e293b;font-style:italic;background:#fff7ed;border-left:3px solid var(--naranja);padding:8px 10px;margin-top:6px}
+  .tag{display:inline-block;font-size:11px;font-weight:900;text-transform:uppercase;padding:3px 8px;border:2px solid;margin-right:4px;margin-bottom:4px}
+  .tag-verde{border-color:#16a34a;color:#16a34a;background:#f0fdf4}
+  .tag-rojo{border-color:#dc2626;color:#dc2626;background:#fef2f2}
+  .tag-naranja{border-color:var(--naranja);color:#c2410c;background:#fff7ed}
+  .alerta{background:#fef9c3;border:2px solid #ca8a04;padding:12px 14px;font-size:13px;font-weight:700;color:#713f12;margin-bottom:12px}
+  .highlight{background:var(--naranja);color:#fff;padding:2px 6px;font-weight:900}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+  th{background:var(--negro);color:#fff;padding:8px 10px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px}
+  td{padding:8px 10px;border-bottom:2px solid #e2e8f0;color:var(--gris)}
+  tr:nth-child(even) td{background:#f8fafc}
+  .nav{position:sticky;top:0;background:var(--negro);z-index:50;padding:10px 16px;display:flex;gap:8px;overflow-x:auto;border-bottom:3px solid var(--naranja)}
+  .nav a{color:#94a3b8;text-decoration:none;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;white-space:nowrap;padding:4px 8px;border:2px solid transparent}
+  .nav a:hover{color:#fff;border-color:var(--naranja)}
+  hr{border:none;border-top:2px dashed #cbd5e1;margin:24px 0}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="wrap">
+    <h1>ActivaQR — Guía de reunión</h1>
+    <p>Material de ventas · Uso personal · Jesús Narciso Olguín</p>
+  </div>
+</div>
+
+<div class="nav">
+  <a href="#epsa">EPSA</a>
+  <a href="#pitch">Pitch</a>
+  <a href="#demo">Demo en vivo</a>
+  <a href="#preguntas">Preguntas técnicas</a>
+  <a href="#precios">Precios</a>
+  <a href="#empresas">Otras empresas</a>
+  <a href="#nohacer">No hacer</a>
+</div>
+
+<div class="wrap">
+
+<!-- EPSA -->
+<div class="seccion" id="epsa">
+  <div class="seccion-titulo">Perfil del cliente — EPSA</div>
+
+  <div class="card">
+    <h3>Estrella Patagónica SA</h3>
+    <ul>
+      <li>Empresa pesquera industrial — Puerto Madryn, Chubut</li>
+      <li>500 a 1.000 empleados</li>
+      <li>Flota propia de buques congeladores (Valiente I y II, Mara I, Carolina P)</li>
+      <li>Planta frigorífica en tierra + operaciones en varios puertos</li>
+      <li>Exporta a Europa y Asia — en proceso de certificación MSC (trazabilidad)</li>
+      <li>Vinculada a Pescapuerta SA (Vigo, España)</li>
+      <li>En 2024 sumó actividad de construcción y reparación naval</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Brian Lewis — Tu contacto</h3>
+    <ul>
+      <li>Cargo: Gerente de Producción</li>
+      <li>Formación: Ingeniería en Seguridad e Higiene (UTN) + Maestría en Gestión Ambiental (UNINI USA)</li>
+      <li>Perfil técnico, sensible a trazabilidad y cumplimiento</li>
+      <li>Decision-maker directo para herramientas de gestión de activos</li>
+    </ul>
+  </div>
+
+  <div class="alerta">
+    No se detectó ningún sistema de gestión de activos en uso. Oportunidad abierta.
+  </div>
+
+  <div class="card">
+    <h3>Por qué ActivaQR encaja con EPSA</h3>
+    <ul>
+      <li>Equipos a bordo con tripulaciones rotativas → el QR sin login resuelve la falta de contexto</li>
+      <li>Certificación MSC exige trazabilidad documental → el historial digitalizado lo cubre</li>
+      <li>Planta + flota = activos físicos complejos que necesitan mantenimiento sistemático</li>
+      <li>Brian tiene perfil de higiene y gestión ambiental → comprende el valor del registro</li>
+    </ul>
+  </div>
+</div>
+
+<hr />
+
+<!-- PITCH -->
+<div class="seccion" id="pitch">
+  <div class="seccion-titulo">El pitch — apertura y cierre</div>
+
+  <div class="card">
+    <h3>Frase de apertura</h3>
+    <p class="r" style="font-style:italic;background:#fff7ed;border-left:3px solid #f97316;padding:10px 12px;margin-top:4px">
+      "Brian, cuando un equipo falla en plena producción, la primera pregunta siempre es la misma: ¿cuándo fue el último servicio? Y nadie tiene la respuesta rápida. ActivaQR pega un código QR en cada equipo. Cualquier técnico lo escanea y ve el historial completo, las últimas mediciones, quién hizo cada servicio — sin instalar nada, sin login."
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>Gancho específico para EPSA</h3>
+    <p class="r" style="font-style:italic;background:#fff7ed;border-left:3px solid #f97316;padding:10px 12px;margin-top:4px">
+      "Para EPSA esto es especialmente valioso porque tienen equipos a bordo con tripulaciones rotativas. El próximo marinero que suba no sabe lo que hizo el anterior — pero el QR sí. Y para la certificación MSC que están tramitando, la trazabilidad documental ya no es opcional — los compradores europeos la van a exigir."
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>Tagline de cierre</h3>
+    <p style="font-size:18px;font-weight:900;color:var(--negro);margin-top:4px">"La falla que no registraste, ya ocurrió."</p>
+  </div>
+
+  <div class="card">
+    <h3>Pregunta de apertura (antes de mostrar nada)</h3>
+    <p class="r" style="font-style:italic;background:#fff7ed;border-left:3px solid #f97316;padding:10px 12px;margin-top:4px">
+      "Brian, cuando un equipo falla hoy en EPSA, ¿cuánto tiempo pasa hasta que alguien sabe cuándo fue el último servicio?"
+    </p>
+    <p style="margin-top:8px;font-size:13px;color:var(--gris)">Dejalo responder. Esa respuesta es el dolor. Cuando termine: <strong>"Eso es exactamente lo que resuelve esto."</strong></p>
+  </div>
+</div>
+
+<hr />
+
+<!-- DEMO EN VIVO -->
+<div class="seccion" id="demo">
+  <div class="seccion-titulo">Demo en vivo — secuencia exacta (12-15 min)</div>
+
+  <div class="alerta">Antes de la reunión: cargá activos con nombres reales de equipos pesqueros. Compresor de bodegas, bomba de agua de mar, sistema de frío, tablero principal.</div>
+
+  <div class="paso">
+    <div class="num">1</div>
+    <div class="contenido">
+      <h3>El problema (2 min) — No abras la app todavía</h3>
+      <p>Hacé la pregunta de apertura. Esperá la respuesta de Brian.</p>
+      <div class="frase">"Eso es exactamente lo que resuelve esto." → Recién ahí abrís el celular.</div>
+    </div>
+  </div>
+
+  <div class="paso">
+    <div class="num">2</div>
+    <div class="contenido">
+      <h3>El QR en acción (3 min)</h3>
+      <p>Abrís la app → Gestión QR → mostrás un QR impreso o en pantalla.</p>
+      <div class="frase">"Esto es lo que va pegado en el equipo. Cualquier persona, con cualquier celular, sin instalar nada, sin login."</div>
+      <p style="margin-top:8px"><strong>Le pasás el celular a Brian para que lo escanee él.</strong> Que vea la ficha pública.</p>
+      <div class="frase">"Lo que acaba de ver es lo que ve cualquier técnico nuevo el primer día. Sin que nadie le explique nada."</div>
+    </div>
+  </div>
+
+  <div class="paso">
+    <div class="num">3</div>
+    <div class="contenido">
+      <h3>El historial que salva (3 min)</h3>
+      <p>Entrás a un activo del demo que tenga varias mediciones cargadas.</p>
+      <div class="frase">"Supongamos que ese compresor acaba de fallar. Entro acá. Puedo ver exactamente qué pasó antes de la falla. Si el mantenimiento estaba al día o vencido. Quién hizo el último servicio y cuándo. Esto es lo que hoy están buscando en papeles o en el WhatsApp del técnico."</div>
+    </div>
+  </div>
+
+  <div class="paso">
+    <div class="num">4</div>
+    <div class="contenido">
+      <h3>El sistema que anticipa (2 min)</h3>
+      <p>Navegás a Indicadores → panel de mantenimiento predictivo.</p>
+      <div class="frase">"El sistema analiza la tendencia de temperatura, presión y amperaje de cada equipo. Si algo viene subiendo en las últimas mediciones, te avisa antes de que falle."</div>
+      <p style="margin-top:6px">Mostrás el gráfico de tendencia de fallas de 6 meses.</p>
+      <div class="frase">"Esto es lo que le presentás a tu directorio cada mes."</div>
+    </div>
+  </div>
+
+  <div class="paso">
+    <div class="num">5</div>
+    <div class="contenido">
+      <h3>El informe (1 min)</h3>
+      <p>Indicadores → botón "Informe mensual PDF" → lo apretás.</p>
+      <div class="frase">"Un clic. PDF listo para mandar."</div>
+    </div>
+  </div>
+
+  <div class="paso">
+    <div class="num">6</div>
+    <div class="contenido">
+      <h3>El cierre (3 min) — Dejás el celular en la mesa</h3>
+      <div class="frase">"Brian, para EPSA veo dos formas de trabajar. Una: les doy acceso y el equipo carga las mediciones ustedes. Dos: yo me encargo — visita mensual, mediciones documentadas, informe automático. Como si tuvieran un servicio de mantenimiento predictivo externo, sin contratar a nadie."</div>
+      <p style="margin-top:8px;font-weight:700">Silencio. Esperás. Si pregunta el precio, preguntás primero:</p>
+      <div class="frase">"¿Cuántos equipos tienen en la planta de Puerto Madryn?"</div>
+    </div>
+  </div>
+</div>
+
+<hr />
+
+<!-- PREGUNTAS TECNICAS -->
+<div class="seccion" id="preguntas">
+  <div class="seccion-titulo">Preguntas técnicas — todo lo que te puede preguntar</div>
+
+  <div class="pregunta">
+    <div class="q">¿Dónde están mis datos? ¿En tu servidor, en la nube, en el exterior?</div>
+    <div class="r">En un servidor de Railway (infraestructura de Cloudflare), base de datos PostgreSQL con backup automático. Los datos de EPSA nunca se mezclan con los de otra empresa — cada consulta filtra por empresa. Si en algún momento quieren los datos fuera, los exporto en CSV o JSON en el día.</div>
+  </div>
+
+  <div class="pregunta">
+    <div class="q">¿Qué pasa si vos desaparecés o cerrás el servicio?</div>
+    <div class="r">El código es propio, repositorio privado con historial completo. El contrato puede incluir una cláusula de escrow del código fuente. El export de datos está disponible en cualquier momento — no quedan rehenes.</div>
+  </div>
+
+  <div class="pregunta">
+    <div class="q">¿Cómo manejan la autenticación? ¿Hay roles?</div>
+    <div class="r">JWT con expiración de 7 días, guardado en sessionStorage — muere al cerrar el navegador. Tres roles: admin, operador y técnico. El operador no puede borrar activos. Cada acción queda en un log de auditoría con usuario, fecha y detalle.</div>
+  </div>
+
+  <div class="pregunta">
+    <div class="q">¿Qué tan difícil es integrar esto con nuestro ERP o sistema actual?</div>
+    <div class="r">Hoy no tiene integración nativa, pero la API REST está disponible y cualquier sistema puede consumirla con un token. Si tienen un ERP específico, me decís cuál y vemos qué endpoint necesitamos.</div>
+  </div>
+
+  <div class="pregunta">
+    <div class="q">¿Cómo escala si tenemos 500 activos y 20 técnicos cargando al mismo tiempo?</div>
+    <div class="r">Railway escala automáticamente. La base de datos tiene índices en las columnas críticas. Para el volumen de EPSA — que no es tiempo real sino registro — el stack actual lo maneja sin problema. Si en algún momento llegamos a un límite, te aviso antes de que lo notes.</div>
+  </div>
+
+  <div class="pregunta">
+    <div class="q">¿Los QR funcionan sin internet?</div>
+    <div class="r">La ficha pública del QR funciona con cualquier conexión, incluso 3G. Para cargar mediciones sí se necesita conexión — hay modo offline que guarda localmente y sincroniza cuando vuelve la señal.</div>
+  </div>
+
+  <div class="pregunta">
+    <div class="q">¿Qué garantía tengo de que un técnico no vea datos de otra empresa?</div>
+    <div class="r">Cada token lleva el ID de empresa firmado. El backend rechaza cualquier intento de cruzar empresas, sin excepción. El operador no puede borrar activos ni mediciones. Todo queda en auditoría.</div>
+  </div>
+
+  <div class="pregunta">
+    <div class="q">¿Tienen SLA? ¿Qué uptime garantizan?</div>
+    <div class="r">Hoy no hay SLA formal — te lo digo directo porque es un producto en etapa inicial. Railway tiene 99.9% de uptime histórico. Si eso es un bloqueante para EPSA, lo ponemos por escrito con un descuento a cambio.</div>
+  </div>
+
+  <div class="pregunta">
+    <div class="q">¿Cuánto tiempo lleva cargar todos nuestros activos?</div>
+    <div class="r">Hay importación masiva por CSV. Si me mandás el inventario en un Excel, lo proceso y lo subo en menos de un día. Para EPSA eso puede ser parte del onboarding del servicio gestionado.</div>
+  </div>
+
+  <div class="alerta">Todo esto ya existe y funciona en producción. No es roadmap ni promesa. Si Brian lo pregunta, podés mostrarlo en vivo.</div>
+</div>
+
+<hr />
+
+<!-- PRECIOS -->
+<div class="seccion" id="precios">
+  <div class="seccion-titulo">Precios — cómo responder</div>
+
+  <div class="card">
+    <h3>No des el precio antes de que pregunten</h3>
+    <p>Cuando pregunten, primero preguntás vos: <strong>"¿Cuántos equipos tienen?"</strong> Eso te ubica en el contexto y te da tiempo para pensar.</p>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Modelo</th><th>Precio</th><th>ARS aprox.</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Solo app (SaaS)</td><td>USD 150/mes</td><td>~$215.000/mes</td></tr>
+      <tr><td>App + servicio de medición mensual</td><td>USD 400-600/mes</td><td>~$575.000-$860.000/mes</td></tr>
+      <tr><td>Implementación inicial (onboarding)</td><td>USD 300-500 único</td><td>~$430.000-$717.000</td></tr>
+    </tbody>
+  </table>
+
+  <div class="card" style="margin-top:12px">
+    <h3>Si dicen que es caro</h3>
+    <p style="margin-bottom:6px">No bajes el precio. Cambiá el marco:</p>
+    <div class="r" style="font-style:italic;background:#fff7ed;border-left:3px solid #f97316;padding:10px 12px">"Una parada de producción no planificada en una planta pesquera cuesta mucho más que USD 150 por mes. Este sistema existe para evitar esa parada."</div>
+  </div>
+</div>
+
+<hr />
+
+<!-- OTRAS EMPRESAS -->
+<div class="seccion" id="empresas">
+  <div class="seccion-titulo">Otras empresas objetivo</div>
+
+  <div class="card">
+    <h3>Millennium SRL — Puerto Madryn</h3>
+    <ul>
+      <li>Mantenimiento de equipos navales y mineros</li>
+      <li>Socio de Epiroc (equipos de minería de alta gama)</li>
+      <li>Perfil: empresa de servicio técnico → les conviene el módulo de técnicos y soporte remoto</li>
+      <li>Gancho: "Podés darle a tus técnicos un sistema que documenta cada intervención con foto y firma digital"</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>CIMA Patagonia</h3>
+    <ul>
+      <li>Investigar antes de la reunión</li>
+      <li>Enfocarte en: ¿qué equipos manejan? ¿tienen procesos de mantenimiento documentados?</li>
+      <li>Gancho genérico: disponibilidad de equipos + certificaciones + auditoría</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>INFA</h3>
+    <ul>
+      <li>Investigar antes de la reunión</li>
+      <li>Mismo enfoque: activos físicos críticos + necesidad de trazabilidad</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Patagonia Estibajes</h3>
+    <ul>
+      <li>Logística portuaria — equipos de carga/descarga (grúas, autoelevadores, reach stackers)</li>
+      <li>Gancho fuerte: equipos que operan 24/7, con múltiples turnos de operadores → el QR resuelve la continuidad de la información entre turnos</li>
+      <li>"Cuando el operador del turno noche no sabe qué hizo el del turno día, el QR lo sabe."</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Contratistas de Vaca Muerta</h3>
+    <ul>
+      <li>Mercado más grande, más difícil de acceder inicialmente</li>
+      <li>Las operadoras (YPF, Chevron, Shell) exigen GPS tracking y registros a sus contratistas</li>
+      <li>Entrar con un caso de éxito de EPSA o Millennium primero</li>
+      <li>Precio objetivo: USD 200-400/mes por empresa</li>
+    </ul>
+  </div>
+</div>
+
+<hr />
+
+<!-- NO HACER -->
+<div class="seccion" id="nohacer">
+  <div class="seccion-titulo">Lo que NO hacés en la reunión</div>
+
+  <div class="card">
+    <ul>
+      <li><strong>No mostrés el panel de admin</strong> ni la configuración interna</li>
+      <li><strong>No explicás la arquitectura técnica</strong> a menos que pregunten</li>
+      <li><strong>No hablés de roadmap</strong> ni features futuras que no existan</li>
+      <li><strong>No cerrás el precio</strong> hasta que él pregunta</li>
+      <li><strong>No bajés el precio</strong> sin antes cambiar el marco de valor</li>
+      <li><strong>No prometés cosas que no existen</strong> — todo lo que demostrás ya funciona</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Tu mayor ventaja</h3>
+    <p>Cuando Brian te haga una pregunta técnica, no estás improvisando ni prometiendo — estás describiendo lo que ya existe y funciona en producción. Eso se nota. La confianza de alguien que construyó la herramienta es completamente distinta a la de alguien que vende una promesa.</p>
+  </div>
+
+  <div class="card" style="border-color:var(--naranja);box-shadow:4px 4px 0 var(--naranja)">
+    <h3 style="color:var(--naranja)">La meta</h3>
+    <p>No salir con un "lo pensamos". Salir con una fecha de inicio de prueba, una lista de activos para cargar, o un número de equipos confirmado. Cualquiera de las tres es un cierre.</p>
+  </div>
+</div>
+
+</div>
+
+<script>
+  // Marcar sección activa en nav al hacer scroll
+  const secciones = document.querySelectorAll('.seccion');
+  const navLinks = document.querySelectorAll('.nav a');
+  window.addEventListener('scroll', () => {
+    let actual = '';
+    secciones.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 80) actual = s.id;
+    });
+    navLinks.forEach(a => {
+      a.style.borderColor = a.getAttribute('href') === '#' + actual ? '#f97316' : 'transparent';
+      a.style.color = a.getAttribute('href') === '#' + actual ? '#fff' : '#94a3b8';
+    });
+  });
+</script>
+
+</body>
+</html>
