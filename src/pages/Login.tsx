@@ -212,6 +212,7 @@ export const Login: React.FC = () => {
 
           {!vistaRegistro && !vistaForgot && (
             <div className="mt-4 border-t-2 border-slate-200 pt-4 text-center">
+              <p className="text-xs text-slate-400 mb-3">Técnicos y operadores de campo ingresan con el mismo formulario usando las credenciales que les asignó el administrador.</p>
               <p className="text-xs text-slate-500 mb-2">¿No tenés cuenta todavía?</p>
               <button
                 type="button"
