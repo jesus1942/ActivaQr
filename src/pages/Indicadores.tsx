@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import {
   Activity,
   AlertTriangle,
@@ -8,8 +10,11 @@ import {
   Gauge,
   TrendingUp,
   Wrench,
+  FileDown,
 } from 'lucide-react';
 import { getKpis, Kpis } from '../data/indicadoresApi';
+import { exportarInformeMensualPdf } from '../utils/exportPdf';
+import { useAuth } from '../context/AuthContext';
 
 const card = 'bg-white border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-5';
 
@@ -30,6 +35,17 @@ export const Indicadores: React.FC = () => {
   const [kpis, setKpis] = useState<Kpis | null>(null);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { usuario } = useAuth();
+
+  const generarInforme = () => {
+    if (!kpis) return;
+    exportarInformeMensualPdf({
+      kpis,
+      empresaNombre: usuario?.empresa?.nombre ?? 'Mi empresa',
+      periodo: format(new Date(), 'MMMM yyyy', { locale: es }).replace(/^\w/, (c) => c.toUpperCase()),
+      responsableInforme: usuario?.nombre,
+    });
+  };
 
   useEffect(() => {
     getKpis().then(setKpis).catch((e) => setError(e.message));
@@ -43,9 +59,19 @@ export const Indicadores: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-sketch text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 uppercase tracking-tight">Indicadores</h1>
-        <p className="text-slate-500 text-sm mt-1">Tablero ejecutivo de gestión de mantenimiento</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="font-sketch text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 uppercase tracking-tight">Indicadores</h1>
+          <p className="text-slate-500 text-sm mt-1">Tablero ejecutivo de gestión de mantenimiento</p>
+        </div>
+        <button
+          onClick={generarInforme}
+          className="flex items-center gap-2 bg-orange-500 text-white px-4 min-h-[44px] font-bold border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all text-sm"
+          title="Descargar informe mensual en PDF para el cliente"
+        >
+          <FileDown size={16} />
+          Informe mensual PDF
+        </button>
       </div>
 
       {/* Resumen ejecutivo */}
