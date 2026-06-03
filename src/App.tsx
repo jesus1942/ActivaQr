@@ -1,5 +1,12 @@
 // v1.1.0
-import { HashRouter as BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
 import { Layout } from './components/layout/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { Indicadores } from './pages/Indicadores';
@@ -97,6 +104,7 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           <Route path="/ficha/:id" element={<FichaPublica />} />
           <Route path="/acceso-remoto/aprobar/:token" element={<AprobarAccesoRemoto />} />
