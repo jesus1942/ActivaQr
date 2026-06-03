@@ -19,8 +19,6 @@ import {
 import { useRemote } from '../data/store';
 
 export function useActivos() {
-  // En modo remoto arrancamos con arrays vacíos para no mostrar datos de prueba
-  // mientras llega la primera respuesta de la API.
   const defaultActivos    = useRemote ? [] : seedActivos;
   const defaultMediciones = useRemote ? [] : seedMediciones;
   const defaultTareas     = useRemote ? [] : seedTareas;
@@ -124,7 +122,7 @@ export function useActivos() {
     }
   };
 
-  // ── Técnicos ───────────────────────────────────────────────
+  // ── Personal (ex-Tecnicos) — backward compat stubs ────────
   const addTecnico = (tecnico: Tecnico) => {
     setTecnicos((prev) => [...prev, tecnico]);
   };

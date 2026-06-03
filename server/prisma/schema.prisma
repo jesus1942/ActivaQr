@@ -26,12 +26,6 @@ enum RolUsuario {
   operador
 }
 
-enum RolTecnico {
-  admin
-  supervisor
-  tecnico
-}
-
 enum EstadoActivo {
   normal
   alerta
@@ -146,7 +140,6 @@ model Empresa {
   sedes          Sede[]
   sectores       Sector[]
   tipos          TipoActivo[]
-  tecnicos       Tecnico[]
   activos        Activo[]
   permisoAcceso  PermisoAccesoRemoto?
   categorias     CategoriaEquipo[]
@@ -161,6 +154,7 @@ model Usuario {
   passwordHash String
   nombre       String
   telefono     String?
+  cargo        String?
   rol          RolUsuario @default(admin)
   activo           Boolean    @default(true)
   creadoEn         DateTime   @default(now())
@@ -170,7 +164,10 @@ model Usuario {
   telegramChatId   String?
 
   empresa Empresa? @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  pushSubscriptions PushSubscription[]
+  pushSubscriptions    PushSubscription[]
+  activosResponsable   Activo[]             @relation("ActivoResponsable")
+  tareasResponsable    TareaMantenimiento[] @relation("TareaResponsable")
+  medicionesRealizadas Medicion[]           @relation("MedicionTecnico")
 
   @@index([empresaId])
 }
@@ -272,23 +269,6 @@ model TipoActivo {
   @@index([categoriaId])
 }
 
-model Tecnico {
-  id        String     @id @default(uuid())
-  empresaId String
-  nombre    String
-  rol       RolTecnico @default(tecnico)
-  email     String?
-  telefono  String?
-  activo    Boolean    @default(true)
-
-  empresa            Empresa              @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  activos            Activo[]
-  mediciones         Medicion[]
-  tareas             TareaMantenimiento[]
-
-  @@index([empresaId])
-}
-
 model Activo {
   id                        String       @id @default(uuid())
   empresaId                 String
@@ -340,7 +320,7 @@ model Activo {
   sede        Sede?    @relation(fields: [sedeId], references: [id], onDelete: SetNull)
   sector      Sector   @relation(fields: [sectorId], references: [id], onDelete: Restrict)
   tipo        TipoActivo @relation(fields: [tipoId], references: [id], onDelete: Restrict)
-  responsable Tecnico? @relation(fields: [responsableId], references: [id], onDelete: SetNull)
+  responsable Usuario?   @relation("ActivoResponsable", fields: [responsableId], references: [id], onDelete: SetNull)
 
   mediciones Medicion[]
   tareas     TareaMantenimiento[]
@@ -372,7 +352,7 @@ model Medicion {
   parametrosExtra Json?
 
   activo  Activo   @relation(fields: [activoId], references: [id], onDelete: Cascade)
-  tecnico Tecnico? @relation(fields: [tecnicoId], references: [id], onDelete: SetNull)
+  tecnico Usuario? @relation("MedicionTecnico", fields: [tecnicoId], references: [id], onDelete: SetNull)
   fotos   Foto[]
 
   @@index([activoId])
@@ -423,7 +403,7 @@ model TareaMantenimiento {
   fotos           Json?
 
   activo      Activo   @relation(fields: [activoId], references: [id], onDelete: Cascade)
-  responsable Tecnico? @relation(fields: [responsableId], references: [id], onDelete: SetNull)
+  responsable Usuario? @relation("TareaResponsable", fields: [responsableId], references: [id], onDelete: SetNull)
 
   @@index([activoId])
 }

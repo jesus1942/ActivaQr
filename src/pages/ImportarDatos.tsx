@@ -96,7 +96,7 @@ export const ImportarDatos: React.FC = () => {
       const found = localTecnicos.find((t) => norm(t.nombre) === norm(nombre));
       if (found) return found.id;
       const id = `tec-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-      addTecnico({ id, nombre: nombre.trim(), rol: 'tecnico', activo: true });
+      addTecnico({ id, nombre: nombre.trim(), activo: true });
       localTecnicos.push({ id, nombre: nombre.trim() });
       return id;
     };

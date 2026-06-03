@@ -5,7 +5,6 @@ import { AuthRequest } from '../auth';
 
 const router = Router();
 
-// Middleware: solo admins pueden gestionar operadores
 function requireAdmin(req: AuthRequest, res: Response, next: NextFunction) {
   if (req.auth?.rol !== 'admin' && req.auth?.rol !== 'superadmin') {
     return res.status(403).json({ error: 'Solo administradores pueden gestionar operadores.' });
@@ -13,7 +12,18 @@ function requireAdmin(req: AuthRequest, res: Response, next: NextFunction) {
   next();
 }
 
-// GET /api/operadores — lista operadores de la empresa
+const selectOperador = {
+  id: true,
+  nombre: true,
+  email: true,
+  cargo: true,
+  telefono: true,
+  activo: true,
+  creadoEn: true,
+  ultimoAcceso: true,
+} as const;
+
+// GET /api/operadores
 router.get('/', requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const empresaId = req.auth!.empresaId;
@@ -21,7 +31,7 @@ router.get('/', requireAdmin, async (req: AuthRequest, res: Response, next: Next
 
     const operadores = await prisma.usuario.findMany({
       where: { empresaId, rol: 'operador' },
-      select: { id: true, nombre: true, email: true, activo: true, creadoEn: true, ultimoAcceso: true },
+      select: selectOperador,
       orderBy: { nombre: 'asc' },
     });
     res.json(operadores);
@@ -30,13 +40,13 @@ router.get('/', requireAdmin, async (req: AuthRequest, res: Response, next: Next
   }
 });
 
-// POST /api/operadores — crear operador
+// POST /api/operadores
 router.post('/', requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const empresaId = req.auth!.empresaId;
     if (!empresaId) return res.status(400).json({ error: 'Sin empresa asignada.' });
 
-    const { nombre, email, password } = req.body ?? {};
+    const { nombre, email, password, cargo } = req.body ?? {};
     if (!nombre || !email || !password) {
       return res.status(400).json({ error: 'Nombre, email y contraseña son obligatorios.' });
     }
@@ -57,12 +67,40 @@ router.post('/', requireAdmin, async (req: AuthRequest, res: Response, next: Nex
         email: emailNorm,
         passwordHash,
         nombre: String(nombre).trim(),
+        cargo: cargo ? String(cargo).trim() : null,
         rol: 'operador',
       },
-      select: { id: true, nombre: true, email: true, activo: true, creadoEn: true, ultimoAcceso: true },
+      select: selectOperador,
     });
 
     res.status(201).json(operador);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/operadores/:id — actualizar nombre y cargo
+router.put('/:id', requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const empresaId = req.auth!.empresaId;
+    if (!empresaId) return res.status(400).json({ error: 'Sin empresa asignada.' });
+
+    const operador = await prisma.usuario.findFirst({
+      where: { id: req.params.id, empresaId, rol: 'operador' },
+    });
+    if (!operador) return res.status(404).json({ error: 'Operador no encontrado.' });
+
+    const { nombre, cargo } = req.body ?? {};
+    const data: any = {};
+    if (nombre !== undefined) data.nombre = String(nombre).trim();
+    if (cargo !== undefined) data.cargo = cargo ? String(cargo).trim() : null;
+
+    const updated = await prisma.usuario.update({
+      where: { id: operador.id },
+      data,
+      select: selectOperador,
+    });
+    res.json(updated);
   } catch (err) {
     next(err);
   }
@@ -89,7 +127,7 @@ router.delete('/:id', requireAdmin, async (req: AuthRequest, res: Response, next
   }
 });
 
-// PATCH /api/operadores/:id/password — resetear contraseña
+// PATCH /api/operadores/:id/password
 router.patch('/:id/password', requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const empresaId = req.auth!.empresaId;

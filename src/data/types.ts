@@ -29,9 +29,7 @@ export interface TipoActivo {
 export interface Tecnico {
   id: string;
   nombre: string;
-  rol: 'admin' | 'supervisor' | 'tecnico';
-  email?: string;
-  telefono?: string;
+  cargo?: string;
   activo: boolean;
 }
 

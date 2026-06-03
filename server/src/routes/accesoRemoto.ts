@@ -216,11 +216,11 @@ router.post(
         : estadoCalculado === 'normal' ? 'normal'
         : 'revision';
 
-      // El técnico asignado: responsable del activo o primer técnico de la empresa.
+      // El tecnico asignado: responsable del activo o primer operador de la empresa.
       let tecnicoId: string | null = activo.responsableId;
       if (!tecnicoId) {
-        const tecnico = await prisma.tecnico.findFirst({ where: { empresaId: req.params.id } });
-        tecnicoId = tecnico?.id ?? null;
+        const operador = await prisma.usuario.findFirst({ where: { empresaId: req.params.id, rol: 'operador' } });
+        tecnicoId = operador?.id ?? null;
       }
 
       const medicion = await prisma.medicion.create({
@@ -513,27 +513,16 @@ router.get(
       const p = await prisma.permisoAccesoRemoto.findUnique({ where: { empresaId: req.params.id } });
       if (!p || p.estado !== 'activo') return res.status(403).json({ error: 'Sin permiso activo.' });
 
-      // Técnicos (modelo Tecnico — los que hacen mediciones en campo)
-      const tecnicos = await prisma.tecnico.findMany({
+      // Personal (operadores y admins de la empresa)
+      const personal = await prisma.usuario.findMany({
         where: { empresaId: req.params.id },
         select: {
-          id: true, nombre: true, rol: true, email: true, telefono: true, activo: true,
-          _count: { select: { mediciones: true, tareas: true } },
+          id: true, nombre: true, rol: true, cargo: true, email: true, telefono: true, activo: true, ultimoAcceso: true,
         },
         orderBy: { nombre: 'asc' },
       });
 
-      // Usuarios (login — admins y operadores)
-      const usuarios = await prisma.usuario.findMany({
-        where: { empresaId: req.params.id },
-        select: {
-          id: true, nombre: true, rol: true, email: true, activo: true, ultimoAcceso: true,
-          // nunca exponer: passwordHash, resetToken, resetTokenExpiry
-        },
-        orderBy: { nombre: 'asc' },
-      });
-
-      res.json({ tecnicos, usuarios });
+      res.json({ personal, usuarios: personal });
     } catch (err) { next(err); }
   }
 );
