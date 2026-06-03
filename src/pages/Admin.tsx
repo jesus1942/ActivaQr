@@ -21,6 +21,7 @@ import {
   Download,
   Search,
   AlertTriangle,
+  Clock,
   MapPin,
   Smartphone,
   Monitor,
@@ -758,6 +759,27 @@ export const Admin: React.FC = () => {
                     <ChevronDown size={16} className={`text-slate-400 transition-transform ${abierta ? 'rotate-180' : ''}`} />
                   </div>
                 </div>
+
+                {emp.esTrial && (() => {
+                  const ahora = Date.now();
+                  const fin = emp.trialFin ? new Date(emp.trialFin).getTime() : 0;
+                  const lecturaFin = emp.trialLecturaFin ? new Date(emp.trialLecturaFin).getTime() : 0;
+                  const fase = ahora < fin ? 'activo' : ahora < lecturaFin ? 'lectura' : 'vencido';
+                  const diasCompleto = fase === 'activo' ? Math.ceil((fin - ahora) / 86400000) : 0;
+                  const diasLectura = fase === 'lectura' ? Math.ceil((lecturaFin - ahora) / 86400000) : 0;
+                  return (
+                    <div className={`mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 border-2 text-xs font-black uppercase ${
+                      fase === 'activo' ? 'border-orange-400 bg-orange-50 text-orange-700'
+                      : fase === 'lectura' ? 'border-amber-400 bg-amber-50 text-amber-700'
+                      : 'border-red-400 bg-red-50 text-red-700'
+                    }`}>
+                      <Clock size={11} />
+                      {fase === 'activo' && `Trial — ${diasCompleto}d restantes`}
+                      {fase === 'lectura' && `Solo lectura — ${diasLectura}d`}
+                      {fase === 'vencido' && 'Trial vencido'}
+                    </div>
+                  );
+                })()}
 
                 <div className="flex gap-3 mt-2 text-xs font-mono text-slate-600 flex-wrap">
                   <span className="flex items-center gap-1">
