@@ -113,7 +113,16 @@ export const FichaPublica: React.FC = () => {
   }
 
   const ultimaMedicion = activo.mediciones[0];
-  const estadoColor = ESTADO_COLORS[activo.estado] ?? 'bg-slate-50 border-slate-300 text-slate-600';
+
+  // Si el equipo está en mantenimiento o fuera de servicio, el badge principal lo refleja
+  const estadoVisual =
+    activo.estadoOperativo === 'mantenimiento' ? 'mantenimiento' :
+    activo.estadoOperativo === 'fuera_servicio' ? 'fuera de servicio' :
+    activo.estado;
+  const estadoColor =
+    activo.estadoOperativo === 'mantenimiento' ? 'bg-blue-50 border-blue-400 text-blue-700' :
+    activo.estadoOperativo === 'fuera_servicio' ? 'bg-red-50 border-red-400 text-red-700' :
+    ESTADO_COLORS[activo.estado] ?? 'bg-slate-50 border-slate-300 text-slate-600';
 
   return (
     <div className="min-h-screen bg-slate-100 py-6 px-4">
@@ -164,7 +173,7 @@ export const FichaPublica: React.FC = () => {
             </div>
             {activo.estado && (
               <span className={`text-xs font-black uppercase px-2 py-1 border-2 whitespace-nowrap ${estadoColor}`}>
-                {activo.estado}
+                {estadoVisual}
               </span>
             )}
           </div>
