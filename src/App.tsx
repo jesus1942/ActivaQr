@@ -30,6 +30,26 @@ import { ResetPassword } from './pages/ResetPassword';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DashboardOperador } from './pages/DashboardOperador';
 import { PantallaTrialVencido, SeccionTracker } from './components/TrialUI';
+import { SplashScreen } from './components/SplashScreen';
+import { useState, useCallback } from 'react';
+
+const SPLASH_KEY = 'aqr_splash_shown';
+
+function AppConSplash() {
+  const yaVisto = sessionStorage.getItem(SPLASH_KEY) === '1';
+  const [splashDone, setSplashDone] = useState(yaVisto);
+  const onDone = useCallback(() => {
+    sessionStorage.setItem(SPLASH_KEY, '1');
+    setSplashDone(true);
+  }, []);
+
+  return (
+    <>
+      {!splashDone && <SplashScreen onDone={onDone} />}
+      <AppInterna />
+    </>
+  );
+}
 
 function PantallaBloqueo() {
   const { logout } = useAuth();
@@ -107,7 +127,7 @@ function AuthedApp() {
   );
 }
 
-function App() {
+function AppInterna() {
   return (
     <AuthProvider>
       <BrowserRouter>
@@ -123,4 +143,4 @@ function App() {
   );
 }
 
-export default App;
+export default AppConSplash;
