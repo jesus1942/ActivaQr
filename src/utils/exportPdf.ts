@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { Activo, Medicion, TareaMantenimiento } from '../data/types';
+import type { Kpis } from '../data/indicadoresApi';
 
 const SLATE900: [number, number, number] = [30, 41, 59];
 const SLATE100: [number, number, number] = [241, 245, 249];
@@ -367,4 +368,211 @@ export function exportarResumenActivosPdf(p: ResumenActivosPdfParams) {
   doc.text(`Total: ${p.activos.length} activos`, W - MAR, H - 3.5, { align: 'right' });
 
   doc.save(`ActivaQR-Activos-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+}
+
+export interface InformeMensualPdfParams {
+  kpis: Kpis;
+  empresaNombre: string;
+  periodo: string; // ej: "Junio 2026"
+  responsableInforme?: string;
+}
+
+export function exportarInformeMensualPdf(p: InformeMensualPdfParams) {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = doc.internal.pageSize.getWidth();
+  const MAR = 14;
+  const r = p.kpis.resumen;
+
+  // ── Portada / encabezado ───────────────────────────────────────────
+  doc.setFillColor(...SLATE900);
+  doc.rect(0, 0, W, 46, 'F');
+  doc.setFillColor(...ORANGE);
+  doc.rect(0, 46, W, 3, 'F');
+
+  doc.setTextColor(...WHITE);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.text('ACTIVAQR', MAR, 18);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Gestion de activos industriales', MAR, 24);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  doc.text('Informe mensual de mantenimiento', MAR, 36);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(p.periodo, W - MAR, 18, { align: 'right' });
+  doc.text(p.empresaNombre, W - MAR, 24, { align: 'right' });
+
+  let y = 58;
+
+  // ── Resumen ejecutivo (tarjetas) ───────────────────────────────────
+  doc.setTextColor(...BLACK);
+  y = seccionTitulo(doc, y, 'Resumen ejecutivo');
+
+  const tarjetas: [string, string, [number, number, number]][] = [
+    ['Disponibilidad', `${r.disponibilidad}%`, GREEN],
+    ['Activos totales', String(r.totalActivos), SLATE900],
+    ['Cumplimiento prev.', `${r.cumplimiento}%`, ORANGE],
+    ['Tareas pendientes', String(r.tareasPendientes), r.tareasVencidas > 0 ? RED : SLATE900],
+    ['MTTR (dias)', r.mttrDias != null ? String(r.mttrDias) : '—', SLATE900],
+    ['MTBF (dias)', r.mtbfDias != null ? String(r.mtbfDias) : '—', SLATE900],
+    ['Ordenes cerradas', String(r.tareasCompletadas), GREEN],
+    ['Estado critico', String(r.porEstado.critico ?? 0), RED],
+  ];
+
+  const cardW = (W - MAR * 2 - 9) / 4;
+  const cardH = 22;
+  tarjetas.forEach((t, i) => {
+    const col = i % 4;
+    const row = Math.floor(i / 4);
+    const x = MAR + col * (cardW + 3);
+    const cy = y + row * (cardH + 3);
+    doc.setDrawColor(...SLATE900);
+    doc.setLineWidth(0.4);
+    doc.rect(x, cy, cardW, cardH);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(t[0].toUpperCase(), x + 2.5, cy + 5);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(15);
+    doc.setTextColor(...t[2]);
+    doc.text(t[1], x + 2.5, cy + 16);
+  });
+
+  y += 2 * (cardH + 3) + 6;
+
+  // ── Mantenimiento predictivo ───────────────────────────────────────
+  doc.setTextColor(...BLACK);
+  y = seccionTitulo(doc, y, 'Mantenimiento predictivo');
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  if (p.kpis.predictivo.length === 0) {
+    doc.text('Sin tendencias ascendentes en los parametros monitoreados. Todo dentro de lo esperado.', MAR + 2, y);
+    y += 8;
+  } else {
+    doc.text('Parametros con tendencia creciente — revisar antes de que escalen a falla:', MAR + 2, y);
+    y += 6;
+    p.kpis.predictivo.slice(0, 10).forEach((pr, idx) => {
+      if (y > 270) { doc.addPage(); y = 20; }
+      if (idx % 2 === 0) { doc.setFillColor(...SLATE50); doc.rect(MAR, y - 3.5, W - MAR * 2, 6, 'F'); }
+      doc.setTextColor(...BLACK);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${pr.codigo} — ${pr.nombre}`, MAR + 2, y);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...AMBER);
+      doc.text(`${pr.parametro} en ascenso`, W - MAR - 2, y, { align: 'right' });
+      y += 6;
+    });
+    y += 2;
+  }
+
+  // ── Equipos con mas fallas ─────────────────────────────────────────
+  doc.setTextColor(...BLACK);
+  if (y > 240) { doc.addPage(); y = 20; }
+  y = seccionTitulo(doc, y, 'Equipos con mas fallas');
+  doc.setFontSize(8);
+  if (p.kpis.equiposConMasFallas.length === 0) {
+    doc.setFont('helvetica', 'normal');
+    doc.text('Sin fallas registradas en el periodo.', MAR + 2, y);
+    y += 8;
+  } else {
+    p.kpis.equiposConMasFallas.forEach((e, idx) => {
+      if (y > 270) { doc.addPage(); y = 20; }
+      if (idx % 2 === 0) { doc.setFillColor(...SLATE50); doc.rect(MAR, y - 3.5, W - MAR * 2, 6, 'F'); }
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...BLACK);
+      doc.text(`${e.codigo} — ${e.nombre}`, MAR + 2, y);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...RED);
+      doc.text(`${e.fallas} fallas`, W - MAR - 2, y, { align: 'right' });
+      y += 6;
+    });
+    y += 2;
+  }
+
+  // ── Alertas por sector ─────────────────────────────────────────────
+  doc.setTextColor(...BLACK);
+  if (y > 235) { doc.addPage(); y = 20; }
+  y = seccionTitulo(doc, y, 'Estado por sector');
+  doc.setFontSize(8);
+  if (p.kpis.alertasPorSector.length === 0) {
+    doc.setFont('helvetica', 'normal');
+    doc.text('Sin sectores definidos.', MAR + 2, y);
+    y += 8;
+  } else {
+    p.kpis.alertasPorSector.forEach((s, idx) => {
+      if (y > 270) { doc.addPage(); y = 20; }
+      if (idx % 2 === 0) { doc.setFillColor(...SLATE50); doc.rect(MAR, y - 3.5, W - MAR * 2, 6, 'F'); }
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...BLACK);
+      doc.text(s.sector, MAR + 2, y);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(s.criticos > 0 ? RED[0] : GREEN[0], s.criticos > 0 ? RED[1] : GREEN[1], s.criticos > 0 ? RED[2] : GREEN[2]);
+      doc.text(`${s.total} activos · ${s.criticos} en alerta`, W - MAR - 2, y, { align: 'right' });
+      y += 6;
+    });
+    y += 2;
+  }
+
+  // ── Tendencia de fallas (6 meses) ──────────────────────────────────
+  doc.setTextColor(...BLACK);
+  if (y > 220) { doc.addPage(); y = 20; }
+  y = seccionTitulo(doc, y, 'Tendencia de fallas (6 meses)');
+  const tf = p.kpis.tendenciaFallas;
+  const maxF = Math.max(1, ...tf.map((t) => t.fallas));
+  const chartH = 36;
+  const chartW = W - MAR * 2;
+  const barGap = 4;
+  const barW = (chartW - barGap * (tf.length - 1)) / tf.length;
+  const baseY = y + chartH;
+  tf.forEach((t, i) => {
+    const bx = MAR + i * (barW + barGap);
+    const bh = (t.fallas / maxF) * chartH;
+    doc.setFillColor(...ORANGE);
+    doc.setDrawColor(...SLATE900);
+    doc.setLineWidth(0.3);
+    if (bh > 0) doc.rect(bx, baseY - bh, barW, bh, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...BLACK);
+    doc.text(String(t.fallas), bx + barW / 2, baseY - bh - 1.5, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 116, 139);
+    doc.text(t.mes.slice(5), bx + barW / 2, baseY + 4, { align: 'center' });
+  });
+  y = baseY + 10;
+
+  // ── Cierre / firma ─────────────────────────────────────────────────
+  if (y > 255) { doc.addPage(); y = 20; }
+  doc.setDrawColor(...SLATE100);
+  doc.setLineWidth(0.5);
+  doc.line(MAR, y, W - MAR, y);
+  y += 6;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(100, 116, 139);
+  const obs = p.responsableInforme
+    ? `Informe elaborado por ${p.responsableInforme}. Ante alertas criticas se notifica al cliente por los canales acordados.`
+    : 'Ante alertas criticas se notifica al cliente por los canales acordados.';
+  doc.text(doc.splitTextToSize(obs, W - MAR * 2), MAR, y);
+
+  // ── Footer en todas las paginas ────────────────────────────────────
+  const H = doc.internal.pageSize.getHeight();
+  const pages = doc.getNumberOfPages();
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i);
+    doc.setFillColor(...SLATE100);
+    doc.rect(0, H - 10, W, 10, 'F');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`ActivaQR — Informe mensual · ${p.empresaNombre}`, MAR, H - 3.5);
+    doc.text(`${p.periodo} · Pag. ${i}/${pages}`, W - MAR, H - 3.5, { align: 'right' });
+  }
+
+  const slug = p.empresaNombre.replace(/\s+/g, '-').toLowerCase();
+  doc.save(`ActivaQR-Informe-${slug}-${p.periodo.replace(/\s+/g, '-')}.pdf`);
 }
