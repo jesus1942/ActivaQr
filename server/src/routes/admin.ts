@@ -441,6 +441,31 @@ router.get('/estadisticas', async (_req: AuthRequest, res: Response, next: NextF
       else dispositivos.desktop++;
     });
 
+    // Secciones más usadas (tracking interno de navegación).
+    const topSeccionesRaw = await prisma.visita.groupBy({
+      by: ['seccion'],
+      where: { tipo: 'seccion', seccion: { not: null } },
+      _count: { seccion: true },
+      orderBy: { _count: { seccion: 'desc' } },
+      take: 15,
+    });
+    const topSecciones = topSeccionesRaw
+      .filter((s) => s.seccion)
+      .map((s) => ({ seccion: s.seccion!, visitas: s._count.seccion }));
+
+    // Cuentas de prueba (trial) por fase.
+    const trialEmpresas = await prisma.empresa.findMany({
+      where: { esTrial: true },
+      select: { id: true, nombre: true, creadaEn: true, trialFin: true, trialLecturaFin: true },
+    });
+    const ahoraT = new Date();
+    const trials = { total: trialEmpresas.length, activos: 0, lectura: 0, vencidos: 0 };
+    trialEmpresas.forEach((e) => {
+      if (e.trialFin && ahoraT < e.trialFin) trials.activos++;
+      else if (e.trialLecturaFin && ahoraT < e.trialLecturaFin) trials.lectura++;
+      else trials.vencidos++;
+    });
+
     res.json({
       landingHoy,
       landingSemana,
@@ -451,6 +476,8 @@ router.get('/estadisticas', async (_req: AuthRequest, res: Response, next: NextF
       topFichas,
       topCiudades,
       dispositivos,
+      topSecciones,
+      trials,
     });
   } catch (err) {
     next(err);

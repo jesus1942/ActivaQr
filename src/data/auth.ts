@@ -17,7 +17,18 @@ export interface UsuarioSesion {
   email: string;
   rol: 'superadmin' | 'admin' | 'operador';
   empresaId: string | null;
-  empresa: { id: string; nombre: string; logoUrl?: string | null; estado?: string; plan?: string; mpEstadoSub?: string | null } | null;
+  empresa: {
+    id: string;
+    nombre: string;
+    logoUrl?: string | null;
+    estado?: string;
+    plan?: string;
+    mpEstadoSub?: string | null;
+    esTrial?: boolean;
+    trialFin?: string | null;
+    trialLecturaFin?: string | null;
+    fase?: 'activo' | 'lectura' | 'vencido' | null;
+  } | null;
 }
 
 export function getToken(): string | null {
@@ -84,10 +95,44 @@ export async function login(
   return data.usuario as UsuarioSesion;
 }
 
+export async function registro(payload: {
+  empresaNombre: string;
+  nombre: string;
+  email: string;
+  password: string;
+  telefono?: string;
+}): Promise<UsuarioSesion> {
+  const res = await fetch(`${API_URL}/auth/registro`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error || 'No se pudo crear la cuenta.');
+  }
+  guardarSesion(data.token, data.usuario);
+  return data.usuario as UsuarioSesion;
+}
+
 export class EmpresaSuspendidaError extends Error {
   constructor() {
     super('empresa_suspendida');
     this.name = 'EmpresaSuspendidaError';
+  }
+}
+
+export class TrialVencidoError extends Error {
+  constructor() {
+    super('trial_vencido');
+    this.name = 'TrialVencidoError';
+  }
+}
+
+export class TrialLecturaError extends Error {
+  constructor() {
+    super('trial_lectura');
+    this.name = 'TrialLecturaError';
   }
 }
 
@@ -117,6 +162,12 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
     const data = await res.clone().json().catch(() => ({}));
     if (data?.code === 'empresa_suspendida') {
       throw new EmpresaSuspendidaError();
+    }
+    if (data?.code === 'trial_vencido') {
+      throw new TrialVencidoError();
+    }
+    if (data?.code === 'trial_lectura') {
+      throw new TrialLecturaError();
     }
   }
 

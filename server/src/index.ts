@@ -54,6 +54,10 @@ app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/forgot-password', authLimiter);
 app.use('/api/auth/reset-password', authLimiter);
 
+// Registro de trial: límite estricto por IP contra altas masivas.
+const registroLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: 'Demasiados registros desde esta conexión. Intentá más tarde.' } });
+app.use('/api/auth/registro', registroLimiter);
+
 // Límite global generoso contra abuso automatizado (no afecta el uso normal).
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,

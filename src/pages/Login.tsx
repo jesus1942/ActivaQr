@@ -1,6 +1,6 @@
 // v1.1.0
 import React, { useState } from 'react';
-import { LogIn, Lock, Mail } from 'lucide-react';
+import { LogIn, Lock, Mail, UserPlus, Building2, User, Phone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { apiFetch, logout as clearSession } from '../data/auth';
 
@@ -14,9 +14,40 @@ function isDemoParam() {
   return hash.includes('demo=1');
 }
 
+function isRegistroParam() {
+  return window.location.hash.includes('registro=1');
+}
+
 export const Login: React.FC = () => {
-  const { login } = useAuth();
+  const { login, registro } = useAuth();
   const isDemo = isDemoParam();
+  const [vistaRegistro, setVistaRegistro] = useState(isRegistroParam());
+  const [regEmpresa, setRegEmpresa] = useState('');
+  const [regNombre, setRegNombre] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regTelefono, setRegTelefono] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regError, setRegError] = useState<string | null>(null);
+  const [regCargando, setRegCargando] = useState(false);
+
+  const handleRegistro = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRegError(null);
+    setRegCargando(true);
+    try {
+      await registro({
+        empresaNombre: regEmpresa,
+        nombre: regNombre,
+        email: regEmail,
+        password: regPassword,
+        telefono: regTelefono || undefined,
+      });
+    } catch (err) {
+      setRegError(err instanceof Error ? err.message : 'No se pudo crear la cuenta.');
+    } finally {
+      setRegCargando(false);
+    }
+  };
   const [email, setEmail] = useState(isDemo ? DEMO_EMAIL : '');
   const [password, setPassword] = useState(isDemo ? DEMO_PASS : '');
   const [error, setError] = useState<string | null>(null);
@@ -55,10 +86,66 @@ export const Login: React.FC = () => {
               ActivaQR
             </h1>
             <p className="text-slate-500 text-sm mt-1 font-medium uppercase tracking-wider">
-              Activos bajo control
+              {vistaRegistro ? 'Probá gratis 14 días' : 'Activos bajo control'}
             </p>
           </div>
 
+          {vistaRegistro ? (
+            <form onSubmit={handleRegistro} className="space-y-3">
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Empresa</label>
+                <div className="flex items-center gap-2 border-2 border-slate-300 px-3 h-12 focus-within:border-orange-500">
+                  <Building2 size={18} className="text-slate-400" />
+                  <input value={regEmpresa} onChange={(e) => setRegEmpresa(e.target.value)} placeholder="Nombre de tu empresa" className="flex-1 outline-none bg-transparent" required />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Tu nombre</label>
+                <div className="flex items-center gap-2 border-2 border-slate-300 px-3 h-12 focus-within:border-orange-500">
+                  <User size={18} className="text-slate-400" />
+                  <input value={regNombre} onChange={(e) => setRegNombre(e.target.value)} placeholder="Nombre y apellido" className="flex-1 outline-none bg-transparent" required />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Email</label>
+                <div className="flex items-center gap-2 border-2 border-slate-300 px-3 h-12 focus-within:border-orange-500">
+                  <Mail size={18} className="text-slate-400" />
+                  <input type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} placeholder="tu@empresa.com" className="flex-1 outline-none bg-transparent font-mono" autoComplete="username" required />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Teléfono <span className="text-slate-400 font-normal lowercase">(opcional)</span></label>
+                <div className="flex items-center gap-2 border-2 border-slate-300 px-3 h-12 focus-within:border-orange-500">
+                  <Phone size={18} className="text-slate-400" />
+                  <input value={regTelefono} onChange={(e) => setRegTelefono(e.target.value)} placeholder="+54 9 ..." className="flex-1 outline-none bg-transparent font-mono" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Contraseña</label>
+                <div className="flex items-center gap-2 border-2 border-slate-300 px-3 h-12 focus-within:border-orange-500">
+                  <Lock size={18} className="text-slate-400" />
+                  <input type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} placeholder="Mínimo 8 caracteres" className="flex-1 outline-none bg-transparent font-mono" autoComplete="new-password" minLength={8} required />
+                </div>
+              </div>
+
+              {regError && (
+                <div className="bg-red-50 border-2 border-red-300 text-red-700 text-sm px-3 py-2 font-semibold">{regError}</div>
+              )}
+
+              <button type="submit" disabled={regCargando} className="w-full flex items-center justify-center gap-2 bg-orange-500 text-white h-12 font-sketch font-black text-xl uppercase border-2 border-slate-900 shadow-[4px_4px_0px_0px_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#1e293b] transition-all disabled:opacity-50">
+                <UserPlus size={20} />
+                {regCargando ? 'Creando…' : 'Crear cuenta y probar'}
+              </button>
+
+              <p className="text-[11px] text-slate-400 text-center leading-snug">14 días de acceso completo, hasta 10 activos. Sin tarjeta de crédito.</p>
+
+              <div className="text-center mt-2">
+                <button type="button" onClick={() => { setVistaRegistro(false); setRegError(null); }} className="text-xs text-slate-500 hover:text-orange-500 underline transition-colors">
+                  Ya tengo cuenta — Ingresar
+                </button>
+              </div>
+            </form>
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
@@ -121,6 +208,21 @@ export const Login: React.FC = () => {
               </button>
             </div>
           </form>
+          )}
+
+          {!vistaRegistro && !vistaForgot && (
+            <div className="mt-4 border-t-2 border-slate-200 pt-4 text-center">
+              <p className="text-xs text-slate-500 mb-2">¿No tenés cuenta todavía?</p>
+              <button
+                type="button"
+                onClick={() => { setVistaRegistro(true); setError(null); }}
+                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white h-11 font-black text-sm uppercase tracking-wide border-2 border-slate-900 hover:bg-orange-500 transition-colors"
+              >
+                <UserPlus size={18} />
+                Probar gratis 14 días
+              </button>
+            </div>
+          )}
 
           {vistaForgot && (
             <div className="mt-4 border-t-2 border-slate-200 pt-4">

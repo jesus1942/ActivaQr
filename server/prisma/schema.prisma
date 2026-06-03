@@ -131,6 +131,11 @@ model Empresa {
   estado    EstadoEmpresa @default(activa)
   creadaEn  DateTime      @default(now())
 
+  // Free trial autogestionado.
+  esTrial         Boolean   @default(false)
+  trialFin        DateTime? // fin del acceso completo (registro + 14d)
+  trialLecturaFin DateTime? // fin del modo solo-lectura (registro + 28d)
+
   // Suscripción Mercado Pago.
   mpPreapprovalId String?   // id del preapproval (suscripción) en MP
   mpEstadoSub     String?   // estado reportado por MP: authorized, paused, cancelled...
@@ -391,6 +396,8 @@ model Visita {
   pais      String?
   ciudad    String?
   ip        String?
+  seccion   String?  // solo para tipo 'seccion': nombre de la pantalla
+  empresaId String?  // empresa del usuario logueado (tracking interno)
   creadoEn  DateTime @default(now())
 
   @@index([tipo])

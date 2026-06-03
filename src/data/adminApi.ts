@@ -128,6 +128,8 @@ export interface Estadisticas {
   topFichas: { activoId: string; nombre: string; codigo: string; empresa: string; visitas: number }[];
   topCiudades: { ciudad: string; pais: string; visitas: number }[];
   dispositivos: { mobile: number; tablet: number; desktop: number };
+  topSecciones: { seccion: string; visitas: number }[];
+  trials: { total: number; activos: number; lectura: number; vencidos: number };
 }
 
 export async function getEstadisticas(): Promise<Estadisticas> {

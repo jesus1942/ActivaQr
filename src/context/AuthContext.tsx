@@ -4,8 +4,10 @@ import {
   UsuarioSesion,
   getUsuario,
   login as apiLogin,
+  registro as apiRegistro,
   logout as apiLogout,
   EmpresaSuspendidaError,
+  TrialVencidoError,
 } from '../data/auth';
 import { useRemote } from '../data/store';
 
@@ -15,7 +17,10 @@ interface AuthState {
   requiereLogin: boolean;
   /** true cuando la empresa fue suspendida — bloquea la app inmediatamente. */
   empresaSuspendida: boolean;
+  /** true cuando el período de prueba venció — bloquea con pantalla de pago. */
+  trialVencido: boolean;
   login: (email: string, password: string) => Promise<void>;
+  registro: (payload: { empresaNombre: string; nombre: string; email: string; password: string; telefono?: string }) => Promise<void>;
   logout: () => void;
 }
 
@@ -24,13 +29,17 @@ const AuthContext = createContext<AuthState | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [usuario, setUsuario] = useState<UsuarioSesion | null>(() => getUsuario());
   const [empresaSuspendida, setEmpresaSuspendida] = useState(false);
+  const [trialVencido, setTrialVencido] = useState(() => getUsuario()?.empresa?.fase === 'vencido');
 
-  // Captura global: cualquier apiFetch que reciba 403 empresa_suspendida
-  // lanza EmpresaSuspendidaError como promesa rechazada no manejada.
+  // Captura global: cualquier apiFetch que reciba 403 lanza el error especial
+  // como promesa rechazada no manejada.
   useEffect(() => {
     const handler = (e: PromiseRejectionEvent) => {
       if (e.reason instanceof EmpresaSuspendidaError) {
         setEmpresaSuspendida(true);
+        e.preventDefault();
+      } else if (e.reason instanceof TrialVencidoError) {
+        setTrialVencido(true);
         e.preventDefault();
       }
     };
@@ -41,6 +50,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = useCallback(async (email: string, password: string) => {
     const u = await apiLogin(email, password);
     setEmpresaSuspendida(false);
+    setTrialVencido(u.empresa?.fase === 'vencido');
+    setUsuario(u);
+  }, []);
+
+  const registro = useCallback(async (payload: { empresaNombre: string; nombre: string; email: string; password: string; telefono?: string }) => {
+    const u = await apiRegistro(payload);
+    setEmpresaSuspendida(false);
+    setTrialVencido(false);
     setUsuario(u);
   }, []);
 
@@ -48,6 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     apiLogout();
     setUsuario(null);
     setEmpresaSuspendida(false);
+    setTrialVencido(false);
     ['activos', 'mediciones', 'tareas', 'sectores', 'tipos', 'tecnicos'].forEach((k) =>
       localStorage.removeItem(k)
     );
@@ -55,7 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <AuthContext.Provider value={{ usuario, requiereLogin: useRemote, empresaSuspendida, login, logout }}>
+    <AuthContext.Provider value={{ usuario, requiereLogin: useRemote, empresaSuspendida, trialVencido, login, registro, logout }}>
       {children}
     </AuthContext.Provider>
   );

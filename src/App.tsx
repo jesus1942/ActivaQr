@@ -22,12 +22,14 @@ import { Configuracion } from './pages/Configuracion';
 import { Mensajes } from './pages/Mensajes';
 import { MensajesAdmin } from './pages/MensajesAdmin';
 import { Admin } from './pages/Admin';
+import { Analitica } from './pages/Analitica';
 import { Login } from './pages/Login';
 import { FichaPublica } from './pages/FichaPublica';
 import { AprobarAccesoRemoto } from './pages/AprobarAccesoRemoto';
 import { ResetPassword } from './pages/ResetPassword';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DashboardOperador } from './pages/DashboardOperador';
+import { PantallaTrialVencido, SeccionTracker } from './components/TrialUI';
 
 function PantallaBloqueo() {
   const { logout } = useAuth();
@@ -59,22 +61,26 @@ function PantallaBloqueo() {
 }
 
 function AuthedApp() {
-  const { usuario, requiereLogin, empresaSuspendida } = useAuth();
+  const { usuario, requiereLogin, empresaSuspendida, trialVencido } = useAuth();
 
   if (requiereLogin && !usuario) return <Login />;
   if (empresaSuspendida && usuario?.rol !== 'superadmin') return <PantallaBloqueo />;
+  if (trialVencido && usuario?.rol !== 'superadmin') return <PantallaTrialVencido />;
 
   if (usuario?.rol === 'operador') return <DashboardOperador />;
 
   const esSuperadmin = usuario?.rol === 'superadmin';
 
   return (
+    <>
+    <SeccionTracker />
     <Routes>
       <Route path="/" element={<Layout />}>
         {esSuperadmin ? (
           <>
             <Route index element={<Admin />} />
             <Route path="admin" element={<Admin />} />
+            <Route path="analitica" element={<Analitica />} />
             <Route path="mensajes" element={<MensajesAdmin />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </>
@@ -97,6 +103,7 @@ function AuthedApp() {
         )}
       </Route>
     </Routes>
+    </>
   );
 }
 

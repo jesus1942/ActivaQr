@@ -365,7 +365,6 @@ export const Admin: React.FC = () => {
   const [empresas, setEmpresas] = useState<EmpresaAdmin[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [solicitudes, setSolicitudes] = useState<SolicitudUpgrade[]>([]);
-  const [estadisticas, setEstadisticas] = useState<Estadisticas | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -431,10 +430,6 @@ export const Admin: React.FC = () => {
   };
 
   useEffect(() => { cargar(); }, []);
-
-  useEffect(() => {
-    getEstadisticas().then(setEstadisticas).catch(() => {});
-  }, []);
 
   useEffect(() => {
     apiFetch('admin/stripe-status')
@@ -675,16 +670,6 @@ export const Admin: React.FC = () => {
         />
       </div>
 
-      {estadisticas && (
-        <PanelEstadisticas
-          estadisticas={estadisticas}
-          onReiniciar={async () => {
-            if (!confirm('Reiniciar el contador de visitas? Se borran todos los registros de visitas y escaneos.')) return;
-            await reiniciarEstadisticas();
-            getEstadisticas().then(setEstadisticas).catch(() => {});
-          }}
-        />
-      )}
 
       {error && (
         <div className="bg-red-50 border-2 border-red-300 text-red-700 px-4 py-3 font-semibold">
@@ -1218,8 +1203,9 @@ const StatCard: React.FC<{ label: string; valor: number }> = ({ label, valor }) 
   </div>
 );
 
-const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReiniciar: () => void }> = ({ estadisticas, onReiniciar }) => {
+export const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReiniciar: () => void }> = ({ estadisticas, onReiniciar }) => {
   const maxVisitas = estadisticas.topFichas.reduce((m, f) => Math.max(m, f.visitas), 0) || 1;
+  const maxSeccion = (estadisticas.topSecciones ?? []).reduce((m, s) => Math.max(m, s.visitas), 0) || 1;
   return (
     <div className="border-2 border-slate-900 bg-slate-50 shadow-[4px_4px_0px_0px_#1e293b] p-4 space-y-4">
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -1322,6 +1308,49 @@ const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReiniciar: () 
               <span className="font-black text-xl text-slate-900">{estadisticas.dispositivos.tablet}</span>
               <span className="text-[10px] font-black uppercase text-slate-500">Tablet</span>
             </div>
+          </div>
+        </div>
+      )}
+
+      {estadisticas.trials && (
+        <div>
+          <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Cuentas de prueba</p>
+          <div className="grid grid-cols-4 gap-2">
+            <div className="bg-white border-2 border-slate-900 shadow-[2px_2px_0px_0px_#1e293b] p-2.5 flex flex-col items-center gap-0.5">
+              <span className="font-black text-xl text-slate-900">{estadisticas.trials.total}</span>
+              <span className="text-[10px] font-black uppercase text-slate-500">Total</span>
+            </div>
+            <div className="bg-white border-2 border-emerald-500 shadow-[2px_2px_0px_0px_#1e293b] p-2.5 flex flex-col items-center gap-0.5">
+              <span className="font-black text-xl text-emerald-600">{estadisticas.trials.activos}</span>
+              <span className="text-[10px] font-black uppercase text-slate-500">Activos</span>
+            </div>
+            <div className="bg-white border-2 border-amber-500 shadow-[2px_2px_0px_0px_#1e293b] p-2.5 flex flex-col items-center gap-0.5">
+              <span className="font-black text-xl text-amber-600">{estadisticas.trials.lectura}</span>
+              <span className="text-[10px] font-black uppercase text-slate-500">Lectura</span>
+            </div>
+            <div className="bg-white border-2 border-red-400 shadow-[2px_2px_0px_0px_#1e293b] p-2.5 flex flex-col items-center gap-0.5">
+              <span className="font-black text-xl text-red-600">{estadisticas.trials.vencidos}</span>
+              <span className="text-[10px] font-black uppercase text-slate-500">Vencidos</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {estadisticas.topSecciones?.length > 0 && (
+        <div>
+          <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Secciones más usadas</p>
+          <div className="space-y-1.5">
+            {estadisticas.topSecciones.map((s) => (
+              <div key={s.seccion} className="bg-white border-2 border-slate-200 px-3 py-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-slate-800">{s.seccion}</span>
+                  <span className="font-black text-slate-900 text-sm">{s.visitas}</span>
+                </div>
+                <div className="mt-1 h-1.5 bg-slate-100">
+                  <div className="h-full bg-orange-500" style={{ width: `${Math.round((s.visitas / maxSeccion) * 100)}%` }} />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
