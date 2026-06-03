@@ -78,6 +78,26 @@ export async function obtenerPreapproval(id: string): Promise<PreapprovalInfo> {
   return data as PreapprovalInfo;
 }
 
+export interface PagoInfo {
+  id: string;
+  status: string; // approved | pending | rejected | cancelled
+  transaction_amount: number;
+  currency_id: string;
+  description?: string;
+  date_approved?: string;
+  date_created?: string;
+  external_reference?: string;
+  preapproval_id?: string;
+}
+
+/** Consulta un pago individual por su ID. */
+export async function obtenerPago(id: string): Promise<PagoInfo> {
+  const res = await fetch(`${MP_API}/v1/payments/${id}`, { headers: headers() });
+  const data = (await res.json()) as any;
+  if (!res.ok) throw new Error(data?.message || 'No se pudo consultar el pago.');
+  return data as PagoInfo;
+}
+
 /** Cancela una suscripción activa en Mercado Pago. */
 export async function cancelarPreapproval(id: string): Promise<void> {
   const res = await fetch(`${MP_API}/preapproval/${id}`, {

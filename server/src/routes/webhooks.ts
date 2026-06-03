@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { prisma } from '../prisma';
-import { obtenerPreapproval } from '../mercadopago';
+import { obtenerPreapproval, obtenerPago } from '../mercadopago';
 
 const router = Router();
 
@@ -49,8 +49,36 @@ router.post('/mercadopago', async (req: Request, res: Response) => {
 
     if (!id) return;
 
-    // Solo nos interesan los eventos de suscripción (preapproval).
-    const esPreapproval = String(tipo).includes('preapproval') || String(tipo).includes('subscription');
+    const tipoStr = String(tipo);
+
+    // ── Evento de pago individual ──────────────────────────────
+    if (tipoStr === 'payment') {
+      const pago = await obtenerPago(String(id));
+      const empresaId = pago.external_reference;
+      if (!empresaId) return;
+
+      // Evitar duplicados por ID de pago MP
+      const existe = await prisma.pagoMP.findUnique({ where: { mpPagoId: String(pago.id) } });
+      if (!existe) {
+        await prisma.pagoMP.create({
+          data: {
+            empresaId,
+            mpPagoId: String(pago.id),
+            monto: pago.transaction_amount,
+            moneda: pago.currency_id ?? 'ARS',
+            estado: pago.status,
+            concepto: pago.description ?? null,
+            fecha: pago.date_approved ? new Date(pago.date_approved) : new Date(),
+            preapprovalId: pago.preapproval_id ?? null,
+          },
+        });
+        console.log(`MP pago registrado: ${pago.id} empresa=${empresaId} monto=${pago.transaction_amount} estado=${pago.status}`);
+      }
+      return;
+    }
+
+    // ── Evento de suscripción (preapproval) ───────────────────
+    const esPreapproval = tipoStr.includes('preapproval') || tipoStr.includes('subscription');
     if (!esPreapproval) return;
 
     const info = await obtenerPreapproval(String(id));
@@ -58,6 +86,7 @@ router.post('/mercadopago', async (req: Request, res: Response) => {
     if (!empresaId) return;
 
     const nuevoEstado = info.status === 'authorized' ? 'activa' : 'suspendida';
+    const monto = info.auto_recurring?.transaction_amount;
 
     await prisma.empresa.update({
       where: { id: empresaId },
@@ -65,10 +94,32 @@ router.post('/mercadopago', async (req: Request, res: Response) => {
         estado: nuevoEstado,
         mpPreapprovalId: info.id,
         mpEstadoSub: info.status,
-        mpMonto: info.auto_recurring?.transaction_amount ?? undefined,
+        mpMonto: monto ?? undefined,
         ...(info.status === 'authorized' ? { mpUltimoPago: new Date() } : {}),
       },
     });
+
+    // Registrar el cobro de la suscripción si viene autorizado
+    if (info.status === 'authorized' && monto) {
+      const hoy = new Date();
+      const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+      const finMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
+      const yaRegistrado = await prisma.pagoMP.findFirst({
+        where: { empresaId, preapprovalId: info.id, fecha: { gte: inicioMes, lt: finMes } },
+      });
+      if (!yaRegistrado) {
+        await prisma.pagoMP.create({
+          data: {
+            empresaId,
+            monto,
+            moneda: 'ARS',
+            estado: 'approved',
+            concepto: 'Suscripción mensual ActivaQR',
+            preapprovalId: info.id,
+          },
+        });
+      }
+    }
 
     console.log(`MP webhook: empresa ${empresaId} → ${nuevoEstado} (${info.status})`);
   } catch (err) {

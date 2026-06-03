@@ -143,6 +143,32 @@ export async function reiniciarEstadisticas(): Promise<void> {
   await apiFetch('admin/estadisticas', { method: 'DELETE' });
 }
 
+export interface PagoMP {
+  id: string;
+  empresaId: string;
+  mpPagoId: string | null;
+  monto: number;
+  moneda: string;
+  estado: string;
+  concepto: string | null;
+  fecha: string;
+  empresa: { id: string; nombre: string; plan: string };
+}
+
+export interface Facturacion {
+  mrr: number;
+  mrrAnterior: number;
+  totalAcumulado: number;
+  pagosEsteMes: number;
+  porMes: { mes: string; total: number; cantidad: number }[];
+  porEmpresa: { empresa: { id: string; nombre: string; plan: string }; total: number; cantidad: number }[];
+  ultimos: PagoMP[];
+}
+
+export async function getFacturacion(): Promise<Facturacion> {
+  return parse(await apiFetch('admin/facturacion'));
+}
+
 export async function generarSuscripcion(
   id: string,
   monto: number,

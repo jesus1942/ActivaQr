@@ -494,6 +494,63 @@ router.delete('/estadisticas', async (_req: AuthRequest, res: Response, next: Ne
   }
 });
 
+// GET /api/admin/facturacion — analítica económica: pagos MP registrados
+router.get('/facturacion', async (_req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const pagos = await prisma.pagoMP.findMany({
+      orderBy: { fecha: 'desc' },
+      include: { empresa: { select: { id: true, nombre: true, plan: true } } },
+    });
+
+    const ahora = new Date();
+    const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+    const inicioMesAnterior = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
+
+    const aprobados = pagos.filter(p => p.estado === 'approved');
+    const esteMes = aprobados.filter(p => p.fecha >= inicioMes);
+    const mesAnterior = aprobados.filter(p => p.fecha >= inicioMesAnterior && p.fecha < inicioMes);
+
+    const mrr = esteMes.reduce((s, p) => s + p.monto, 0);
+    const mrrAnterior = mesAnterior.reduce((s, p) => s + p.monto, 0);
+    const totalAcumulado = aprobados.reduce((s, p) => s + p.monto, 0);
+
+    // Ingresos por mes (últimos 6 meses)
+    const porMes: { mes: string; total: number; cantidad: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const inicio = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
+      const fin = new Date(ahora.getFullYear(), ahora.getMonth() - i + 1, 1);
+      const del_mes = aprobados.filter(p => p.fecha >= inicio && p.fecha < fin);
+      porMes.push({
+        mes: inicio.toISOString().slice(0, 7),
+        total: del_mes.reduce((s, p) => s + p.monto, 0),
+        cantidad: del_mes.length,
+      });
+    }
+
+    // Por empresa
+    const porEmpresa = new Map<string, { empresa: { id: string; nombre: string; plan: string }; total: number; cantidad: number }>();
+    aprobados.forEach(p => {
+      const key = p.empresaId;
+      if (!porEmpresa.has(key)) porEmpresa.set(key, { empresa: { id: p.empresa.id, nombre: p.empresa.nombre, plan: p.empresa.plan }, total: 0, cantidad: 0 });
+      const e = porEmpresa.get(key)!;
+      e.total += p.monto;
+      e.cantidad += 1;
+    });
+
+    res.json({
+      mrr,
+      mrrAnterior,
+      totalAcumulado,
+      pagosEsteMes: esteMes.length,
+      porMes,
+      porEmpresa: [...porEmpresa.values()].sort((a, b) => b.total - a.total),
+      ultimos: pagos.slice(0, 50),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /api/admin/seed-demo — recrea la empresa demo si no existe
 router.get('/stripe-status', (_req: AuthRequest, res: Response) => {
   res.json({ configurado: !!process.env.STRIPE_SECRET_KEY });

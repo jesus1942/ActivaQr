@@ -143,6 +143,7 @@ model Empresa {
   activos        Activo[]
   permisoAcceso  PermisoAccesoRemoto?
   categorias     CategoriaEquipo[]
+  pagos          PagoMP[]
 
   @@index([mpPreapprovalId])
 }
@@ -436,4 +437,22 @@ model Documento {
   activo Activo @relation(fields: [activoId], references: [id], onDelete: Cascade)
 
   @@index([activoId])
+}
+
+model PagoMP {
+  id             String   @id @default(uuid())
+  empresaId      String
+  mpPagoId       String?  @unique  // ID del pago en MP (para no duplicar)
+  monto          Float
+  moneda         String   @default("ARS")
+  estado         String   // approved, pending, rejected, cancelled
+  concepto       String?
+  fecha          DateTime @default(now())
+  preapprovalId  String?  // ID de la suscripción
+  creadoEn       DateTime @default(now())
+
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@index([empresaId])
+  @@index([fecha])
 }
