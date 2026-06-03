@@ -83,31 +83,9 @@ router.put('/tipos', asyncHandler(async (req, res) => {
   res.json({ synced: items.length });
 }));
 
-// ───────── Técnicos ─────────
-router.put('/tecnicos', asyncHandler(async (req, res) => {
-  const empresaId = await resolveEmpresaId(req);
-  const items: any[] = Array.isArray(req.body) ? req.body : [];
-  const ids = items.map((i) => i.id);
-  await prisma.$transaction([
-    ...(ids.length
-      ? [prisma.tecnico.deleteMany({ where: { empresaId, id: { notIn: ids } } })]
-      : []),
-    ...items.map((i) => {
-      const data = {
-        nombre: i.nombre,
-        rol: i.rol ?? 'tecnico',
-        email: i.email ?? null,
-        telefono: i.telefono ?? null,
-        activo: i.activo ?? true,
-      };
-      return prisma.tecnico.upsert({
-        where: { id: i.id },
-        create: { id: i.id, empresaId, ...data },
-        update: data,
-      });
-    }),
-  ]);
-  res.json({ synced: items.length });
+// ───────── Personal (ex-tecnicos) — no-op: se gestionan via /api/operadores
+router.put('/tecnicos', asyncHandler(async (_req, res) => {
+  res.json({ synced: 0 });
 }));
 
 // ───────── Activos ─────────

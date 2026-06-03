@@ -26,7 +26,7 @@ async function main() {
   await prisma.medicion.deleteMany();
   await prisma.tareaMantenimiento.deleteMany();
   await prisma.activo.deleteMany();
-  await prisma.tecnico.deleteMany();
+  await prisma.usuario.deleteMany();
   await prisma.tipoActivo.deleteMany();
   await prisma.sector.deleteMany();
   await prisma.sede.deleteMany();
@@ -103,32 +103,40 @@ async function main() {
     tipos[t.nombre] = created.id;
   }
 
-  console.log('Creando técnicos...');
-  const juan = await prisma.tecnico.create({
+  console.log('Creando personal...');
+  const bcrypt = await import('bcryptjs');
+  const defaultHash = await bcrypt.hash('operador1234', 10);
+  const juan = await prisma.usuario.create({
     data: {
       empresaId: empresa.id,
-      nombre: 'Juan Rodríguez',
-      rol: 'admin',
+      nombre: 'Juan Rodriguez',
       email: 'juan.rodriguez@indpatagonicas.com',
+      passwordHash: defaultHash,
       telefono: '+54 280 4123456',
+      cargo: 'Supervisor',
+      rol: 'operador',
     },
   });
-  const carlos = await prisma.tecnico.create({
+  const carlos = await prisma.usuario.create({
     data: {
       empresaId: empresa.id,
       nombre: 'Carlos Vera',
-      rol: 'supervisor',
       email: 'carlos.vera@indpatagonicas.com',
+      passwordHash: defaultHash,
       telefono: '+54 280 4123457',
+      cargo: 'Supervisor',
+      rol: 'operador',
     },
   });
-  const maria = await prisma.tecnico.create({
+  const maria = await prisma.usuario.create({
     data: {
       empresaId: empresa.id,
-      nombre: 'María González',
-      rol: 'tecnico',
+      nombre: 'Maria Gonzalez',
       email: 'maria.gonzalez@indpatagonicas.com',
+      passwordHash: defaultHash,
       telefono: '+54 280 4123458',
+      cargo: 'Tecnico',
+      rol: 'operador',
     },
   });
 

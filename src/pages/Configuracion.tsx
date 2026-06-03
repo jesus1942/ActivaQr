@@ -1,10 +1,10 @@
 // v1.1.0
 import React, { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, RotateCcw, Check, AlertTriangle, MessageSquare, ShieldCheck, ShieldOff, ChevronDown, ChevronRight, KeyRound, UserX } from 'lucide-react';
-import { Operador, getOperadores, crearOperador, desactivarOperador, resetPasswordOperador } from '../data/operadoresApi';
+import { Operador, getOperadores, crearOperador, actualizarOperador, desactivarOperador, resetPasswordOperador } from '../data/operadoresApi';
 import { useActivos } from '../hooks/useActivos';
 import { useAuth } from '../context/AuthContext';
-import { Sector, TipoActivo, Tecnico } from '../data/types';
+import { Sector, TipoActivo } from '../data/types';
 import { cancelarMiSuscripcion, solicitarUpgrade } from '../data/adminApi';
 import {
   PermisoAcceso, MensajeRemoto,
@@ -19,14 +19,13 @@ import {
   getCategorias, crearCategoria, eliminarCategoria, agregarParametro,
 } from '../data/categoriasApi';
 
-type Tab = 'sectores' | 'tipos' | 'tecnicos' | 'categorias' | 'operadores';
+type Tab = 'sectores' | 'tipos' | 'categorias' | 'personal';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'sectores', label: 'Sectores' },
   { id: 'tipos', label: 'Tipos de Activo' },
-  { id: 'tecnicos', label: 'Técnicos' },
-  { id: 'categorias', label: 'Categorías' },
-  { id: 'operadores', label: 'Operadores de campo' },
+  { id: 'categorias', label: 'Categorias' },
+  { id: 'personal', label: 'Personal' },
 ];
 
 const inputCls =
@@ -37,7 +36,6 @@ export const Configuracion: React.FC = () => {
   const {
     sectores, addSector, updateSector, deleteSector,
     tipos, addTipo, updateTipo, deleteTipo,
-    tecnicos, addTecnico, updateTecnico, deleteTecnico,
   } = useActivos();
   const { usuario } = useAuth();
 
@@ -52,7 +50,7 @@ export const Configuracion: React.FC = () => {
         <h1 className="font-sketch text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 uppercase tracking-tight">
           Configuración
         </h1>
-        <p className="text-slate-500 text-sm mt-1">Gestioná sectores, tipos de activo y técnicos</p>
+        <p className="text-slate-500 text-sm mt-1">Gestioná sectores, tipos de activo y personal</p>
       </div>
 
       <NotificacionesPush />
@@ -90,17 +88,8 @@ export const Configuracion: React.FC = () => {
       {tab === 'tipos' && (
         <TiposSection tipos={tipos} addTipo={addTipo} updateTipo={updateTipo} deleteTipo={deleteTipo} />
       )}
-      {tab === 'tecnicos' && (
-        <TecnicosSection
-          tecnicos={tecnicos}
-          addTecnico={addTecnico}
-          updateTecnico={updateTecnico}
-          deleteTecnico={deleteTecnico}
-        />
-      )}
-
       {tab === 'categorias' && <CategoriasSection />}
-      {tab === 'operadores' && <OperadoresSection />}
+      {tab === 'personal' && <PersonalSection />}
 
       {tieneSubActiva && <SeccionSuscripcion />}
       <SeccionAccesoRemoto />
@@ -360,101 +349,6 @@ const TiposSection: React.FC<TiposProps> = ({ tipos, addTipo, updateTipo, delete
   );
 };
 
-// ─── TECNICOS ──────────────────────────────────────────────────
-interface TecnicosProps {
-  tecnicos: Tecnico[];
-  addTecnico: (t: Tecnico) => void;
-  updateTecnico: (id: string, u: Partial<Tecnico>) => void;
-  deleteTecnico: (id: string) => void;
-}
-
-const TecnicosSection: React.FC<TecnicosProps> = ({ tecnicos, addTecnico, updateTecnico, deleteTecnico }) => {
-  const [editing, setEditing] = useState<Tecnico | null>(null);
-  const [adding, setAdding] = useState(false);
-
-  const empty: Omit<Tecnico, 'id'> = { nombre: '', rol: 'tecnico', email: '', telefono: '', activo: true };
-  const [form, setForm] = useState<Omit<Tecnico, 'id'>>(empty);
-
-  const startAdd = () => { setForm(empty); setAdding(true); setEditing(null); };
-  const startEdit = (t: Tecnico) => {
-    setForm({ nombre: t.nombre, rol: t.rol, email: t.email ?? '', telefono: t.telefono ?? '', activo: t.activo });
-    setEditing(t); setAdding(false);
-  };
-  const cancel = () => { setAdding(false); setEditing(null); };
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editing) updateTecnico(editing.id, form);
-    else addTecnico({ ...form, id: `tec-${Date.now()}` });
-    cancel();
-  };
-
-  const confirmDelete = (t: Tecnico) => {
-    if (window.confirm(`¿Eliminar al técnico "${t.nombre}"? Si tiene registros asociados se marcará como inactivo.`)) {
-      deleteTecnico(t.id);
-    }
-  };
-
-  return (
-    <div className="space-y-4">
-      {!adding && !editing && <AddButton onClick={startAdd} label="Agregar Técnico" />}
-
-      {(adding || editing) && (
-        <form onSubmit={submit} className="bg-white border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)] p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className={labelCls}>Nombre</label>
-            <input required value={form.nombre} onChange={(e) => setForm((p) => ({ ...p, nombre: e.target.value }))} className={inputCls} />
-          </div>
-          <div>
-            <label className={labelCls}>Rol</label>
-            <select value={form.rol} onChange={(e) => setForm((p) => ({ ...p, rol: e.target.value as Tecnico['rol'] }))} className={inputCls}>
-              <option value="admin">Admin</option>
-              <option value="supervisor">Supervisor</option>
-              <option value="tecnico">Técnico</option>
-            </select>
-          </div>
-          <div>
-            <label className={labelCls}>Email</label>
-            <input type="email" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} className={inputCls} />
-          </div>
-          <div>
-            <label className={labelCls}>Teléfono</label>
-            <input value={form.telefono} onChange={(e) => setForm((p) => ({ ...p, telefono: e.target.value }))} className={inputCls} />
-          </div>
-          <div className="sm:col-span-2 flex justify-end gap-3">
-            <button type="button" onClick={cancel} className="px-4 min-h-[44px] border-2 border-slate-400 font-bold text-slate-600">Cancelar</button>
-            <button type="submit" className="px-4 min-h-[44px] bg-orange-500 text-white border-2 border-slate-800 font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)]">{editing ? 'Guardar' : 'Crear'}</button>
-          </div>
-        </form>
-      )}
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {tecnicos.map((t) => (
-          <Card key={t.id} inactivo={!t.activo}>
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <div className="font-bold text-slate-800 truncate">{t.nombre}</div>
-                <div className="text-xs font-semibold uppercase text-orange-500 tracking-wider">{t.rol}</div>
-                {t.email && <div className="text-xs text-slate-500 truncate mt-1">{t.email}</div>}
-                {t.telefono && <div className="text-xs text-slate-500 truncate">{t.telefono}</div>}
-              </div>
-              <div className="flex gap-1.5 flex-shrink-0">
-                {t.activo ? (
-                  <>
-                    <IconBtn onClick={() => startEdit(t)} title="Editar"><Pencil size={15} /></IconBtn>
-                    <IconBtn onClick={() => confirmDelete(t)} title="Eliminar" danger><Trash2 size={15} /></IconBtn>
-                  </>
-                ) : (
-                  <IconBtn onClick={() => updateTecnico(t.id, { activo: true })} title="Reactivar"><RotateCcw size={15} /></IconBtn>
-                )}
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-};
 
 // ─── CATEGORÍAS ────────────────────────────────────────────────
 
@@ -812,15 +706,17 @@ const CategoriaCard: React.FC<CategoriaCardProps> = ({ cat, expandido, onToggle,
   );
 };
 
-// ─── OPERADORES DE CAMPO ───────────────────────────────────────
+// ─── PERSONAL ─────────────────────────────────────────────────
 
-const OperadoresSection: React.FC = () => {
+const PersonalSection: React.FC = () => {
   const [operadores, setOperadores] = useState<Operador[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [guardando, setGuardando] = useState(false);
-  const [form, setForm] = useState({ nombre: '', email: '', password: '' });
+  const [form, setForm] = useState({ nombre: '', email: '', password: '', cargo: '' });
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ nombre: '', cargo: '' });
 
   const [resetId, setResetId] = useState<string | null>(null);
   const [resetPwd, setResetPwd] = useState('');
@@ -841,14 +737,27 @@ const OperadoresSection: React.FC = () => {
     setGuardando(true);
     setError(null);
     try {
-      const nuevo = await crearOperador(form);
+      const nuevo = await crearOperador({ ...form, cargo: form.cargo || undefined });
       setOperadores((p) => [...p, nuevo]);
-      setForm({ nombre: '', email: '', password: '' });
+      setForm({ nombre: '', email: '', password: '', cargo: '' });
       setAdding(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al crear operador');
     } finally {
       setGuardando(false);
+    }
+  };
+
+  const handleEditar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editId) return;
+    setError(null);
+    try {
+      const actualizado = await actualizarOperador(editId, { nombre: editForm.nombre, cargo: editForm.cargo || null });
+      setOperadores((p) => p.map((o) => o.id === editId ? { ...o, ...actualizado } : o));
+      setEditId(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al actualizar');
     }
   };
 
@@ -886,11 +795,11 @@ const OperadoresSection: React.FC = () => {
       )}
 
       <p className="text-sm text-slate-500">
-        Los operadores de campo pueden iniciar sesión con su email y contraseña para registrar mediciones desde sus celulares.
+        El personal puede iniciar sesion con email y contrasena para registrar mediciones. Asignales un cargo libre como "Tecnico", "Supervisor" u "Operador de campo".
       </p>
 
       {!adding && (
-        <AddButton onClick={() => setAdding(true)} label="Nuevo operador" />
+        <AddButton onClick={() => setAdding(true)} label="Nuevo personal" />
       )}
 
       {adding && (
@@ -906,6 +815,15 @@ const OperadoresSection: React.FC = () => {
             />
           </div>
           <div>
+            <label className={labelCls}>Cargo</label>
+            <input
+              value={form.cargo}
+              onChange={(e) => setForm((p) => ({ ...p, cargo: e.target.value }))}
+              className={inputCls}
+              placeholder="Ej: Tecnico, Supervisor, Operador de campo..."
+            />
+          </div>
+          <div>
             <label className={labelCls}>Email</label>
             <input
               required
@@ -916,7 +834,7 @@ const OperadoresSection: React.FC = () => {
               placeholder="operador@empresa.com"
             />
           </div>
-          <div className="sm:col-span-2">
+          <div>
             <label className={labelCls}>Contrasena (min. 8 caracteres)</label>
             <input
               required
@@ -930,7 +848,7 @@ const OperadoresSection: React.FC = () => {
           <div className="sm:col-span-2 flex justify-end gap-3">
             <button
               type="button"
-              onClick={() => { setAdding(false); setForm({ nombre: '', email: '', password: '' }); }}
+              onClick={() => { setAdding(false); setForm({ nombre: '', email: '', password: '', cargo: '' }); }}
               className="px-4 min-h-[44px] border-2 border-slate-400 font-bold text-slate-600"
             >
               Cancelar
@@ -940,8 +858,25 @@ const OperadoresSection: React.FC = () => {
               disabled={guardando}
               className="px-4 min-h-[44px] bg-orange-500 text-white border-2 border-slate-800 font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] disabled:opacity-50"
             >
-              {guardando ? 'Creando...' : 'Crear operador'}
+              {guardando ? 'Creando...' : 'Crear'}
             </button>
+          </div>
+        </form>
+      )}
+
+      {editId && (
+        <form onSubmit={handleEditar} className="bg-white border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)] p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls}>Nombre</label>
+            <input required value={editForm.nombre} onChange={(e) => setEditForm((p) => ({ ...p, nombre: e.target.value }))} className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Cargo</label>
+            <input value={editForm.cargo} onChange={(e) => setEditForm((p) => ({ ...p, cargo: e.target.value }))} className={inputCls} placeholder="Ej: Tecnico, Supervisor..." />
+          </div>
+          <div className="sm:col-span-2 flex justify-end gap-3">
+            <button type="button" onClick={() => setEditId(null)} className="px-4 min-h-[44px] border-2 border-slate-400 font-bold text-slate-600">Cancelar</button>
+            <button type="submit" className="px-4 min-h-[44px] bg-orange-500 text-white border-2 border-slate-800 font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)]">Guardar</button>
           </div>
         </form>
       )}
@@ -981,9 +916,9 @@ const OperadoresSection: React.FC = () => {
       )}
 
       {cargando ? (
-        <p className="text-sm text-slate-400">Cargando operadores...</p>
+        <p className="text-sm text-slate-400">Cargando personal...</p>
       ) : operadores.length === 0 ? (
-        <p className="text-sm text-slate-400 italic">No hay operadores de campo registrados.</p>
+        <p className="text-sm text-slate-400 italic">No hay personal registrado.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {operadores.map((o) => (
@@ -991,7 +926,9 @@ const OperadoresSection: React.FC = () => {
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <div className="font-bold text-slate-800 truncate">{o.nombre}</div>
-                  <div className="text-xs font-semibold uppercase text-orange-500 tracking-wider">operador</div>
+                  {o.cargo && (
+                    <div className="text-xs font-semibold uppercase text-orange-500 tracking-wider">{o.cargo}</div>
+                  )}
                   <div className="text-xs text-slate-500 truncate mt-1">{o.email}</div>
                   {!o.activo && (
                     <span className="mt-1 inline-block text-xs font-black uppercase bg-red-100 border border-red-300 text-red-600 px-1.5 py-0.5">
@@ -1002,6 +939,12 @@ const OperadoresSection: React.FC = () => {
                 {o.activo && (
                   <div className="flex gap-1.5 flex-shrink-0">
                     <IconBtn
+                      onClick={() => { setEditId(o.id); setEditForm({ nombre: o.nombre, cargo: o.cargo ?? '' }); }}
+                      title="Editar"
+                    >
+                      <Pencil size={15} />
+                    </IconBtn>
+                    <IconBtn
                       onClick={() => { setResetId(o.id); setResetPwd(''); }}
                       title="Resetear contrasena"
                     >
@@ -1009,7 +952,7 @@ const OperadoresSection: React.FC = () => {
                     </IconBtn>
                     <IconBtn
                       onClick={() => handleDesactivar(o.id, o.nombre)}
-                      title="Desactivar operador"
+                      title="Desactivar"
                       danger
                     >
                       <UserX size={15} />

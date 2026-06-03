@@ -31,7 +31,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
         ...(estado ? { estado: estado as any } : {}),
         activo: { empresaId },
       },
-      include: { responsable: true, activo: true },
+      include: { responsable: { select: { id: true, nombre: true, cargo: true } }, activo: true },
       orderBy: { fechaProgramada: 'asc' },
     });
     res.json(tareas);
@@ -85,7 +85,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         horasTrabajo: typeof horasTrabajo === 'number' ? horasTrabajo : null,
         fotos: Array.isArray(fotos) ? fotos : undefined,
       },
-      include: { responsable: true },
+      include: { responsable: { select: { id: true, nombre: true, cargo: true } } },
     });
     void auditar(req as AuthRequest, 'crear', 'orden_trabajo', tarea.id, `OT-${String(numero).padStart(5, '0')} en ${activo.codigo}`);
     res.status(201).json(tarea);
@@ -136,7 +136,7 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
     const tarea = await prisma.tareaMantenimiento.update({
       where: { id: req.params.id },
       data,
-      include: { responsable: true },
+      include: { responsable: { select: { id: true, nombre: true, cargo: true } } },
     });
     const accion = estado === 'completado' ? 'cerrar' : 'editar';
     void auditar(req as AuthRequest, accion, 'orden_trabajo', tarea.id, tarea.numero ? `OT-${String(tarea.numero).padStart(5, '0')}` : tarea.tipo);

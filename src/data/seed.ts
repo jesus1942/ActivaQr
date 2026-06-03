@@ -25,11 +25,11 @@ export const seedTipos: TipoActivo[] = [
 ];
 
 export const seedTecnicos: Tecnico[] = [
-  { id: 'tec-001', nombre: 'Juan Rodríguez', rol: 'admin', email: 'juan.rodriguez@plantapatagonica.com', telefono: '+54 280 400-0001', activo: true },
-  { id: 'tec-002', nombre: 'Carlos Vera', rol: 'supervisor', email: 'carlos.vera@plantapatagonica.com', telefono: '+54 280 400-0002', activo: true },
-  { id: 'tec-003', nombre: 'María González', rol: 'tecnico', email: 'maria.gonzalez@plantapatagonica.com', telefono: '+54 280 400-0003', activo: true },
-  { id: 'tec-004', nombre: 'Roberto Sánchez', rol: 'tecnico', email: 'roberto.sanchez@plantapatagonica.com', telefono: '+54 280 400-0004', activo: true },
-  { id: 'tec-005', nombre: 'Alejandro Torres', rol: 'supervisor', email: 'alejandro.torres@plantapatagonica.com', telefono: '+54 280 400-0005', activo: true },
+  { id: 'tec-001', nombre: 'Juan Rodríguez', cargo: 'Supervisor', activo: true },
+  { id: 'tec-002', nombre: 'Carlos Vera', cargo: 'Supervisor', activo: true },
+  { id: 'tec-003', nombre: 'María González', cargo: 'Tecnico', activo: true },
+  { id: 'tec-004', nombre: 'Roberto Sánchez', cargo: 'Tecnico', activo: true },
+  { id: 'tec-005', nombre: 'Alejandro Torres', cargo: 'Supervisor', activo: true },
 ];
 
 export const seedActivos: Activo[] = [

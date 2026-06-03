@@ -112,7 +112,7 @@ function pickActivoData(body: any) {
 const includeRelaciones = {
   sector: true,
   tipo: true,
-  responsable: true,
+  responsable: { select: { id: true, nombre: true, cargo: true } },
   sede: true,
 };
 
@@ -158,11 +158,11 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
         ...includeRelaciones,
         mediciones: {
           orderBy: { fecha: 'desc' },
-          include: { tecnico: true, fotos: true },
+          include: { tecnico: { select: { id: true, nombre: true, cargo: true } }, fotos: true },
         },
         tareas: {
           orderBy: { fechaProgramada: 'asc' },
-          include: { responsable: true },
+          include: { responsable: { select: { id: true, nombre: true, cargo: true } } },
         },
       },
     });

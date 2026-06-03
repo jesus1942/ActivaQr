@@ -20,7 +20,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
         ...(activoId ? { activoId } : {}),
         activo: { empresaId }, // garantiza aislamiento multi-tenant
       },
-      include: { tecnico: true, fotos: true },
+      include: { tecnico: { select: { id: true, nombre: true, cargo: true } }, fotos: true },
       orderBy: { fecha: 'desc' },
     });
     res.json(mediciones);
@@ -107,7 +107,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         origen,
         ...(fotosCreate ? { fotos: fotosCreate } : {}),
       },
-      include: { tecnico: true, fotos: true },
+      include: { tecnico: { select: { id: true, nombre: true, cargo: true } }, fotos: true },
     });
 
     // Actualizar estado del activo automáticamente según la medición.
