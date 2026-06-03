@@ -22,7 +22,7 @@ router.get('/empresas', async (_req: AuthRequest, res: Response, next: NextFunct
         _count: { select: { activos: true, usuarios: true } },
         usuarios: {
           where: { rol: 'admin' },
-          select: { id: true, nombre: true, email: true, activo: true, ultimoAcceso: true },
+          select: { id: true, nombre: true, email: true, telefono: true, activo: true, ultimoAcceso: true },
         },
       },
     });
@@ -35,7 +35,7 @@ router.get('/empresas', async (_req: AuthRequest, res: Response, next: NextFunct
 // POST /api/admin/empresas — crea empresa + su usuario administrador
 router.post('/empresas', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { nombre, cuit, plan, adminNombre, adminEmail, adminPassword } = req.body ?? {};
+    const { nombre, cuit, plan, adminNombre, adminEmail, adminPassword, adminTelefono } = req.body ?? {};
     if (!nombre || !adminEmail || !adminPassword) {
       return res.status(400).json({
         error: 'Faltan datos: nombre de empresa, email y contraseña del administrador.',
@@ -63,6 +63,7 @@ router.post('/empresas', async (req: AuthRequest, res: Response, next: NextFunct
             email: emailNorm,
             passwordHash,
             nombre: adminNombre || 'Administrador',
+            telefono: adminTelefono || null,
             rol: 'admin',
           },
         },

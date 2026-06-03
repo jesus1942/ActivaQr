@@ -155,6 +155,7 @@ model Usuario {
   email        String     @unique
   passwordHash String
   nombre       String
+  telefono     String?
   rol          RolUsuario @default(admin)
   activo           Boolean    @default(true)
   creadoEn         DateTime   @default(now())

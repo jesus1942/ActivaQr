@@ -1,11 +1,12 @@
 // v1.1.0
 import React, { useEffect, useState } from 'react';
-import { MessageSquare, ShieldCheck, ShieldOff } from 'lucide-react';
+import { MessageSquare, ShieldCheck, ShieldOff, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import {
   PermisoAcceso, MensajeRemoto,
   getSolicitudCliente, revocarAccesoCliente,
   getMensajesCliente, enviarMensajeCliente,
+  aprobarAccesoConToken,
 } from '../data/accesoRemotoApi';
 import { ChatRemoto } from '../components/ChatRemoto';
 
@@ -18,6 +19,8 @@ export const Mensajes: React.FC = () => {
   const [mensajes, setMensajes] = useState<MensajeRemoto[]>([]);
   const [cargando, setCargando] = useState(true);
   const [revocar, setRevocar] = useState(false);
+  const [aprobando, setAprobando] = useState(false);
+  const [errAprobacion, setErrAprobacion] = useState('');
 
   useEffect(() => {
     if (!planesConAcceso.includes(plan)) { setCargando(false); return; }
@@ -33,6 +36,20 @@ export const Mensajes: React.FC = () => {
     const iv = setInterval(() => getMensajesCliente().then(setMensajes).catch(() => {}), 8000);
     return () => clearInterval(iv);
   }, [permiso?.estado]);
+
+  const handleAprobar = async () => {
+    if (!permiso?.token) return;
+    setAprobando(true);
+    setErrAprobacion('');
+    try {
+      const { permiso: updated } = await aprobarAccesoConToken(permiso.token);
+      setPermiso(updated);
+    } catch (e) {
+      setErrAprobacion(e instanceof Error ? e.message : 'Error al aprobar el acceso.');
+    } finally {
+      setAprobando(false);
+    }
+  };
 
   const handleRevocar = async () => {
     await revocarAccesoCliente();
@@ -75,13 +92,31 @@ export const Mensajes: React.FC = () => {
       )}
 
       {!cargando && permiso?.estado === 'pendiente' && (
-        <div className="border-2 border-amber-400 bg-amber-50 p-5 max-w-lg space-y-3">
-          <p className="text-sm font-black text-amber-700 uppercase tracking-wide">Solicitud de acceso pendiente</p>
-          <p className="text-sm text-amber-700 leading-relaxed">
-            El equipo de ActivaQR solicitó acceso remoto para brindarte soporte.
-            {permiso.costoMensual ? ` Costo adicional: $${permiso.costoMensual.toLocaleString('es-AR')}/mes.` : ''}
+        <div className="border-2 border-amber-400 bg-amber-50 p-5 max-w-lg space-y-4">
+          <div>
+            <p className="text-sm font-black text-amber-700 uppercase tracking-wide mb-1">Solicitud de acceso pendiente</p>
+            <p className="text-sm text-amber-700 leading-relaxed">
+              El equipo de ActivaQR solicitó acceso remoto para brindarte soporte técnico.
+              {permiso.costoMensual ? ` Costo adicional: $${permiso.costoMensual.toLocaleString('es-AR')}/mes.` : ' Sin costo adicional.'}
+            </p>
+          </div>
+
+          <p className="text-xs text-amber-600 leading-relaxed">
+            Al aprobar, el soporte podrá ver tus activos, mediciones y comunicarse con vos desde la plataforma. Podés revocar el acceso en cualquier momento.
           </p>
-          <p className="text-xs text-amber-600">Revisá tu email para encontrar el link de aprobación.</p>
+
+          {errAprobacion && (
+            <p className="text-xs font-bold text-red-600 bg-red-50 border-2 border-red-200 px-3 py-2">{errAprobacion}</p>
+          )}
+
+          <button
+            onClick={handleAprobar}
+            disabled={aprobando}
+            className="w-full flex items-center justify-center gap-2 bg-amber-500 text-white font-black uppercase tracking-wide text-sm border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all py-3 disabled:opacity-50 disabled:pointer-events-none"
+          >
+            <CheckCircle2 size={16} />
+            {aprobando ? 'Aprobando...' : 'Aprobar acceso de soporte'}
+          </button>
         </div>
       )}
 

@@ -4,6 +4,7 @@ import { apiFetch, API_URL } from './auth';
 export interface PermisoAcceso {
   id: string;
   empresaId: string;
+  token: string;
   estado: 'pendiente' | 'activo' | 'revocado';
   solicitadoEn: string;
   otorgadoEn: string | null;
