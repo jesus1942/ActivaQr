@@ -5,15 +5,16 @@
  * y chatear con un cliente que otorgó permiso.
  */
 import React, { useEffect, useState } from 'react';
-import { Plus, X, ArrowLeft, Activity, CheckCircle, Download } from 'lucide-react';
+import { Plus, X, ArrowLeft, Activity, CheckCircle, Download, Users, ScrollText } from 'lucide-react';
 import { format } from 'date-fns';
 import {
-  PermisoAcceso, MensajeRemoto,
+  PermisoAcceso, MensajeRemoto, PersonalRemoto, ActividadRemoto,
   getActivosRemoto, getMedicionesRemoto, getMensajesAdmin, enviarMensajeAdmin,
-  crearTareaRemota, crearMedicionRemota,
+  crearTareaRemota, crearMedicionRemota, getPersonalRemoto, getActividadRemoto,
 } from '../data/accesoRemotoApi';
 import { ChatRemoto } from './ChatRemoto';
 import { exportarCsv } from '../utils/exportCsv';
+import { exportarResumenActivosPdf } from '../utils/exportPdf';
 
 const ESTADO_COLOR: Record<string, string> = {
   normal:        'bg-emerald-50 border-emerald-400 text-emerald-700',
@@ -41,9 +42,11 @@ const FORM_INICIAL = {
 };
 
 export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, permiso, onClose }) => {
-  const [tab, setTab] = useState<'activos' | 'chat'>('activos');
+  const [tab, setTab] = useState<'activos' | 'personal' | 'actividad' | 'chat'>('activos');
   const [activos, setActivos] = useState<any[]>([]);
   const [mensajes, setMensajes] = useState<MensajeRemoto[]>([]);
+  const [personal, setPersonal] = useState<PersonalRemoto | null>(null);
+  const [actividad, setActividad] = useState<ActividadRemoto[]>([]);
   const [cargando, setCargando] = useState(true);
 
   // Detalle / intervención
@@ -72,6 +75,16 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
     getMensajesAdmin(empresaId).then(setMensajes).catch(() => {});
     const iv = setInterval(() => getMensajesAdmin(empresaId).then(setMensajes).catch(() => {}), 8000);
     return () => clearInterval(iv);
+  }, [tab, empresaId]);
+
+  useEffect(() => {
+    if (tab !== 'personal' || personal) return;
+    getPersonalRemoto(empresaId).then(setPersonal).catch(() => {});
+  }, [tab, empresaId]);
+
+  useEffect(() => {
+    if (tab !== 'actividad' || actividad.length > 0) return;
+    getActividadRemoto(empresaId).then(setActividad).catch(() => {});
   }, [tab, empresaId]);
 
   const cargarMediciones = (activoId: string) => {
@@ -212,16 +225,21 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b-2 border-slate-200">
-          {(['activos', 'chat'] as const).map((t) => (
+        <div className="flex border-b-2 border-slate-200 overflow-x-auto">
+          {([
+            { id: 'activos',   label: 'Activos' },
+            { id: 'personal',  label: 'Personal' },
+            { id: 'actividad', label: 'Actividad' },
+            { id: 'chat',      label: 'Chat' },
+          ] as const).map((t) => (
             <button
-              key={t}
-              onClick={() => { setTab(t); }}
-              className={`px-5 py-3 text-sm font-black uppercase tracking-wide transition-colors ${
-                tab === t ? 'border-b-2 border-orange-500 text-orange-600' : 'text-slate-500 hover:text-slate-800'
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`px-4 py-3 text-sm font-black uppercase tracking-wide whitespace-nowrap transition-colors ${
+                tab === t.id ? 'border-b-2 border-orange-500 text-orange-600' : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              {t === 'activos' ? 'Activos' : 'Chat'}
+              {t.label}
             </button>
           ))}
         </div>
@@ -375,6 +393,136 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
                   </button>
                 </div>
               </form>
+            </div>
+          )}
+
+          {tab === 'personal' && (
+            <div className="space-y-5">
+              {!personal && <p className="text-sm text-slate-400 animate-pulse py-4 text-center">Cargando personal...</p>}
+
+              {personal && (
+                <>
+                  {/* Usuarios con acceso a la plataforma */}
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+                      <Users size={13} /> Usuarios con acceso ({personal.usuarios.length})
+                    </p>
+                    <div className="space-y-1.5">
+                      {personal.usuarios.map((u) => (
+                        <div key={u.id} className="border-2 border-slate-200 px-3 py-2.5 flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="font-bold text-slate-800 text-sm">{u.nombre}</p>
+                            <p className="text-xs font-mono text-slate-500">{u.email}</p>
+                            {u.ultimoAcceso && (
+                              <p className="text-xs text-slate-400 mt-0.5">
+                                Último acceso: {format(new Date(u.ultimoAcceso), 'dd/MM/yyyy HH:mm')}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                            <span className="text-xs font-black uppercase px-2 py-0.5 border-2 border-slate-300 text-slate-600">
+                              {u.rol}
+                            </span>
+                            {!u.activo && (
+                              <span className="text-xs font-black text-red-600">Inactivo</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      {personal.usuarios.length === 0 && (
+                        <p className="text-sm text-slate-400">Sin usuarios registrados.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Técnicos de campo */}
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+                      <Activity size={13} /> Técnicos de campo ({personal.tecnicos.length})
+                    </p>
+                    <div className="space-y-1.5">
+                      {personal.tecnicos.map((t) => (
+                        <div key={t.id} className="border-2 border-slate-200 px-3 py-2.5 flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="font-bold text-slate-800 text-sm">{t.nombre}</p>
+                            {t.email && <p className="text-xs font-mono text-slate-500">{t.email}</p>}
+                            {t.telefono && <p className="text-xs text-slate-500">{t.telefono}</p>}
+                          </div>
+                          <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                            <span className="text-xs font-black uppercase px-2 py-0.5 border-2 border-slate-300 text-slate-600">
+                              {t.rol}
+                            </span>
+                            <span className="text-xs text-slate-400">
+                              {t._count.mediciones} med · {t._count.tareas} OTs
+                            </span>
+                            {!t.activo && (
+                              <span className="text-xs font-black text-red-600">Inactivo</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      {personal.tecnicos.length === 0 && (
+                        <p className="text-sm text-slate-400">Sin técnicos registrados.</p>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {tab === 'actividad' && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <ScrollText size={13} /> Últimos 60 registros
+                </p>
+                {actividad.length > 0 && (
+                  <button
+                    onClick={() => {
+                      exportarCsv(`actividad-${empresaNombre.replace(/\s+/g,'-').toLowerCase()}`, actividad.map((r) => ({
+                        Fecha: format(new Date(r.creadoEn), 'dd/MM/yyyy HH:mm'),
+                        Accion: r.accion,
+                        Entidad: r.entidad,
+                        Detalle: r.detalle ?? '',
+                        Usuario: r.usuarioNombre ?? '',
+                      })));
+                    }}
+                    className="flex items-center gap-1 text-xs font-bold border-2 border-slate-300 px-2 py-1 hover:border-slate-900 transition-colors"
+                  >
+                    <Download size={11} /> CSV
+                  </button>
+                )}
+              </div>
+
+              {actividad.length === 0 && (
+                <p className="text-sm text-slate-400 py-4 text-center animate-pulse">Cargando actividad...</p>
+              )}
+
+              {actividad.map((r) => {
+                const colorAccion: Record<string, string> = {
+                  crear: 'text-emerald-700 bg-emerald-50 border-emerald-300',
+                  editar: 'text-blue-700 bg-blue-50 border-blue-300',
+                  eliminar: 'text-red-700 bg-red-50 border-red-300',
+                  medicion: 'text-orange-700 bg-orange-50 border-orange-300',
+                  cerrar: 'text-slate-700 bg-slate-100 border-slate-300',
+                  login: 'text-slate-500 bg-slate-50 border-slate-200',
+                };
+                const cls = colorAccion[r.accion] ?? 'text-slate-600 bg-slate-50 border-slate-200';
+                return (
+                  <div key={r.id} className="border-2 border-slate-100 px-3 py-2 flex items-start gap-3">
+                    <span className={`text-xs font-black uppercase px-1.5 py-0.5 border flex-shrink-0 ${cls}`}>
+                      {r.accion}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-slate-700 font-semibold truncate">{r.detalle ?? r.entidad}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {r.usuarioNombre ?? 'Sistema'} · {format(new Date(r.creadoEn), 'dd/MM/yy HH:mm')}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
 
