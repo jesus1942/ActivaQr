@@ -23,7 +23,10 @@ function tendencia(valores: number[]): 'subiendo' | 'bajando' | 'estable' {
     den += (x - mediaX) ** 2;
   });
   const pendiente = den === 0 ? 0 : num / den;
-  const umbral = Math.abs(mediaY) * 0.02 + 0.001;
+  // Umbral relativo al rango de la serie para evitar falsos positivos
+  // cuando los valores son cercanos a cero.
+  const rango = Math.max(...serie) - Math.min(...serie);
+  const umbral = Math.max(Math.abs(mediaY) * 0.05, rango * 0.1, 0.01);
   if (pendiente > umbral) return 'subiendo';
   if (pendiente < -umbral) return 'bajando';
   return 'estable';
@@ -40,7 +43,12 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
       prisma.medicion.findMany({
         where: { activo: { empresaId } },
         orderBy: { fecha: 'desc' },
-        select: { activoId: true, fecha: true, estado: true, temperatura: true, amperaje: true, presion: true },
+        select: {
+          activoId: true, fecha: true, estado: true,
+          temperatura: true, amperaje: true, presion: true,
+          voltaje: true, porcentajeBateria: true, nivelToner: true,
+          horasMarcha: true, vibracion: true,
+        },
       }),
       prisma.sector.findMany({ where: { empresaId } }),
     ]);
@@ -119,23 +127,65 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
       tendenciaFallas.push({ mes: d.toISOString().slice(0, 7), fallas });
     }
 
-    // Análisis predictivo: por activo, tendencia de temperatura / amperaje / presión
-    // sobre las últimas 6 mediciones. Si suben, se marca como alerta predictiva.
+    // ── Análisis predictivo ───────────────────────────────────────────────────
     const predictivo: { activoId: string; codigo: string; nombre: string; parametro: string; tendencia: string }[] = [];
+    const VIBRACION_NUM: Record<string, number> = { ninguna: 0, leve: 1, moderada: 2, alta: 3 };
+
     activos.forEach((a) => {
-      const ms = mediciones.filter((m) => m.activoId === a.id).slice(0, 6);
+      const ms = mediciones.filter((m) => m.activoId === a.id).slice(0, 8);
       if (ms.length < 3) return;
-      const params: { clave: 'temperatura' | 'amperaje' | 'presion'; label: string }[] = [
+
+      const agregar = (parametro: string, t: string) =>
+        predictivo.push({ activoId: a.id, codigo: a.codigo, nombre: a.nombre, parametro, tendencia: t });
+
+      // Parámetros con tendencia ascendente (malo que suban)
+      const ascendentes: { clave: keyof typeof ms[0]; label: string }[] = [
         { clave: 'temperatura', label: 'Temperatura' },
         { clave: 'amperaje', label: 'Amperaje' },
         { clave: 'presion', label: 'Presion' },
+        { clave: 'voltaje', label: 'Voltaje' },
       ];
-      params.forEach((p) => {
-        const serie = ms.map((m) => m[p.clave]).filter((x): x is number => typeof x === 'number');
-        if (serie.length >= 3 && tendencia(serie) === 'subiendo') {
-          predictivo.push({ activoId: a.id, codigo: a.codigo, nombre: a.nombre, parametro: p.label, tendencia: 'subiendo' });
-        }
+      ascendentes.forEach(({ clave, label }) => {
+        const serie = ms.map((m) => m[clave] as number | null).filter((x): x is number => typeof x === 'number' && !isNaN(x));
+        if (serie.length >= 3 && tendencia(serie) === 'subiendo') agregar(label, 'subiendo');
       });
+
+      // Parámetros con tendencia descendente (malo que bajen)
+      const descendentes: { clave: keyof typeof ms[0]; label: string }[] = [
+        { clave: 'porcentajeBateria', label: 'Bateria' },
+        { clave: 'nivelToner', label: 'Toner' },
+      ];
+      descendentes.forEach(({ clave, label }) => {
+        const serie = ms.map((m) => m[clave] as number | null).filter((x): x is number => typeof x === 'number' && !isNaN(x));
+        if (serie.length >= 3 && tendencia(serie) === 'bajando') agregar(label, 'bajando');
+      });
+
+      // Vibración: convertir enum a número y detectar escalada
+      const vibSerie = ms
+        .map((m) => VIBRACION_NUM[m.vibracion as string] ?? null)
+        .filter((x): x is number => x !== null);
+      if (vibSerie.length >= 3 && tendencia(vibSerie) === 'subiendo') {
+        const ultima = ms[0].vibracion as string;
+        if (ultima === 'moderada' || ultima === 'alta') agregar('Vibracion', 'subiendo');
+      }
+
+      // Aceleración de horas de marcha: si el incremento entre mediciones crece (uso intensivo)
+      const horas = ms.map((m) => m.horasMarcha).filter((x): x is number => typeof x === 'number' && x > 0);
+      if (horas.length >= 4) {
+        const incrementos: number[] = [];
+        for (let i = 0; i < horas.length - 1; i++) incrementos.push(horas[i] - horas[i + 1]);
+        if (incrementos.length >= 3 && tendencia(incrementos) === 'subiendo') {
+          agregar('Uso acelerado', 'subiendo');
+        }
+      }
+
+      // Frecuencia de revisiones: si en las últimas 6 el % de estado revision/urgente sube
+      const estadosSerie = ms.slice(0, 6).map((m) => (m.estado === 'revision' || m.estado === 'urgente' ? 1 : 0));
+      if (estadosSerie.length >= 3) {
+        const ventana1 = estadosSerie.slice(0, 3).filter(Boolean).length;
+        const ventana2 = estadosSerie.slice(3).filter(Boolean).length;
+        if (ventana1 > ventana2 && ventana1 >= 2) agregar('Inestabilidad reciente', 'subiendo');
+      }
     });
 
     res.json({

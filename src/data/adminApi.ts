@@ -12,6 +12,9 @@ export interface EmpresaAdmin {
   mpEstadoSub?: string | null;
   mpMonto?: number | null;
   mpUltimoPago?: string | null;
+  esTrial?: boolean;
+  trialFin?: string | null;
+  trialLecturaFin?: string | null;
   _count: { activos: number; usuarios: number };
   usuarios: { id: string; nombre: string; email: string; telefono: string | null; activo: boolean; ultimoAcceso: string | null }[];
 }
