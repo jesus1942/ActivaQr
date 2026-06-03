@@ -278,6 +278,99 @@ Todos los planes incluyen débito automático mensual via Mercado Pago.
 
 ---
 
+## Modelo de negocio (lectura del dueño)
+
+> Esta sección es la guía comercial del proyecto. Resume cómo se monetiza,
+> qué precios poner, y qué queda en el bolsillo después de impuestos.
+> Los números usan referencias de junio 2026 (dólar blue ~$1.435 ARS).
+
+### Dos formas de cobrar
+
+**1. Software como servicio (SaaS) — el modelo base**
+
+El cliente paga una suscripción mensual y usa la plataforma. Vos no hacés
+trabajo operativo, solo mantenés el sistema.
+
+| Plan | Precio sugerido USD/mes | En ARS (blue ~$1.435) |
+|---|---|---|
+| Inicial | 50 | ~$71.750 |
+| Empresa | 150 | ~$215.250 |
+| Industrial | 250+ | ~$358.750+ |
+
+Margen altísimo (~88% después de impuestos en monotributo). El valor crece
+con cada cliente sin sumar horas de trabajo tuyas.
+
+**2. Software + Servicio gestionado — el modelo premium (esta es la veta)**
+
+Cuando el cliente no tiene tiempo o personal para cargar las mediciones,
+vos te encargás. Combinás la suscripción con una visita técnica mensual.
+
+| Concepto | Precio sugerido |
+|---|---|
+| Suscripción ActivaQR (software) | $150 USD/mes |
+| Visita técnica mensual in situ | $100–200 USD/visita |
+| **Total por cliente** | **$250–350 USD/mes** |
+
+Una visita a una planta de 20–30 activos lleva medio día. A $200 USD eso
+equivale a ~$400/hora efectiva. El entregable que justifica el cobro es el
+**informe mensual en PDF** generado por el sistema (resumen del período,
+alertas detectadas, recomendaciones).
+
+Pitch comercial:
+> "Yo me encargo de todo. Vengo una vez por mes, tomo las mediciones de cada
+> equipo, el sistema evalúa si hay algo fuera de rango, y te mando el informe
+> al otro día. Si aparece una alerta crítica antes de la visita, te aviso por
+> WhatsApp."
+
+### Cuánto queda en el bolsillo (Argentina)
+
+**Monotributo** (recomendado al arrancar — simple, hasta ~$7.5M ARS/mes facturados):
+
+| Clientes | USD/mes | ARS bruto | En mano (~88%) |
+|---|---|---|---|
+| 1 cliente Empresa | 150 | $215.250 | ~$189.400 |
+| 5 clientes | 750 | $1.076.250 | ~$947.000 |
+| 10 clientes | 1.500 | $2.152.500 | ~$1.894.200 |
+
+El monotributo incluye obra social y aportes jubilatorios. No se paga
+Ganancias. Solo se suma Ingresos Brutos de Neuquén (~3.5%).
+
+**Responsable Inscripto** (cuando superás el límite del monotributo, con contador):
+retención efectiva real ~35–40% (IVA neutralizable con gastos, Ganancias sobre
+utilidad neta, autónomos fijos). Con 30 clientes a $150 quedarían ~$2.000–2.200
+USD limpios/mes.
+
+### Referencia de mercado
+
+- Competidores (Fracttal, Infraspeak, UpKeep) cobran 2–3x más y exigen
+  implementación de semanas + capacitación.
+- ActivaQR arranca en minutos: pegás el QR y listo.
+- Segmento objetivo desatendido: empresas de **20 a 200 activos** —
+  contratistas medianos, mantenimiento industrial en Patagonia
+  (Neuquén, Río Negro, Chubut), petróleo no convencional y minería.
+- $150 USD/mes es precio justo de mercado para software industrial con
+  soporte. La clave de la venta es la demo del QR en vivo, no el precio.
+
+### Pendientes para escalar la facturación
+
+1. **Dominio verificado en Resend** (~$12/año) — hoy el email solo envía a
+   chucky9425@gmail.com. Sin esto, el onboarding de clientes reales pierde
+   profesionalismo.
+2. **Video demo de 90 segundos** — el producto es visual; una demo grabada
+   convierte más que cualquier landing.
+3. **Primer cliente pagando** — un solo cliente a $150 USD valida todo el
+   modelo. Millennium Argentina (Puerto Madryn, partner Epiroc, mantenimiento
+   minero) es el candidato natural.
+
+### STRIPE_SECRET_KEY pendiente
+
+Para cobrar a clientes de Uruguay/internacional en USD/UYU hay que cargar
+`STRIPE_SECRET_KEY` en Railway. Sin esa variable, el selector de moneda
+USD/UYU del panel admin queda deshabilitado (ARS via Mercado Pago sigue
+funcionando).
+
+---
+
 ## Estructura del proyecto
 
 ```
