@@ -117,6 +117,7 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   .plan li{padding:7px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:var(--gris)}
   .plan.destacado li{border-color:#334155;color:#cbd5e1}
   .plan .btn{text-align:center}
+  @media(max-width:720px){.servicio-grid{grid-template-columns:1fr !important}}
 
   /* COMO FUNCIONA */
   .pasos{counter-reset:p}
@@ -159,6 +160,7 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
       <a class="nav-link" href="#categorias">Rubros</a>
       <a class="nav-link" href="#vision">Vision</a>
       <a class="nav-link" href="#planes">Planes</a>
+      <a class="nav-link" href="#servicio">Servicio</a>
       <a class="btn btn-naranja" href="${appUrl}" target="_blank" rel="noopener">Ingresar</a>
     </div>
   </div>
@@ -437,6 +439,37 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
         </ul>
         <a class="btn btn-negro" href="#contacto">Lo quiero</a>
       </div>
+    </div>
+  </div>
+</section>
+
+<section id="servicio" class="reveal" style="background:#0f172a;border-top:3px solid var(--negro);border-bottom:3px solid var(--negro)">
+  <div class="wrap">
+    <h2 class="titulo" style="color:#fff">¿No tenés tiempo de cargar las mediciones?</h2>
+    <p class="bajada" style="color:#94a3b8">Nosotros nos encargamos. Vos recibís el informe.</p>
+    <div style="background:#fff;border:3px solid var(--naranja);box-shadow:6px 6px 0 var(--naranja);padding:32px;max-width:760px;margin:0 auto">
+      <p style="font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:14px">Servicio gestionado de mantenimiento</p>
+      <p style="font-size:17px;color:var(--negro);line-height:1.6;margin-bottom:20px">
+        Combinás el software con nuestra visita técnica mensual. Un especialista va a tu planta,
+        toma las mediciones de cada equipo, el sistema evalúa automáticamente las alertas, y al otro día
+        recibís un <strong>informe profesional en PDF</strong> listo para auditorías o tus propios clientes.
+      </p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:8px" class="servicio-grid">
+        <div style="border:2px solid #e2e8f0;padding:16px">
+          <p style="font-weight:900;font-size:15px;margin-bottom:4px">Visita mensual in situ</p>
+          <p style="font-size:13px;color:var(--gris)">Mediciones tomadas por un técnico, sin que muevas a nadie de tu equipo.</p>
+        </div>
+        <div style="border:2px solid #e2e8f0;padding:16px">
+          <p style="font-weight:900;font-size:15px;margin-bottom:4px">Informe automático</p>
+          <p style="font-size:13px;color:var(--gris)">Resumen del período, alertas detectadas y recomendaciones, en PDF.</p>
+        </div>
+        <div style="border:2px solid #e2e8f0;padding:16px">
+          <p style="font-weight:900;font-size:15px;margin-bottom:4px">Aviso ante alertas críticas</p>
+          <p style="font-size:13px;color:var(--gris)">Si algo se sale de rango antes de la visita, te avisamos por WhatsApp.</p>
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--gris-c);margin-top:18px">Ideal para talleres, contratistas y plantas que quieren trazabilidad sin sumar carga administrativa.</p>
+      <a class="btn btn-naranja" href="#contacto" style="margin-top:20px">Quiero que se encarguen</a>
     </div>
   </div>
 </section>
