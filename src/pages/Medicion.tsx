@@ -1,9 +1,9 @@
 // v1.1.0
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Search, CheckCircle, ArrowLeft, ClipboardList, Camera, AlertTriangle, Zap } from 'lucide-react';
+import { Search, CheckCircle, ArrowLeft, ClipboardList, Camera, AlertTriangle, Zap, ImagePlus, X } from 'lucide-react';
 import { useActivos } from '../hooks/useActivos';
 import { QrScanner, extraerActivoId } from '../components/QrScanner';
 import { Medicion as MedicionType, EstadoMedicion, Activo } from '../data/types';
@@ -213,12 +213,17 @@ export const Medicion: React.FC = () => {
     }
   };
 
-  // Find activo by id or by codigo search
+  // Find activo by id or by codigo/nombre search (parcial, insensible a mayúsculas)
   let activo = activos.find((a) => a.id === activoId);
-  if (!activo && searchCodigo) {
-    activo = activos.find((a) =>
-      a.codigo.toLowerCase() === searchCodigo.toLowerCase()
-    );
+  const terminoBusqueda = searchCodigo.toLowerCase().trim();
+  const resultadosBusqueda = !activoId && terminoBusqueda
+    ? activos.filter((a) =>
+        a.codigo.toLowerCase().includes(terminoBusqueda) ||
+        a.nombre.toLowerCase().includes(terminoBusqueda)
+      )
+    : [];
+  if (!activo && resultadosBusqueda.length === 1) {
+    activo = resultadosBusqueda[0];
   }
 
   const lastMedicion = activo
@@ -263,6 +268,23 @@ export const Medicion: React.FC = () => {
 
   // Dynamic extra params from category
   const [parametrosExtra, setParametrosExtra] = useState<Record<string, string | number | boolean>>({});
+
+  // Fotos adjuntas a la medición
+  const [fotos, setFotos] = useState<string[]>([]); // base64 data URLs
+  const fotoInputRef = useRef<HTMLInputElement>(null);
+
+  const agregarFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const archivos = Array.from(e.target.files ?? []);
+    archivos.forEach((archivo) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const result = ev.target?.result as string;
+        if (result) setFotos((prev) => [...prev, result]);
+      };
+      reader.readAsDataURL(archivo);
+    });
+    e.target.value = '';
+  };
   const setParamExtra = (clave: string, val: string | number | boolean) =>
     setParametrosExtra((p) => ({ ...p, [clave]: val }));
 
@@ -416,8 +438,23 @@ export const Medicion: React.FC = () => {
               <span className="hidden sm:inline">Escanear</span>
             </button>
           </div>
-          {searchCodigo && !activo && (
-            <p className="text-red-500 text-sm mt-1 font-semibold">Activo no encontrado</p>
+          {terminoBusqueda && resultadosBusqueda.length === 0 && (
+            <p className="text-red-500 text-sm mt-2 font-semibold">No se encontró ningún activo con ese código o nombre.</p>
+          )}
+          {resultadosBusqueda.length > 1 && (
+            <div className="mt-2 border-2 border-slate-200 bg-white divide-y divide-slate-100">
+              {resultadosBusqueda.map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => navigate(`/medicion/${a.id}`)}
+                  className="w-full text-left px-3 py-2.5 hover:bg-orange-50 transition-colors"
+                >
+                  <span className="text-xs font-black text-orange-500 uppercase">{a.codigo}</span>
+                  <span className="text-sm font-semibold text-slate-800 ml-2">{a.nombre}</span>
+                </button>
+              ))}
+            </div>
           )}
         </div>
       )}
@@ -645,8 +682,8 @@ export const Medicion: React.FC = () => {
             {categoria && categoria.parametros.length > 0 && (
               <div className="space-y-4">
                 <div className="border-t-2 border-dashed border-slate-300 pt-3">
-                  <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-3">
-                    {categoria.icono} {categoria.nombre}
+                  <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
+                    <ClipboardList size={13} /> {categoria.nombre}
                   </p>
                   {categoria.parametros.map((param) => (
                     <ParamDinamicoInput
@@ -717,6 +754,43 @@ export const Medicion: React.FC = () => {
                 className="w-full border-2 border-slate-300 px-3 py-3 text-base outline-none focus:border-orange-500 bg-white"
                 placeholder="Notas adicionales sobre el estado del equipo..."
               />
+            </div>
+
+            {/* Fotos */}
+            <div>
+              <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-2">Fotos del estado</label>
+              <input
+                ref={fotoInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                capture="environment"
+                onChange={agregarFoto}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fotoInputRef.current?.click()}
+                className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 h-14 text-slate-500 font-bold uppercase text-sm hover:border-orange-500 hover:text-orange-500 transition-colors bg-white"
+              >
+                <ImagePlus size={20} /> Agregar foto
+              </button>
+              {fotos.length > 0 && (
+                <div className="flex gap-2 mt-2 flex-wrap">
+                  {fotos.map((src, i) => (
+                    <div key={i} className="relative">
+                      <img src={src} alt={`foto-${i}`} className="w-20 h-20 object-cover border-2 border-slate-300" />
+                      <button
+                        type="button"
+                        onClick={() => setFotos((prev) => prev.filter((_, j) => j !== i))}
+                        className="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full p-0.5 border border-white"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Técnico */}

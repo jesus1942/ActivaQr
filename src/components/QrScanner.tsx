@@ -39,6 +39,19 @@ export const QrScanner: React.FC<{
         return;
       }
       try {
+        // Verificar permiso antes de intentar abrir el stream
+        if (navigator.permissions) {
+          try {
+            const perm = await navigator.permissions.query({ name: 'camera' as PermissionName });
+            if (perm.state === 'denied') {
+              setError('El acceso a la cámara está bloqueado. Habilitalo en la configuración del navegador y volvé a intentar.');
+              return;
+            }
+          } catch {
+            // permissions API no disponible en este browser — seguimos igual
+          }
+        }
+
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'environment' },
         });
@@ -67,8 +80,14 @@ export const QrScanner: React.FC<{
           rafRef.current = requestAnimationFrame(tick);
         };
         rafRef.current = requestAnimationFrame(tick);
-      } catch {
-        setError('No pudimos acceder a la cámara. Revisá los permisos del navegador.');
+      } catch (err: any) {
+        if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
+          setError('Permiso de cámara denegado. Tocá el ícono del candado en la barra del navegador y habilitá la cámara para este sitio.');
+        } else if (err?.name === 'NotFoundError') {
+          setError('No se encontró ninguna cámara en este dispositivo.');
+        } else {
+          setError('No pudimos acceder a la cámara. Revisá los permisos del navegador e intentá de nuevo.');
+        }
       }
     }
 
