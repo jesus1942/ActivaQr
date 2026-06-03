@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { prisma } from '../prisma';
 import { firmarToken, requireAuth, AuthRequest, DEMO_TOKEN_TTL } from '../auth';
 import { enviarEmailResetPassword } from '../email';
+import { enviarLinkRecuperacion, notificarAdminRecuperacion } from '../telegram';
 import { registrarAuditoria } from '../auditoria';
 import { faseTrial } from '../trial';
 
@@ -217,6 +218,35 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: Response, next: Nex
   }
 });
 
+// PATCH /api/auth/perfil — actualizar datos propios (nombre, telegramChatId)
+router.patch('/perfil', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { nombre, telegramChatId } = req.body ?? {};
+    const data: Record<string, unknown> = {};
+    if (nombre && String(nombre).trim()) data.nombre = String(nombre).trim();
+    if (telegramChatId !== undefined) data.telegramChatId = telegramChatId ? String(telegramChatId).trim() : null;
+    if (Object.keys(data).length === 0) return res.status(400).json({ error: 'Nada que actualizar.' });
+    const updated = await prisma.usuario.update({ where: { id: req.auth!.userId }, data, select: { id: true, nombre: true, telegramChatId: true } });
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/auth/perfil — datos propios incluyendo telegramChatId
+router.get('/perfil', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const u = await prisma.usuario.findUnique({
+      where: { id: req.auth!.userId },
+      select: { id: true, nombre: true, email: true, telefono: true, telegramChatId: true },
+    });
+    if (!u) return res.status(404).json({ error: 'No encontrado.' });
+    res.json(u);
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post('/forgot-password', async (req, res: Response, next: NextFunction) => {
   try {
     const { email } = req.body ?? {};
@@ -233,12 +263,32 @@ router.post('/forgot-password', async (req, res: Response, next: NextFunction) =
       });
       const appPublicUrl = process.env.APP_PUBLIC_URL || 'https://jesus1942.github.io/ActivaQr/';
       const resetUrl = `${appPublicUrl}#/reset-password?token=${token}`;
-      await enviarEmailResetPassword({
-        destinatario: usuario.email,
-        adminNombre: usuario.nombre,
-        token,
-        resetUrl,
-      }).catch((e) => console.error('[forgot-password] email error:', e));
+
+      if (usuario.telegramChatId) {
+        await enviarLinkRecuperacion({
+          chatId: usuario.telegramChatId,
+          nombre: usuario.nombre,
+          resetUrl,
+        }).catch((e) => console.error('[forgot-password] telegram error:', e));
+      } else {
+        // Fallback: notificar al admin para que reenvíe el link manualmente
+        const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID ?? '';
+        if (adminChatId) {
+          await notificarAdminRecuperacion({
+            adminChatId,
+            clienteNombre: usuario.nombre,
+            clienteEmail: usuario.email,
+            resetUrl,
+          }).catch((e) => console.error('[forgot-password] telegram-admin error:', e));
+        }
+        // Intentar email como último recurso
+        await enviarEmailResetPassword({
+          destinatario: usuario.email,
+          adminNombre: usuario.nombre,
+          token,
+          resetUrl,
+        }).catch((e) => console.error('[forgot-password] email error:', e));
+      }
     }
     res.json({ ok: true });
   } catch (err) {

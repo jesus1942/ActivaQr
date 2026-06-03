@@ -111,6 +111,32 @@ app.post('/api/leads', async (req: Request, res: Response) => {
 // Webhooks externos (sin auth: los llama Mercado Pago).
 app.use('/api/webhooks', webhooksRouter);
 
+// Telegram Bot webhook — responde /start con el Chat ID del usuario
+app.post('/api/telegram/webhook', express.json(), async (req: Request, res: Response) => {
+  try {
+    const { message } = req.body ?? {};
+    if (message?.text?.startsWith('/start') && message.chat?.id) {
+      const chatId = String(message.chat.id);
+      const nombre = message.from?.first_name ?? 'usuario';
+      const TOKEN = process.env.TELEGRAM_BOT_TOKEN ?? '';
+      if (TOKEN) {
+        await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: `Hola ${nombre}! Tu Chat ID es:\n\n<code>${chatId}</code>\n\nCopialo y pegalo en ActivaQR → Configuración → Telegram para activar la recuperación de contraseña.`,
+            parse_mode: 'HTML',
+          }),
+        });
+      }
+    }
+    res.json({ ok: true });
+  } catch {
+    res.json({ ok: true });
+  }
+});
+
 // SEO: sitemap y robots
 const SITE_URL = process.env.APP_PUBLIC_URL?.replace(/\/$/, '').replace('github.io/ActivaQr', 'railway.app').replace('jesus1942', 'activaqr-production') || 'https://activaqr-production.up.railway.app';
 app.get('/sitemap.xml', (_req, res) => {

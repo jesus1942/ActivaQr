@@ -13,6 +13,7 @@ import {
 } from '../data/accesoRemotoApi';
 import { ChatRemoto } from '../components/ChatRemoto';
 import { NotificacionesPush } from '../components/NotificacionesPush';
+import { apiFetch } from '../data/auth';
 import {
   CategoriaEquipo, ParametroCategoria,
   getCategorias, crearCategoria, eliminarCategoria, agregarParametro,
@@ -55,6 +56,8 @@ export const Configuracion: React.FC = () => {
       </div>
 
       <NotificacionesPush />
+
+      <SeccionTelegram />
 
       {/* Plan actual */}
       {usuario && <SeccionPlan />}
@@ -1018,6 +1021,70 @@ const OperadoresSection: React.FC = () => {
           ))}
         </div>
       )}
+    </div>
+  );
+};
+
+const SeccionTelegram: React.FC = () => {
+  const [chatId, setChatId] = React.useState('');
+  const [guardado, setGuardado] = React.useState(false);
+  const [cargando, setCargando] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  React.useEffect(() => {
+    apiFetch('auth/perfil').then((d: any) => { if (d.telegramChatId) setChatId(d.telegramChatId); }).catch(() => {});
+  }, []);
+
+  const guardar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setCargando(true);
+    try {
+      await apiFetch('auth/perfil', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telegramChatId: chatId.trim() || null }) });
+      setGuardado(true);
+      setTimeout(() => setGuardado(false), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Error al guardar.');
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const BOT_NAME = import.meta.env.VITE_TELEGRAM_BOT_NAME || 'ActivaQRBot';
+
+  return (
+    <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_#1e293b] p-5 mb-6">
+      <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-1">Telegram para recuperar contraseña</h2>
+      <p className="text-xs text-slate-500 mb-3">
+        Si vinculás tu Telegram, el link de recuperación te llega directo al chat en segundos — sin depender del email.
+      </p>
+
+      <div className="bg-slate-50 border-2 border-slate-200 p-3 text-xs text-slate-700 mb-4 space-y-1">
+        <p className="font-bold">Cómo obtener tu Chat ID:</p>
+        <ol className="list-decimal list-inside space-y-1 text-slate-600">
+          <li>Abrí Telegram y buscá <a href={`https://t.me/${BOT_NAME}`} target="_blank" rel="noopener noreferrer" className="font-mono text-orange-600 underline">@{BOT_NAME}</a></li>
+          <li>Tocá <span className="font-mono bg-slate-200 px-1">Iniciar / Start</span></li>
+          <li>El bot te responde con tu Chat ID — copialo y pegalo abajo</li>
+        </ol>
+      </div>
+
+      <form onSubmit={guardar} className="flex items-center gap-2">
+        <input
+          value={chatId}
+          onChange={e => setChatId(e.target.value)}
+          placeholder="Ej: 123456789"
+          className="flex-1 border-2 border-slate-300 px-3 h-10 text-sm font-mono outline-none focus:border-orange-500"
+        />
+        <button
+          type="submit"
+          disabled={cargando}
+          className="bg-slate-900 text-white px-4 h-10 text-xs font-black uppercase border-2 border-slate-900 shadow-[3px_3px_0px_0px_#f97316] disabled:opacity-50"
+        >
+          {cargando ? 'Guardando...' : guardado ? 'Guardado' : 'Guardar'}
+        </button>
+      </form>
+      {error && <p className="text-red-600 text-xs mt-1">{error}</p>}
+      {chatId && !guardado && <p className="text-xs text-slate-400 mt-1">Chat ID actual: <span className="font-mono">{chatId}</span></p>}
     </div>
   );
 };
