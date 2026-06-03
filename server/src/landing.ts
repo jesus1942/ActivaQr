@@ -16,8 +16,72 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ActivaQR — Gestión de activos industriales con QR</title>
-<meta name="description" content="Convertí cada máquina de tu planta en un nodo inteligente. Ficha pública por QR, alertas automáticas, soporte remoto. Sin papel, sin excusas." />
+
+<!-- SEO primario -->
+<title>ActivaQR — Gestión de activos industriales con QR | Patagonia Argentina</title>
+<meta name="description" content="Sistema de gestión de activos industriales con QR para empresas de Patagonia. Mantenimiento predictivo, alertas automáticas, historial digitalizado. Probá gratis 14 días." />
+<meta name="keywords" content="gestión de activos industriales, mantenimiento preventivo, CMMS, QR equipos, Patagonia, Neuquén, Puerto Madryn, Vaca Muerta, software mantenimiento Argentina" />
+<meta name="author" content="ActivaQR" />
+<link rel="canonical" href="https://activaqr-production.up.railway.app/" />
+
+<!-- Open Graph (WhatsApp, LinkedIn, Facebook) -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://activaqr-production.up.railway.app/" />
+<meta property="og:title" content="ActivaQR — Gestión de activos industriales con QR" />
+<meta property="og:description" content="Pegás un QR en cada equipo y convertís el mantenimiento en datos. Anticipás roturas, reducís costos y aumentás la disponibilidad de tu planta." />
+<meta property="og:image" content="https://jesus1942.github.io/ActivaQr/company-logo-hd.png" />
+<meta property="og:locale" content="es_AR" />
+<meta property="og:site_name" content="ActivaQR" />
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="ActivaQR — Gestión de activos industriales con QR" />
+<meta name="twitter:description" content="Pegás un QR en cada equipo y convertís el mantenimiento en datos. Probá gratis 14 días." />
+<meta name="twitter:image" content="https://jesus1942.github.io/ActivaQr/company-logo-hd.png" />
+
+<!-- Schema.org: SoftwareApplication -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "ActivaQR",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web, iOS, Android",
+  "description": "Sistema SaaS de gestión de activos industriales con códigos QR. Mantenimiento preventivo y predictivo, alertas automáticas, historial digitalizado y soporte remoto.",
+  "url": "https://activaqr-production.up.railway.app/",
+  "offers": {
+    "@type": "Offer",
+    "price": "150",
+    "priceCurrency": "USD",
+    "priceSpecification": {
+      "@type": "UnitPriceSpecification",
+      "price": "150",
+      "priceCurrency": "USD",
+      "unitText": "mes"
+    }
+  },
+  "provider": {
+    "@type": "Person",
+    "name": "Jesús Narciso Olguín",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Neuquén",
+      "addressRegion": "Neuquén",
+      "addressCountry": "AR"
+    }
+  },
+  "areaServed": {
+    "@type": "GeoCircle",
+    "geoMidpoint": {
+      "@type": "GeoCoordinates",
+      "latitude": -38.9516,
+      "longitude": -68.0591
+    },
+    "geoRadius": "1000000"
+  }
+}
+</script>
+
 <link rel="icon" type="image/png" href="https://jesus1942.github.io/ActivaQr/favicon.png" />
 <style>
   *{margin:0;padding:0;box-sizing:border-box}

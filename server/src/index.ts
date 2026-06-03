@@ -111,6 +111,26 @@ app.post('/api/leads', async (req: Request, res: Response) => {
 // Webhooks externos (sin auth: los llama Mercado Pago).
 app.use('/api/webhooks', webhooksRouter);
 
+// SEO: sitemap y robots
+const SITE_URL = process.env.APP_PUBLIC_URL?.replace(/\/$/, '').replace('github.io/ActivaQr', 'railway.app').replace('jesus1942', 'activaqr-production') || 'https://activaqr-production.up.railway.app';
+app.get('/sitemap.xml', (_req, res) => {
+  const ahora = new Date().toISOString().slice(0, 10);
+  res.header('Content-Type', 'application/xml');
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>${SITE_URL}/</loc><lastmod>${ahora}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>${SITE_URL}/#features</loc><lastmod>${ahora}</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>${SITE_URL}/#planes</loc><lastmod>${ahora}</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>${SITE_URL}/#servicio</loc><lastmod>${ahora}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>${SITE_URL}/#contacto</loc><lastmod>${ahora}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+</urlset>`);
+});
+
+app.get('/robots.txt', (_req, res) => {
+  res.header('Content-Type', 'text/plain');
+  res.send(`User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: ${SITE_URL}/sitemap.xml\n`);
+});
+
 // Rutas públicas (sin auth): fichas técnicas para QR.
 app.use('/api/public', publicRouter);
 
