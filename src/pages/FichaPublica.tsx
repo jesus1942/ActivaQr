@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { API_URL, getToken, getUsuario } from '../data/auth';
 import { EstadoOperativoBadge } from '../components/ui/EstadoOperativoBadge';
+import { FallasActivo } from '../components/FallasActivo';
 import { EstadoOperativo } from '../data/types';
 import { ArrowLeft, LayoutDashboard } from 'lucide-react';
 
@@ -231,6 +232,9 @@ export const FichaPublica: React.FC = () => {
             <Fila label="Estado"      value={ultimaMedicion.estado} />
           </div>
         )}
+
+        {/* Codigos de error y soluciones — knowledge base por categoria */}
+        <FallasActivo activoId={activo.id} publico />
 
         {/* Notas */}
         {activo.notas && (

@@ -227,7 +227,31 @@ model CategoriaEquipo {
   empresa    Empresa?             @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   parametros ParametroCategoria[]
   tipos      TipoActivo[]
+  fallas     FallaCatalogo[]
 
+  @@index([empresaId])
+}
+
+// Catalogo de fallas tipicas por categoria de equipo.
+// Pensado como base de conocimiento accesible desde la ficha publica del QR:
+// el tecnico en campo busca el sintoma y ve causas probables + solucion paso a paso.
+// Severidad: info | advertencia | critico.
+model FallaCatalogo {
+  id           String   @id @default(uuid())
+  categoriaId  String
+  empresaId    String?  // null = falla global (provista por ActivaQR), no-null = privada del tenant
+  codigo       String?  // opcional, p.ej. "E04" o "P0301"
+  sintoma      String   // texto observable: "Temperatura del refrigerante supera 95°C"
+  causas       Json     // [{ causa: string, probabilidad: 'alta'|'media'|'baja' }]
+  solucion     String   // pasos a seguir (markdown simple)
+  severidad    String   @default("advertencia") // info | advertencia | critico
+  orden        Int      @default(0)
+  creadoEn     DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  categoria CategoriaEquipo @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+
+  @@index([categoriaId])
   @@index([empresaId])
 }
 

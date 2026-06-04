@@ -29,6 +29,9 @@ import cuentaRouter from './routes/cuenta';
 import { enviarPushASuperadmin } from './push';
 import { requireAuth, requireAuthAndActiveEmpresa, requireSuperadmin } from './auth';
 import { seedCategorias } from './seedCategorias';
+import { seedFallasMotorDiesel } from './seedFallasMotorDiesel';
+import { limpiarEmojisDeCategorias } from './limpiarEmojis';
+import { fallasRouter, fallasPublicRouter } from './routes/fallas';
 import { seedDemo } from './seedDemo';
 import { renderLanding } from './landing';
 import { renderPoliticaUso, renderPoliticaPrivacidad, POLITICAS_VERSION } from './politicas';
@@ -174,6 +177,8 @@ app.get('/robots.txt', (_req, res) => {
 
 // Rutas públicas (sin auth): fichas técnicas para QR.
 app.use('/api/public', publicRouter);
+// Catalogo de fallas — version publica para ficha QR (sin auth).
+app.use('/api/public/fallas', fallasPublicRouter);
 
 // Analítica propia de visitas (sin auth: la landing y las fichas públicas la llaman).
 app.use('/api/visitas', visitasRouter);
@@ -204,6 +209,7 @@ app.use('/api/sync', requireAuthAndActiveEmpresa, syncRouter);
 app.use('/api/categorias', requireAuthAndActiveEmpresa, categoriasRouter);
 app.use('/api/suscripcion', requireAuthAndActiveEmpresa, suscripcionRouter);
 app.use('/api/operadores', requireAuthAndActiveEmpresa, operadoresRouter);
+app.use('/api/fallas', requireAuthAndActiveEmpresa, fallasRouter);
 app.use('/api/auditoria', requireAuthAndActiveEmpresa, auditoriaRouter);
 app.use('/api/kpis', requireAuthAndActiveEmpresa, kpisRouter);
 app.use('/api/documentos', requireAuthAndActiveEmpresa, documentosRouter);
@@ -222,8 +228,12 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 const PORT = Number(process.env.PORT) || 3001;
 app.listen(PORT, () => {
   console.log(`ActivaQR API escuchando en http://localhost:${PORT}`);
-  // Seed global equipment categories if not already present
-  seedCategorias().catch((e) => console.error('seedCategorias error:', e));
+  // Seed global equipment categories if not already present.
+  // Cada paso es independiente: si uno falla, los demas siguen.
+  seedCategorias()
+    .then(() => limpiarEmojisDeCategorias())
+    .then(() => seedFallasMotorDiesel())
+    .catch((e) => console.error('seed/limpieza error:', e));
   seedDemo().catch((e) => console.error('seedDemo error:', e));
 });
 
