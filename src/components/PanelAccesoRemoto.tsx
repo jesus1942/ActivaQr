@@ -400,19 +400,21 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
             <div className="space-y-5">
               {!personal && <p className="text-sm text-slate-400 animate-pulse py-4 text-center">Cargando personal...</p>}
 
-              {personal && (
-                <>
-                  {/* Usuarios con acceso a la plataforma */}
+              {personal && (() => {
+                const lista = personal.personal ?? personal.usuarios ?? [];
+                return (
                   <div>
                     <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
-                      <Users size={13} /> Usuarios con acceso ({personal.usuarios.length})
+                      <Users size={13} /> Personal de la empresa ({lista.length})
                     </p>
                     <div className="space-y-1.5">
-                      {personal.usuarios.map((u) => (
+                      {lista.map((u) => (
                         <div key={u.id} className="border-2 border-slate-200 px-3 py-2.5 flex items-center justify-between gap-3">
                           <div className="min-w-0">
                             <p className="font-bold text-slate-800 text-sm">{u.nombre}</p>
-                            <p className="text-xs font-mono text-slate-500">{u.email}</p>
+                            {u.email && <p className="text-xs font-mono text-slate-500">{u.email}</p>}
+                            {u.telefono && <p className="text-xs text-slate-500">{u.telefono}</p>}
+                            {u.cargo && <p className="text-xs text-slate-400 mt-0.5">{u.cargo}</p>}
                             {u.ultimoAcceso && (
                               <p className="text-xs text-slate-400 mt-0.5">
                                 Último acceso: {format(new Date(u.ultimoAcceso), 'dd/MM/yyyy HH:mm')}
@@ -429,45 +431,13 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
                           </div>
                         </div>
                       ))}
-                      {personal.usuarios.length === 0 && (
-                        <p className="text-sm text-slate-400">Sin usuarios registrados.</p>
+                      {lista.length === 0 && (
+                        <p className="text-sm text-slate-400">Sin personal registrado.</p>
                       )}
                     </div>
                   </div>
-
-                  {/* Técnicos de campo */}
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
-                      <Activity size={13} /> Técnicos de campo ({personal.tecnicos.length})
-                    </p>
-                    <div className="space-y-1.5">
-                      {personal.tecnicos.map((t) => (
-                        <div key={t.id} className="border-2 border-slate-200 px-3 py-2.5 flex items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="font-bold text-slate-800 text-sm">{t.nombre}</p>
-                            {t.email && <p className="text-xs font-mono text-slate-500">{t.email}</p>}
-                            {t.telefono && <p className="text-xs text-slate-500">{t.telefono}</p>}
-                          </div>
-                          <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                            <span className="text-xs font-black uppercase px-2 py-0.5 border-2 border-slate-300 text-slate-600">
-                              {t.rol}
-                            </span>
-                            <span className="text-xs text-slate-400">
-                              {t._count.mediciones} med · {t._count.tareas} OTs
-                            </span>
-                            {!t.activo && (
-                              <span className="text-xs font-black text-red-600">Inactivo</span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                      {personal.tecnicos.length === 0 && (
-                        <p className="text-sm text-slate-400">Sin técnicos registrados.</p>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
+                );
+              })()}
             </div>
           )}
 
