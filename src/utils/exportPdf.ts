@@ -576,3 +576,171 @@ export function exportarInformeMensualPdf(p: InformeMensualPdfParams) {
   const slug = p.empresaNombre.replace(/\s+/g, '-').toLowerCase();
   doc.save(`ActivaQR-Informe-${slug}-${p.periodo.replace(/\s+/g, '-')}.pdf`);
 }
+
+// ─────────────────────────────────────────────────────────────────────
+// REPORTE DE CADENA DE CUSTODIA
+// Documento que prueba donde y cuando estuvo registrado un activo.
+// Util para auditoria, seguros y disputas por extravio o daño en traslado.
+
+interface PuntoCustodia {
+  id: string;
+  origen: 'medicion' | 'mensaje_remoto';
+  lat: number;
+  lng: number;
+  capturedAt: string | null;
+  subidoEn: string;
+  fuente: string | null;
+  device: string | null;
+  descripcion: string | null;
+  autor: string | null;
+}
+
+export interface CadenaCustodiaPdfParams {
+  activoCodigo: string;
+  activoNombre: string;
+  empresaNombre?: string;
+  puntos: PuntoCustodia[];
+}
+
+export function exportarCadenaCustodiaPdf(p: CadenaCustodiaPdfParams) {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const MAR = 14;
+
+  header(doc, 'CADENA DE CUSTODIA DIGITAL', `${p.activoCodigo} — ${p.activoNombre}`);
+  let y = 40;
+
+  // Resumen
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...SLATE900);
+  const resumen = `Este documento reporta ${p.puntos.length} ubicacion${p.puntos.length === 1 ? '' : 'es'} geolocalizada${p.puntos.length === 1 ? '' : 's'} del activo, ordenadas de mas reciente a mas antigua. Cada punto incluye la coordenada GPS, la fecha y hora del registro, el dispositivo que captura los datos y la fuente (EXIF de la imagen, mas confiable, o ubicacion del navegador como respaldo).`;
+  const lineas = doc.splitTextToSize(resumen, W - MAR * 2);
+  doc.text(lineas, MAR, y);
+  y += lineas.length * 4 + 4;
+
+  if (p.empresaNombre) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text(`Empresa: ${p.empresaNombre}`, MAR, y);
+    y += 6;
+  }
+
+  if (p.puntos.length === 0) {
+    y = seccionTitulo(doc, y, 'SIN UBICACIONES REGISTRADAS');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...SLATE900);
+    doc.text('Todavia no hay fotos con GPS asociadas a este activo.', MAR, y);
+    doc.save(`ActivaQR-Custodia-${p.activoCodigo}.pdf`);
+    return;
+  }
+
+  // Tabla de puntos
+  y = seccionTitulo(doc, y + 2, 'REGISTRO CRONOLOGICO');
+
+  for (let i = 0; i < p.puntos.length; i++) {
+    const pt = p.puntos[i];
+    const fechaReal = pt.capturedAt ?? pt.subidoEn;
+    let fechaFmt = '';
+    try {
+      fechaFmt = format(parseISO(fechaReal), "dd/MM/yyyy HH:mm 'hs'", { locale: es });
+    } catch {
+      fechaFmt = fechaReal;
+    }
+
+    // Salto de pagina si no entra el bloque entero (necesita ~28mm)
+    if (y + 32 > H - 15) {
+      doc.addPage();
+      header(doc, 'CADENA DE CUSTODIA DIGITAL (cont.)', `${p.activoCodigo} — ${p.activoNombre}`);
+      y = 40;
+    }
+
+    // Recuadro del bloque
+    doc.setDrawColor(...SLATE100);
+    doc.setLineWidth(0.3);
+    doc.rect(MAR, y, W - MAR * 2, 28);
+
+    // Numero + indicador EXIF
+    doc.setFillColor(...(i === 0 ? ORANGE : SLATE900));
+    doc.rect(MAR, y, 12, 28, 'F');
+    doc.setTextColor(...WHITE);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text(String(i + 1), MAR + 6, y + 12, { align: 'center' });
+    doc.setFontSize(6);
+    if (i === 0) doc.text('MAS', MAR + 6, y + 18, { align: 'center' });
+    if (i === 0) doc.text('RECIENTE', MAR + 6, y + 21, { align: 'center' });
+
+    // Contenido del bloque
+    const x = MAR + 16;
+    doc.setTextColor(...SLATE900);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text(fechaFmt, x, y + 5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text(`Lat: ${pt.lat.toFixed(6)}   Lng: ${pt.lng.toFixed(6)}`, x, y + 10);
+
+    const origenTxt = pt.origen === 'medicion' ? 'Medicion del operario' : 'Mensaje de soporte';
+    const autorTxt = pt.autor ? ` - ${pt.autor}` : '';
+    doc.text(`${origenTxt}${autorTxt}`, x, y + 15);
+
+    if (pt.device) {
+      doc.text(`Dispositivo: ${pt.device}`, x, y + 20);
+    }
+
+    // Badge de fuente (EXIF / Navegador)
+    const badgeX = W - MAR - 28;
+    if (pt.fuente === 'exif') {
+      doc.setFillColor(...GREEN);
+      doc.rect(badgeX, y + 3, 26, 5, 'F');
+      doc.setTextColor(...WHITE);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.text('EXIF VERIFICADO', badgeX + 13, y + 6.5, { align: 'center' });
+    } else if (pt.fuente === 'browser') {
+      doc.setFillColor(...AMBER);
+      doc.rect(badgeX, y + 3, 26, 5, 'F');
+      doc.setTextColor(...WHITE);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.text('NAVEGADOR', badgeX + 13, y + 6.5, { align: 'center' });
+    }
+
+    // Link Google Maps
+    doc.setTextColor(...ORANGE);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    const linkMaps = `https://www.google.com/maps?q=${pt.lat},${pt.lng}`;
+    doc.textWithLink('Ver en Google Maps', badgeX, y + 14, { url: linkMaps });
+
+    if (pt.descripcion) {
+      doc.setTextColor(100, 116, 139);
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(7);
+      const desc = pt.descripcion.length > 80 ? pt.descripcion.slice(0, 80) + '...' : pt.descripcion;
+      doc.text(desc, x, y + 25);
+    }
+
+    y += 30;
+  }
+
+  // Footer en cada pagina
+  const pages = doc.getNumberOfPages();
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i);
+    doc.setFillColor(...SLATE100);
+    doc.rect(0, H - 10, W, 10, 'F');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`ActivaQR — Cadena de custodia · ${p.activoCodigo}`, MAR, H - 3.5);
+    doc.text(`Generado ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es })} · Pag. ${i}/${pages}`, W - MAR, H - 3.5, { align: 'right' });
+  }
+
+  const slug = p.activoCodigo.replace(/\s+/g, '-').toLowerCase();
+  doc.save(`ActivaQR-Custodia-${slug}.pdf`);
+}

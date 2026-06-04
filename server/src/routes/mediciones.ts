@@ -78,15 +78,33 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       ? (estado ?? 'normal')
       : estadoCalculado;
 
-    const fotosCreate =
-      Array.isArray(fotos) && fotos.length > 0
-        ? {
-            create: fotos
-              .map((f: any) => (typeof f === 'string' ? f : f?.url))
-              .filter((url: any) => typeof url === 'string' && url)
-              .map((url: string) => ({ url })),
-          }
-        : undefined;
+    // Fotos: aceptamos string (solo URL) o objeto con evidencia forense
+    // (capturedLat, capturedLng, capturedAt, deviceModel, fuenteUbicacion).
+    interface FotoCreateData {
+      url: string;
+      capturedLat: number | null;
+      capturedLng: number | null;
+      capturedAt: Date | null;
+      deviceModel: string | null;
+      fuenteUbicacion: string | null;
+    }
+    const fotosNormalizadas: FotoCreateData[] = Array.isArray(fotos)
+      ? fotos
+          .map((f: any): FotoCreateData | null => {
+            const url = typeof f === 'string' ? f : (f?.url ?? null);
+            if (typeof url !== 'string' || !url) return null;
+            return {
+              url,
+              capturedLat: typeof f?.capturedLat === 'number' ? f.capturedLat : null,
+              capturedLng: typeof f?.capturedLng === 'number' ? f.capturedLng : null,
+              capturedAt: f?.capturedAt ? new Date(f.capturedAt) : null,
+              deviceModel: f?.deviceModel ? String(f.deviceModel).slice(0, 80) : null,
+              fuenteUbicacion: f?.fuenteUbicacion ? String(f.fuenteUbicacion).slice(0, 16) : null,
+            };
+          })
+          .filter((x): x is FotoCreateData => x !== null)
+      : [];
+    const fotosCreate = fotosNormalizadas.length > 0 ? { create: fotosNormalizadas } : undefined;
 
     const medicion = await prisma.medicion.create({
       data: {

@@ -15,6 +15,7 @@ import { EstadoOperativoBadge, ESTADOS_OPERATIVOS } from '../components/ui/Estad
 import { ValueGauge } from '../components/ui/ValueGauge';
 import { DocumentosActivo } from '../components/DocumentosActivo';
 import { FallasActivo } from '../components/FallasActivo';
+import { UbicacionesActivo } from '../components/UbicacionesActivo';
 import { EstadoOperativo } from '../data/types';
 import { API_URL } from '../data/auth';
 import { useAuth } from '../context/AuthContext';
@@ -234,6 +235,9 @@ export const ActivoDetalle: React.FC = () => {
 
           {/* Catalogo de fallas tipicas para la categoria de este equipo */}
           {API_URL && <FallasActivo activoId={activo.id} publico />}
+
+          {/* Cadena de custodia: ubicaciones registradas con GPS */}
+          {API_URL && <UbicacionesActivo activoId={activo.id} />}
 
           {/* Maintenance history */}
           <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">

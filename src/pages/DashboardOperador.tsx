@@ -4,7 +4,38 @@ import { apiFetch, apiPostOffline } from '../data/auth';
 import { useAuth } from '../context/AuthContext';
 import { QrScanner, extraerActivoId } from '../components/QrScanner';
 import { SyncBadge } from '../components/ui/SyncBadge';
-import { ScanLine, ClipboardList, CheckCircle2, AlertTriangle, LogOut, ChevronRight, X, CloudOff } from 'lucide-react';
+import { extraerEvidencia, EvidenciaForense } from '../data/evidenciaForense';
+import { ScanLine, ClipboardList, CheckCircle2, AlertTriangle, LogOut, ChevronRight, X, CloudOff, Camera, ShieldCheck } from 'lucide-react';
+
+const MAX_DIM_FOTO = 1280;
+
+async function comprimirFoto(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        if (width > MAX_DIM_FOTO || height > MAX_DIM_FOTO) {
+          const ratio = Math.min(MAX_DIM_FOTO / width, MAX_DIM_FOTO / height);
+          width *= ratio;
+          height *= ratio;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('No se pudo crear canvas'));
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.onerror = () => reject(new Error('Imagen invalida'));
+      img.src = reader.result as string;
+    };
+    reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
+    reader.readAsDataURL(file);
+  });
+}
 
 interface Activo {
   id: string;
@@ -81,6 +112,9 @@ export const DashboardOperador: React.FC = () => {
   const [guardadoOffline, setGuardadoOffline] = useState(false);
   const [errorForm, setErrorForm] = useState<string | null>(null);
   const [notasOT, setNotasOT] = useState('');
+  const [foto, setFoto] = useState<string | null>(null);
+  const [evidenciaFoto, setEvidenciaFoto] = useState<EvidenciaForense | null>(null);
+  const [procesandoFoto, setProcesandoFoto] = useState(false);
 
   const cargarDatos = useCallback(async () => {
     setCargando(true);
@@ -104,9 +138,31 @@ export const DashboardOperador: React.FC = () => {
   const abrirMedicion = (activo: Activo) => {
     setActivoSeleccionado(activo);
     setForm({ temperatura: '', amperaje: '', presion: '', vibracion: 'ninguna', observaciones: '' });
+    setFoto(null);
+    setEvidenciaFoto(null);
     setExito(false);
     setErrorForm(null);
     setVista('medicion');
+  };
+
+  const handleFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setProcesandoFoto(true);
+    setErrorForm(null);
+    try {
+      // Extraer evidencia del archivo ORIGINAL antes de comprimir (la compresion
+      // descarta EXIF). Si no hay GPS en la imagen, intenta navigator.geolocation.
+      const evidencia = await extraerEvidencia(file).catch(() => null);
+      const dataUrl = await comprimirFoto(file);
+      setFoto(dataUrl);
+      setEvidenciaFoto(evidencia);
+    } catch (err) {
+      setErrorForm(err instanceof Error ? err.message : 'No se pudo procesar la foto.');
+    } finally {
+      setProcesandoFoto(false);
+    }
   };
 
   const abrirCerrarOT = (tarea: Tarea) => {
@@ -141,6 +197,16 @@ export const DashboardOperador: React.FC = () => {
       if (form.temperatura !== '') body.temperatura = parseFloat(form.temperatura);
       if (form.amperaje !== '') body.amperaje = parseFloat(form.amperaje);
       if (form.presion !== '') body.presion = parseFloat(form.presion);
+      if (foto) {
+        body.fotos = [{
+          url: foto,
+          capturedLat: evidenciaFoto?.capturedLat,
+          capturedLng: evidenciaFoto?.capturedLng,
+          capturedAt: evidenciaFoto?.capturedAt,
+          deviceModel: evidenciaFoto?.deviceModel,
+          fuenteUbicacion: evidenciaFoto?.fuenteUbicacion,
+        }];
+      }
 
       const resultado = await apiPostOffline<{ estado?: string; fecha?: string }>('mediciones', body);
       if (resultado.encolada) {
@@ -253,7 +319,47 @@ export const DashboardOperador: React.FC = () => {
                 <label className={labelCls}>Observaciones</label>
                 <textarea value={form.observaciones} onChange={e => setForm(p => ({ ...p, observaciones: e.target.value }))} className="w-full border-2 border-slate-300 px-3 py-2 text-base outline-none focus:border-orange-500 bg-white min-h-[80px] resize-none" placeholder="Novedades, ruidos, olores, anomalías..." />
               </div>
-              <button type="submit" disabled={enviando} className="w-full min-h-[52px] bg-orange-500 text-white font-black border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] text-base uppercase tracking-wide disabled:opacity-50">
+
+              {/* Foto con captura forense */}
+              <div>
+                <label className={labelCls}>Foto del equipo <span className="font-normal lowercase text-slate-400">(opcional, con evidencia GPS)</span></label>
+                {!foto ? (
+                  <label className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 px-3 py-4 min-h-[64px] cursor-pointer hover:border-orange-500 transition-colors">
+                    <input type="file" accept="image/*" capture="environment" onChange={handleFoto} className="hidden" />
+                    <Camera size={20} className="text-slate-500" />
+                    <span className="text-sm font-bold text-slate-600 uppercase tracking-wide">
+                      {procesandoFoto ? 'Leyendo metadatos...' : 'Tomar foto'}
+                    </span>
+                  </label>
+                ) : (
+                  <div className="border-2 border-slate-300 p-2 space-y-2">
+                    <div className="relative">
+                      <img src={foto} alt="Adjunto" className="max-w-full max-h-48 mx-auto border border-slate-200" />
+                      <button
+                        type="button"
+                        onClick={() => { setFoto(null); setEvidenciaFoto(null); }}
+                        className="absolute top-1 right-1 bg-slate-900/80 text-white p-1 hover:bg-red-600 transition-colors"
+                        title="Quitar foto"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                    {evidenciaFoto && evidenciaFoto.fuenteUbicacion !== 'ninguna' && (
+                      <div className={`text-xs px-2 py-1.5 flex items-center gap-1.5 ${evidenciaFoto.fuenteUbicacion === 'exif' ? 'bg-emerald-50 text-emerald-700 border border-emerald-300' : 'bg-amber-50 text-amber-700 border border-amber-300'}`}>
+                        <ShieldCheck size={12} />
+                        <span className="font-bold uppercase tracking-wider">
+                          {evidenciaFoto.fuenteUbicacion === 'exif' ? 'EXIF verificado' : 'Ubicacion del navegador'}
+                        </span>
+                        {evidenciaFoto.capturedLat != null && evidenciaFoto.capturedLng != null && (
+                          <span className="font-mono ml-auto">{evidenciaFoto.capturedLat.toFixed(4)}, {evidenciaFoto.capturedLng.toFixed(4)}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <button type="submit" disabled={enviando || procesandoFoto} className="w-full min-h-[52px] bg-orange-500 text-white font-black border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] text-base uppercase tracking-wide disabled:opacity-50">
                 {enviando ? 'Guardando...' : 'Registrar medición'}
               </button>
             </form>
