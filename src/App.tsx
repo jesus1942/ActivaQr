@@ -32,6 +32,7 @@ import { DashboardOperador } from './pages/DashboardOperador';
 import { PantallaTrialVencido, SeccionTracker } from './components/TrialUI';
 import { PantallaAceptarPoliticas } from './components/PantallaAceptarPoliticas';
 import { SplashScreen } from './components/SplashScreen';
+import { ErrorBoundary, RutaProtegida } from './components/ErrorBoundary';
 import { useState, useCallback } from 'react';
 
 const SPLASH_KEY = 'aqr_splash_shown';
@@ -99,7 +100,7 @@ function AuthedApp() {
     return <PantallaAceptarPoliticas onAceptada={refrescarEstadoPoliticas} />;
   }
 
-  if (usuario?.rol === 'operador') return <DashboardOperador />;
+  if (usuario?.rol === 'operador') return <RutaProtegida scope="Dashboard del operador"><DashboardOperador /></RutaProtegida>;
 
   const esSuperadmin = usuario?.rol === 'superadmin';
 
@@ -110,27 +111,27 @@ function AuthedApp() {
       <Route path="/" element={<Layout />}>
         {esSuperadmin ? (
           <>
-            <Route index element={<Admin />} />
-            <Route path="admin" element={<Admin />} />
-            <Route path="analitica" element={<Analitica />} />
-            <Route path="mensajes" element={<MensajesAdmin />} />
+            <Route index element={<RutaProtegida scope="Administracion"><Admin /></RutaProtegida>} />
+            <Route path="admin" element={<RutaProtegida scope="Administracion"><Admin /></RutaProtegida>} />
+            <Route path="analitica" element={<RutaProtegida scope="Analitica"><Analitica /></RutaProtegida>} />
+            <Route path="mensajes" element={<RutaProtegida scope="Mensajes"><MensajesAdmin /></RutaProtegida>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </>
         ) : (
           <>
-            <Route index element={<Dashboard />} />
-            <Route path="indicadores" element={<Indicadores />} />
-            <Route path="auditoria" element={<Auditoria />} />
-            <Route path="activos" element={<Activos />} />
-            <Route path="activos/:id" element={<ActivoDetalle />} />
-            <Route path="medicion" element={<Medicion />} />
-            <Route path="medicion/:activoId" element={<Medicion />} />
-            <Route path="mantenimiento" element={<Mantenimiento />} />
-            <Route path="reportes" element={<Reportes />} />
-            <Route path="importar" element={<ImportarDatos />} />
-            <Route path="qr" element={<GestionQR />} />
-            <Route path="configuracion" element={<Configuracion />} />
-            <Route path="mensajes" element={<Mensajes />} />
+            <Route index element={<RutaProtegida scope="Dashboard"><Dashboard /></RutaProtegida>} />
+            <Route path="indicadores" element={<RutaProtegida scope="Indicadores"><Indicadores /></RutaProtegida>} />
+            <Route path="auditoria" element={<RutaProtegida scope="Auditoria"><Auditoria /></RutaProtegida>} />
+            <Route path="activos" element={<RutaProtegida scope="Activos"><Activos /></RutaProtegida>} />
+            <Route path="activos/:id" element={<RutaProtegida scope="Detalle del activo"><ActivoDetalle /></RutaProtegida>} />
+            <Route path="medicion" element={<RutaProtegida scope="Medicion"><Medicion /></RutaProtegida>} />
+            <Route path="medicion/:activoId" element={<RutaProtegida scope="Medicion"><Medicion /></RutaProtegida>} />
+            <Route path="mantenimiento" element={<RutaProtegida scope="Mantenimiento"><Mantenimiento /></RutaProtegida>} />
+            <Route path="reportes" element={<RutaProtegida scope="Reportes"><Reportes /></RutaProtegida>} />
+            <Route path="importar" element={<RutaProtegida scope="Importar datos"><ImportarDatos /></RutaProtegida>} />
+            <Route path="qr" element={<RutaProtegida scope="Gestion QR"><GestionQR /></RutaProtegida>} />
+            <Route path="configuracion" element={<RutaProtegida scope="Configuracion"><Configuracion /></RutaProtegida>} />
+            <Route path="mensajes" element={<RutaProtegida scope="Mensajes"><Mensajes /></RutaProtegida>} />
           </>
         )}
       </Route>
@@ -141,17 +142,19 @@ function AuthedApp() {
 
 function AppInterna() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <ScrollToTop />
-        <Routes>
-          <Route path="/ficha/:id" element={<FichaPublica />} />
-          <Route path="/acceso-remoto/aprobar/:token" element={<AprobarAccesoRemoto />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/*" element={<AuthedApp />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <ErrorBoundary variant="full" scope="la app">
+      <AuthProvider>
+        <BrowserRouter>
+          <ScrollToTop />
+          <Routes>
+            <Route path="/ficha/:id" element={<RutaProtegida scope="Ficha publica"><FichaPublica /></RutaProtegida>} />
+            <Route path="/acceso-remoto/aprobar/:token" element={<RutaProtegida scope="Aprobacion de acceso remoto"><AprobarAccesoRemoto /></RutaProtegida>} />
+            <Route path="/reset-password" element={<RutaProtegida scope="Reset de contrasena"><ResetPassword /></RutaProtegida>} />
+            <Route path="/*" element={<AuthedApp />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
