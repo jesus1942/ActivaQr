@@ -220,10 +220,8 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   <div class="wrap">
     <a class="brand" href="#" style="text-decoration:none">ActivaQR</a>
     <div class="links">
-      <a class="nav-link" href="#features">Funciones</a>
-      <a class="nav-link" href="#casos">Casos de uso</a>
-      <a class="nav-link" href="#categorias">Rubros</a>
-      <a class="nav-link" href="#vision">Vision</a>
+      <a class="nav-link" href="#ultimo-km">Por qué</a>
+      <a class="nav-link" href="#casos">Para quién</a>
       <a class="nav-link" href="#planes">Planes</a>
       <a class="nav-link" href="#servicio">Servicio</a>
       <a class="btn btn-naranja" href="${appUrl}" target="_blank" rel="noopener">Ingresar</a>
@@ -252,81 +250,28 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
     <span style="display:inline-block;background:transparent;border:2px solid var(--naranja);color:var(--naranja);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:6px 12px;margin-bottom:24px">El ultimo kilometro</span>
     <h2 style="font-size:clamp(28px,4.5vw,44px);font-weight:900;text-transform:uppercase;letter-spacing:-.5px;line-height:1.1;color:#fff;margin-bottom:24px">Los grandes te venden software de oficina.<br><span style="color:var(--naranja)">Vos necesitás algo que aguante el campo.</span></h2>
     <p style="font-size:18px;color:#cbd5e1;line-height:1.6;margin-bottom:18px">Tu cliente exige reportes mensuales auditables. Hoy el tecnico anota en planilla, vuelve a la oficina, alguien la carga al sistema. Datos perdidos, horas perdidas, fechas truchadas para llegar a fin de mes.</p>
-    <p style="font-size:18px;color:#cbd5e1;line-height:1.6;margin-bottom:24px"><strong style="color:#fff">ActivaQR resuelve eso.</strong> La medicion se carga en el momento, en el lugar, con el dedo del que la hizo. Sin internet, sin VPN, sin licencia de USD 8.000 por usuario. Despues lo exportas como tu cliente lo quiera: PDF, CSV, lo que sea.</p>
-    <div id="ttsBox" style="display:none;border-top:1px solid #1e293b;padding-top:24px">
-      <button id="ttsBtn" type="button" style="display:inline-flex;align-items:center;gap:10px;background:transparent;border:2px solid var(--naranja);color:var(--naranja);font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:1px;padding:12px 20px;cursor:pointer;font-family:inherit;transition:all .15s">
-        <span id="ttsIcon" aria-hidden="true" style="display:inline-block;width:0;height:0;border-style:solid;border-width:7px 0 7px 12px;border-color:transparent transparent transparent var(--naranja)"></span>
-        <span id="ttsLabel">Escuchá esta historia (1 min)</span>
-      </button>
-      <div id="ttsProgress" style="margin-top:14px;height:3px;background:#1e293b;display:none;overflow:hidden">
-        <div id="ttsBar" style="height:100%;width:0%;background:var(--naranja);transition:width .3s"></div>
-      </div>
-    </div>
+    <p style="font-size:18px;color:#cbd5e1;line-height:1.6;margin-bottom:0"><strong style="color:#fff">ActivaQR resuelve eso.</strong> La medicion se carga en el momento, en el lugar, con el dedo del que la hizo. Sin internet, sin VPN, sin licencia de USD 8.000 por usuario. Despues lo exportas como tu cliente lo quiera: PDF, CSV, lo que sea.</p>
   </div>
 </section>
 
-<section id="features" class="reveal">
-  <div class="wrap">
-    <h2 class="titulo">Menos paradas. Menos costos. Más control.</h2>
-    <p class="bajada">Desde el operario en el piso de planta hasta el gerente que mira el tablero. Una sola herramienta, en el celular.</p>
-    <div class="grid g3">
-      <div class="card"><p class="num">01</p><h3>Toda la ficha en un escaneo</h3><p>Escaneás el QR de la máquina y ves estado, última medición, valores de referencia y responsable. Sin app, sin login.</p></div>
-      <div class="card"><p class="num">02</p><h3>Avisos antes de la falla costosa</h3><p>Definís umbrales por equipo. Cuando una medición los supera, el activo cambia de estado solo: normal, alerta, crítico o urgente.</p></div>
-      <div class="card"><p class="num">03</p><h3>Listo para tu rubro</h3><p>Un motor diesel no se mide igual que un equipo de estética. Cada categoría trae sus propios parámetros y umbrales listos.</p></div>
-      <div class="card"><p class="num">04</p><h3>Órdenes de trabajo y cumplimiento</h3><p>Preventivos y correctivos por activo, con técnicos asignados, materiales, horas y tareas vencidas marcadas automáticamente.</p></div>
-      <div class="card"><p class="num">05</p><h3>Soporte que entra por vos</h3><p>Nuestro equipo puede entrar, ver tus activos y registrar mediciones por vos. Con chat de fotos y audio. Siempre con tu permiso.</p></div>
-      <div class="card"><p class="num">06</p><h3>Indicadores para decidir</h3><p>Tablero ejecutivo con disponibilidad, equipos más críticos, tendencia de fallas y mantenimiento predictivo. Reportes y QR en PDF.</p></div>
-    </div>
-  </div>
-</section>
 
 <section class="dif reveal">
   <div class="wrap">
-    <h2 class="titulo">Lo que ningún otro hace</h2>
-    <p class="bajada">Comparamos contra el SAP de tu cliente, el Maximo de IBM y las planillas de Excel del taller. Estas son las cinco cosas que no encontrás en ningún otro lado.</p>
+    <h2 class="titulo">Tres cosas que no vas a encontrar en otro lado</h2>
+    <p class="bajada">Lo demás (QR, alertas, reportes) lo hace cualquier app. Estas tres definen por qué un contratista nos elige.</p>
     <div class="grid g3">
-      <div class="card"><h3>Funciona sin internet</h3><p>El SAP exige VPN. El Maximo exige red corporativa. ActivaQR funciona en el celular del técnico aunque no haya señal: la medición queda guardada y sube sola cuando vuelve la conexión.</p></div>
-      <div class="card"><h3>Mecánico veterano en el QR</h3><p>Escaneás el equipo y ves no solo su ficha, sino los códigos de error típicos, causas probables rankeadas por probabilidad, y solución paso a paso. Cargamos el catálogo por categoría. No te dejamos solo frente a una falla.</p></div>
-      <div class="card"><h3>QR sin login</h3><p>Todos los competidores exigen cuenta y sesión para ver un activo. ActivaQR muestra la ficha al instante a cualquiera con el celular.</p></div>
-      <div class="card"><h3>Intervención remota</h3><p>Otros te dejan mirar datos. Nosotros entramos, registramos la medición y disparamos el recálculo de alertas. Tele-mantenimiento de verdad.</p></div>
-      <div class="card"><h3>Precio que cierra</h3><p>Pagás en pesos con Mercado Pago o en dólares con Stripe. Un usuario de SAP Asset Manager te cuesta USD 8.000 al año. ActivaQR te cuesta lo que un par de mates por día.</p></div>
-      <div class="card"><h3>Lo configurás vos</h3><p>El SAP lo cambia el área de TI de la casa matriz. Acá cargás un activo, agregás una falla a tu catálogo o cambiás un umbral desde el celular, sin pedirle permiso a nadie.</p></div>
-    </div>
-  </div>
-</section>
-
-<section id="categorias" class="reveal">
-  <div class="wrap">
-    <h2 class="titulo">Un rubro para cada equipo</h2>
-    <p class="bajada">Plantillas de medición listas para usar, desde estética hasta ingeniería aeroespacial. Y podés crear las tuyas.</p>
-    <div class="chips">
-      <span class="chip">Motor Diesel / Generador</span>
-      <span class="chip">Hidráulico</span>
-      <span class="chip">Neumático / Compresor</span>
-      <span class="chip">Eléctrico / Tablero</span>
-      <span class="chip">Bomba Centrífuga</span>
-      <span class="chip">HVAC / Climatización</span>
-      <span class="chip">Estética / Belleza</span>
-      <span class="chip">Equipo Médico</span>
-      <span class="chip">Odontología</span>
-      <span class="chip">Laboratorio</span>
-      <span class="chip">Cadena de Frío</span>
-      <span class="chip">Gastronomía</span>
-      <span class="chip">Panadería</span>
-      <span class="chip">Refrigeración Comercial</span>
-      <span class="chip">Maquinaria Agrícola</span>
-      <span class="chip">Flota de Vehículos</span>
-      <span class="chip">Autoelevador</span>
-      <span class="chip">Grúa / Izaje</span>
-      <span class="chip">Naval</span>
-      <span class="chip">Aviación General</span>
-      <span class="chip">Aeroespacial / Propulsión</span>
-      <span class="chip">IT / Informática</span>
-      <span class="chip">Telecomunicaciones</span>
-      <span class="chip">CCTV / Seguridad</span>
-      <span class="chip">Minería</span>
-      <span class="chip">Petróleo y Gas</span>
-      <span class="chip">+ muchos más</span>
+      <div class="card">
+        <h3>Funciona sin señal</h3>
+        <p>El técnico carga la medición en el pad, en el socavón o en la cámara. Queda en el celular y sube sola cuando vuelve la conexión. Con hora real y GPS del momento que se midió, no del momento que se cargó.</p>
+      </div>
+      <div class="card">
+        <h3>Un mecánico veterano en el QR</h3>
+        <p>Escaneás el equipo y no ves solo su ficha: ves los síntomas típicos, las causas probables ordenadas por frecuencia y cómo resolverlo paso a paso. Cada categoría con su catálogo. El operario nuevo deja de quedar solo frente al equipo.</p>
+      </div>
+      <div class="card">
+        <h3>Cadena de custodia en la foto</h3>
+        <p>Cada foto que sube el técnico trae GPS, hora real y modelo del celular. Sirve para auditoría de tu cliente, reclamos a seguros y disputas por traslados o extravíos. Exportable como PDF firmado.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -370,42 +315,9 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
         <p style="margin-top:14px;font-size:13px;font-weight:700;color:var(--negro)">Activos tipicos: aerogeneradores, transformadores de torre, subestaciones de parque</p>
       </div>
 
-      <div class="card" style="border-left:5px solid var(--naranja)">
-        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:8px">Salud y estetica</p>
-        <h3 style="margin-bottom:10px">Clinicas, hospitales y centros esteticos</h3>
-        <p style="color:var(--gris);font-size:14px">Los equipos medicos y esteticos requieren mantenimiento obligatorio con respaldo documental. El tecnico escanea el QR, carga la revision y queda todo registrado con fecha y firma digital.</p>
-        <p style="margin-top:14px;font-size:13px;font-weight:700;color:var(--negro)">Activos tipicos: HIFU, laser, autoclave, ecografo, UPS, grupos electrogenos</p>
-      </div>
-
-      <div class="card" style="border-left:5px solid var(--naranja)">
-        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:8px">Construccion y obra civil</p>
-        <h3 style="margin-bottom:10px">Empresas constructoras y vial</h3>
-        <p style="color:var(--gris);font-size:14px">Maquinaria pesada moviendose entre obras. Con el modulo itinerante rastrean donde esta cada equipo, cuando salio, cuando vuelve y que mantenimiento le toca antes de la proxima jornada.</p>
-        <p style="margin-top:14px;font-size:13px;font-weight:700;color:var(--negro)">Activos tipicos: retroexcavadoras, motoniveladoras, volquetes, hormigoneras</p>
-      </div>
-
-      <div class="card" style="border-left:5px solid var(--naranja)">
-        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:8px">Industria alimentaria y frigorifica</p>
-        <h3 style="margin-bottom:10px">Plantas de procesamiento y camaras frigorificas</h3>
-        <p style="color:var(--gris);font-size:14px">La cadena de frio exige control de temperatura constante. ActivaQR alerta automaticamente cuando un compresor o camara se sale del rango permitido, antes de comprometer el producto.</p>
-        <p style="margin-top:14px;font-size:13px;font-weight:700;color:var(--negro)">Activos tipicos: compresores de frio, camaras, tuneles de congelado, lineas de proceso</p>
-      </div>
-
-      <div class="card" style="border-left:5px solid var(--naranja)">
-        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:8px">Talleres y metalurgia</p>
-        <h3 style="margin-bottom:10px">Talleres mecanicos, torneria y metalmecanica</h3>
-        <p style="color:var(--gris);font-size:14px">Maquinaria de alta precision que para la produccion si falla. Registro de horas de marcha, lubricaciones y revisiones periodicas. El tecnico sabe que le toca hacer antes de encender la maquina.</p>
-        <p style="margin-top:14px;font-size:13px;font-weight:700;color:var(--negro)">Activos tipicos: tornos CNC, fresadoras, prensas, compresores de aire, soldadoras</p>
-      </div>
-
-      <div class="card" style="border-left:5px solid var(--naranja)">
-        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:8px">Energia y utilities</p>
-        <h3 style="margin-bottom:10px">Plantas de generacion y distribucion electrica</h3>
-        <p style="color:var(--gris);font-size:14px">Grupos electrogenos, tableros y UPS con control de voltaje, temperatura y horas de operacion. Las alertas criticas llegan al responsable antes de que se vaya la luz.</p>
-        <p style="margin-top:14px;font-size:13px;font-weight:700;color:var(--negro)">Activos tipicos: generadores diesel, transformadores, tableros electricos, UPS industriales</p>
-      </div>
-
     </div>
+
+    <p style="margin-top:32px;color:var(--gris);font-size:14px;text-align:center">También se usa en frigoríficos, talleres, hospitales, agro y obra. Si tu equipo se rompe y te frena la facturación, sirve.</p>
   </div>
 </section>
 
@@ -437,63 +349,6 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
       <p style="margin:0 0 18px;">No vengo de una gran empresa de software. Soy autodidacta: aprend&iacute; a programar resolviendo problemas concretos de la vida cotidiana, esos que uno vive todos los d&iacute;as y que nadie termina de solucionar bien.</p>
       <p style="margin:0 0 18px;">ActivaQR empez&oacute; con una idea simple que surgi&oacute; en casa: proteger los equipos con los que trabajo a diario. Saber en qu&eacute; estado est&aacute;n, cu&aacute;ndo necesitan mantenimiento, y poder identificarlos al instante con solo escanear un c&oacute;digo. Que cualquiera que pase al lado de una m&aacute;quina sepa qu&eacute; es y c&oacute;mo est&aacute;, sin papeles ni planillas perdidas.</p>
       <p style="margin:0;">De esa necesidad real, entre el taller y el teclado, naci&oacute; esta plataforma. Hoy la comparto con vos porque creo que el mismo problema que ten&iacute;a yo, lo tienen muchos.</p>
-    </div>
-  </div>
-</section>
-
-<section class="capital-banner reveal">
-  <div class="wrap">
-    <h2>Los activos son capital. No solo equipos.</h2>
-    <p>Cada máquina, vehículo o herramienta que usás en tu operación representa una inversión. Cuidarlos, medirlos y trazarlos no es un gasto: es proteger el capital de tu empresa y la continuidad del negocio. Lo mismo que hacés con tu equipo humano, tenés que hacerlo con tu capital físico.</p>
-  </div>
-</section>
-
-<section id="vision" class="roadmap reveal">
-  <div class="wrap">
-    <h2 class="titulo">Hacia donde vamos</h2>
-    <p class="bajada">Lo que ves hoy es la base. Esto es lo que se viene: más automatización, más alcance, menos intervención humana para lo rutinario.</p>
-    <div class="fase">
-
-      <div class="fase-item">
-        <span class="fase-badge activo">Hoy disponible</span>
-        <div class="fase-content">
-          <h3>Gestion completa de activos con QR</h3>
-          <p>Ficha pública por QR sin login, mediciones con alertas automáticas, mantenimientos preventivos, soporte remoto con chat de fotos y audio, reportes en PDF y exportación CSV. Multi-empresa, multi-sede, multi-técnico.</p>
-        </div>
-      </div>
-
-      <div class="fase-item">
-        <span class="fase-badge proximo">Proximo</span>
-        <div class="fase-content">
-          <h3>Seguimiento GPS para activos moviles</h3>
-          <p>Flotas de vehículos, maquinaria vial, embarcaciones y equipos de campo. El técnico responsable queda inscripto en el activo antes de salir. Historial de recorrido, alertas por zona y velocidad. Conectividad celular en zonas urbanas e industriales.</p>
-        </div>
-      </div>
-
-      <div class="fase-item">
-        <span class="fase-badge proximo">Proximo</span>
-        <div class="fase-content">
-          <h3>Integracion con sensores IoT</h3>
-          <p>Mediciones automáticas sin intervención humana. Dispositivos de bajo costo conectados al activo que mandan temperatura, vibración y amperaje al sistema cada pocos segundos. Sin depender de que alguien lo registre manualmente.</p>
-        </div>
-      </div>
-
-      <div class="fase-item">
-        <span class="fase-badge futuro">En el horizonte</span>
-        <div class="fase-content">
-          <h3>Cobertura en zonas sin señal — Starlink</h3>
-          <p>Para operaciones en campo abierto, cuencas petroleras, obra vial en ruta y embarcaciones. Integración con antenas Starlink itinerantes para garantizar que ningún activo quede fuera de monitoreo, sin importar dónde esté.</p>
-        </div>
-      </div>
-
-      <div class="fase-item">
-        <span class="fase-badge futuro">En el horizonte</span>
-        <div class="fase-content">
-          <h3>Mantenimiento predictivo con analisis de tendencias</h3>
-          <p>Cuando acumulás suficiente historia de mediciones, el sistema empieza a ver patrones. Una temperatura que sube 2 grados por semana durante un mes no es normal. La alerta llega antes de que falle, no después.</p>
-        </div>
-      </div>
-
     </div>
   </div>
 </section>
@@ -662,134 +517,6 @@ const observer = new IntersectionObserver(function(entries){
 }, {threshold:0.12});
 document.querySelectorAll('.reveal').forEach(function(el){ observer.observe(el); });
 
-// ─── Narracion en voz alta (Web Speech API) ─────────────────────────────
-(function(){
-  if (!('speechSynthesis' in window)) return;
-
-  // Texto a narrar: hero + ultimo kilometro. Sin emojis ni puntuacion rara.
-  var TEXTO = [
-    'El mantenimiento no se hace desde una oficina en Lima.',
-    'Tu técnico escanea el QR del equipo, carga la medición y la foto desde el celular.',
-    'Si no hay señal — y en el pad, en el socavón o en la cámara nunca hay — la medición queda en el celular.',
-    'Apenas agarra wifi del comedor, sube sola, con hora real y geolocalización del momento que se midió, no del momento que se cargó.',
-    '',
-    'Los grandes te venden software de oficina. Vos necesitás algo que aguante el campo.',
-    '',
-    'Tu cliente exige reportes mensuales auditables. Hoy el técnico anota en planilla, vuelve a la oficina, alguien la carga al sistema. Datos perdidos, horas perdidas, fechas truchadas para llegar a fin de mes.',
-    '',
-    'ActivaQR resuelve eso. La medición se carga en el momento, en el lugar, con el dedo del que la hizo. Sin internet, sin VPN, sin licencias de ocho mil dólares por usuario.'
-  ].join(' ');
-
-  var box = document.getElementById('ttsBox');
-  var btn = document.getElementById('ttsBtn');
-  var label = document.getElementById('ttsLabel');
-  var icon = document.getElementById('ttsIcon');
-  var progress = document.getElementById('ttsProgress');
-  var bar = document.getElementById('ttsBar');
-  if (!box || !btn || !label || !icon || !progress || !bar) return;
-
-  // Selecciona la mejor voz en español. Algunos navegadores cargan voces async.
-  function elegirVoz() {
-    var voces = window.speechSynthesis.getVoices() || [];
-    if (voces.length === 0) return null;
-    // Preferencia: es-AR > es-MX > es-419 > es-CL/CO/PE > es-ES > cualquier es
-    var prefs = [/^es-AR/i, /^es-419/i, /^es-MX/i, /^es-CO/i, /^es-CL/i, /^es-PE/i, /^es-ES/i, /^es/i];
-    for (var i = 0; i < prefs.length; i++) {
-      var match = voces.find(function(v){ return prefs[i].test(v.lang); });
-      if (match) return match;
-    }
-    return null;
-  }
-
-  // Si no hay voz en español, no mostramos el boton (mejor que ofrecer una experiencia mala).
-  function inicializar() {
-    var voz = elegirVoz();
-    if (!voz) {
-      // Algunos navegadores cargan voces despues. Reintentar una sola vez.
-      window.speechSynthesis.onvoiceschanged = function(){
-        if (elegirVoz()) box.style.display = 'block';
-      };
-      return;
-    }
-    box.style.display = 'block';
-  }
-  inicializar();
-
-  var utter = null;
-  var reproduciendo = false;
-  var inicio = 0;
-  var duracionEstimadaMs = 0;
-  var tickInterval = null;
-
-  function setIcono(tipo) {
-    // 'play' o 'pause'
-    if (tipo === 'pause') {
-      icon.style.borderWidth = '0';
-      icon.style.width = '4px';
-      icon.style.height = '14px';
-      icon.style.background = 'var(--naranja)';
-      icon.style.boxShadow = '7px 0 0 0 var(--naranja)';
-    } else {
-      icon.style.background = 'transparent';
-      icon.style.boxShadow = 'none';
-      icon.style.width = '0';
-      icon.style.height = '0';
-      icon.style.borderStyle = 'solid';
-      icon.style.borderWidth = '7px 0 7px 12px';
-      icon.style.borderColor = 'transparent transparent transparent var(--naranja)';
-    }
-  }
-
-  function frenar() {
-    window.speechSynthesis.cancel();
-    reproduciendo = false;
-    if (tickInterval) { clearInterval(tickInterval); tickInterval = null; }
-    bar.style.width = '0%';
-    progress.style.display = 'none';
-    label.textContent = 'Escuchá esta historia (1 min)';
-    setIcono('play');
-  }
-
-  btn.addEventListener('click', function(){
-    if (reproduciendo) { frenar(); return; }
-
-    var voz = elegirVoz();
-    if (!voz) return;
-
-    utter = new SpeechSynthesisUtterance(TEXTO);
-    utter.voice = voz;
-    utter.lang = voz.lang;
-    utter.rate = 0.95;
-    utter.pitch = 1.0;
-    utter.volume = 1.0;
-
-    // Estimacion gruesa: ~14 caracteres por segundo de habla a rate 0.95.
-    duracionEstimadaMs = (TEXTO.length / 14) * 1000;
-    inicio = Date.now();
-    progress.style.display = 'block';
-
-    utter.onstart = function(){
-      reproduciendo = true;
-      label.textContent = 'Pausar narración';
-      setIcono('pause');
-      tickInterval = setInterval(function(){
-        var t = Math.min(100, ((Date.now() - inicio) / duracionEstimadaMs) * 100);
-        bar.style.width = t.toFixed(1) + '%';
-      }, 200);
-    };
-    utter.onend = function(){
-      bar.style.width = '100%';
-      setTimeout(frenar, 500);
-    };
-    utter.onerror = frenar;
-
-    window.speechSynthesis.cancel(); // por si quedo algo en cola
-    window.speechSynthesis.speak(utter);
-  });
-
-  // Al salir de la pagina, frenar la voz para que no siga hablando sola.
-  window.addEventListener('beforeunload', function(){ window.speechSynthesis.cancel(); });
-})();
 </script>
 
 </body>
