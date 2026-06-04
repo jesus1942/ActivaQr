@@ -174,3 +174,44 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
 
   return res;
 }
+
+/**
+ * POST con soporte offline. Si la red falla (sin senal en el campo, server
+ * caido temporal, etc), la operacion se encola en IndexedDB y se reintenta
+ * cuando vuelva la conexion via useEstadoSync.
+ *
+ * Devuelve { encolada: true } si quedo offline, o { encolada: false, data }
+ * si se envio. Asi el caller puede dar feedback distinto al usuario.
+ */
+export interface ResultadoPostOffline<T = unknown> {
+  encolada: boolean;
+  data?: T;
+  idLocal?: string;
+}
+
+export async function apiPostOffline<T = unknown>(path: string, body: unknown): Promise<ResultadoPostOffline<T>> {
+  const { encolarOperacion } = await import('./offlineQueue');
+  try {
+    const res = await apiFetch(path, { method: 'POST', body: JSON.stringify(body) });
+    if (!res.ok) {
+      // El server respondio mal: NO encolar, es un error de logica que un retry no va a resolver.
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data?.error || `Error ${res.status}`);
+    }
+    const data = (await res.json()) as T;
+    return { encolada: false, data };
+  } catch (err) {
+    // Errores conocidos que no son de red: propagar.
+    if (err instanceof EmpresaSuspendidaError || err instanceof TrialVencidoError || err instanceof TrialLecturaError) {
+      throw err;
+    }
+    // TypeError de fetch (red caida) o AbortError (timeout) → encolar.
+    const esErrorDeRed = err instanceof TypeError || (err instanceof Error && (err.name === 'AbortError' || err.message === 'Failed to fetch'));
+    if (esErrorDeRed) {
+      const idLocal = await encolarOperacion(path, 'POST', body);
+      return { encolada: true, idLocal };
+    }
+    // Errores del server (4xx, 5xx ya parseados): no encolar, propagar.
+    throw err;
+  }
+}

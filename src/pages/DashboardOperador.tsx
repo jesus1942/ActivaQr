@@ -1,9 +1,10 @@
 // v1.2.0
 import React, { useEffect, useState, useCallback } from 'react';
-import { apiFetch } from '../data/auth';
+import { apiFetch, apiPostOffline } from '../data/auth';
 import { useAuth } from '../context/AuthContext';
 import { QrScanner, extraerActivoId } from '../components/QrScanner';
-import { ScanLine, ClipboardList, CheckCircle2, AlertTriangle, LogOut, ChevronRight, X } from 'lucide-react';
+import { SyncBadge } from '../components/ui/SyncBadge';
+import { ScanLine, ClipboardList, CheckCircle2, AlertTriangle, LogOut, ChevronRight, X, CloudOff } from 'lucide-react';
 
 interface Activo {
   id: string;
@@ -77,6 +78,7 @@ export const DashboardOperador: React.FC = () => {
   const [form, setForm] = useState<FormMedicion>({ temperatura: '', amperaje: '', presion: '', vibracion: 'ninguna', observaciones: '' });
   const [enviando, setEnviando] = useState(false);
   const [exito, setExito] = useState(false);
+  const [guardadoOffline, setGuardadoOffline] = useState(false);
   const [errorForm, setErrorForm] = useState<string | null>(null);
   const [notasOT, setNotasOT] = useState('');
 
@@ -129,6 +131,7 @@ export const DashboardOperador: React.FC = () => {
     if (!activoSeleccionado) return;
     setEnviando(true);
     setErrorForm(null);
+    setGuardadoOffline(false);
     try {
       const body: Record<string, unknown> = {
         activoId: activoSeleccionado.id,
@@ -139,12 +142,16 @@ export const DashboardOperador: React.FC = () => {
       if (form.amperaje !== '') body.amperaje = parseFloat(form.amperaje);
       if (form.presion !== '') body.presion = parseFloat(form.presion);
 
-      const res = await apiFetch('mediciones', { method: 'POST', body: JSON.stringify(body) });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error al registrar');
+      const resultado = await apiPostOffline<{ estado?: string; fecha?: string }>('mediciones', body);
+      if (resultado.encolada) {
+        // Sin senal: la medicion quedo en el celular y se enviara cuando vuelva.
+        setGuardadoOffline(true);
+        setExito(true);
+        return;
+      }
       setExito(true);
       setActivos(prev => prev.map(a => a.id === activoSeleccionado.id
-        ? { ...a, estado: data.estado ?? a.estado, mediciones: [{ fecha: data.fecha ?? new Date().toISOString() }] }
+        ? { ...a, estado: resultado.data?.estado ?? a.estado, mediciones: [{ fecha: resultado.data?.fecha ?? new Date().toISOString() }] }
         : a
       ));
     } catch (err) {
@@ -180,8 +187,9 @@ export const DashboardOperador: React.FC = () => {
   // ── Vista: registrar medición ─────────────────────────────────
   if (vista === 'medicion' && activoSeleccionado) {
     return (
-      <div className="min-h-screen bg-slate-100 px-4 py-6">
-        <div className="max-w-lg mx-auto space-y-4">
+      <div className="min-h-screen bg-slate-100">
+        <SyncBadge />
+        <div className="max-w-lg mx-auto space-y-4 px-4 py-6">
           <div className="bg-slate-900 text-white px-5 py-4 border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] flex items-start justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-wider text-orange-400 mb-0.5">Registrar medición</p>
@@ -194,14 +202,27 @@ export const DashboardOperador: React.FC = () => {
           </div>
 
           {exito ? (
-            <div className="bg-white border-2 border-emerald-400 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.6)] p-6 text-center space-y-4">
-              <CheckCircle2 size={40} className="mx-auto text-emerald-500" />
-              <p className="font-black text-2xl text-emerald-700 uppercase">Registrada</p>
-              <p className="text-slate-600 text-sm">La medición fue guardada correctamente.</p>
-              <button onClick={() => { setVista('activos'); setExito(false); }} className="w-full min-h-[52px] bg-slate-900 text-white font-black border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.6)] text-base uppercase tracking-wide">
-                Volver a la lista
-              </button>
-            </div>
+            guardadoOffline ? (
+              <div className="bg-white border-2 border-slate-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.6)] p-6 text-center space-y-4">
+                <CloudOff size={40} className="mx-auto text-slate-600" />
+                <p className="font-black text-2xl text-slate-800 uppercase">Guardada offline</p>
+                <p className="text-slate-600 text-sm">
+                  No habia conexion. La medición quedó en tu celular y se va a enviar sola cuando agarres senal.
+                </p>
+                <button onClick={() => { setVista('activos'); setExito(false); setGuardadoOffline(false); }} className="w-full min-h-[52px] bg-slate-900 text-white font-black border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.6)] text-base uppercase tracking-wide">
+                  Seguir trabajando
+                </button>
+              </div>
+            ) : (
+              <div className="bg-white border-2 border-emerald-400 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.6)] p-6 text-center space-y-4">
+                <CheckCircle2 size={40} className="mx-auto text-emerald-500" />
+                <p className="font-black text-2xl text-emerald-700 uppercase">Registrada</p>
+                <p className="text-slate-600 text-sm">La medición fue guardada correctamente.</p>
+                <button onClick={() => { setVista('activos'); setExito(false); }} className="w-full min-h-[52px] bg-slate-900 text-white font-black border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.6)] text-base uppercase tracking-wide">
+                  Volver a la lista
+                </button>
+              </div>
+            )
           ) : (
             <form onSubmit={handleEnviarMedicion} className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.6)] p-5 space-y-4">
               {errorForm && <div className="border-2 border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{errorForm}</div>}
@@ -245,8 +266,9 @@ export const DashboardOperador: React.FC = () => {
   // ── Vista: cerrar OT ──────────────────────────────────────────
   if (vista === 'cerrar_ot' && tareaSeleccionada) {
     return (
-      <div className="min-h-screen bg-slate-100 px-4 py-6">
-        <div className="max-w-lg mx-auto space-y-4">
+      <div className="min-h-screen bg-slate-100">
+        <SyncBadge />
+        <div className="max-w-lg mx-auto space-y-4 px-4 py-6">
           <div className="bg-slate-900 text-white px-5 py-4 border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] flex items-start justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-wider text-orange-400 mb-0.5">Cerrar orden de trabajo</p>
@@ -294,6 +316,8 @@ export const DashboardOperador: React.FC = () => {
       {scannerAbierto && (
         <QrScanner onResult={onQrResult} onClose={() => setScannerAbierto(false)} />
       )}
+
+      <SyncBadge />
 
       {/* Header */}
       <div className="bg-slate-900 text-white px-5 py-4 border-b-2 border-slate-900 flex items-center justify-between">

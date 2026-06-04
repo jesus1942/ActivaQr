@@ -5,6 +5,7 @@ import { Sidebar } from './Sidebar';
 import { PantallaCarga } from '../PantallaCarga';
 import { useCargaRemota } from '../../hooks/useStorage';
 import { DemoBanner } from '../ui/DemoBanner';
+import { SyncBadge } from '../ui/SyncBadge';
 import { TrialBanner } from '../TrialUI';
 
 export const Layout: React.FC = () => {
@@ -19,6 +20,7 @@ export const Layout: React.FC = () => {
         {/* Spacer for mobile fixed header (incluye safe-area de la barra de estado) */}
         <div className="md:hidden h-safe-header" />
         <TrialBanner />
+        <SyncBadge />
         <div className="p-4 md:p-8 min-h-full">
           <Outlet />
         </div>
