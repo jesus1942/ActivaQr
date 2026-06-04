@@ -68,7 +68,7 @@ const FALLAS_MOTOR_DIESEL: FallaSeed[] = [
   },
   {
     codigo: 'MD-003',
-    sintoma: 'Humo BLANCO denso por el escape (no es vapor)',
+    sintoma: 'Humo BLANCO denso CONSTANTE por el escape (no es vapor)',
     severidad: 'critico',
     orden: 3,
     causas: [
@@ -83,6 +83,27 @@ const FALLAS_MOTOR_DIESEL: FallaSeed[] = [
       '2. Sacar bujias de precalentamiento e inspeccionar. Pueden estar limpias (lavadas por agua).\n' +
       '3. Hacer prueba de gases en el sistema de refrigeracion (detector de CO2).\n' +
       '4. Si confirmado: desarmar tapa de cilindros, cambiar junta y verificar planitud de tapa. A veces hay que rectificar o reemplazar.',
+  },
+  {
+    codigo: 'MD-003B',
+    sintoma: 'Humo BLANCO al arrancar (desaparece despues de unos minutos)',
+    severidad: 'advertencia',
+    orden: 4,
+    causas: [
+      { causa: 'Valvula de escape de gases del motor (EGR) pegada o sucia', probabilidad: 'alta' },
+      { causa: 'Valvula PCV (ventilacion del carter) tapada — vapores de aceite quemados', probabilidad: 'alta' },
+      { causa: 'Retenes de valvulas vencidos (chupa aceite con motor frio)', probabilidad: 'media' },
+      { causa: 'Condensacion acumulada en el escape (normal en frio extremo)', probabilidad: 'media' },
+      { causa: 'Combustible diesel con agua o contaminacion', probabilidad: 'baja' },
+      { causa: 'Bujias de precalentamiento debiles (combustion incompleta inicial)', probabilidad: 'baja' },
+    ],
+    solucion:
+      'No es critico si el humo desaparece al alcanzar temperatura. Si persiste, ver MD-003.\n' +
+      '1. Limpiar la valvula EGR. Con uso prolongado se llena de carbonilla y se pega.\n' +
+      '2. Revisar la valvula PCV y la manguera de ventilacion del carter. Si esta tapada, los vapores de aceite van al colector de admision y se queman generando humo blanco.\n' +
+      '3. Si el humo es blanco-azulado al arrancar en frio y baja al calentar: retenes de valvulas vencidos. Cambio.\n' +
+      '4. Verificar bujias de precalentamiento individualmente. Las debiles dejan combustion incompleta los primeros segundos.\n' +
+      '5. Si trabajas con combustible de mala calidad o sospecha de agua en el tanque: drenar tanque y filtros, cambiar gasoil.',
   },
   {
     codigo: 'MD-004',
