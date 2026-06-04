@@ -18,25 +18,25 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <!-- SEO primario -->
-<title>ActivaQR — Gestión de activos industriales con QR | Patagonia Argentina</title>
-<meta name="description" content="Sistema de gestión de activos industriales con QR para empresas de Patagonia. Mantenimiento predictivo, alertas automáticas, historial digitalizado. Probá gratis 30 días." />
-<meta name="keywords" content="gestión de activos industriales, mantenimiento preventivo, CMMS, QR equipos, Patagonia, Neuquén, Puerto Madryn, Vaca Muerta, software mantenimiento Argentina" />
+<title>ActivaQR — Mantenimiento desde el campo, no desde una oficina en Lima</title>
+<meta name="description" content="El tecnico escanea el QR, carga la medicion en el celular y se sincroniza sola cuando vuelve la senal. Funciona sin internet, sin VPN, sin licencias de USD 8.000. Para contratistas de Vaca Muerta, mineros y O&M eolico." />
+<meta name="keywords" content="mantenimiento industrial offline, gestion de activos con QR, CMMS para contratistas, mantenimiento Vaca Muerta, O&M aerogeneradores Patagonia, software mantenimiento sin internet, alternativa SAP PM, alternativa IBM Maximo" />
 <meta name="author" content="ActivaQR" />
 <link rel="canonical" href="https://activaqr-production.up.railway.app/" />
 
 <!-- Open Graph (WhatsApp, LinkedIn, Facebook) -->
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://activaqr-production.up.railway.app/" />
-<meta property="og:title" content="ActivaQR — Gestión de activos industriales con QR" />
-<meta property="og:description" content="Pegás un QR en cada equipo y convertís el mantenimiento en datos. Anticipás roturas, reducís costos y aumentás la disponibilidad de tu planta." />
+<meta property="og:title" content="ActivaQR — El mantenimiento no se hace desde una oficina en Lima" />
+<meta property="og:description" content="Tu tecnico escanea el QR, carga la medicion y la foto desde el celular. Si no hay senal, queda guardado y sube solo cuando vuelve la conexion. Pensado para el que tiene las manos sucias." />
 <meta property="og:image" content="https://jesus1942.github.io/ActivaQr/company-logo-hd.png" />
 <meta property="og:locale" content="es_AR" />
 <meta property="og:site_name" content="ActivaQR" />
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="ActivaQR — Gestión de activos industriales con QR" />
-<meta name="twitter:description" content="Pegás un QR en cada equipo y convertís el mantenimiento en datos. Probá gratis 30 días." />
+<meta name="twitter:title" content="ActivaQR — Hecho para el que tiene las manos sucias" />
+<meta name="twitter:description" content="Mantenimiento que funciona en el pad sin senal, en la mina, en la gondola del aerogenerador. Sin VPN, sin licencias de USD 8.000." />
 <meta name="twitter:image" content="https://jesus1942.github.io/ActivaQr/company-logo-hd.png" />
 
 <!-- Schema.org: SoftwareApplication -->
@@ -233,9 +233,9 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
 
 <header class="hero">
   <div class="wrap">
-    <span class="tag">Sin papel. Sin excusas.</span>
-    <h1>Detectá las fallas<br>antes de que <span class="o">paren tu producción</span>.</h1>
-    <p class="sub">Pegás un QR en cada equipo y convertís el mantenimiento en datos. Anticipás roturas, reducís costos de reparación y aumentás la disponibilidad de tu planta. Todo desde el celular, sin instalar nada.</p>
+    <span class="tag">Hecho para el que tiene las manos sucias.</span>
+    <h1>El mantenimiento<br>no se hace desde <span class="o">una oficina en Lima</span>.</h1>
+    <p class="sub">Tu técnico escanea el QR del equipo, carga la medición y la foto desde el celular. <strong>Si no hay señal — y en el pad, en el socavón o en la cámara nunca hay — la medición queda en el celular.</strong> Apenas agarra WiFi del comedor, sube sola, con hora real y geolocalización del momento que se midió, no del momento que se cargó.</p>
     <div class="acciones">
       <a class="btn btn-naranja" href="${appUrl}#/login?registro=1" target="_blank" rel="noopener">Probar gratis 30 días</a>
       <a class="btn btn-blanco" href="#contacto">Quiero suscribirme</a>
@@ -246,6 +246,15 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
     <div class="scroll-arrow"></div>
   </div>
 </header>
+
+<section id="ultimo-km" class="reveal" style="background:#0f172a;color:#fff;border-top:3px solid var(--negro);border-bottom:3px solid var(--negro);padding:72px 0;">
+  <div class="wrap" style="max-width:820px">
+    <span style="display:inline-block;background:transparent;border:2px solid var(--naranja);color:var(--naranja);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:6px 12px;margin-bottom:24px">El ultimo kilometro</span>
+    <h2 style="font-size:clamp(28px,4.5vw,44px);font-weight:900;text-transform:uppercase;letter-spacing:-.5px;line-height:1.1;color:#fff;margin-bottom:24px">Los grandes te venden software de oficina.<br><span style="color:var(--naranja)">Vos necesitás algo que aguante el campo.</span></h2>
+    <p style="font-size:18px;color:#cbd5e1;line-height:1.6;margin-bottom:18px">Tu cliente exige reportes mensuales auditables. Hoy el tecnico anota en planilla, vuelve a la oficina, alguien la carga al sistema. Datos perdidos, horas perdidas, fechas truchadas para llegar a fin de mes.</p>
+    <p style="font-size:18px;color:#cbd5e1;line-height:1.6;margin-bottom:0"><strong style="color:#fff">ActivaQR resuelve eso.</strong> La medicion se carga en el momento, en el lugar, con el dedo del que la hizo. Sin internet, sin VPN, sin licencia de USD 8.000 por usuario. Despues lo exportas como tu cliente lo quiera: PDF, CSV, lo que sea.</p>
+  </div>
+</section>
 
 <section id="features" class="reveal">
   <div class="wrap">
@@ -265,11 +274,14 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
 <section class="dif reveal">
   <div class="wrap">
     <h2 class="titulo">Lo que ningún otro hace</h2>
-    <p class="bajada">Comparamos contra las soluciones de mantenimiento del mercado local y regional. Estas tres cosas no las tiene nadie más.</p>
+    <p class="bajada">Comparamos contra el SAP de tu cliente, el Maximo de IBM y las planillas de Excel del taller. Estas son las cinco cosas que no encontrás en ningún otro lado.</p>
     <div class="grid g3">
+      <div class="card"><h3>Funciona sin internet</h3><p>El SAP exige VPN. El Maximo exige red corporativa. ActivaQR funciona en el celular del técnico aunque no haya señal: la medición queda guardada y sube sola cuando vuelve la conexión.</p></div>
+      <div class="card"><h3>Mecánico veterano en el QR</h3><p>Escaneás el equipo y ves no solo su ficha, sino los códigos de error típicos, causas probables rankeadas por probabilidad, y solución paso a paso. Cargamos el catálogo por categoría. No te dejamos solo frente a una falla.</p></div>
       <div class="card"><h3>QR sin login</h3><p>Todos los competidores exigen cuenta y sesión para ver un activo. ActivaQR muestra la ficha al instante a cualquiera con el celular.</p></div>
       <div class="card"><h3>Intervención remota</h3><p>Otros te dejan mirar datos. Nosotros entramos, registramos la medición y disparamos el recálculo de alertas. Tele-mantenimiento de verdad.</p></div>
-      <div class="card"><h3>Precio local</h3><p>Pagás en pesos con Mercado Pago. Las alternativas internacionales arrancan en cientos de dólares por mes.</p></div>
+      <div class="card"><h3>Precio que cierra</h3><p>Pagás en pesos con Mercado Pago o en dólares con Stripe. Un usuario de SAP Asset Manager te cuesta USD 8.000 al año. ActivaQR te cuesta lo que un par de mates por día.</p></div>
+      <div class="card"><h3>Lo configurás vos</h3><p>El SAP lo cambia el área de TI de la casa matriz. Acá cargás un activo, agregás una falla a tu catálogo o cambiás un umbral desde el celular, sin pedirle permiso a nadie.</p></div>
     </div>
   </div>
 </section>
@@ -324,15 +336,29 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
 
 <section id="casos" class="reveal" style="background:#f8fafc;border-top:3px solid var(--negro);border-bottom:3px solid var(--negro)">
   <div class="wrap">
-    <h2 class="titulo">Casos de uso reales</h2>
-    <p class="bajada">Industrias que ya pueden usar ActivaQR hoy, sin adaptaciones.</p>
+    <h2 class="titulo">Para el contratista, no para la operadora</h2>
+    <p class="bajada">Si vos sos el que mantiene los equipos que las grandes empresas usan, esto te conviene. Si sos la operadora con SAP, llamá a Deloitte.</p>
     <div class="grid g3" style="margin-top:40px">
 
       <div class="card" style="border-left:5px solid var(--naranja)">
-        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:8px">Petroleo y gas</p>
-        <h3 style="margin-bottom:10px">Contratistas y empresas de servicios</h3>
-        <p style="color:var(--gris);font-size:14px">Las operadoras exigen trazabilidad de mantenimiento. Con ActivaQR cada equipo tiene su historial auditable accesible desde el campo con el celular, sin papel ni planillas.</p>
-        <p style="margin-top:14px;font-size:13px;font-weight:700;color:var(--negro)">Activos tipicos: compresores, generadores, autoelevadores, equipos de alta presion</p>
+        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:8px">Contratistas Vaca Muerta</p>
+        <h3 style="margin-bottom:10px">Empresas de servicios para YPF, Chevron, Shell, PAE</h3>
+        <p style="color:var(--gris);font-size:14px">Las operadoras te exigen reportes de mantenimiento mensuales auditables. Hoy tu HSE pasa el dia armando carpetas con planillas. Con ActivaQR cada medicion se carga en el campo desde el celular y el reporte lo exportas con un click.</p>
+        <p style="margin-top:14px;font-size:13px;font-weight:700;color:var(--negro)">Activos tipicos: compresores, generadores, plantas de bombeo, equipos de alta presion, casing handlers</p>
+      </div>
+
+      <div class="card" style="border-left:5px solid var(--naranja)">
+        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:8px">Contratistas mineros</p>
+        <h3 style="margin-bottom:10px">Empresas de mantenimiento para Cerro Vanguardia, Cerro Negro, Veladero</h3>
+        <p style="color:var(--gris);font-size:14px">La mina tiene SAP. Vos tenes que entregar planillas que la mina sube a su SAP. Con ActivaQR la planilla se arma sola, con hora real, foto y firma del tecnico. La mina audita y vos no pierdes un contrato por papeles incompletos.</p>
+        <p style="margin-top:14px;font-size:13px;font-weight:700;color:var(--negro)">Activos tipicos: cintas transportadoras, generadores, compresores, equipos de izaje, motores diesel</p>
+      </div>
+
+      <div class="card" style="border-left:5px solid var(--naranja)">
+        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:8px">O&amp;M Eolico Patagonia</p>
+        <h3 style="margin-bottom:10px">Contratistas de parques eolicos en Chubut y Santa Cruz</h3>
+        <p style="color:var(--gris);font-size:14px">Cada aerogenerador con su QR en la entrada de torre. El tecnico sube 100 metros, escanea y ve estado, ultima intervencion y catalogo de fallas tipicas (gearbox, pitch, yaw). En la gondola no hay senal: la medicion queda en el celular y sube cuando baja.</p>
+        <p style="margin-top:14px;font-size:13px;font-weight:700;color:var(--negro)">Activos tipicos: aerogeneradores, transformadores de torre, subestaciones de parque</p>
       </div>
 
       <div class="card" style="border-left:5px solid var(--naranja)">
