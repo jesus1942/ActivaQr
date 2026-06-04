@@ -248,6 +248,29 @@ const CATEGORIAS_GLOBALES: CategoriaInput[] = [
     ],
   },
 
+  // ───────────────────────── IZAJE Y MANEJO DE CARGA ─────────────────────────
+  {
+    nombre: 'Autoelevador / Equipo de Izaje',
+    descripcion: 'Autoelevadores contrabalanceados (diesel, GLP, electricos) y equipos de izaje de planta. Aplica a operacion en almacenes, frigorificos, terminales portuarias, parques eolicos y plantas industriales. Cubre tambien reach trucks y montacargas de planta.',
+    orden: 37,
+    parametros: [
+      { nombre: 'Horometro (horas de operacion)', clave: 'horometro', unidad: 'h', orden: 1 },
+      { nombre: 'Carga nominal a 500 mm de centro', clave: 'carga_nominal', unidad: 'kg', orden: 2 },
+      { nombre: 'Temperatura motor (diesel/GLP)', clave: 'temp_motor', unidad: '°C', orden: 3, umbralAlerta: 95, umbralCritico: 105, umbralUrgente: 110 },
+      { nombre: 'Estado de bateria (electrico)', clave: 'soc_bateria', unidad: '%', tipo: 'porcentaje', orden: 4, invertido: true, umbralAlerta: 30, umbralCritico: 20 },
+      { nombre: 'Voltaje de bateria de traccion', clave: 'voltaje_bat_traccion', unidad: 'V', orden: 5 },
+      { nombre: 'Presion del sistema hidraulico', clave: 'presion_hidraulica', unidad: 'bar', orden: 6, umbralAlerta: 180, umbralCritico: 200 },
+      { nombre: 'Temperatura del aceite hidraulico', clave: 'temp_aceite_hidr', unidad: '°C', orden: 7, umbralAlerta: 65, umbralCritico: 80, umbralUrgente: 90 },
+      { nombre: 'Nivel de aceite hidraulico', clave: 'nivel_aceite_hidr', unidad: '%', tipo: 'porcentaje', orden: 8, invertido: true, umbralAlerta: 30, umbralCritico: 15 },
+      { nombre: 'Estado de cadenas del mastil', clave: 'estado_cadenas', tipo: 'seleccion', orden: 9 },
+      { nombre: 'Estado de uñas / horquillas', clave: 'estado_uñas', tipo: 'seleccion', orden: 10 },
+      { nombre: 'Estado de neumaticos', clave: 'estado_neumaticos', tipo: 'seleccion', orden: 11 },
+      { nombre: 'Inspeccion pre-uso OK', clave: 'preuso_ok', tipo: 'booleano', orden: 12 },
+      { nombre: 'Cinturon de seguridad / OPSS funcional', clave: 'opss_ok', tipo: 'booleano', orden: 13 },
+      { nombre: 'Bocina y baliza funcionales', clave: 'alarmas_ok', tipo: 'booleano', orden: 14 },
+    ],
+  },
+
   // ───────────────────────── MANUFACTURA Y MÁQUINA-HERRAMIENTA ─────────────────────────
   {
     nombre: 'CNC / Máquina Herramienta',
