@@ -18,25 +18,25 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <!-- SEO primario -->
-<title>ActivaQR — Mantenimiento desde el campo, no desde una oficina en Lima</title>
-<meta name="description" content="El tecnico escanea el QR, carga la medicion en el celular y se sincroniza sola cuando vuelve la senal. Funciona sin internet, sin VPN, sin licencias de USD 8.000. Para contratistas de Vaca Muerta, mineros y O&M eolico." />
-<meta name="keywords" content="mantenimiento industrial offline, gestion de activos con QR, CMMS para contratistas, mantenimiento Vaca Muerta, O&M aerogeneradores Patagonia, software mantenimiento sin internet, alternativa SAP PM, alternativa IBM Maximo" />
+<title>ActivaQR — Mantenimiento que llega hasta el campo</title>
+<meta name="description" content="El técnico escanea el QR, carga la medición y la foto desde el celular. Funciona sin señal: queda guardado y se sincroniza cuando vuelve la conexión. Para contratistas y empresas de servicios que necesitan que el trabajo del campo llegue ordenado al cliente." />
+<meta name="keywords" content="mantenimiento industrial, gestion de activos con QR, CMMS para contratistas, mantenimiento Vaca Muerta, O&M aerogeneradores Patagonia, software mantenimiento offline, planilla digital de mantenimiento" />
 <meta name="author" content="ActivaQR" />
 <link rel="canonical" href="https://activaqr-production.up.railway.app/" />
 
 <!-- Open Graph (WhatsApp, LinkedIn, Facebook) -->
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://activaqr-production.up.railway.app/" />
-<meta property="og:title" content="ActivaQR — El mantenimiento no se hace desde una oficina en Lima" />
-<meta property="og:description" content="Tu tecnico escanea el QR, carga la medicion y la foto desde el celular. Si no hay senal, queda guardado y sube solo cuando vuelve la conexion. Pensado para el que tiene las manos sucias." />
+<meta property="og:title" content="ActivaQR — Mantenimiento que llega hasta el campo" />
+<meta property="og:description" content="Tu técnico escanea el QR, carga la medición y la foto desde el celular. Si no hay señal, queda guardado y sube solo cuando vuelve la conexión." />
 <meta property="og:image" content="https://jesus1942.github.io/ActivaQr/company-logo-hd.png" />
 <meta property="og:locale" content="es_AR" />
 <meta property="og:site_name" content="ActivaQR" />
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="ActivaQR — Hecho para el que tiene las manos sucias" />
-<meta name="twitter:description" content="Mantenimiento que funciona en el pad sin senal, en la mina, en la gondola del aerogenerador. Sin VPN, sin licencias de USD 8.000." />
+<meta name="twitter:title" content="ActivaQR — Mantenimiento que llega hasta el campo" />
+<meta name="twitter:description" content="Pensado para empresas de servicios y mantenimiento. Funciona en el pad sin señal, en la mina, en la góndola del aerogenerador." />
 <meta name="twitter:image" content="https://jesus1942.github.io/ActivaQr/company-logo-hd.png" />
 
 <!-- Schema.org: SoftwareApplication -->
@@ -85,14 +85,14 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
 <link rel="icon" type="image/png" href="https://jesus1942.github.io/ActivaQr/favicon.png" />
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  :root{--naranja:#f97316;--negro:#0f172a;--gris:#475569;--gris-c:#94a3b8;--fondo:#f1f5f9}
-  body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:var(--negro);background:var(--fondo);line-height:1.5}
+  :root{--naranja:#f97316;--negro:#0f172a;--gris:#475569;--gris-c:#94a3b8;--fondo:#fafafa}
+  body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:var(--negro);background:var(--fondo);line-height:1.6;-webkit-font-smoothing:antialiased}
   .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
-  h1,h2,h3{font-weight:900;text-transform:uppercase;letter-spacing:-.5px;line-height:1.05}
+  h1,h2,h3{font-weight:800;letter-spacing:-.01em;line-height:1.15}
   .brand{font-weight:900;color:var(--naranja);text-transform:uppercase;letter-spacing:2px}
   a{color:inherit}
-  .btn{display:inline-block;font-weight:900;text-transform:uppercase;letter-spacing:1px;text-decoration:none;padding:14px 26px;border:3px solid var(--negro);box-shadow:5px 5px 0 var(--negro);transition:transform .1s}
-  .btn:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 var(--negro)}
+  .btn{display:inline-block;font-weight:700;text-decoration:none;padding:13px 22px;border:2px solid var(--negro);box-shadow:3px 3px 0 var(--negro);transition:transform .15s,box-shadow .15s}
+  .btn:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--negro)}
   .btn-naranja{background:var(--naranja);color:#fff}
   .btn-negro{background:var(--negro);color:#fff}
   .btn-blanco{background:#fff;color:var(--negro)}
@@ -124,11 +124,11 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   .capital-banner p{color:#94a3b8;font-size:16px;max-width:680px;margin:0 auto}
 
   /* HERO */
-  .hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;border-bottom:3px solid var(--negro);padding:80px 0 100px;position:relative}
-  .hero .tag{display:inline-block;background:#fff7ed;border:2px solid var(--naranja);color:#ea580c;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:6px 12px;margin-bottom:24px}
-  .hero h1{font-size:clamp(40px,7vw,76px);margin-bottom:24px;line-height:1.0}
+  .hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding:80px 0 100px;position:relative}
+  .hero .tag{display:inline-block;background:#fff7ed;border:1px solid #fdba74;color:#ea580c;font-size:12px;font-weight:600;letter-spacing:.3px;padding:6px 14px;margin-bottom:28px;border-radius:2px}
+  .hero h1{font-size:clamp(38px,6.5vw,68px);margin-bottom:26px;line-height:1.05;letter-spacing:-.025em;font-weight:800}
   .hero h1 .o{color:var(--naranja)}
-  .hero p.sub{font-size:clamp(16px,2.2vw,20px);color:var(--gris);max-width:580px;margin-bottom:36px}
+  .hero p.sub{font-size:clamp(17px,2.1vw,20px);color:var(--gris);max-width:620px;margin-bottom:40px;line-height:1.7}
   .hero .acciones{display:flex;gap:14px;flex-wrap:wrap}
 
   /* HERO — animacion de entrada al cargar */
@@ -145,25 +145,27 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   @keyframes bounce{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(6px)}}
 
   /* SECCIONES */
-  section{padding:60px 0}
-  .titulo{font-size:clamp(26px,4vw,38px);margin-bottom:12px}
-  .bajada{color:var(--gris);max-width:640px;margin-bottom:36px;font-size:16px}
+  section{padding:84px 0}
+  .titulo{font-size:clamp(26px,3.6vw,38px);margin-bottom:14px;letter-spacing:-.015em}
+  .bajada{color:var(--gris);max-width:640px;margin-bottom:40px;font-size:17px;line-height:1.65}
 
-  .grid{display:grid;gap:18px}
+  .grid{display:grid;gap:20px}
   .g3{grid-template-columns:repeat(3,1fr)}
   .g2{grid-template-columns:repeat(2,1fr)}
   @media(max-width:820px){.g3,.g2{grid-template-columns:1fr}}
 
-  .card{background:#fff;border:3px solid var(--negro);box-shadow:5px 5px 0 var(--negro);padding:24px}
-  .card h3{font-size:18px;margin-bottom:8px}
-  .card p{color:var(--gris);font-size:15px}
-  .card .num{font-size:12px;font-weight:900;color:var(--naranja);letter-spacing:1px}
+  .card{background:#fff;border:2px solid var(--negro);box-shadow:3px 3px 0 var(--negro);padding:26px;transition:transform .15s,box-shadow .15s}
+  .card:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--negro)}
+  .card h3{font-size:19px;margin-bottom:10px;font-weight:700}
+  .card p{color:var(--gris);font-size:15px;line-height:1.65}
+  .card .num{font-size:11px;font-weight:800;color:var(--naranja);letter-spacing:1.5px;text-transform:uppercase}
 
   /* DIFERENCIAL */
-  .dif{background:var(--negro);color:#fff;border-top:3px solid var(--negro);border-bottom:3px solid var(--negro)}
+  .dif{background:var(--negro);color:#fff}
   .dif .titulo{color:#fff}
   .dif .bajada{color:var(--gris-c)}
-  .dif .card{background:#1e293b;border-color:#334155;box-shadow:5px 5px 0 #000}
+  .dif .card{background:#1e293b;border-color:#334155;box-shadow:none}
+  .dif .card:hover{transform:none;box-shadow:none;border-color:var(--naranja)}
   .dif .card h3{color:var(--naranja)}
   .dif .card p{color:#cbd5e1}
 
@@ -192,10 +194,10 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   .paso p{color:var(--gris);font-size:15px}
 
   /* CONTACTO */
-  .contacto{background:var(--naranja);border-top:3px solid var(--negro);border-bottom:3px solid var(--negro)}
+  .contacto{background:var(--naranja)}
   .contacto .titulo{color:#fff}
   .contacto .bajada{color:#fff;opacity:.95}
-  .form-box{background:#fff;border:3px solid var(--negro);box-shadow:6px 6px 0 var(--negro);padding:28px;max-width:540px}
+  .form-box{background:#fff;border:2px solid var(--negro);box-shadow:4px 4px 0 var(--negro);padding:30px;max-width:540px}
   .form-box label{display:block;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--gris);margin-bottom:5px;margin-top:14px}
   .form-box label:first-child{margin-top:0}
   .form-box input,.form-box textarea{width:100%;border:2px solid #cbd5e1;padding:11px 13px;font-size:15px;font-family:inherit;outline:none}
@@ -231,9 +233,9 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
 
 <header class="hero">
   <div class="wrap">
-    <span class="tag">Hecho para el que tiene las manos sucias.</span>
-    <h1>El mantenimiento<br>no se hace desde <span class="o">una oficina en Lima</span>.</h1>
-    <p class="sub">Tu técnico escanea el QR del equipo, carga la medición y la foto desde el celular. <strong>Si no hay señal — y en el pad, en el socavón o en la cámara nunca hay — la medición queda en el celular.</strong> Apenas agarra WiFi del comedor, sube sola, con hora real y geolocalización del momento que se midió, no del momento que se cargó.</p>
+    <span class="tag">Pensado para el campo.</span>
+    <h1>El mantenimiento se hace<br>donde <span class="o">está el equipo</span>.</h1>
+    <p class="sub">Tu técnico escanea el QR del equipo, carga la medición y la foto desde el celular. <strong>Si no hay señal — y en el pad, en el socavón o en la cámara muchas veces no hay — la medición queda en el celular.</strong> Apenas vuelve la conexión, sube sola: con la hora real y la ubicación del momento que se midió.</p>
     <div class="acciones">
       <a class="btn btn-naranja" href="${appUrl}#/login?registro=1" target="_blank" rel="noopener">Probar gratis 30 días</a>
       <a class="btn btn-blanco" href="#contacto">Quiero suscribirme</a>
@@ -245,32 +247,32 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   </div>
 </header>
 
-<section id="ultimo-km" class="reveal" style="background:#0f172a;color:#fff;border-top:3px solid var(--negro);border-bottom:3px solid var(--negro);padding:72px 0;">
+<section id="ultimo-km" class="reveal" style="background:#0f172a;color:#fff;padding:96px 0;">
   <div class="wrap" style="max-width:820px">
-    <span style="display:inline-block;background:transparent;border:2px solid var(--naranja);color:var(--naranja);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:6px 12px;margin-bottom:24px">El ultimo kilometro</span>
-    <h2 style="font-size:clamp(28px,4.5vw,44px);font-weight:900;text-transform:uppercase;letter-spacing:-.5px;line-height:1.1;color:#fff;margin-bottom:24px">Los grandes te venden software de oficina.<br><span style="color:var(--naranja)">Vos necesitás algo que aguante el campo.</span></h2>
-    <p style="font-size:18px;color:#cbd5e1;line-height:1.6;margin-bottom:18px">Tu cliente exige reportes mensuales auditables. Hoy el tecnico anota en planilla, vuelve a la oficina, alguien la carga al sistema. Datos perdidos, horas perdidas, fechas truchadas para llegar a fin de mes.</p>
-    <p style="font-size:18px;color:#cbd5e1;line-height:1.6;margin-bottom:0"><strong style="color:#fff">ActivaQR resuelve eso.</strong> La medicion se carga en el momento, en el lugar, con el dedo del que la hizo. Sin internet, sin VPN, sin licencia de USD 8.000 por usuario. Despues lo exportas como tu cliente lo quiera: PDF, CSV, lo que sea.</p>
+    <span style="display:inline-block;border:1px solid var(--naranja);color:var(--naranja);font-size:12px;font-weight:600;letter-spacing:.5px;padding:6px 14px;margin-bottom:28px;border-radius:2px">El último kilómetro</span>
+    <h2 style="font-size:clamp(28px,4.2vw,42px);font-weight:700;letter-spacing:-.02em;line-height:1.25;color:#fff;margin-bottom:28px">Los sistemas grandes manejan bien la oficina.<br><span style="color:var(--naranja)">Nosotros nos ocupamos del campo.</span></h2>
+    <p style="font-size:18px;color:#cbd5e1;line-height:1.75;margin-bottom:22px">Si tu empresa o tu cliente ya usan SAP, Maximo u otro ERP, ActivaQR no compite con eso: cubre el tramo que ellos no cubren. El que va desde el equipo físico hasta la planilla. Hoy ese tramo lo hace el papel.</p>
+    <p style="font-size:18px;color:#cbd5e1;line-height:1.75;margin-bottom:0"><strong style="color:#fff;font-weight:700">El técnico escanea el QR, carga la medición y la foto desde el celular,</strong> incluso sin señal. Cuando vuelve la conexión, los datos suben solos. Después lo exportás en el formato que pida tu cliente: PDF, CSV, lo que sea.</p>
   </div>
 </section>
 
 
 <section class="dif reveal">
   <div class="wrap">
-    <h2 class="titulo">Tres cosas que no vas a encontrar en otro lado</h2>
-    <p class="bajada">Lo demás (QR, alertas, reportes) lo hace cualquier app. Estas tres definen por qué un contratista nos elige.</p>
+    <h2 class="titulo">Tres cosas que resolvemos donde otros no llegan</h2>
+    <p class="bajada">Hay muchas apps de mantenimiento que muestran datos. Estas tres cosas son las que nos diferencian: están pensadas para el día a día del que trabaja afuera de la oficina.</p>
     <div class="grid g3">
       <div class="card">
         <h3>Funciona sin señal</h3>
-        <p>El técnico carga la medición en el pad, en el socavón o en la cámara. Queda en el celular y sube sola cuando vuelve la conexión. Con hora real y GPS del momento que se midió, no del momento que se cargó.</p>
+        <p>El técnico carga la medición en el pad, en el socavón o en la cámara. Queda en el celular y sube sola cuando vuelve la conexión. Con la hora y la ubicación del momento que se midió.</p>
       </div>
       <div class="card">
-        <h3>Un mecánico veterano en el QR</h3>
-        <p>Escaneás el equipo y no ves solo su ficha: ves los síntomas típicos, las causas probables ordenadas por frecuencia y cómo resolverlo paso a paso. Cada categoría con su catálogo. El operario nuevo deja de quedar solo frente al equipo.</p>
+        <h3>Una mano experta en el QR</h3>
+        <p>Escaneás el equipo y no ves solo su ficha: ves los síntomas típicos, las causas más probables y cómo resolverlo. Cada rubro con su propio catálogo. El operario nuevo deja de quedar solo frente al equipo.</p>
       </div>
       <div class="card">
         <h3>Cadena de custodia en la foto</h3>
-        <p>Cada foto que sube el técnico trae GPS, hora real y modelo del celular. Sirve para auditoría de tu cliente, reclamos a seguros y disputas por traslados o extravíos. Exportable como PDF firmado.</p>
+        <p>Cada foto trae GPS, hora real y modelo del celular. Sirve para auditorías, reclamos a seguros y para resolver disputas por traslados o extravíos. Exportable como reporte PDF.</p>
       </div>
     </div>
   </div>
@@ -288,31 +290,31 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   </div>
 </section>
 
-<section id="casos" class="reveal" style="background:#f8fafc;border-top:3px solid var(--negro);border-bottom:3px solid var(--negro)">
+<section id="casos" class="reveal" style="background:#f8fafc">
   <div class="wrap">
-    <h2 class="titulo">Para el contratista, no para la operadora</h2>
-    <p class="bajada">Si vos sos el que mantiene los equipos que las grandes empresas usan, esto te conviene. Si sos la operadora con SAP, llamá a Deloitte.</p>
+    <h2 class="titulo">Pensado para el que está cerca del equipo</h2>
+    <p class="bajada">Empresas de mantenimiento, contratistas y servicios que necesitan que el trabajo del campo llegue ordenado al cliente. Tres mercados donde ya estamos enfocados:</p>
     <div class="grid g3" style="margin-top:40px">
 
-      <div class="card" style="border-left:5px solid var(--naranja)">
-        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:8px">Contratistas Vaca Muerta</p>
-        <h3 style="margin-bottom:10px">Empresas de servicios para YPF, Chevron, Shell, PAE</h3>
-        <p style="color:var(--gris);font-size:14px">Las operadoras te exigen reportes de mantenimiento mensuales auditables. Hoy tu HSE pasa el dia armando carpetas con planillas. Con ActivaQR cada medicion se carga en el campo desde el celular y el reporte lo exportas con un click.</p>
-        <p style="margin-top:14px;font-size:13px;font-weight:700;color:var(--negro)">Activos tipicos: compresores, generadores, plantas de bombeo, equipos de alta presion, casing handlers</p>
+      <div class="card" style="border-left:4px solid var(--naranja)">
+        <p style="font-size:11px;font-weight:600;letter-spacing:.5px;color:var(--naranja);margin-bottom:10px;text-transform:uppercase">Vaca Muerta</p>
+        <h3 style="margin-bottom:12px">Servicios y mantenimiento en el yacimiento</h3>
+        <p style="color:var(--gris);font-size:15px;line-height:1.65">Si trabajás para una operadora, sabés que el reporte mensual auditable es el que define si seguís en el contrato. Acá cada medición se carga en el pad desde el celular, con foto y ubicación. El reporte se arma solo a fin de mes.</p>
+        <p style="margin-top:16px;font-size:13px;color:var(--negro);font-weight:600">Activos típicos: compresores, generadores, plantas de bombeo, equipos de alta presión</p>
       </div>
 
-      <div class="card" style="border-left:5px solid var(--naranja)">
-        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:8px">Contratistas mineros</p>
-        <h3 style="margin-bottom:10px">Empresas de mantenimiento para Cerro Vanguardia, Cerro Negro, Veladero</h3>
-        <p style="color:var(--gris);font-size:14px">La mina tiene SAP. Vos tenes que entregar planillas que la mina sube a su SAP. Con ActivaQR la planilla se arma sola, con hora real, foto y firma del tecnico. La mina audita y vos no pierdes un contrato por papeles incompletos.</p>
-        <p style="margin-top:14px;font-size:13px;font-weight:700;color:var(--negro)">Activos tipicos: cintas transportadoras, generadores, compresores, equipos de izaje, motores diesel</p>
+      <div class="card" style="border-left:4px solid var(--naranja)">
+        <p style="font-size:11px;font-weight:600;letter-spacing:.5px;color:var(--naranja);margin-bottom:10px;text-transform:uppercase">Minería</p>
+        <h3 style="margin-bottom:12px">Contratistas que dan servicio a las grandes mineras</h3>
+        <p style="color:var(--gris);font-size:15px;line-height:1.65">La mina ya tiene su sistema. Lo que necesita son las planillas tuyas en tiempo y forma, con la trazabilidad que pide auditoría. Acá el técnico carga la medición en el yacimiento y la planilla queda lista, sin reescribirla en Excel después.</p>
+        <p style="margin-top:16px;font-size:13px;color:var(--negro);font-weight:600">Activos típicos: cintas transportadoras, generadores, compresores, equipos de izaje</p>
       </div>
 
-      <div class="card" style="border-left:5px solid var(--naranja)">
-        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:8px">O&amp;M Eolico Patagonia</p>
-        <h3 style="margin-bottom:10px">Contratistas de parques eolicos en Chubut y Santa Cruz</h3>
-        <p style="color:var(--gris);font-size:14px">Cada aerogenerador con su QR en la entrada de torre. El tecnico sube 100 metros, escanea y ve estado, ultima intervencion y catalogo de fallas tipicas (gearbox, pitch, yaw). En la gondola no hay senal: la medicion queda en el celular y sube cuando baja.</p>
-        <p style="margin-top:14px;font-size:13px;font-weight:700;color:var(--negro)">Activos tipicos: aerogeneradores, transformadores de torre, subestaciones de parque</p>
+      <div class="card" style="border-left:4px solid var(--naranja)">
+        <p style="font-size:11px;font-weight:600;letter-spacing:.5px;color:var(--naranja);margin-bottom:10px;text-transform:uppercase">Eólico Patagonia</p>
+        <h3 style="margin-bottom:12px">O&amp;M de parques en Chubut y Santa Cruz</h3>
+        <p style="color:var(--gris);font-size:15px;line-height:1.65">Cada aerogenerador con su QR en la entrada de torre. El técnico sube, escanea y ve estado, última intervención y las fallas típicas de la categoría (gearbox, pitch, yaw). En la góndola no hay señal, así que la medición queda guardada y sube cuando baja.</p>
+        <p style="margin-top:16px;font-size:13px;color:var(--negro);font-weight:600">Activos típicos: aerogeneradores, transformadores de torre, subestaciones de parque</p>
       </div>
 
     </div>
