@@ -19,7 +19,7 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
 
 <!-- SEO primario -->
 <title>ActivaQR — Gestión de activos industriales con QR | Patagonia Argentina</title>
-<meta name="description" content="Sistema de gestión de activos industriales con QR para empresas de Patagonia. Mantenimiento predictivo, alertas automáticas, historial digitalizado. Probá gratis 14 días." />
+<meta name="description" content="Sistema de gestión de activos industriales con QR para empresas de Patagonia. Mantenimiento predictivo, alertas automáticas, historial digitalizado. Probá gratis 30 días." />
 <meta name="keywords" content="gestión de activos industriales, mantenimiento preventivo, CMMS, QR equipos, Patagonia, Neuquén, Puerto Madryn, Vaca Muerta, software mantenimiento Argentina" />
 <meta name="author" content="ActivaQR" />
 <link rel="canonical" href="https://activaqr-production.up.railway.app/" />
@@ -36,7 +36,7 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="ActivaQR — Gestión de activos industriales con QR" />
-<meta name="twitter:description" content="Pegás un QR en cada equipo y convertís el mantenimiento en datos. Probá gratis 14 días." />
+<meta name="twitter:description" content="Pegás un QR en cada equipo y convertís el mantenimiento en datos. Probá gratis 30 días." />
 <meta name="twitter:image" content="https://jesus1942.github.io/ActivaQr/company-logo-hd.png" />
 
 <!-- Schema.org: SoftwareApplication -->
@@ -237,7 +237,7 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
     <h1>Detectá las fallas<br>antes de que <span class="o">paren tu producción</span>.</h1>
     <p class="sub">Pegás un QR en cada equipo y convertís el mantenimiento en datos. Anticipás roturas, reducís costos de reparación y aumentás la disponibilidad de tu planta. Todo desde el celular, sin instalar nada.</p>
     <div class="acciones">
-      <a class="btn btn-naranja" href="${appUrl}#/login?registro=1" target="_blank" rel="noopener">Probar gratis 14 días</a>
+      <a class="btn btn-naranja" href="${appUrl}#/login?registro=1" target="_blank" rel="noopener">Probar gratis 30 días</a>
       <a class="btn btn-blanco" href="#contacto">Quiero suscribirme</a>
     </div>
   </div>
@@ -568,6 +568,11 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
     <span class="brand">ActivaQR</span>
     Gestión de activos industriales con QR. Hecho en Argentina.
     <div style="margin-top:8px"><a href="${appUrl}" target="_blank" rel="noopener" style="color:var(--naranja);text-decoration:none;font-weight:700">Ingresar a la app</a></div>
+    <div style="margin-top:10px;font-size:12px;color:var(--gris-c)">
+      <a href="/politica-uso" style="color:var(--gris-c);text-decoration:none;font-weight:600">Pol&iacute;tica de Uso</a>
+      <span style="margin:0 8px;color:#475569">&middot;</span>
+      <a href="/politica-privacidad" style="color:var(--gris-c);text-decoration:none;font-weight:600">Pol&iacute;tica de Privacidad</a>
+    </div>
   </div>
 </footer>
 

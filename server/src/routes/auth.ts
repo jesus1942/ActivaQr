@@ -7,21 +7,28 @@ import { enviarEmailResetPassword } from '../email';
 import { enviarLinkRecuperacion, notificarAdminRecuperacion } from '../telegram';
 import { registrarAuditoria } from '../auditoria';
 import { faseTrial } from '../trial';
+import { POLITICAS_VERSION } from '../politicas';
 
 const router = Router();
 
-const TRIAL_DIAS = 14;
-const TRIAL_LECTURA_DIAS = 14; // 14 días más de solo-lectura tras vencer
+const TRIAL_DIAS = 30;
+const TRIAL_LECTURA_DIAS = 0; // sin fase intermedia: al dia 31 se bloquea total
 
-// POST /api/auth/registro — alta autogestionada con free trial de 14 días
+// POST /api/auth/registro — alta autogestionada con free trial de 30 dias
 router.post('/registro', async (req, res: Response, next: NextFunction) => {
   try {
-    const { empresaNombre, nombre, email, password, telefono } = req.body ?? {};
+    const { empresaNombre, nombre, email, password, telefono, aceptaPoliticas } = req.body ?? {};
     if (!empresaNombre || !nombre || !email || !password) {
       return res.status(400).json({ error: 'Faltan datos: empresa, nombre, email y contraseña.' });
     }
     if (String(password).length < 8) {
       return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres.' });
+    }
+    if (aceptaPoliticas !== true) {
+      return res.status(400).json({
+        code: 'politicas_no_aceptadas',
+        error: 'Tenes que aceptar la Politica de Uso y la Politica de Privacidad para crear la cuenta.',
+      });
     }
     const emailNorm = String(email).toLowerCase().trim();
     const existente = await prisma.usuario.findUnique({ where: { email: emailNorm } });
@@ -34,6 +41,12 @@ router.post('/registro', async (req, res: Response, next: NextFunction) => {
     const trialLecturaFin = new Date(trialFin.getTime() + TRIAL_LECTURA_DIAS * 24 * 60 * 60 * 1000);
     const passwordHash = await bcrypt.hash(password, 10);
 
+    const ipAceptacion = (
+      (req.headers['x-forwarded-for']?.toString().split(',')[0].trim()) ||
+      req.socket.remoteAddress ||
+      'desconocida'
+    ).slice(0, 64);
+
     const empresa = await prisma.empresa.create({
       data: {
         nombre: String(empresaNombre).trim(),
@@ -42,6 +55,9 @@ router.post('/registro', async (req, res: Response, next: NextFunction) => {
         esTrial: true,
         trialFin,
         trialLecturaFin,
+        politicasAceptadasEn: ahora,
+        politicasAceptadasIp: ipAceptacion,
+        politicasVersion: POLITICAS_VERSION,
         usuarios: {
           create: {
             nombre: String(nombre).trim(),

@@ -30,6 +30,7 @@ import { ResetPassword } from './pages/ResetPassword';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DashboardOperador } from './pages/DashboardOperador';
 import { PantallaTrialVencido, SeccionTracker } from './components/TrialUI';
+import { PantallaAceptarPoliticas } from './components/PantallaAceptarPoliticas';
 import { SplashScreen } from './components/SplashScreen';
 import { useState, useCallback } from 'react';
 
@@ -81,11 +82,22 @@ function PantallaBloqueo() {
 }
 
 function AuthedApp() {
-  const { usuario, requiereLogin, empresaSuspendida, trialVencido } = useAuth();
+  const { usuario, requiereLogin, empresaSuspendida, trialVencido, estadoPoliticas, refrescarEstadoPoliticas } = useAuth();
 
   if (requiereLogin && !usuario) return <Login />;
   if (empresaSuspendida && usuario?.rol !== 'superadmin') return <PantallaBloqueo />;
   if (trialVencido && usuario?.rol !== 'superadmin') return <PantallaTrialVencido />;
+
+  // Aceptacion de politicas obligatoria antes de seguir.
+  // Solo aplica a empresas (no al superadmin) y solo si el endpoint respondio
+  // que la empresa todavia no acepta la version vigente.
+  if (
+    usuario &&
+    usuario.rol !== 'superadmin' &&
+    estadoPoliticas?.requiereAceptarPoliticas
+  ) {
+    return <PantallaAceptarPoliticas onAceptada={refrescarEstadoPoliticas} />;
+  }
 
   if (usuario?.rol === 'operador') return <DashboardOperador />;
 
