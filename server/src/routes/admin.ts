@@ -172,6 +172,13 @@ router.post('/empresas/:id/suscripcion', async (req: AuthRequest, res: Response,
     });
     if (!empresa) return res.status(404).json({ error: 'Empresa no encontrada.' });
 
+    if (!empresa.politicasAceptadasEn) {
+      return res.status(409).json({
+        code: 'politicas_no_aceptadas',
+        error: 'La empresa todavia no acepto la Politica de Uso y Privacidad. El admin debe aceptarlas desde su panel antes de generar el link de pago.',
+      });
+    }
+
     // En modo prueba (token TEST-) el payer_email debe ser de una cuenta MP
     // argentina de prueba. El superadmin puede pasarlo manualmente con
     // payerEmailOverride, o usamos el email real del admin de la empresa.
@@ -225,6 +232,9 @@ router.post('/empresas/:id/link-pago', async (req: AuthRequest, res: Response, n
       include: { usuarios: { where: { rol: 'admin' }, take: 1 } },
     });
     if (!empresa) return res.status(404).json({ error: 'Empresa no encontrada.' });
+    if (!empresa.politicasAceptadasEn) {
+      return res.status(409).json({ code: 'politicas_no_aceptadas', error: 'La empresa todavia no acepto la Politica de Uso y Privacidad.' });
+    }
 
     const backUrl = process.env.MP_BACK_URL || 'https://jesus1942.github.io/ActivaQr/';
     const desc = descripcion || `Pago ActivaQR — ${empresa.nombre}`;
@@ -249,6 +259,9 @@ router.post('/empresas/:id/stripe-suscripcion', async (req: AuthRequest, res: Re
 
     const empresa = await prisma.empresa.findUnique({ where: { id: req.params.id } });
     if (!empresa) return res.status(404).json({ error: 'Empresa no encontrada.' });
+    if (!empresa.politicasAceptadasEn) {
+      return res.status(409).json({ code: 'politicas_no_aceptadas', error: 'La empresa todavia no acepto la Politica de Uso y Privacidad.' });
+    }
 
     const backUrl = process.env.APP_PUBLIC_URL || 'https://jesus1942.github.io/ActivaQr/';
     const result = await crearStripeSubscripcion({
@@ -277,6 +290,9 @@ router.post('/empresas/:id/stripe-link-pago', async (req: AuthRequest, res: Resp
 
     const empresa = await prisma.empresa.findUnique({ where: { id: req.params.id } });
     if (!empresa) return res.status(404).json({ error: 'Empresa no encontrada.' });
+    if (!empresa.politicasAceptadasEn) {
+      return res.status(409).json({ code: 'politicas_no_aceptadas', error: 'La empresa todavia no acepto la Politica de Uso y Privacidad.' });
+    }
 
     const backUrl = process.env.APP_PUBLIC_URL || 'https://jesus1942.github.io/ActivaQr/';
     const desc = descripcion || `Pago ActivaQR — ${empresa.nombre}`;

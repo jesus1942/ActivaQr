@@ -101,6 +101,7 @@ export async function registro(payload: {
   email: string;
   password: string;
   telefono?: string;
+  aceptaPoliticas: boolean;
 }): Promise<UsuarioSesion> {
   const res = await fetch(`${API_URL}/auth/registro`, {
     method: 'POST',

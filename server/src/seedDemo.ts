@@ -10,7 +10,21 @@ export async function seedDemo() {
     where: { email: DEMO_EMAIL },
     include: { empresa: true },
   });
-  if (existingUser?.empresa) return;
+  // Si la empresa demo ya existe, forzar politicas aceptadas para que el modal
+  // legal no interrumpa la experiencia demo.
+  if (existingUser?.empresa) {
+    if (!existingUser.empresa.politicasAceptadasEn) {
+      await prisma.empresa.update({
+        where: { id: existingUser.empresa.id },
+        data: {
+          politicasAceptadasEn: new Date(),
+          politicasAceptadasIp: 'seed-demo',
+          politicasVersion: 'demo',
+        },
+      });
+    }
+    return;
+  }
   // Usuario existe pero empresa fue borrada — borrar usuario huerfano y recrear todo
   if (existingUser) {
     await prisma.usuario.delete({ where: { id: existingUser.id } });
@@ -23,6 +37,9 @@ export async function seedDemo() {
       nombre: DEMO_EMPRESA,
       plan: 'empresa',
       estado: 'activa',
+      politicasAceptadasEn: new Date(),
+      politicasAceptadasIp: 'seed-demo',
+      politicasVersion: 'demo',
     },
   });
 

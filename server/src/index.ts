@@ -25,11 +25,13 @@ import pushRouter from './routes/push';
 import auditoriaRouter from './routes/auditoria';
 import kpisRouter from './routes/kpis';
 import documentosRouter from './routes/documentos';
+import cuentaRouter from './routes/cuenta';
 import { enviarPushASuperadmin } from './push';
 import { requireAuth, requireAuthAndActiveEmpresa, requireSuperadmin } from './auth';
 import { seedCategorias } from './seedCategorias';
 import { seedDemo } from './seedDemo';
 import { renderLanding } from './landing';
+import { renderPoliticaUso, renderPoliticaPrivacidad, POLITICAS_VERSION } from './politicas';
 import { enviarEmailLead } from './email';
 
 const app = express();
@@ -78,8 +80,22 @@ app.get('/', (req, res) => {
   res.send(renderLanding(APP_PUBLIC_URL, process.env.WHATSAPP_NUMERO || '5492804018359'));
 });
 
+// Paginas legales publicas: requisito para aceptacion previa al pago.
+app.get('/politica-uso', (_req, res) => {
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  res.send(renderPoliticaUso(APP_PUBLIC_URL));
+});
+app.get('/politica-privacidad', (_req, res) => {
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  res.send(renderPoliticaPrivacidad(APP_PUBLIC_URL));
+});
+
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
+});
+
+app.get('/api/politicas/version', (_req, res) => {
+  res.json({ version: POLITICAS_VERSION });
 });
 
 // Captura de leads desde la landing (sin auth).
@@ -170,6 +186,9 @@ app.use('/api/acceso-remoto', accesoRemotoRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/admin', accesoRemotoRouter);
+
+// Cuenta del propio tenant: solo requireAuth — accesible incluso con trial vencido.
+app.use('/api/cuenta', cuentaRouter);
 
 // Rutas de datos: requieren token válido + empresa activa.
 // requireAuthAndActiveEmpresa verifica el estado en DB en cada request —

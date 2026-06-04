@@ -125,10 +125,16 @@ model Empresa {
   estado    EstadoEmpresa @default(activa)
   creadaEn  DateTime      @default(now())
 
-  // Free trial autogestionado.
+  // Free trial autogestionado de 30 dias.
   esTrial         Boolean   @default(false)
-  trialFin        DateTime? // fin del acceso completo (registro + 14d)
-  trialLecturaFin DateTime? // fin del modo solo-lectura (registro + 28d)
+  trialFin        DateTime? // fin del acceso completo (registro + 30d)
+  trialLecturaFin DateTime? // fin del modo solo-lectura (igual a trialFin: sin fase intermedia)
+
+  // Aceptacion de Politicas de Uso y Privacidad.
+  // Requisito previo a la generacion del link de suscripcion.
+  politicasAceptadasEn  DateTime?
+  politicasAceptadasIp  String?
+  politicasVersion      String?
 
   // Suscripción Mercado Pago.
   mpPreapprovalId String?   // id del preapproval (suscripción) en MP

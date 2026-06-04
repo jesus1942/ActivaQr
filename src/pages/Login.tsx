@@ -27,12 +27,19 @@ export const Login: React.FC = () => {
   const [regEmail, setRegEmail] = useState('');
   const [regTelefono, setRegTelefono] = useState('');
   const [regPassword, setRegPassword] = useState('');
+  const [regAcepta, setRegAcepta] = useState(false);
   const [regError, setRegError] = useState<string | null>(null);
   const [regCargando, setRegCargando] = useState(false);
+
+  const apiBase = (import.meta.env.VITE_API_URL || '').replace(/\/api\/?$/, '');
 
   const handleRegistro = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegError(null);
+    if (!regAcepta) {
+      setRegError('Para crear la cuenta tenes que aceptar la Politica de Uso y la Politica de Privacidad.');
+      return;
+    }
     setRegCargando(true);
     try {
       await registro({
@@ -41,6 +48,7 @@ export const Login: React.FC = () => {
         email: regEmail,
         password: regPassword,
         telefono: regTelefono || undefined,
+        aceptaPoliticas: true,
       });
     } catch (err) {
       setRegError(err instanceof Error ? err.message : 'No se pudo crear la cuenta.');
@@ -86,7 +94,7 @@ export const Login: React.FC = () => {
               ActivaQR
             </h1>
             <p className="text-slate-500 text-sm mt-1 font-medium uppercase tracking-wider">
-              {vistaRegistro ? 'Probá gratis 14 días' : 'Activos bajo control'}
+              {vistaRegistro ? 'Probá gratis 30 días' : 'Activos bajo control'}
             </p>
           </div>
 
@@ -128,16 +136,33 @@ export const Login: React.FC = () => {
                 </div>
               </div>
 
+              <label className="flex items-start gap-2 text-xs text-slate-600 leading-snug cursor-pointer pt-1">
+                <input
+                  type="checkbox"
+                  checked={regAcepta}
+                  onChange={(e) => setRegAcepta(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-orange-500 flex-shrink-0"
+                  required
+                />
+                <span>
+                  Lei y acepto la{' '}
+                  <a href={`${apiBase}/politica-uso`} target="_blank" rel="noopener noreferrer" className="text-orange-600 font-bold underline">Politica de Uso</a>
+                  {' '}y la{' '}
+                  <a href={`${apiBase}/politica-privacidad`} target="_blank" rel="noopener noreferrer" className="text-orange-600 font-bold underline">Politica de Privacidad</a>
+                  {' '}de ActivaQR.
+                </span>
+              </label>
+
               {regError && (
                 <div className="bg-red-50 border-2 border-red-300 text-red-700 text-sm px-3 py-2 font-semibold">{regError}</div>
               )}
 
-              <button type="submit" disabled={regCargando} className="w-full flex items-center justify-center gap-2 bg-orange-500 text-white h-12 font-sketch font-black text-xl uppercase border-2 border-slate-900 shadow-[4px_4px_0px_0px_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#1e293b] transition-all disabled:opacity-50">
+              <button type="submit" disabled={regCargando || !regAcepta} className="w-full flex items-center justify-center gap-2 bg-orange-500 text-white h-12 font-sketch font-black text-xl uppercase border-2 border-slate-900 shadow-[4px_4px_0px_0px_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#1e293b] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0px_0px_#1e293b]">
                 <UserPlus size={20} />
                 {regCargando ? 'Creando…' : 'Crear cuenta y probar'}
               </button>
 
-              <p className="text-[11px] text-slate-400 text-center leading-snug">14 días de acceso completo, hasta 10 activos. Sin tarjeta de crédito.</p>
+              <p className="text-[11px] text-slate-400 text-center leading-snug">30 días de acceso completo, hasta 10 activos. Sin tarjeta de crédito.</p>
 
               <div className="text-center mt-2">
                 <button type="button" onClick={() => { setVistaRegistro(false); setRegError(null); }} className="text-xs text-slate-500 hover:text-orange-500 underline transition-colors">
@@ -220,7 +245,7 @@ export const Login: React.FC = () => {
                 className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white h-11 font-black text-sm uppercase tracking-wide border-2 border-slate-900 hover:bg-orange-500 transition-colors"
               >
                 <UserPlus size={18} />
-                Probar gratis 14 días
+                Probar gratis 30 días
               </button>
             </div>
           )}
@@ -273,6 +298,11 @@ export const Login: React.FC = () => {
 
         <p className="text-center text-slate-400 text-xs mt-4 font-mono">
           ActivaQR · Gestión de activos industriales
+        </p>
+        <p className="text-center text-slate-400 text-[11px] mt-1 font-mono">
+          <a href={`${apiBase}/politica-uso`} target="_blank" rel="noopener noreferrer" className="hover:text-orange-500 underline">Política de Uso</a>
+          <span className="mx-2">·</span>
+          <a href={`${apiBase}/politica-privacidad`} target="_blank" rel="noopener noreferrer" className="hover:text-orange-500 underline">Política de Privacidad</a>
         </p>
       </div>
     </div>
