@@ -338,7 +338,7 @@ router.post(
     try {
       const p = await prisma.permisoAccesoRemoto.findUnique({ where: { empresaId: req.params.id } });
       if (!p || p.estado !== 'activo') return res.status(403).json({ error: 'Sin permiso activo.' });
-      const { contenido, tipo, adjunto } = req.body ?? {};
+      const { contenido, tipo, adjunto, capturedLat, capturedLng, capturedAt, deviceModel, fuenteUbicacion } = req.body ?? {};
       if (!contenido?.trim() && !adjunto) {
         return res.status(400).json({ error: 'El mensaje no puede estar vacío.' });
       }
@@ -353,6 +353,11 @@ router.post(
           contenido: contenido?.trim() || null,
           tipo: tipo || 'texto',
           adjunto: adjunto || null,
+          capturedLat: typeof capturedLat === 'number' ? capturedLat : null,
+          capturedLng: typeof capturedLng === 'number' ? capturedLng : null,
+          capturedAt: capturedAt ? new Date(capturedAt) : null,
+          deviceModel: deviceModel ? String(deviceModel).slice(0, 80) : null,
+          fuenteUbicacion: fuenteUbicacion ? String(fuenteUbicacion).slice(0, 16) : null,
         },
       });
       enviarPushAEmpresa(req.params.id, {
@@ -476,7 +481,7 @@ router.post(
         include: { empresa: { include: { usuarios: { where: { rol: 'admin' }, take: 1 } } } },
       });
       if (!p || p.estado !== 'activo') return res.status(403).json({ error: 'Sin permiso activo.' });
-      const { contenido, tipo, adjunto } = req.body ?? {};
+      const { contenido, tipo, adjunto, capturedLat, capturedLng, capturedAt, deviceModel, fuenteUbicacion } = req.body ?? {};
       if (!contenido?.trim() && !adjunto) {
         return res.status(400).json({ error: 'El mensaje no puede estar vacío.' });
       }
@@ -492,6 +497,11 @@ router.post(
           contenido: contenido?.trim() || null,
           tipo: tipo || 'texto',
           adjunto: adjunto || null,
+          capturedLat: typeof capturedLat === 'number' ? capturedLat : null,
+          capturedLng: typeof capturedLng === 'number' ? capturedLng : null,
+          capturedAt: capturedAt ? new Date(capturedAt) : null,
+          deviceModel: deviceModel ? String(deviceModel).slice(0, 80) : null,
+          fuenteUbicacion: fuenteUbicacion ? String(fuenteUbicacion).slice(0, 16) : null,
         },
       });
       enviarPushASuperadmin({

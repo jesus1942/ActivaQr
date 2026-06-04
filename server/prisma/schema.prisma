@@ -110,6 +110,13 @@ model MensajeRemoto {
   creadoEn  DateTime @default(now())
   leido     Boolean  @default(false)
 
+  // Evidencia forense para mensajes con foto (ver Foto.capturedAt para detalle).
+  capturedLat     Float?
+  capturedLng     Float?
+  capturedAt      DateTime?
+  deviceModel     String?
+  fuenteUbicacion String?
+
   permiso PermisoAccesoRemoto @relation(fields: [permisoId], references: [id], onDelete: Cascade)
 
   @@index([permisoId])
@@ -393,6 +400,17 @@ model Foto {
   id         String @id @default(uuid())
   medicionId String
   url        String
+
+  // Cadena de custodia digital / evidencia forense de la foto.
+  // Cuando el celular saca la foto, la imagen trae metadatos EXIF: GPS, fecha
+  // y modelo de dispositivo. Eso se extrae al subirla y se guarda aca para
+  // probar despues 'donde y cuando se hizo realmente la medicion'.
+  capturedLat       Float?
+  capturedLng       Float?
+  capturedAt        DateTime?  // timestamp REAL del EXIF, no el del upload
+  deviceModel       String?    // ej: 'iPhone 13', 'Samsung SM-A536E'
+  fuenteUbicacion   String?    // 'exif' (mas confiable) | 'browser' | null
+  subidoEn          DateTime   @default(now())
 
   medicion Medicion @relation(fields: [medicionId], references: [id], onDelete: Cascade)
 

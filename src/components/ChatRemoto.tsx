@@ -2,6 +2,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Send, ImagePlus, Mic, Square } from 'lucide-react';
 import { MensajeRemoto, MensajePayload } from '../data/accesoRemotoApi';
+import { extraerEvidencia } from '../data/evidenciaForense';
+import { EvidenciaForenseBadge, DatosEvidencia } from './EvidenciaForenseBadge';
 
 interface Props {
   mensajes: MensajeRemoto[];
@@ -100,8 +102,19 @@ export const ChatRemoto: React.FC<Props> = ({ mensajes, miRol, onEnviar, cargand
     if (!file) return;
     setError(null);
     try {
+      // Extraer evidencia forense del archivo ORIGINAL antes de comprimir
+      // (la compresion suele descartar EXIF).
+      const evidencia = await extraerEvidencia(file).catch(() => null);
       const adjunto = await comprimirImagen(file);
-      await enviar({ tipo: 'imagen', adjunto });
+      await enviar({
+        tipo: 'imagen',
+        adjunto,
+        capturedLat: evidencia?.capturedLat,
+        capturedLng: evidencia?.capturedLng,
+        capturedAt: evidencia?.capturedAt,
+        deviceModel: evidencia?.deviceModel,
+        fuenteUbicacion: evidencia?.fuenteUbicacion,
+      });
     } catch (err: any) {
       setError(err?.message || 'No se pudo procesar la imagen.');
     }
@@ -167,12 +180,21 @@ export const ChatRemoto: React.FC<Props> = ({ mensajes, miRol, onEnviar, cargand
                   <p className="text-xs font-black uppercase tracking-wider mb-1 text-orange-600">{m.autorNombre}</p>
                 )}
                 {m.tipo === 'imagen' && m.adjunto ? (
-                  <img
-                    src={m.adjunto}
-                    alt="Adjunto"
-                    onClick={() => window.open(m.adjunto!, '_blank')}
-                    className="max-w-full max-h-48 border-2 border-slate-900 cursor-pointer rounded"
-                  />
+                  <>
+                    <img
+                      src={m.adjunto}
+                      alt="Adjunto"
+                      onClick={() => window.open(m.adjunto!, '_blank')}
+                      className="max-w-full max-h-48 border-2 border-slate-900 cursor-pointer rounded"
+                    />
+                    {((m as MensajeRemoto & DatosEvidencia).capturedLat != null ||
+                      (m as MensajeRemoto & DatosEvidencia).capturedAt ||
+                      (m as MensajeRemoto & DatosEvidencia).deviceModel) && (
+                      <div className="mt-1.5">
+                        <EvidenciaForenseBadge datos={m as MensajeRemoto & DatosEvidencia} compacto />
+                      </div>
+                    )}
+                  </>
                 ) : m.tipo === 'audio' && m.adjunto ? (
                   <audio controls src={m.adjunto} className="max-w-full" />
                 ) : (

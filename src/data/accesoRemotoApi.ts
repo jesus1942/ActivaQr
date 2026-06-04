@@ -20,12 +20,23 @@ export interface MensajeRemoto {
   adjunto?: string | null;
   creadoEn: string;
   leido: boolean;
+  // Evidencia forense de la foto (solo presentes cuando tipo === 'imagen').
+  capturedLat?: number | null;
+  capturedLng?: number | null;
+  capturedAt?: string | null;
+  deviceModel?: string | null;
+  fuenteUbicacion?: string | null;
 }
 
 export interface MensajePayload {
   contenido?: string;
   tipo?: string;
   adjunto?: string;
+  capturedLat?: number;
+  capturedLng?: number;
+  capturedAt?: string;
+  deviceModel?: string;
+  fuenteUbicacion?: string;
 }
 
 async function parse(res: Response) {

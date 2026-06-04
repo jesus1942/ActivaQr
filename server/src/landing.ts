@@ -252,7 +252,16 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
     <span style="display:inline-block;background:transparent;border:2px solid var(--naranja);color:var(--naranja);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:6px 12px;margin-bottom:24px">El ultimo kilometro</span>
     <h2 style="font-size:clamp(28px,4.5vw,44px);font-weight:900;text-transform:uppercase;letter-spacing:-.5px;line-height:1.1;color:#fff;margin-bottom:24px">Los grandes te venden software de oficina.<br><span style="color:var(--naranja)">Vos necesitás algo que aguante el campo.</span></h2>
     <p style="font-size:18px;color:#cbd5e1;line-height:1.6;margin-bottom:18px">Tu cliente exige reportes mensuales auditables. Hoy el tecnico anota en planilla, vuelve a la oficina, alguien la carga al sistema. Datos perdidos, horas perdidas, fechas truchadas para llegar a fin de mes.</p>
-    <p style="font-size:18px;color:#cbd5e1;line-height:1.6;margin-bottom:0"><strong style="color:#fff">ActivaQR resuelve eso.</strong> La medicion se carga en el momento, en el lugar, con el dedo del que la hizo. Sin internet, sin VPN, sin licencia de USD 8.000 por usuario. Despues lo exportas como tu cliente lo quiera: PDF, CSV, lo que sea.</p>
+    <p style="font-size:18px;color:#cbd5e1;line-height:1.6;margin-bottom:24px"><strong style="color:#fff">ActivaQR resuelve eso.</strong> La medicion se carga en el momento, en el lugar, con el dedo del que la hizo. Sin internet, sin VPN, sin licencia de USD 8.000 por usuario. Despues lo exportas como tu cliente lo quiera: PDF, CSV, lo que sea.</p>
+    <div id="ttsBox" style="display:none;border-top:1px solid #1e293b;padding-top:24px">
+      <button id="ttsBtn" type="button" style="display:inline-flex;align-items:center;gap:10px;background:transparent;border:2px solid var(--naranja);color:var(--naranja);font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:1px;padding:12px 20px;cursor:pointer;font-family:inherit;transition:all .15s">
+        <span id="ttsIcon" aria-hidden="true" style="display:inline-block;width:0;height:0;border-style:solid;border-width:7px 0 7px 12px;border-color:transparent transparent transparent var(--naranja)"></span>
+        <span id="ttsLabel">Escuchá esta historia (1 min)</span>
+      </button>
+      <div id="ttsProgress" style="margin-top:14px;height:3px;background:#1e293b;display:none;overflow:hidden">
+        <div id="ttsBar" style="height:100%;width:0%;background:var(--naranja);transition:width .3s"></div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -652,6 +661,135 @@ const observer = new IntersectionObserver(function(entries){
   });
 }, {threshold:0.12});
 document.querySelectorAll('.reveal').forEach(function(el){ observer.observe(el); });
+
+// ─── Narracion en voz alta (Web Speech API) ─────────────────────────────
+(function(){
+  if (!('speechSynthesis' in window)) return;
+
+  // Texto a narrar: hero + ultimo kilometro. Sin emojis ni puntuacion rara.
+  var TEXTO = [
+    'El mantenimiento no se hace desde una oficina en Lima.',
+    'Tu técnico escanea el QR del equipo, carga la medición y la foto desde el celular.',
+    'Si no hay señal — y en el pad, en el socavón o en la cámara nunca hay — la medición queda en el celular.',
+    'Apenas agarra wifi del comedor, sube sola, con hora real y geolocalización del momento que se midió, no del momento que se cargó.',
+    '',
+    'Los grandes te venden software de oficina. Vos necesitás algo que aguante el campo.',
+    '',
+    'Tu cliente exige reportes mensuales auditables. Hoy el técnico anota en planilla, vuelve a la oficina, alguien la carga al sistema. Datos perdidos, horas perdidas, fechas truchadas para llegar a fin de mes.',
+    '',
+    'ActivaQR resuelve eso. La medición se carga en el momento, en el lugar, con el dedo del que la hizo. Sin internet, sin VPN, sin licencias de ocho mil dólares por usuario.'
+  ].join(' ');
+
+  var box = document.getElementById('ttsBox');
+  var btn = document.getElementById('ttsBtn');
+  var label = document.getElementById('ttsLabel');
+  var icon = document.getElementById('ttsIcon');
+  var progress = document.getElementById('ttsProgress');
+  var bar = document.getElementById('ttsBar');
+  if (!box || !btn || !label || !icon || !progress || !bar) return;
+
+  // Selecciona la mejor voz en español. Algunos navegadores cargan voces async.
+  function elegirVoz() {
+    var voces = window.speechSynthesis.getVoices() || [];
+    if (voces.length === 0) return null;
+    // Preferencia: es-AR > es-MX > es-419 > es-CL/CO/PE > es-ES > cualquier es
+    var prefs = [/^es-AR/i, /^es-419/i, /^es-MX/i, /^es-CO/i, /^es-CL/i, /^es-PE/i, /^es-ES/i, /^es/i];
+    for (var i = 0; i < prefs.length; i++) {
+      var match = voces.find(function(v){ return prefs[i].test(v.lang); });
+      if (match) return match;
+    }
+    return null;
+  }
+
+  // Si no hay voz en español, no mostramos el boton (mejor que ofrecer una experiencia mala).
+  function inicializar() {
+    var voz = elegirVoz();
+    if (!voz) {
+      // Algunos navegadores cargan voces despues. Reintentar una sola vez.
+      window.speechSynthesis.onvoiceschanged = function(){
+        if (elegirVoz()) box.style.display = 'block';
+      };
+      return;
+    }
+    box.style.display = 'block';
+  }
+  inicializar();
+
+  var utter = null;
+  var reproduciendo = false;
+  var inicio = 0;
+  var duracionEstimadaMs = 0;
+  var tickInterval = null;
+
+  function setIcono(tipo) {
+    // 'play' o 'pause'
+    if (tipo === 'pause') {
+      icon.style.borderWidth = '0';
+      icon.style.width = '4px';
+      icon.style.height = '14px';
+      icon.style.background = 'var(--naranja)';
+      icon.style.boxShadow = '7px 0 0 0 var(--naranja)';
+    } else {
+      icon.style.background = 'transparent';
+      icon.style.boxShadow = 'none';
+      icon.style.width = '0';
+      icon.style.height = '0';
+      icon.style.borderStyle = 'solid';
+      icon.style.borderWidth = '7px 0 7px 12px';
+      icon.style.borderColor = 'transparent transparent transparent var(--naranja)';
+    }
+  }
+
+  function frenar() {
+    window.speechSynthesis.cancel();
+    reproduciendo = false;
+    if (tickInterval) { clearInterval(tickInterval); tickInterval = null; }
+    bar.style.width = '0%';
+    progress.style.display = 'none';
+    label.textContent = 'Escuchá esta historia (1 min)';
+    setIcono('play');
+  }
+
+  btn.addEventListener('click', function(){
+    if (reproduciendo) { frenar(); return; }
+
+    var voz = elegirVoz();
+    if (!voz) return;
+
+    utter = new SpeechSynthesisUtterance(TEXTO);
+    utter.voice = voz;
+    utter.lang = voz.lang;
+    utter.rate = 0.95;
+    utter.pitch = 1.0;
+    utter.volume = 1.0;
+
+    // Estimacion gruesa: ~14 caracteres por segundo de habla a rate 0.95.
+    duracionEstimadaMs = (TEXTO.length / 14) * 1000;
+    inicio = Date.now();
+    progress.style.display = 'block';
+
+    utter.onstart = function(){
+      reproduciendo = true;
+      label.textContent = 'Pausar narración';
+      setIcono('pause');
+      tickInterval = setInterval(function(){
+        var t = Math.min(100, ((Date.now() - inicio) / duracionEstimadaMs) * 100);
+        bar.style.width = t.toFixed(1) + '%';
+      }, 200);
+    };
+    utter.onend = function(){
+      bar.style.width = '100%';
+      setTimeout(frenar, 500);
+    };
+    utter.onerror = frenar;
+
+    window.speechSynthesis.cancel(); // por si quedo algo en cola
+    window.speechSynthesis.speak(utter);
+  });
+
+  // Al salir de la pagina, frenar la voz para que no siga hablando sola.
+  window.addEventListener('beforeunload', function(){ window.speechSynthesis.cancel(); });
+})();
 </script>
 
 </body>
