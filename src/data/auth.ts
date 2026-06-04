@@ -190,28 +190,33 @@ export interface ResultadoPostOffline<T = unknown> {
 }
 
 export async function apiPostOffline<T = unknown>(path: string, body: unknown): Promise<ResultadoPostOffline<T>> {
+  return apiEnvioConCola<T>(path, 'POST', body);
+}
+
+/** Igual que apiPostOffline pero usando PUT. Util para cierre de OT del operario. */
+export async function apiPutOffline<T = unknown>(path: string, body: unknown): Promise<ResultadoPostOffline<T>> {
+  return apiEnvioConCola<T>(path, 'PUT', body);
+}
+
+async function apiEnvioConCola<T = unknown>(path: string, method: 'POST' | 'PUT' | 'PATCH', body: unknown): Promise<ResultadoPostOffline<T>> {
   const { encolarOperacion } = await import('./offlineQueue');
   try {
-    const res = await apiFetch(path, { method: 'POST', body: JSON.stringify(body) });
+    const res = await apiFetch(path, { method, body: JSON.stringify(body) });
     if (!res.ok) {
-      // El server respondio mal: NO encolar, es un error de logica que un retry no va a resolver.
       const data = await res.json().catch(() => ({}));
       throw new Error(data?.error || `Error ${res.status}`);
     }
     const data = (await res.json()) as T;
     return { encolada: false, data };
   } catch (err) {
-    // Errores conocidos que no son de red: propagar.
     if (err instanceof EmpresaSuspendidaError || err instanceof TrialVencidoError || err instanceof TrialLecturaError) {
       throw err;
     }
-    // TypeError de fetch (red caida) o AbortError (timeout) → encolar.
     const esErrorDeRed = err instanceof TypeError || (err instanceof Error && (err.name === 'AbortError' || err.message === 'Failed to fetch'));
     if (esErrorDeRed) {
-      const idLocal = await encolarOperacion(path, 'POST', body);
+      const idLocal = await encolarOperacion(path, method, body);
       return { encolada: true, idLocal };
     }
-    // Errores del server (4xx, 5xx ya parseados): no encolar, propagar.
     throw err;
   }
 }

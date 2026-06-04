@@ -1,10 +1,11 @@
 // v1.2.0
 import React, { useEffect, useState, useCallback } from 'react';
-import { apiFetch, apiPostOffline } from '../data/auth';
+import { apiFetch, apiPostOffline, apiPutOffline } from '../data/auth';
 import { useAuth } from '../context/AuthContext';
 import { QrScanner, extraerActivoId } from '../components/QrScanner';
 import { SyncBadge } from '../components/ui/SyncBadge';
 import { extraerEvidencia, EvidenciaForense } from '../data/evidenciaForense';
+import { DiagnosticoSugerido } from '../components/DiagnosticoSugerido';
 import { ScanLine, ClipboardList, CheckCircle2, AlertTriangle, LogOut, ChevronRight, X, CloudOff, Camera, ShieldCheck } from 'lucide-react';
 
 const MAX_DIM_FOTO = 1280;
@@ -232,13 +233,16 @@ export const DashboardOperador: React.FC = () => {
     if (!tareaSeleccionada) return;
     setEnviando(true);
     setErrorForm(null);
+    setGuardadoOffline(false);
     try {
-      const res = await apiFetch(`tareas/${tareaSeleccionada.id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ estado: 'completado', observaciones: notasOT || undefined, fechaRealizada: new Date().toISOString() }),
+      const resultado = await apiPutOffline(`tareas/${tareaSeleccionada.id}`, {
+        estado: 'completado',
+        observaciones: notasOT || undefined,
+        fechaRealizada: new Date().toISOString(),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error al cerrar OT');
+      if (resultado.encolada) {
+        setGuardadoOffline(true);
+      }
       setExito(true);
       setTareas(prev => prev.filter(t => t.id !== tareaSeleccionada.id));
     } catch (err) {
@@ -359,6 +363,15 @@ export const DashboardOperador: React.FC = () => {
                 )}
               </div>
 
+              {/* Diagnostico asistido: sugiere fallas tipicas segun lo que el operario ya cargo */}
+              <DiagnosticoSugerido activoId={activoSeleccionado.id} sintomas={{
+                temperatura: form.temperatura,
+                amperaje: form.amperaje,
+                presion: form.presion,
+                vibracion: form.vibracion,
+                observaciones: form.observaciones,
+              }} />
+
               <button type="submit" disabled={enviando || procesandoFoto} className="w-full min-h-[52px] bg-orange-500 text-white font-black border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] text-base uppercase tracking-wide disabled:opacity-50">
                 {enviando ? 'Guardando...' : 'Registrar medición'}
               </button>
@@ -387,14 +400,25 @@ export const DashboardOperador: React.FC = () => {
           </div>
 
           {exito ? (
-            <div className="bg-white border-2 border-emerald-400 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.6)] p-6 text-center space-y-4">
-              <CheckCircle2 size={40} className="mx-auto text-emerald-500" />
-              <p className="font-black text-2xl text-emerald-700 uppercase">OT cerrada</p>
-              <p className="text-slate-600 text-sm">La orden de trabajo fue marcada como completada.</p>
-              <button onClick={() => { setVista('tareas'); setExito(false); }} className="w-full min-h-[52px] bg-slate-900 text-white font-black border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.6)] text-base uppercase tracking-wide">
-                Volver a tareas
-              </button>
-            </div>
+            guardadoOffline ? (
+              <div className="bg-white border-2 border-slate-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.6)] p-6 text-center space-y-4">
+                <CloudOff size={40} className="mx-auto text-slate-600" />
+                <p className="font-black text-2xl text-slate-800 uppercase">Cierre offline</p>
+                <p className="text-slate-600 text-sm">No habia conexion. El cierre quedó en tu celular y se va a confirmar al servidor cuando agarres senal.</p>
+                <button onClick={() => { setVista('tareas'); setExito(false); setGuardadoOffline(false); }} className="w-full min-h-[52px] bg-slate-900 text-white font-black border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.6)] text-base uppercase tracking-wide">
+                  Volver a tareas
+                </button>
+              </div>
+            ) : (
+              <div className="bg-white border-2 border-emerald-400 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.6)] p-6 text-center space-y-4">
+                <CheckCircle2 size={40} className="mx-auto text-emerald-500" />
+                <p className="font-black text-2xl text-emerald-700 uppercase">OT cerrada</p>
+                <p className="text-slate-600 text-sm">La orden de trabajo fue marcada como completada.</p>
+                <button onClick={() => { setVista('tareas'); setExito(false); }} className="w-full min-h-[52px] bg-slate-900 text-white font-black border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.6)] text-base uppercase tracking-wide">
+                  Volver a tareas
+                </button>
+              </div>
+            )
           ) : (
             <form onSubmit={handleCerrarOT} className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.6)] p-5 space-y-4">
               <div className="text-sm text-slate-700 space-y-1">
