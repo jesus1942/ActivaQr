@@ -224,6 +224,30 @@ const CATEGORIAS_GLOBALES: CategoriaInput[] = [
     ],
   },
 
+  // ───────────────────────── ENERGIA EOLICA ─────────────────────────
+  {
+    nombre: 'Aerogenerador',
+    descripcion: 'Turbinas eolicas de eje horizontal. Cubre arquitecturas con multiplicadora (gearbox) y direct drive (PMSG, sin caja). Parametros pensados para empresas de O&M de parques eolicos: Vestas, Goldwind, Nordex/Acciona, Siemens Gamesa, GE, Wobben/Enercon, Suzlon, Senvion.',
+    orden: 36,
+    parametros: [
+      { nombre: 'Velocidad del viento', clave: 'viento', unidad: 'm/s', orden: 1, umbralAlerta: 20, umbralCritico: 25 },
+      { nombre: 'Velocidad del rotor', clave: 'rpm_rotor', unidad: 'RPM', orden: 2 },
+      { nombre: 'Velocidad del generador', clave: 'rpm_generador', unidad: 'RPM', orden: 3 },
+      { nombre: 'Potencia activa', clave: 'potencia_activa', unidad: 'kW', orden: 4 },
+      { nombre: 'Temperatura devanado generador', clave: 'temp_devanado', unidad: '°C', orden: 5, umbralAlerta: 130, umbralCritico: 150, umbralUrgente: 160 },
+      { nombre: 'Temperatura aceite multiplicadora', clave: 'temp_aceite_gearbox', unidad: '°C', orden: 6, umbralAlerta: 75, umbralCritico: 85, umbralUrgente: 95 },
+      { nombre: 'Temperatura rodamiento principal', clave: 'temp_rod_principal', unidad: '°C', orden: 7, umbralAlerta: 70, umbralCritico: 85, umbralUrgente: 95 },
+      { nombre: 'Presion sistema hidraulico', clave: 'presion_hidraulica', unidad: 'bar', orden: 8, umbralAlerta: 200, umbralCritico: 230 },
+      { nombre: 'Angulo de pitch (paso de pala)', clave: 'pitch_angle', unidad: 'grados', orden: 9 },
+      { nombre: 'Posicion de yaw (orientacion)', clave: 'yaw_pos', unidad: 'grados', orden: 10 },
+      { nombre: 'Vibracion gondola (RMS, banda 0.1-10 Hz)', clave: 'vib_gondola', unidad: 'mm/s', orden: 11, umbralAlerta: 4.5, umbralCritico: 7.1, umbralUrgente: 11.2 },
+      { nombre: 'Vibracion alta frecuencia (banda > 100 Hz, rodamientos)', clave: 'vib_alta_freq', unidad: 'g', orden: 12 },
+      { nombre: 'Disponibilidad', clave: 'disponibilidad', unidad: '%', tipo: 'porcentaje', orden: 13, invertido: true, umbralAlerta: 95, umbralCritico: 90 },
+      { nombre: 'Disparos de seguridad acumulados (mes)', clave: 'trips_mes', orden: 14, umbralAlerta: 5, umbralCritico: 15 },
+      { nombre: 'Horas equivalentes plena carga (EFLH)', clave: 'eflh', unidad: 'h', orden: 15 },
+    ],
+  },
+
   // ───────────────────────── MANUFACTURA Y MÁQUINA-HERRAMIENTA ─────────────────────────
   {
     nombre: 'CNC / Máquina Herramienta',
