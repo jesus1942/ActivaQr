@@ -202,6 +202,28 @@ const CATEGORIAS_GLOBALES: CategoriaInput[] = [
     ],
   },
 
+  // ───────────────────────── TRANSPORTE INTERNO / MANEJO DE MATERIALES ─────────────────────────
+  {
+    nombre: 'Cinta Transportadora',
+    descripcion: 'Cintas transportadoras de banda. Cubre cintas con motor unico y cintas con doble accionamiento (motor de traccion + motor de acompañamiento). Aplica a mineria, aridos, frigorificos, plantas de proceso, packaging y agro.',
+    orden: 35,
+    parametros: [
+      { nombre: 'Corriente motor de traccion', clave: 'corriente_motor_traccion', unidad: 'A', orden: 1, umbralAlerta: 90, umbralCritico: 110 },
+      { nombre: 'Corriente motor de acompañamiento', clave: 'corriente_motor_acomp', unidad: 'A', orden: 2, umbralAlerta: 90, umbralCritico: 110 },
+      { nombre: 'Temperatura motor de traccion', clave: 'temp_motor_traccion', unidad: '°C', orden: 3, umbralAlerta: 80, umbralCritico: 95, umbralUrgente: 105 },
+      { nombre: 'Temperatura motor de acompañamiento', clave: 'temp_motor_acomp', unidad: '°C', orden: 4, umbralAlerta: 80, umbralCritico: 95, umbralUrgente: 105 },
+      { nombre: 'Temperatura del reductor', clave: 'temp_reductor', unidad: '°C', orden: 5, umbralAlerta: 75, umbralCritico: 90 },
+      { nombre: 'Velocidad de la cinta', clave: 'velocidad_cinta', unidad: 'm/s', orden: 6 },
+      { nombre: 'Nivel de aceite del reductor', clave: 'nivel_aceite_reductor', unidad: '%', tipo: 'porcentaje', orden: 7, invertido: true, umbralAlerta: 30, umbralCritico: 15 },
+      { nombre: 'Tension de la banda (contrapeso)', clave: 'tension_banda', unidad: 'kN', orden: 8 },
+      { nombre: 'Temperatura de rodamiento polea motriz', clave: 'temp_rodamiento_motriz', unidad: '°C', orden: 9, umbralAlerta: 60, umbralCritico: 75, umbralUrgente: 85 },
+      { nombre: 'Vibracion del motor', clave: 'vibracion_motor', unidad: 'mm/s', orden: 10, umbralAlerta: 4.5, umbralCritico: 7.1, umbralUrgente: 11.2 },
+      { nombre: 'Estado del empalme', clave: 'estado_empalme', tipo: 'seleccion', orden: 11 },
+      { nombre: 'Patinaje detectado (zero speed)', clave: 'patinaje', tipo: 'booleano', orden: 12 },
+      { nombre: 'Horas de operacion', clave: 'horas_operacion', unidad: 'h', orden: 13 },
+    ],
+  },
+
   // ───────────────────────── MANUFACTURA Y MÁQUINA-HERRAMIENTA ─────────────────────────
   {
     nombre: 'CNC / Máquina Herramienta',

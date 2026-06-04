@@ -30,6 +30,7 @@ import { enviarPushASuperadmin } from './push';
 import { requireAuth, requireAuthAndActiveEmpresa, requireSuperadmin } from './auth';
 import { seedCategorias } from './seedCategorias';
 import { seedFallasMotorDiesel } from './seedFallasMotorDiesel';
+import { seedFallasCintaTransportadora } from './seedFallasCintaTransportadora';
 import { limpiarEmojisDeCategorias } from './limpiarEmojis';
 import { fallasRouter, fallasPublicRouter } from './routes/fallas';
 import { seedDemo } from './seedDemo';
@@ -233,6 +234,7 @@ app.listen(PORT, () => {
   seedCategorias()
     .then(() => limpiarEmojisDeCategorias())
     .then(() => seedFallasMotorDiesel())
+    .then(() => seedFallasCintaTransportadora())
     .catch((e) => console.error('seed/limpieza error:', e));
   seedDemo().catch((e) => console.error('seedDemo error:', e));
 });
