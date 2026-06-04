@@ -104,16 +104,20 @@ export async function crearMedicionRemota(
   }));
 }
 
+export interface PersonalUsuario {
+  id: string;
+  nombre: string;
+  rol: string;
+  cargo?: string | null;
+  email: string | null;
+  telefono?: string | null;
+  activo: boolean;
+  ultimoAcceso?: string | null;
+}
+
 export interface PersonalRemoto {
-  tecnicos: {
-    id: string; nombre: string; rol: string; email: string | null;
-    telefono: string | null; activo: boolean;
-    _count: { mediciones: number; tareas: number };
-  }[];
-  usuarios: {
-    id: string; nombre: string; rol: string; email: string;
-    activo: boolean; ultimoAcceso: string | null;
-  }[];
+  personal: PersonalUsuario[];
+  usuarios: PersonalUsuario[];
 }
 
 export interface ActividadRemoto {
