@@ -9,7 +9,24 @@
 // mediciones y tareas seed y se reseedean; los datos cargados a mano por el
 // cliente (activos sin prefijo AUS-) NO se tocan.
 
+import bcrypt from 'bcryptjs';
 import { prisma } from './prisma';
+
+// ── Catalogo de personal (Usuarios con rol operador) ────────────────────────
+// Estos usuarios aparecen en el dropdown de "Responsable" en todas las
+// pantallas (editar tarea, asignar tarea, registrar medicion). Si re-corres
+// el seed y ya existen, NO se recrean ni se cambian sus passwords.
+interface PersonalSpec {
+  email: string;
+  nombre: string;
+  cargo: string;
+  passwordInicial: string;
+}
+const PERSONAL: PersonalSpec[] = [
+  { email: 'mantenimiento.austral@activaqr.com', nombre: 'Carlos Riveros',  cargo: 'Tecnico de Mantenimiento', passwordInicial: 'austral-mant-1234' },
+  { email: 'ti.austral@activaqr.com',            nombre: 'Lucia Mendez',    cargo: 'Soporte TI',               passwordInicial: 'austral-ti-1234'   },
+  { email: 'servicios.austral@activaqr.com',     nombre: 'Hector Quintela', cargo: 'Auxiliar de Servicios',    passwordInicial: 'austral-srv-1234'  },
+];
 
 // ── Catalogo de sectores ────────────────────────────────────────────────────
 const SECTORES = [
@@ -233,15 +250,24 @@ function generarMediciones(
 
 // Genera tareas de mantenimiento: preventivas cada 6 meses + correctivas
 // segun la tendencia del activo.
-function generarTareas(activoId: string, spec: ActivoSpec, numeroBase: { value: number }) {
+function generarTareas(activoId: string, spec: ActivoSpec, numeroBase: { value: number }, responsables: { mantenimiento: string; ti: string; servicios: string }) {
   const tareas: any[] = [];
   const mesesHistorial = Math.min(spec.mesesEnUso, 18);
+
+  // Resolver responsable segun categoria del activo
+  const responsablePorCategoria = (cat: CategoriaKey): string => {
+    if (cat === 'laptop' || cat === 'tablet' || cat === 'proyector' || cat === 'impresora') return responsables.ti;
+    if (cat === 'dispenser' || cat === 'microondas') return responsables.servicios;
+    return responsables.mantenimiento;
+  };
+  const respId = responsablePorCategoria(spec.categoria);
 
   // Preventivas regulares
   for (let m = mesesHistorial; m >= 6; m -= 6) {
     numeroBase.value += 1;
     tareas.push({
       activoId,
+      responsableId: respId,
       numero: numeroBase.value,
       tipo: 'preventivo',
       prioridad: 'media',
@@ -264,6 +290,7 @@ function generarTareas(activoId: string, spec: ActivoSpec, numeroBase: { value: 
       numeroBase.value += 1;
       tareas.push({
         activoId,
+        responsableId: respId,
         numero: numeroBase.value,
         tipo: 'correctivo',
         prioridad: 'alta',
@@ -281,6 +308,7 @@ function generarTareas(activoId: string, spec: ActivoSpec, numeroBase: { value: 
     numeroBase.value += 1;
     tareas.push({
       activoId,
+        responsableId: respId,
       numero: numeroBase.value,
       tipo: 'correctivo',
       prioridad: 'alta',
@@ -294,6 +322,7 @@ function generarTareas(activoId: string, spec: ActivoSpec, numeroBase: { value: 
     numeroBase.value += 1;
     tareas.push({
       activoId,
+        responsableId: respId,
       numero: numeroBase.value,
       tipo: 'preventivo',
       prioridad: 'alta',
@@ -307,6 +336,7 @@ function generarTareas(activoId: string, spec: ActivoSpec, numeroBase: { value: 
     numeroBase.value += 1;
     tareas.push({
       activoId,
+        responsableId: respId,
       numero: numeroBase.value,
       tipo: 'predictivo',
       prioridad: 'alta',
@@ -320,6 +350,7 @@ function generarTareas(activoId: string, spec: ActivoSpec, numeroBase: { value: 
     numeroBase.value += 1;
     tareas.push({
       activoId,
+        responsableId: respId,
       numero: numeroBase.value,
       tipo: 'predictivo',
       prioridad: 'media',
@@ -342,9 +373,48 @@ export async function seedAustral(empresaId: string): Promise<{
   activosExistentes: number;
   medicionesCreadas: number;
   tareasCreadas: number;
+  personalCreado: number;
+  personalExistente: number;
+  passwordsIniciales: { email: string; password: string | null }[];
 }> {
   const empresa = await prisma.empresa.findUnique({ where: { id: empresaId } });
   if (!empresa) throw Object.assign(new Error('Empresa no encontrada'), { status: 404 });
+
+  // 0. Personal: crear 3 operadores que aparezcan en el dropdown de
+  //    Responsable. Si ya existen, NO se recrean ni se cambia su password.
+  const personalIds: Record<string, string> = {};
+  const passwordsIniciales: { email: string; password: string | null }[] = [];
+  let personalCreado = 0;
+  let personalExistente = 0;
+  for (const p of PERSONAL) {
+    const existente = await prisma.usuario.findUnique({ where: { email: p.email } });
+    if (existente) {
+      personalIds[p.email] = existente.id;
+      personalExistente++;
+      passwordsIniciales.push({ email: p.email, password: null });
+    } else {
+      const hash = await bcrypt.hash(p.passwordInicial, 10);
+      const nuevo = await prisma.usuario.create({
+        data: {
+          empresaId,
+          email: p.email,
+          passwordHash: hash,
+          nombre: p.nombre,
+          rol: 'operador',
+          cargo: p.cargo,
+          activo: true,
+        },
+      });
+      personalIds[p.email] = nuevo.id;
+      personalCreado++;
+      passwordsIniciales.push({ email: p.email, password: p.passwordInicial });
+    }
+  }
+  const responsables = {
+    mantenimiento: personalIds['mantenimiento.austral@activaqr.com'],
+    ti: personalIds['ti.austral@activaqr.com'],
+    servicios: personalIds['servicios.austral@activaqr.com'],
+  };
 
   // 1. Upsert sectores
   const sectoresMap = new Map<string, string>();
@@ -429,6 +499,12 @@ export async function seedAustral(empresaId: string): Promise<{
     } else {
       const flags = TIPOS[spec.categoria].flags;
       const fechaIngreso = fechaMesesAtras(spec.mesesEnUso);
+      const respActivo =
+        spec.categoria === 'laptop' || spec.categoria === 'tablet' || spec.categoria === 'proyector' || spec.categoria === 'impresora'
+          ? responsables.ti
+          : spec.categoria === 'dispenser' || spec.categoria === 'microondas'
+            ? responsables.servicios
+            : responsables.mantenimiento;
       const nuevo = await prisma.activo.create({
         data: {
           empresaId,
@@ -438,6 +514,7 @@ export async function seedAustral(empresaId: string): Promise<{
           modelo: spec.modelo,
           sectorId,
           tipoId,
+          responsableId: respActivo,
           ubicacion: spec.ubicacion,
           fechaIngreso,
           horasActuales: 0,
@@ -471,7 +548,7 @@ export async function seedAustral(empresaId: string): Promise<{
     }
 
     // Tareas
-    const tareas = generarTareas(activoId, spec, numeroBase);
+    const tareas = generarTareas(activoId, spec, numeroBase, responsables);
     if (tareas.length) {
       await prisma.tareaMantenimiento.createMany({ data: tareas });
       tareasCreadas += tareas.length;
@@ -486,5 +563,8 @@ export async function seedAustral(empresaId: string): Promise<{
     activosExistentes,
     medicionesCreadas,
     tareasCreadas,
+    personalCreado,
+    personalExistente,
+    passwordsIniciales,
   };
 }

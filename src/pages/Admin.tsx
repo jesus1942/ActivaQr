@@ -947,7 +947,24 @@ export const Admin: React.FC = () => {
                             return;
                           }
                           const r = await res.json();
-                          alert(`Listo en ${emp.nombre}.\n\nSectores nuevos: ${r.sectoresCreados}\nTipos nuevos: ${r.tiposCreados}\nActivos nuevos: ${r.activosCreados}\nActivos reseedeados: ${r.activosExistentes}\nMediciones: ${r.medicionesCreadas}\nTareas: ${r.tareasCreadas}`);
+                          const passwordsLineas = (r.passwordsIniciales ?? [])
+                            .map((p: { email: string; password: string | null }) => p.password
+                              ? `  - ${p.email}  /  ${p.password}`
+                              : `  - ${p.email}  (ya existia, password no cambio)`)
+                            .join('\n');
+                          alert(
+                            `Listo en ${emp.nombre}.\n\n` +
+                            `Sectores nuevos: ${r.sectoresCreados}\n` +
+                            `Tipos nuevos: ${r.tiposCreados}\n` +
+                            `Activos nuevos: ${r.activosCreados}\n` +
+                            `Activos reseedeados: ${r.activosExistentes}\n` +
+                            `Mediciones: ${r.medicionesCreadas}\n` +
+                            `Tareas: ${r.tareasCreadas}\n` +
+                            `Personal nuevo: ${r.personalCreado}\n` +
+                            `Personal ya existente: ${r.personalExistente}\n\n` +
+                            `Credenciales iniciales:\n${passwordsLineas}\n\n` +
+                            `Copialas ahora. No se vuelven a mostrar.`
+                          );
                           cargar();
                         } catch (e) {
                           alert(`Error al sembrar dataset.\n\n${e instanceof Error ? e.message : String(e)}`);
