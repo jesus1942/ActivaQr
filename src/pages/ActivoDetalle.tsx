@@ -4,9 +4,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from 'recharts';
 import { ArrowLeft, Printer, ClipboardList, Pencil, Trash2, FileDown } from 'lucide-react';
 import { exportarFichaActivoPdf } from '../utils/exportPdf';
 import { useActivos } from '../hooks/useActivos';
@@ -16,7 +13,8 @@ import { ValueGauge } from '../components/ui/ValueGauge';
 import { DocumentosActivo } from '../components/DocumentosActivo';
 import { FallasActivo } from '../components/FallasActivo';
 import { UbicacionesActivo } from '../components/UbicacionesActivo';
-import { EstadoOperativo } from '../data/types';
+import { AnalisisActivo } from '../components/analitica/AnalisisActivo';
+import { EstadoOperativo, TareaMantenimiento } from '../data/types';
 import { API_URL } from '../data/auth';
 import { useAuth } from '../context/AuthContext';
 import { puedeEliminarActivos } from '../data/permisos';
@@ -26,8 +24,8 @@ export const ActivoDetalle: React.FC = () => {
   const navigate = useNavigate();
   const { usuario } = useAuth();
   const {
-    activos, mediciones, tareas,
-    deleteActivo, deleteMedicion, updateActivo,
+    activos, mediciones, tareas, tipos,
+    deleteActivo, deleteMedicion, updateActivo, addTarea,
     getSectorNombre, getTipoNombre, getTecnicoNombre,
   } = useActivos();
 
@@ -40,13 +38,23 @@ export const ActivoDetalle: React.FC = () => {
 
   const last10 = activoMediciones.slice(-10);
   const activoTareas = tareas.filter((t) => t.activoId === id);
+  const tipoActual = tipos.find((t) => t.id === activo.tipoId);
   const qrValue = `${window.location.origin}${import.meta.env.BASE_URL}#/ficha/${activo.id}`;
 
-  const chartData = last10.map((m) => ({
-    fecha: format(parseISO(m.fecha), 'dd/MM', { locale: es }),
-    temperatura: m.temperatura,
-    amperaje: m.amperaje,
-  }));
+  const handleCrearTareaPredictiva = (texto: string) => {
+    const nueva: TareaMantenimiento = {
+      id: `tar-${Date.now()}`,
+      activoId: activo.id,
+      tipo: 'predictivo',
+      prioridad: 'alta',
+      fechaProgramada: format(new Date(Date.now() + 7 * 86400000), 'yyyy-MM-dd'),
+      estado: 'pendiente',
+      observaciones: texto,
+      responsableId: activo.responsableId ?? '',
+    };
+    addTarea(nueva);
+    window.alert('Tarea predictiva creada y agregada al historial de mantenimiento.');
+  };
 
   const handlePrint = () => {
     window.print();
@@ -267,21 +275,14 @@ export const ActivoDetalle: React.FC = () => {
         </div>
       </div>
 
-      {/* Measurement history */}
-      <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4 mb-6">
-        <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-4">Historial de Mediciones (últimas 10)</h2>
-        {chartData.length > 0 && (
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={chartData} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="fecha" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip />
-              <Line type="monotone" dataKey="temperatura" stroke="#F97316" strokeWidth={2} dot={{ r: 4, stroke: '#1E293B', strokeWidth: 2 }} name="Temp. (°C)" />
-            </LineChart>
-          </ResponsiveContainer>
-        )}
-      </div>
+      {/* Analisis predictivo: graficos con tendencias, umbrales y proyeccion */}
+      <AnalisisActivo
+        activo={activo}
+        tipo={tipoActual}
+        mediciones={activoMediciones}
+        tareas={activoTareas}
+        onCrearTareaPredictiva={handleCrearTareaPredictiva}
+      />
 
       <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] overflow-x-auto">
         <table className="w-full text-sm">
