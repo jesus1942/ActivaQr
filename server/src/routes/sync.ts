@@ -71,6 +71,10 @@ router.put('/tipos', asyncHandler(async (req, res) => {
         mideAmperaje: !!i.mideAmperaje,
         midePresion: !!i.midePresion,
         mideVibracion: !!i.mideVibracion,
+        mideBateria: !!i.mideBateria,
+        mideToner: !!i.mideToner,
+        mideContador: !!i.mideContador,
+        mideVoltaje: !!i.mideVoltaje,
         activo: i.activo ?? true,
       };
       return prisma.tipoActivo.upsert({

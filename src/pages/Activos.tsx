@@ -10,7 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { AssetCard } from '../components/ui/AssetCard';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { ESTADOS_OPERATIVOS } from '../components/ui/EstadoOperativoBadge';
-import { Activo, EstadoActivo, EstadoOperativo, ClaveVisibilidad, VISIBILIDAD_DEFAULT, VISIBILIDAD_LABELS } from '../data/types';
+import { Activo, EstadoActivo, EstadoOperativo, TipoActivo, ClaveVisibilidad, VISIBILIDAD_DEFAULT, VISIBILIDAD_LABELS } from '../data/types';
 
 const LIMITES_ACTIVOS: Record<string, number | null> = {
   inicial:    10,
@@ -486,7 +486,7 @@ export const Activos: React.FC = () => {
               </div>
 
               {/* Parámetros de medición */}
-              <ParametrosMedicion form={form} setForm={setForm} />
+              <ParametrosMedicion form={form} setForm={setForm} tipoActivo={tiposActivos.find((t) => t.id === form.tipoId)} />
 
               <div className="sm:col-span-2 flex justify-end gap-3 mt-2">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 min-h-[44px] border-2 border-slate-400 font-bold text-slate-600">
@@ -530,8 +530,23 @@ const CampoNum: React.FC<{
 const ParametrosMedicion: React.FC<{
   form: FormActivo;
   setForm: React.Dispatch<React.SetStateAction<FormActivo>>;
-}> = ({ form, setForm }) => {
+  tipoActivo: TipoActivo | undefined;
+}> = ({ form, setForm, tipoActivo }) => {
   const [abierto, setAbierto] = useState(false);
+
+  const mide = {
+    temperatura: tipoActivo?.mideTemperatura ?? false,
+    amperaje: tipoActivo?.mideAmperaje ?? false,
+    voltaje: tipoActivo?.mideVoltaje ?? false,
+    presion: tipoActivo?.midePresion ?? false,
+    vibracion: tipoActivo?.mideVibracion ?? false,
+    bateria: tipoActivo?.mideBateria ?? false,
+    toner: tipoActivo?.mideToner ?? false,
+    contador: tipoActivo?.mideContador ?? false,
+  };
+  const algunParametro =
+    mide.temperatura || mide.amperaje || mide.voltaje || mide.presion ||
+    mide.bateria || mide.toner;
 
   return (
     <div className="sm:col-span-2 border-2 border-slate-200">
@@ -541,67 +556,108 @@ const ParametrosMedicion: React.FC<{
         className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors"
       >
         <span className="text-xs font-black uppercase tracking-wider text-slate-600">
-          Parámetros de medición y alertas
+          Parámetros y mantenimiento
         </span>
         {abierto ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
       </button>
 
       {abierto && (
         <div className="p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="col-span-2 sm:col-span-4">
-            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2">Temperatura</p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <CampoNum label="Mín normal" campo="temperaturaMin" form={form} setForm={setForm} unidad="°C" />
-              <CampoNum label="Máx normal" campo="temperaturaMax" form={form} setForm={setForm} unidad="°C" />
-              <CampoNum label="Alerta"     campo="temperaturaAlerta"   form={form} setForm={setForm} unidad="°C" />
-              <CampoNum label="Crítica"    campo="temperaturaCritica"  form={form} setForm={setForm} unidad="°C" />
+          {!tipoActivo && (
+            <div className="col-span-2 sm:col-span-4 text-xs text-slate-500 italic">
+              Elegí un tipo de activo arriba para ver los parámetros que aplican.
             </div>
-          </div>
+          )}
+
+          {tipoActivo && !algunParametro && (
+            <div className="col-span-2 sm:col-span-4 text-xs text-slate-500 italic">
+              Este tipo de activo no tiene parámetros de medición configurados. Podés agregarlos desde Configuración → Categorías.
+            </div>
+          )}
+
+          {mide.temperatura && (
+            <div className="col-span-2 sm:col-span-4">
+              <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2">Temperatura</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <CampoNum label="Mín normal" campo="temperaturaMin" form={form} setForm={setForm} unidad="°C" />
+                <CampoNum label="Máx normal" campo="temperaturaMax" form={form} setForm={setForm} unidad="°C" />
+                <CampoNum label="Alerta"     campo="temperaturaAlerta"   form={form} setForm={setForm} unidad="°C" />
+                <CampoNum label="Crítica"    campo="temperaturaCritica"  form={form} setForm={setForm} unidad="°C" />
+              </div>
+            </div>
+          )}
+
+          {mide.amperaje && (
+            <div className="col-span-2 sm:col-span-4">
+              <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Amperaje</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <CampoNum label="Normal"  campo="amperajeNormal"  form={form} setForm={setForm} unidad="A" />
+                <CampoNum label="Alerta"  campo="amperajeAlerta"  form={form} setForm={setForm} unidad="A" />
+                <CampoNum label="Crítico" campo="amperajeCritico" form={form} setForm={setForm} unidad="A" />
+              </div>
+            </div>
+          )}
+
+          {mide.voltaje && (
+            <div className="col-span-2 sm:col-span-4">
+              <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Voltaje</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <CampoNum label="Mín"    campo="voltajeMin"   form={form} setForm={setForm} unidad="V" />
+                <CampoNum label="Máx"    campo="voltajeMax"   form={form} setForm={setForm} unidad="V" />
+                <CampoNum label="Alerta" campo="voltajeAlerta" form={form} setForm={setForm} unidad="V" />
+              </div>
+            </div>
+          )}
+
+          {mide.presion && (
+            <div className="col-span-2 sm:col-span-4">
+              <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Presión</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <CampoNum label="Normal"  campo="presionNormal"  form={form} setForm={setForm} unidad="bar" />
+                <CampoNum label="Alerta"  campo="presionAlerta"  form={form} setForm={setForm} unidad="bar" />
+                <CampoNum label="Crítica" campo="presionCritica" form={form} setForm={setForm} unidad="bar" />
+              </div>
+            </div>
+          )}
+
+          {mide.bateria && (
+            <div className="col-span-2 sm:col-span-4">
+              <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Batería <span className="font-normal normal-case text-slate-500">(valores bajos = peor)</span></p>
+              <div className="grid grid-cols-2 gap-3">
+                <CampoNum label="Alerta"  campo="bateriaAlerta"  form={form} setForm={setForm} unidad="%" />
+                <CampoNum label="Crítica" campo="bateriaCritica" form={form} setForm={setForm} unidad="%" />
+              </div>
+            </div>
+          )}
+
+          {mide.toner && (
+            <div className="col-span-2 sm:col-span-4">
+              <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Tóner / Consumible</p>
+              <div className="grid grid-cols-2 gap-3">
+                <CampoNum label="Alerta"  campo="tonerAlerta"  form={form} setForm={setForm} unidad="%" />
+                <CampoNum label="Crítico" campo="tonerCritico" form={form} setForm={setForm} unidad="%" />
+              </div>
+            </div>
+          )}
 
           <div className="col-span-2 sm:col-span-4">
-            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Amperaje</p>
+            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">
+              Intervalos de mantenimiento
+            </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <CampoNum label="Normal"  campo="amperajeNormal"  form={form} setForm={setForm} unidad="A" />
-              <CampoNum label="Alerta"  campo="amperajeAlerta"  form={form} setForm={setForm} unidad="A" />
-              <CampoNum label="Crítico" campo="amperajeCritico" form={form} setForm={setForm} unidad="A" />
+              <CampoNum label="Medición c/" campo="intervaloMedicionHoras" form={form} setForm={setForm} unidad="hs" />
+              {(mide.vibracion || mide.amperaje || mide.presion) && (
+                <CampoNum label="Lubricación c/" campo="intervaloLubricacionHoras" form={form} setForm={setForm} unidad="hs" />
+              )}
+              {mide.vibracion && (
+                <CampoNum label="Rodamientos c/" campo="intervaloRodamientoHoras" form={form} setForm={setForm} unidad="hs" />
+              )}
             </div>
-          </div>
-
-          <div className="col-span-2 sm:col-span-4">
-            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Presión</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <CampoNum label="Normal"  campo="presionNormal"  form={form} setForm={setForm} unidad="bar" />
-              <CampoNum label="Alerta"  campo="presionAlerta"  form={form} setForm={setForm} unidad="bar" />
-              <CampoNum label="Crítica" campo="presionCritica" form={form} setForm={setForm} unidad="bar" />
-            </div>
-          </div>
-
-          <div className="col-span-2 sm:col-span-4">
-            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Voltaje</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <CampoNum label="Mín"    campo="voltajeMin"   form={form} setForm={setForm} unidad="V" />
-              <CampoNum label="Máx"    campo="voltajeMax"   form={form} setForm={setForm} unidad="V" />
-              <CampoNum label="Alerta" campo="voltajeAlerta" form={form} setForm={setForm} unidad="V" />
-            </div>
-          </div>
-
-          <div className="col-span-2 sm:col-span-4">
-            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Batería / Tóner (valores bajos = peor)</p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <CampoNum label="Batería alerta"   campo="bateriaAlerta"  form={form} setForm={setForm} unidad="%" />
-              <CampoNum label="Batería crítica"  campo="bateriaCritica" form={form} setForm={setForm} unidad="%" />
-              <CampoNum label="Tóner alerta"     campo="tonerAlerta"    form={form} setForm={setForm} unidad="%" />
-              <CampoNum label="Tóner crítico"    campo="tonerCritico"   form={form} setForm={setForm} unidad="%" />
-            </div>
-          </div>
-
-          <div className="col-span-2 sm:col-span-4">
-            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Intervalos de mantenimiento</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <CampoNum label="Medición c/"     campo="intervaloMedicionHoras"     form={form} setForm={setForm} unidad="hs" />
-              <CampoNum label="Lubricación c/"  campo="intervaloLubricacionHoras"  form={form} setForm={setForm} unidad="hs" />
-              <CampoNum label="Rodamientos c/"  campo="intervaloRodamientoHoras"   form={form} setForm={setForm} unidad="hs" />
-            </div>
+            {!mide.vibracion && !mide.amperaje && !mide.presion && (
+              <p className="text-xs text-slate-500 italic mt-2">
+                Para equipos electrónicos / consumibles, el intervalo suele ser por meses, no por horas. Usá el campo "Próximo mantenimiento" arriba.
+              </p>
+            )}
           </div>
         </div>
       )}
