@@ -920,9 +920,20 @@ export const Admin: React.FC = () => {
                   {modoSeed && (
                     <button
                       onClick={async () => {
-                        const confirmacion = prompt(
-                          `SEMBRAR DATASET "Escuela Nueva Austral" EN:\n\n${emp.nombre}\n\nVa a crear 50 activos con prefijo AUS-, 18 meses de mediciones y tareas, incluyendo casos de tendencia para el predictivo.\n\nIdempotente: si lo corres de nuevo no duplica. Los activos del cliente SIN prefijo AUS- NO se tocan.\n\nPara confirmar, escribi el nombre EXACTO de la empresa:`,
-                        );
+                        const advertencia =
+                          `DATASET: ESCUELA (50 activos)\n\n` +
+                          `Sembrar en: ${emp.nombre}\n\n` +
+                          `Contiene equipos tipicos de una escuela:\n` +
+                          `laptops, tablets, proyectores, splits AC, calefactores,\n` +
+                          `dispensers, impresoras, microondas, bombas, grupo electrogeno\n` +
+                          `y extractor de cocina. NO sembrar en otros rubros (panaderia,\n` +
+                          `alquiler de herramientas, etc) o vas a tener data incoherente.\n\n` +
+                          `Crea 18 meses de historial, mediciones, tareas y casos de\n` +
+                          `tendencia para el modulo predictivo. Activos con prefijo AUS-.\n\n` +
+                          `Idempotente: re-corre sin duplicar.\n` +
+                          `Los activos SIN prefijo AUS- NO se tocan.\n\n` +
+                          `Para confirmar, escribi el nombre EXACTO de la empresa:`;
+                        const confirmacion = prompt(advertencia);
                         if (confirmacion == null) return;
                         if (confirmacion.trim().toLowerCase() !== emp.nombre.trim().toLowerCase()) {
                           alert('Nombre no coincide. Operacion cancelada.');
@@ -930,15 +941,21 @@ export const Admin: React.FC = () => {
                         }
                         try {
                           const res = await apiFetch(`admin/empresas/${emp.id}/seed-austral`, { method: 'POST' });
-                          if (!res.ok) { alert('Error al sembrar dataset.'); return; }
+                          if (!res.ok) {
+                            const detalle = await res.text().catch(() => '');
+                            alert(`Error al sembrar dataset (${res.status}).\n\n${detalle.slice(0, 500)}`);
+                            return;
+                          }
                           const r = await res.json();
                           alert(`Listo en ${emp.nombre}.\n\nSectores nuevos: ${r.sectoresCreados}\nTipos nuevos: ${r.tiposCreados}\nActivos nuevos: ${r.activosCreados}\nActivos reseedeados: ${r.activosExistentes}\nMediciones: ${r.medicionesCreadas}\nTareas: ${r.tareasCreadas}`);
                           cargar();
-                        } catch { alert('Error al sembrar dataset.'); }
+                        } catch (e) {
+                          alert(`Error al sembrar dataset.\n\n${e instanceof Error ? e.message : String(e)}`);
+                        }
                       }}
                       className="w-full flex items-center gap-2 border-2 border-violet-400 bg-violet-50 px-3 py-2 text-sm font-bold text-violet-800 hover:border-violet-700 transition-colors"
                     >
-                      <Sparkles size={15} /> Sembrar dataset Austral
+                      <Sparkles size={15} /> Sembrar dataset ESCUELA (Austral)
                     </button>
                   )}
 

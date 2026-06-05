@@ -206,7 +206,7 @@ function generarMediciones(
     }
     if (flags.mideVibracion) {
       if (spec.tendencia === 'vibracion-creciente') {
-        med.vibracion = ratio < 0.4 ? 'ninguna' : ratio < 0.75 ? 'leve' : 'media';
+        med.vibracion = ratio < 0.4 ? 'ninguna' : ratio < 0.75 ? 'leve' : 'moderada';
       } else {
         med.vibracion = Math.random() < 0.92 ? 'ninguna' : 'leve';
       }
@@ -247,7 +247,7 @@ function generarTareas(activoId: string, spec: ActivoSpec, numeroBase: { value: 
       prioridad: 'media',
       fechaProgramada: fechaMesesAtras(m, -2),
       fechaRealizada: fechaMesesAtras(m, 0),
-      estado: 'cerrada',
+      estado: 'completado',
       observaciones: 'Mantenimiento preventivo programado. Limpieza general, revision visual, prueba funcional.',
       materiales: spec.categoria === 'split' ? 'Filtros de aire, limpiador desinfectante' :
                   spec.categoria === 'calefactor' ? 'Junta de gas, limpieza de quemador' :
@@ -269,7 +269,7 @@ function generarTareas(activoId: string, spec: ActivoSpec, numeroBase: { value: 
         prioridad: 'alta',
         fechaProgramada: fechaMesesAtras(m, -1),
         fechaRealizada: fechaMesesAtras(m, 0),
-        estado: 'cerrada',
+        estado: 'completado',
         observaciones: 'No enfria el agua. Recambio de termostato y revision de gas refrigerante.',
         materiales: 'Termostato dispenser, gas refrigerante R134a',
         horasTrabajo: 2,
