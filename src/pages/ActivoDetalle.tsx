@@ -29,6 +29,7 @@ export const ActivoDetalle: React.FC = () => {
     deleteActivo, deleteMedicion, updateActivo, addTarea,
     getSectorNombre, getTipoNombre, getTecnicoNombre,
   } = useActivos();
+  const qrRef = useRef<SVGSVGElement | null>(null);
 
   const activo = activos.find((a) => a.id === id);
   if (!activo) return <div className="p-8 text-red-600 font-bold">Activo no encontrado</div>;
@@ -57,7 +58,6 @@ export const ActivoDetalle: React.FC = () => {
     window.alert('Tarea predictiva creada y agregada al historial de mantenimiento.');
   };
 
-  const qrRef = useRef<SVGSVGElement | null>(null);
   const handlePrint = () => {
     const svg = qrRef.current;
     if (!svg) {
