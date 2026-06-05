@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { parseISO } from 'date-fns';
-import { LineChart as LineChartIcon } from 'lucide-react';
-import { PanelParametro } from './PanelParametro';
+import { LineChart as LineChartIcon, ChevronDown, ChevronUp } from 'lucide-react';
+import { PanelParametro, ResumenParametro, severidadDeParametro } from './PanelParametro';
+import { Direccion, PuntoMedicion, Severidad } from '../../utils/analisisPredictivo';
 import { Activo, Medicion, TareaMantenimiento, TipoActivo } from '../../data/types';
 
 interface AnalisisActivoProps {
@@ -13,18 +13,34 @@ interface AnalisisActivoProps {
 }
 
 const RANGOS = [
-  { label: '1 mes', dias: 30 },
-  { label: '3 meses', dias: 90 },
-  { label: '6 meses', dias: 180 },
-  { label: '12 meses', dias: 365 },
-  { label: '18 meses', dias: 548 },
+  { label: '1m', dias: 30 },
+  { label: '3m', dias: 90 },
+  { label: '6m', dias: 180 },
+  { label: '12m', dias: 365 },
+  { label: '18m', dias: 548 },
   { label: 'Todo', dias: 100000 },
 ];
+
+interface ParametroConfig {
+  key: string;
+  parametro: string;
+  unidad: string;
+  direccion: Direccion;
+  habilitado: boolean;
+  puntos: PuntoMedicion[];
+  alerta?: number | null;
+  critico?: number | null;
+  rangoNormal?: { min: number; max: number };
+}
+
+const SEVERIDAD_PESO: Record<Severidad, number> = { critico: 3, alerta: 2, observar: 1, normal: 0 };
 
 export const AnalisisActivo: React.FC<AnalisisActivoProps> = ({
   activo, tipo, mediciones, tareas, onCrearTareaPredictiva,
 }) => {
   const [rangoDias, setRangoDias] = useState<number>(180);
+  const [abiertos, setAbiertos] = useState<Set<string>>(new Set());
+  const [usuarioToco, setUsuarioToco] = useState(false);
 
   const medicionesFiltradas = useMemo(() => {
     const limite = Date.now() - rangoDias * 86400000;
@@ -47,19 +63,88 @@ export const AnalisisActivo: React.FC<AnalisisActivoProps> = ({
       .filter((x): x is { fecha: Date; label: string } => x !== null);
   }, [tareas, activo.id, rangoDias]);
 
-  // Que parametros muestro: lo decide el tipo de activo via sus flags mide*.
-  const mide = {
-    temperatura: tipo?.mideTemperatura ?? false,
-    amperaje: tipo?.mideAmperaje ?? false,
-    voltaje: tipo?.mideVoltaje ?? false,
-    presion: tipo?.midePresion ?? false,
-    bateria: tipo?.mideBateria ?? false,
-    toner: tipo?.mideToner ?? false,
-    contador: tipo?.mideContador ?? false,
-  };
-  const hayParametros = mide.temperatura || mide.amperaje || mide.voltaje || mide.presion || mide.bateria || mide.toner || mide.contador;
+  const params: ParametroConfig[] = useMemo(() => ([
+    {
+      key: 'temperatura', parametro: 'Temperatura', unidad: '°C', direccion: 'creciente' as Direccion,
+      habilitado: tipo?.mideTemperatura ?? false,
+      puntos: medicionesFiltradas.filter((m) => m.temperatura != null).map((m) => ({ fecha: new Date(m.fecha), valor: m.temperatura as number })),
+      alerta: activo.temperaturaAlerta, critico: activo.temperaturaCritica,
+    },
+    {
+      key: 'amperaje', parametro: 'Amperaje', unidad: 'A', direccion: 'creciente' as Direccion,
+      habilitado: tipo?.mideAmperaje ?? false,
+      puntos: medicionesFiltradas.filter((m) => m.amperaje != null).map((m) => ({ fecha: new Date(m.fecha), valor: m.amperaje as number })),
+      alerta: activo.amperajeAlerta, critico: activo.amperajeCritico,
+    },
+    {
+      key: 'voltaje', parametro: 'Voltaje', unidad: 'V', direccion: 'creciente' as Direccion,
+      habilitado: tipo?.mideVoltaje ?? false,
+      puntos: medicionesFiltradas.filter((m) => (m as any).voltaje != null).map((m) => ({ fecha: new Date(m.fecha), valor: (m as any).voltaje as number })),
+      alerta: activo.voltajeAlerta,
+      rangoNormal: activo.voltajeMin != null && activo.voltajeMax != null ? { min: activo.voltajeMin, max: activo.voltajeMax } : undefined,
+    },
+    {
+      key: 'presion', parametro: 'Presion', unidad: 'bar', direccion: 'creciente' as Direccion,
+      habilitado: tipo?.midePresion ?? false,
+      puntos: medicionesFiltradas.filter((m) => m.presion != null).map((m) => ({ fecha: new Date(m.fecha), valor: m.presion as number })),
+      alerta: activo.presionAlerta, critico: activo.presionCritica,
+    },
+    {
+      key: 'bateria', parametro: 'Bateria', unidad: '%', direccion: 'decreciente' as Direccion,
+      habilitado: tipo?.mideBateria ?? false,
+      puntos: medicionesFiltradas.filter((m) => (m as any).porcentajeBateria != null).map((m) => ({ fecha: new Date(m.fecha), valor: (m as any).porcentajeBateria as number })),
+      alerta: activo.bateriaAlerta, critico: activo.bateriaCritica,
+    },
+    {
+      key: 'toner', parametro: 'Toner', unidad: '%', direccion: 'decreciente' as Direccion,
+      habilitado: tipo?.mideToner ?? false,
+      puntos: medicionesFiltradas.filter((m) => (m as any).nivelToner != null).map((m) => ({ fecha: new Date(m.fecha), valor: (m as any).nivelToner as number })),
+      alerta: activo.tonerAlerta, critico: activo.tonerCritico,
+    },
+    {
+      key: 'contador', parametro: 'Contador', unidad: '', direccion: 'creciente' as Direccion,
+      habilitado: tipo?.mideContador ?? false,
+      puntos: medicionesFiltradas.filter((m) => (m as any).contador != null).map((m) => ({ fecha: new Date(m.fecha), valor: (m as any).contador as number })),
+      alerta: activo.intervaloMedicionHoras ? activo.horasActuales + activo.intervaloMedicionHoras : null,
+      critico: activo.intervaloMedicionHoras ? activo.horasActuales + activo.intervaloMedicionHoras * 1.2 : null,
+    },
+  ].filter((p) => p.habilitado)), [tipo, activo, medicionesFiltradas]);
 
-  if (!hayParametros) {
+  // Conteo de severidades para el header
+  const conteo = useMemo(() => {
+    const c: Record<Severidad, number> = { normal: 0, observar: 0, alerta: 0, critico: 0 };
+    for (const p of params) {
+      const s = severidadDeParametro(p.puntos, p.alerta, p.critico, p.direccion, p.parametro, p.unidad);
+      c[s]++;
+    }
+    return c;
+  }, [params]);
+
+  // Auto-abrir el panel mas urgente la primera vez que el usuario llega
+  const peor = useMemo(() => {
+    let mejor: { key: string; peso: number } | null = null;
+    for (const p of params) {
+      const s = severidadDeParametro(p.puntos, p.alerta, p.critico, p.direccion, p.parametro, p.unidad);
+      const peso = SEVERIDAD_PESO[s];
+      if (peso > 0 && (!mejor || peso > mejor.peso)) mejor = { key: p.key, peso };
+    }
+    return mejor;
+  }, [params]);
+
+  React.useEffect(() => {
+    if (!usuarioToco && peor) setAbiertos(new Set([peor.key]));
+  }, [peor, usuarioToco]);
+
+  const toggle = (key: string) => {
+    setUsuarioToco(true);
+    setAbiertos((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
+
+  if (params.length === 0) {
     return (
       <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4 mb-6">
         <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-2 flex items-center gap-2">
@@ -73,118 +158,76 @@ export const AnalisisActivo: React.FC<AnalisisActivoProps> = ({
   }
 
   return (
-    <div className="mb-6">
-      <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4 mb-4">
-        <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] mb-6">
+      {/* Header de la seccion */}
+      <div className="p-3 sm:p-4 border-b-2 border-slate-200">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
             <LineChartIcon size={16} /> Analisis predictivo
           </h2>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase text-slate-500">Rango:</span>
-            <div className="flex border-2 border-slate-300">
-              {RANGOS.map((r) => (
-                <button
-                  key={r.dias}
-                  onClick={() => setRangoDias(r.dias)}
-                  className={`px-2 py-1 text-xs font-bold uppercase ${
-                    rangoDias === r.dias ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  {r.label}
-                </button>
-              ))}
-            </div>
+          <div className="flex border-2 border-slate-300 flex-wrap">
+            {RANGOS.map((r) => (
+              <button
+                key={r.dias}
+                onClick={() => setRangoDias(r.dias)}
+                className={`px-2 py-1 text-[11px] font-black uppercase ${
+                  rangoDias === r.dias ? 'bg-slate-900 text-white' : 'bg-white text-slate-600'
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
           </div>
         </div>
-        <p className="text-xs text-slate-500 mt-2">
-          {medicionesFiltradas.length} mediciones en el rango seleccionado · {tareasParaMarcar.length} tareas marcadas en los graficos.
-        </p>
+
+        {/* Resumen del estado */}
+        <div className="mt-2 flex items-center gap-2 flex-wrap text-[11px] sm:text-xs">
+          <span className="font-bold text-slate-600">{params.length} parametros</span>
+          {conteo.critico > 0 && <span className="px-1.5 py-0.5 bg-red-100 text-red-800 font-black rounded">{conteo.critico} CRITICO</span>}
+          {conteo.alerta > 0 && <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 font-black rounded">{conteo.alerta} ALERTA</span>}
+          {conteo.observar > 0 && <span className="px-1.5 py-0.5 bg-sky-100 text-sky-800 font-black rounded">{conteo.observar} OBSERVAR</span>}
+          {conteo.normal === params.length && <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 font-black rounded">TODO OK</span>}
+          <span className="ml-auto text-slate-400">{medicionesFiltradas.length} mediciones</span>
+        </div>
       </div>
 
-      {mide.temperatura && (
-        <PanelParametro
-          parametro="Temperatura"
-          unidad="°C"
-          direccion="creciente"
-          puntos={medicionesFiltradas.filter((m) => m.temperatura != null).map((m) => ({ fecha: new Date(m.fecha), valor: m.temperatura as number }))}
-          alerta={activo.temperaturaAlerta}
-          critico={activo.temperaturaCritica}
-          marcadores={tareasParaMarcar}
-          onCrearTareaPredictiva={onCrearTareaPredictiva}
-        />
-      )}
-      {mide.amperaje && (
-        <PanelParametro
-          parametro="Amperaje"
-          unidad="A"
-          direccion="creciente"
-          puntos={medicionesFiltradas.filter((m) => m.amperaje != null).map((m) => ({ fecha: new Date(m.fecha), valor: m.amperaje as number }))}
-          alerta={activo.amperajeAlerta ?? null}
-          critico={activo.amperajeCritico ?? null}
-          marcadores={tareasParaMarcar}
-          onCrearTareaPredictiva={onCrearTareaPredictiva}
-        />
-      )}
-      {mide.voltaje && (
-        <PanelParametro
-          parametro="Voltaje"
-          unidad="V"
-          direccion="creciente"
-          puntos={medicionesFiltradas.filter((m) => (m as any).voltaje != null).map((m) => ({ fecha: new Date(m.fecha), valor: (m as any).voltaje as number }))}
-          alerta={activo.voltajeAlerta ?? null}
-          rangoNormal={activo.voltajeMin != null && activo.voltajeMax != null ? { min: activo.voltajeMin, max: activo.voltajeMax } : undefined}
-          marcadores={tareasParaMarcar}
-          onCrearTareaPredictiva={onCrearTareaPredictiva}
-        />
-      )}
-      {mide.presion && (
-        <PanelParametro
-          parametro="Presion"
-          unidad="bar"
-          direccion="creciente"
-          puntos={medicionesFiltradas.filter((m) => m.presion != null).map((m) => ({ fecha: new Date(m.fecha), valor: m.presion as number }))}
-          alerta={activo.presionAlerta ?? null}
-          critico={activo.presionCritica ?? null}
-          marcadores={tareasParaMarcar}
-          onCrearTareaPredictiva={onCrearTareaPredictiva}
-        />
-      )}
-      {mide.bateria && (
-        <PanelParametro
-          parametro="Bateria"
-          unidad="%"
-          direccion="decreciente"
-          puntos={medicionesFiltradas.filter((m) => (m as any).porcentajeBateria != null).map((m) => ({ fecha: new Date(m.fecha), valor: (m as any).porcentajeBateria as number }))}
-          alerta={activo.bateriaAlerta ?? null}
-          critico={activo.bateriaCritica ?? null}
-          marcadores={tareasParaMarcar}
-          onCrearTareaPredictiva={onCrearTareaPredictiva}
-        />
-      )}
-      {mide.toner && (
-        <PanelParametro
-          parametro="Toner"
-          unidad="%"
-          direccion="decreciente"
-          puntos={medicionesFiltradas.filter((m) => (m as any).nivelToner != null).map((m) => ({ fecha: new Date(m.fecha), valor: (m as any).nivelToner as number }))}
-          alerta={activo.tonerAlerta ?? null}
-          critico={activo.tonerCritico ?? null}
-          marcadores={tareasParaMarcar}
-          onCrearTareaPredictiva={onCrearTareaPredictiva}
-        />
-      )}
-      {mide.contador && (
-        <PanelParametro
-          parametro="Contador"
-          unidad=""
-          direccion="creciente"
-          puntos={medicionesFiltradas.filter((m) => (m as any).contador != null).map((m) => ({ fecha: new Date(m.fecha), valor: (m as any).contador as number }))}
-          alerta={activo.intervaloMedicionHoras ? activo.horasActuales + activo.intervaloMedicionHoras : null}
-          critico={activo.intervaloMedicionHoras ? activo.horasActuales + activo.intervaloMedicionHoras * 1.2 : null}
-          marcadores={tareasParaMarcar}
-          onCrearTareaPredictiva={onCrearTareaPredictiva}
-        />
-      )}
+      {/* Lista de parametros en acordeon */}
+      <div className="divide-y-2 divide-slate-100">
+        {params.map((p) => {
+          const abierto = abiertos.has(p.key);
+          return (
+            <div key={p.key}>
+              <button
+                onClick={() => toggle(p.key)}
+                className="w-full flex items-center gap-2 px-3 sm:px-4 py-2.5 hover:bg-slate-50 active:bg-slate-100 transition-colors"
+              >
+                <ResumenParametro
+                  parametro={p.parametro}
+                  unidad={p.unidad}
+                  puntos={p.puntos}
+                  alerta={p.alerta}
+                  critico={p.critico}
+                  direccion={p.direccion}
+                />
+                {abierto ? <ChevronUp size={16} className="text-slate-400 flex-shrink-0" /> : <ChevronDown size={16} className="text-slate-400 flex-shrink-0" />}
+              </button>
+              {abierto && (
+                <PanelParametro
+                  parametro={p.parametro}
+                  unidad={p.unidad}
+                  direccion={p.direccion}
+                  puntos={p.puntos}
+                  alerta={p.alerta}
+                  critico={p.critico}
+                  rangoNormal={p.rangoNormal}
+                  marcadores={tareasParaMarcar}
+                  onCrearTareaPredictiva={onCrearTareaPredictiva}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };

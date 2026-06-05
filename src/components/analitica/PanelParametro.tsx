@@ -6,25 +6,22 @@ import {
   ResponsiveContainer, ReferenceLine, ReferenceDot,
 } from 'recharts';
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, Plus } from 'lucide-react';
-import { analizarTendencia, Direccion, PuntoMedicion, Severidad } from '../../utils/analisisPredictivo';
+import { analizarTendencia, Direccion, PuntoMedicion, Severidad, ResultadoAnalisis } from '../../utils/analisisPredictivo';
 
 interface MarcadorTarea {
   fecha: Date;
-  label: string; // ej "Correctivo: cambio termostato"
+  label: string;
 }
 
 interface PanelParametroProps {
-  parametro: string; // "Temperatura", "Bateria", etc.
-  unidad: string;    // "°C", "%", "A", "bar", "V"
+  parametro: string;
+  unidad: string;
   puntos: PuntoMedicion[];
   alerta?: number | null;
   critico?: number | null;
   direccion: Direccion;
-  // Para voltaje: tambien hay un min/max "normal" que no son alertas
   rangoNormal?: { min: number; max: number };
-  // Tareas marcadas en el gráfico (correctivos, preventivos cerrados)
   marcadores?: MarcadorTarea[];
-  // Callback para crear tarea predictiva con la recomendacion
   onCrearTareaPredictiva?: (texto: string) => void;
 }
 
@@ -38,25 +35,29 @@ const COLOR_PARAMETRO: Record<string, string> = {
   Contador: '#64748B',
 };
 
-const COLOR_SEVERIDAD: Record<Severidad, { bg: string; border: string; text: string; icon: string }> = {
-  normal:   { bg: 'bg-emerald-50',  border: 'border-emerald-400', text: 'text-emerald-700', icon: 'text-emerald-600' },
-  observar: { bg: 'bg-sky-50',      border: 'border-sky-400',     text: 'text-sky-700',     icon: 'text-sky-600' },
-  alerta:   { bg: 'bg-amber-50',    border: 'border-amber-400',   text: 'text-amber-700',   icon: 'text-amber-600' },
-  critico:  { bg: 'bg-red-50',      border: 'border-red-400',     text: 'text-red-700',     icon: 'text-red-600' },
+const COLOR_SEVERIDAD: Record<Severidad, { bg: string; border: string; text: string; icon: string; chip: string }> = {
+  normal:   { bg: 'bg-emerald-50', border: 'border-emerald-400', text: 'text-emerald-700', icon: 'text-emerald-600', chip: 'bg-emerald-100 text-emerald-800' },
+  observar: { bg: 'bg-sky-50',     border: 'border-sky-400',     text: 'text-sky-700',     icon: 'text-sky-600',     chip: 'bg-sky-100 text-sky-800' },
+  alerta:   { bg: 'bg-amber-50',   border: 'border-amber-400',   text: 'text-amber-700',   icon: 'text-amber-600',   chip: 'bg-amber-100 text-amber-800' },
+  critico:  { bg: 'bg-red-50',     border: 'border-red-400',     text: 'text-red-700',     icon: 'text-red-600',     chip: 'bg-red-100 text-red-800' },
 };
 
+// Exportado para que AnalisisActivo pueda calcular severidad sin renderizar.
+export function analizarParametro(
+  parametro: string,
+  unidad: string,
+  puntos: PuntoMedicion[],
+  alerta: number | null | undefined,
+  critico: number | null | undefined,
+  direccion: Direccion,
+): ResultadoAnalisis {
+  return analizarTendencia({ puntos, alerta, critico, direccion, unidad, parametro });
+}
+
 export const PanelParametro: React.FC<PanelParametroProps> = ({
-  parametro,
-  unidad,
-  puntos,
-  alerta,
-  critico,
-  direccion,
-  rangoNormal,
-  marcadores,
-  onCrearTareaPredictiva,
+  parametro, unidad, puntos, alerta, critico, direccion, rangoNormal, marcadores, onCrearTareaPredictiva,
 }) => {
-  const analisis = analizarTendencia({ puntos, alerta, critico, direccion, unidad, parametro });
+  const analisis = analizarParametro(parametro, unidad, puntos, alerta, critico, direccion);
   const colorLinea = COLOR_PARAMETRO[parametro] ?? '#F97316';
   const colorSev = COLOR_SEVERIDAD[analisis.severidad];
 
@@ -69,97 +70,88 @@ export const PanelParametro: React.FC<PanelParametroProps> = ({
       valor: p.valor,
     }));
 
-  // Detectar tareas para marcar como puntos verticales en el grafico:
-  // las pasamos como ReferenceLine usando el ms timestamp de su fecha.
   const marcadoresConFecha = (marcadores ?? [])
     .filter((m) => m.fecha instanceof Date && !isNaN(m.fecha.getTime()))
-    .map((m) => ({ ...m, fechaMs: m.fecha.getTime(), label: m.label }));
+    .map((m) => ({ ...m, fechaMs: m.fecha.getTime() }));
 
   const TendenciaIcon = analisis.tendencia === 'subiendo' ? TrendingUp
                        : analisis.tendencia === 'bajando' ? TrendingDown
                        : Minus;
 
   return (
-    <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4 mb-4">
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">{parametro}</h3>
-        <div className="flex items-center gap-2">
-          {analisis.tendencia && (
-            <span className={`inline-flex items-center gap-1 text-xs font-black uppercase px-2 py-0.5 border-2 ${colorSev.border} ${colorSev.bg} ${colorSev.text}`}>
-              <TendenciaIcon size={12} /> {analisis.tendencia}
-            </span>
-          )}
-          {analisis.severidad !== 'normal' && (
-            <span className={`inline-flex items-center gap-1 text-xs font-black uppercase px-2 py-0.5 border-2 ${colorSev.border} ${colorSev.bg} ${colorSev.text}`}>
-              <AlertTriangle size={12} />
-              {analisis.severidad}
-            </span>
-          )}
-        </div>
-      </div>
-
+    <div className="bg-white">
       {data.length < 2 ? (
-        <p className="text-sm text-slate-500 italic">
+        <p className="text-sm text-slate-500 italic px-3 py-4">
           Se necesitan al menos 2 mediciones para mostrar tendencia. Actual: {data.length}.
         </p>
       ) : (
         <>
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="fecha" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} domain={['auto', 'auto']} />
-              <Tooltip
-                contentStyle={{ borderRadius: 0, border: '2px solid #0f172a' }}
-                formatter={(v: any) => [`${v}${unidad}`, parametro]}
-              />
-              {alerta != null && (
-                <ReferenceLine y={alerta} stroke="#F59E0B" strokeDasharray="4 2" label={{ value: `Alerta ${alerta}${unidad}`, fontSize: 10, fill: '#B45309', position: 'right' }} />
-              )}
-              {critico != null && (
-                <ReferenceLine y={critico} stroke="#DC2626" strokeDasharray="4 2" label={{ value: `Critico ${critico}${unidad}`, fontSize: 10, fill: '#991B1B', position: 'right' }} />
-              )}
-              {rangoNormal && (
-                <>
-                  <ReferenceLine y={rangoNormal.min} stroke="#64748B" strokeDasharray="2 4" label={{ value: `Min ${rangoNormal.min}${unidad}`, fontSize: 9, fill: '#64748B', position: 'left' }} />
-                  <ReferenceLine y={rangoNormal.max} stroke="#64748B" strokeDasharray="2 4" label={{ value: `Max ${rangoNormal.max}${unidad}`, fontSize: 9, fill: '#64748B', position: 'left' }} />
-                </>
-              )}
-              {marcadoresConFecha.map((m, i) => {
-                // Encontrar el punto de data mas cercano al ms del marcador
-                const punto = data.find((d) => Math.abs(d.fechaMs - m.fechaMs) < 7 * 86400000);
-                if (!punto) return null;
-                return (
-                  <ReferenceDot key={i} x={punto.fecha} y={punto.valor} r={6} fill="#1E293B" stroke="#F97316" strokeWidth={2} />
-                );
-              })}
-              <Line type="monotone" dataKey="valor" stroke={colorLinea} strokeWidth={2.5} dot={{ r: 3, stroke: '#1E293B', strokeWidth: 1, fill: colorLinea }} name={parametro} />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="px-2 sm:px-3 pt-2">
+            <ResponsiveContainer width="100%" height={180}>
+              <LineChart data={data} margin={{ top: 8, right: 8, left: -14, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="fecha" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 10 }} domain={['auto', 'auto']} width={36} />
+                <Tooltip
+                  contentStyle={{ borderRadius: 0, border: '2px solid #0f172a', fontSize: 12 }}
+                  formatter={(v: any) => [`${v}${unidad}`, parametro]}
+                />
+                {alerta != null && (
+                  <ReferenceLine y={alerta} stroke="#F59E0B" strokeDasharray="4 2" />
+                )}
+                {critico != null && (
+                  <ReferenceLine y={critico} stroke="#DC2626" strokeDasharray="4 2" />
+                )}
+                {rangoNormal && (
+                  <>
+                    <ReferenceLine y={rangoNormal.min} stroke="#64748B" strokeDasharray="2 4" />
+                    <ReferenceLine y={rangoNormal.max} stroke="#64748B" strokeDasharray="2 4" />
+                  </>
+                )}
+                {marcadoresConFecha.map((m, i) => {
+                  const punto = data.find((d) => Math.abs(d.fechaMs - m.fechaMs) < 7 * 86400000);
+                  if (!punto) return null;
+                  return (
+                    <ReferenceDot key={i} x={punto.fecha} y={punto.valor} r={5} fill="#1E293B" stroke="#F97316" strokeWidth={2} />
+                  );
+                })}
+                <Line type="monotone" dataKey="valor" stroke={colorLinea} strokeWidth={2.2} dot={{ r: 2.5, stroke: '#1E293B', strokeWidth: 1, fill: colorLinea }} name={parametro} />
+              </LineChart>
+            </ResponsiveContainer>
 
-          <div className={`mt-3 p-3 border-2 ${colorSev.border} ${colorSev.bg}`}>
+            <div className="flex items-center justify-end gap-3 text-[10px] text-slate-500 mt-1 flex-wrap">
+              {alerta != null && <span className="flex items-center gap-1"><span className="inline-block w-3 h-0.5 bg-amber-500"></span>Alerta {alerta}{unidad}</span>}
+              {critico != null && <span className="flex items-center gap-1"><span className="inline-block w-3 h-0.5 bg-red-600"></span>Critico {critico}{unidad}</span>}
+              {rangoNormal && <span className="flex items-center gap-1"><span className="inline-block w-3 h-0.5 bg-slate-500"></span>Rango {rangoNormal.min}-{rangoNormal.max}{unidad}</span>}
+              {marcadoresConFecha.length > 0 && <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-slate-900 border border-orange-500"></span>Tarea</span>}
+            </div>
+          </div>
+
+          <div className={`mx-2 sm:mx-3 mt-2 mb-2 p-2.5 border-2 ${colorSev.border} ${colorSev.bg}`}>
             <div className="flex items-start gap-2">
-              <AlertTriangle size={16} className={`${colorSev.icon} flex-shrink-0 mt-0.5`} />
+              <div className="flex flex-col items-center pt-0.5">
+                <TendenciaIcon size={14} className={colorSev.icon} />
+              </div>
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-bold ${colorSev.text}`}>{analisis.resumen}</p>
+                <p className={`text-xs sm:text-sm font-bold ${colorSev.text} leading-snug`}>{analisis.resumen}</p>
                 {analisis.pendienteMensual != null && Math.abs(analisis.pendienteMensual) > 0.01 && (
-                  <p className="text-xs text-slate-600 mt-1">
-                    Pendiente: {analisis.pendienteMensual > 0 ? '+' : ''}{analisis.pendienteMensual.toFixed(2)}{unidad}/mes
-                    {analisis.diasHastaAlerta != null && ` · ${analisis.diasHastaAlerta} dias hasta alerta`}
-                    {analisis.diasHastaCritico != null && ` · ${analisis.diasHastaCritico} dias hasta critico`}
+                  <p className="text-[11px] text-slate-600 mt-1 leading-snug">
+                    {analisis.pendienteMensual > 0 ? '+' : ''}{analisis.pendienteMensual.toFixed(2)}{unidad}/mes
+                    {analisis.diasHastaAlerta != null && ` · ${analisis.diasHastaAlerta}d hasta alerta`}
+                    {analisis.diasHastaCritico != null && ` · ${analisis.diasHastaCritico}d hasta critico`}
                   </p>
                 )}
                 {analisis.recomendacion && (
-                  <div className="mt-2 flex items-center gap-2 flex-wrap">
-                    <span className="text-xs text-slate-700 italic flex-1 min-w-[200px]">
-                      Recomendacion: {analisis.recomendacion}
-                    </span>
+                  <div className="mt-2">
+                    <p className="text-[11px] sm:text-xs text-slate-700 italic leading-snug">
+                      {analisis.recomendacion}
+                    </p>
                     {onCrearTareaPredictiva && (
                       <button
                         onClick={() => onCrearTareaPredictiva(analisis.recomendacion!)}
-                        className="inline-flex items-center gap-1 text-xs font-black uppercase tracking-wider bg-slate-900 text-white px-2.5 py-1.5 border-2 border-slate-900 shadow-[2px_2px_0px_0px_#1e293b] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
+                        className="mt-2 inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider bg-slate-900 text-white px-2.5 py-1.5 border-2 border-slate-900 shadow-[2px_2px_0px_0px_#1e293b] active:shadow-none active:translate-x-[1px] active:translate-y-[1px]"
                       >
-                        <Plus size={12} /> Tarea predictiva
+                        <Plus size={12} /> Crear tarea predictiva
                       </button>
                     )}
                   </div>
@@ -172,3 +164,49 @@ export const PanelParametro: React.FC<PanelParametroProps> = ({
     </div>
   );
 };
+
+// Resumen visible incluso cuando el panel esta colapsado
+export const ResumenParametro: React.FC<{
+  parametro: string;
+  unidad: string;
+  puntos: PuntoMedicion[];
+  alerta?: number | null;
+  critico?: number | null;
+  direccion: Direccion;
+}> = ({ parametro, unidad, puntos, alerta, critico, direccion }) => {
+  const analisis = analizarParametro(parametro, unidad, puntos, alerta, critico, direccion);
+  const colorSev = COLOR_SEVERIDAD[analisis.severidad];
+  const TendenciaIcon = analisis.tendencia === 'subiendo' ? TrendingUp
+                       : analisis.tendencia === 'bajando' ? TrendingDown
+                       : Minus;
+  return (
+    <div className="flex items-center gap-2 min-w-0 flex-1">
+      <span className="text-xs sm:text-sm font-black uppercase tracking-wide text-slate-700 truncate">{parametro}</span>
+      {analisis.ultimoValor != null && (
+        <span className="text-xs sm:text-sm font-mono font-bold text-slate-900 flex-shrink-0">
+          {analisis.ultimoValor.toFixed(1)}{unidad}
+        </span>
+      )}
+      {analisis.tendencia && analisis.tendencia !== 'estable' && (
+        <TendenciaIcon size={12} className={colorSev.icon} />
+      )}
+      {analisis.severidad !== 'normal' && (
+        <span className={`text-[10px] font-black uppercase px-1.5 py-0.5 rounded ${colorSev.chip} flex-shrink-0`}>
+          {analisis.severidad === 'observar' ? 'obs' : analisis.severidad}
+          {analisis.severidad !== 'observar' && analisis.diasHastaCritico != null && ` ${analisis.diasHastaCritico}d`}
+        </span>
+      )}
+    </div>
+  );
+};
+
+export function severidadDeParametro(
+  puntos: PuntoMedicion[],
+  alerta: number | null | undefined,
+  critico: number | null | undefined,
+  direccion: Direccion,
+  parametro: string,
+  unidad: string,
+): Severidad {
+  return analizarParametro(parametro, unidad, puntos, alerta, critico, direccion).severidad;
+}
