@@ -203,6 +203,23 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     if (!data.fechaIngreso) data.fechaIngreso = new Date();
     if (!data.estadoOperativo) data.estadoOperativo = 'operativo';
 
+    // Defensa: normalizar strings vacios a null (el frontend manda '' como
+    // default cuando no hay seleccion) y descartar IDs que no existen como
+    // Usuario o Sede de esta empresa (el frontend tiene un store local viejo
+    // de 'tecnicos' con IDs que ya no aplican). Sin esto: foreign key error.
+    if (typeof data.responsableId !== 'string' || data.responsableId.trim() === '') {
+      data.responsableId = null;
+    } else {
+      const u = await prisma.usuario.findFirst({ where: { id: data.responsableId, empresaId } });
+      if (!u) data.responsableId = null;
+    }
+    if (typeof data.sedeId !== 'string' || data.sedeId.trim() === '') {
+      data.sedeId = null;
+    } else {
+      const s = await prisma.sede.findFirst({ where: { id: data.sedeId, empresaId } });
+      if (!s) data.sedeId = null;
+    }
+
     const activo = await prisma.activo.create({
       data: { ...data, empresaId },
       include: includeRelaciones,
@@ -229,6 +246,19 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
     if (!existing) return res.status(404).json({ error: 'Activo no encontrado' });
 
     const data = pickActivoData(req.body);
+    // Misma defensa que en POST.
+    if (typeof data.responsableId !== 'string' || data.responsableId.trim() === '') {
+      data.responsableId = null;
+    } else {
+      const u = await prisma.usuario.findFirst({ where: { id: data.responsableId, empresaId } });
+      if (!u) data.responsableId = null;
+    }
+    if (typeof data.sedeId !== 'string' || data.sedeId.trim() === '') {
+      data.sedeId = null;
+    } else {
+      const s = await prisma.sede.findFirst({ where: { id: data.sedeId, empresaId } });
+      if (!s) data.sedeId = null;
+    }
     const activo = await prisma.activo.update({
       where: { id: req.params.id },
       data,

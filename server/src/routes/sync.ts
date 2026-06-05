@@ -93,18 +93,65 @@ router.put('/activos', asyncHandler(async (req, res) => {
   const empresaId = await resolveEmpresaId(req);
   const items: any[] = Array.isArray(req.body) ? req.body : [];
   const ids = items.map((i) => i.id);
+
+  // ─── Defensa contra IDs falsos del frontend ───────────────────────
+  // El frontend tiene un store local de 'tecnicos' con IDs que no existen
+  // como Usuario en BD. Si un activo viene con responsableId que no es un
+  // Usuario real, lo seteamos null para no romper la foreign key.
+  // sedeId, sectorId y tipoId tambien se sanean: vacios -> null o se
+  // descarta el activo (en sectorId y tipoId, que son obligatorios).
+  const respIds = items
+    .map((i) => i.responsableId)
+    .filter((id): id is string => typeof id === 'string' && id.trim().length > 0);
+  const usuariosExistentes = respIds.length > 0
+    ? await prisma.usuario.findMany({
+        where: { id: { in: respIds }, empresaId },
+        select: { id: true },
+      })
+    : [];
+  const responsablesValidos = new Set(usuariosExistentes.map((u) => u.id));
+
+  const sedeIds = items
+    .map((i) => i.sedeId)
+    .filter((id): id is string => typeof id === 'string' && id.trim().length > 0);
+  const sedesExistentes = sedeIds.length > 0
+    ? await prisma.sede.findMany({
+        where: { id: { in: sedeIds }, empresaId },
+        select: { id: true },
+      })
+    : [];
+  const sedesValidas = new Set(sedesExistentes.map((s) => s.id));
+
+  // Filtrar activos invalidos: sin sectorId o tipoId, los descartamos para
+  // que un activo malo no tire toda la transaccion (y que el frontend al
+  // menos sincronice el resto).
+  const itemsValidos = items.filter((i) => {
+    const sectorOk = typeof i.sectorId === 'string' && i.sectorId.trim().length > 0;
+    const tipoOk = typeof i.tipoId === 'string' && i.tipoId.trim().length > 0;
+    if (!sectorOk || !tipoOk) {
+      console.warn('[sync/activos] descartando activo sin sectorId/tipoId:', i.id, i.codigo);
+      return false;
+    }
+    return true;
+  });
+  const idsValidos = itemsValidos.map((i) => i.id);
+
   await prisma.$transaction([
-    ...(ids.length
-      ? [prisma.activo.deleteMany({ where: { empresaId, id: { notIn: ids } } })]
+    ...(idsValidos.length
+      ? [prisma.activo.deleteMany({ where: { empresaId, id: { notIn: idsValidos } } })]
       : []),
-    ...items.map((i) => {
+    ...itemsValidos.map((i) => {
+      const respCandidato = typeof i.responsableId === 'string' ? i.responsableId.trim() : '';
+      const responsableId = respCandidato && responsablesValidos.has(respCandidato) ? respCandidato : null;
+      const sedeCandidata = typeof i.sedeId === 'string' ? i.sedeId.trim() : '';
+      const sedeId = sedeCandidata && sedesValidas.has(sedeCandidata) ? sedeCandidata : null;
       const data = {
         codigo: i.codigo,
         nombre: i.nombre,
         sectorId: i.sectorId,
         tipoId: i.tipoId,
-        responsableId: i.responsableId ?? null,
-        sedeId: i.sedeId ?? null,
+        responsableId,
+        sedeId,
         marca: i.marca ?? null,
         modelo: i.modelo ?? null,
         fechaIngreso: toDate(i.fechaIngreso) ?? new Date(),
@@ -133,7 +180,7 @@ router.put('/activos', asyncHandler(async (req, res) => {
       });
     }),
   ]);
-  res.json({ synced: items.length });
+  res.json({ synced: itemsValidos.length, descartados: items.length - itemsValidos.length });
 }));
 
 // ───────── Mediciones ─────────
