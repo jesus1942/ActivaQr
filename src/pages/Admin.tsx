@@ -372,6 +372,10 @@ export const Admin: React.FC = () => {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [modalCobro, setModalCobro] = useState<EmpresaAdmin | null>(null);
   const [modalResetPass, setModalResetPass] = useState<EmpresaAdmin | null>(null);
+  // Modo seed: oculto por default. Vive en sessionStorage para que muera al
+  // cerrar la pestaña; asi nunca queda "ON" entre sesiones por accidente.
+  const [modoSeed, setModoSeed] = useState<boolean>(() => sessionStorage.getItem('modoSeed') === '1');
+  useEffect(() => { sessionStorage.setItem('modoSeed', modoSeed ? '1' : '0'); }, [modoSeed]);
   const [expandidas, setExpandidas] = useState<Set<string>>(new Set());
   const [toggling, setToggling] = useState<Set<string>>(new Set());
   const [stripeOk, setStripeOk] = useState<boolean | null>(null);
@@ -600,6 +604,19 @@ export const Admin: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {modoSeed && (
+        <div className="flex items-center justify-between gap-3 bg-red-600 text-white border-2 border-red-900 px-4 py-2 font-black uppercase tracking-wider text-sm shadow-[4px_4px_0px_0px_#7f1d1d]">
+          <span className="flex items-center gap-2">
+            <AlertTriangle size={16} /> Modo seed activo — operaciones destructivas habilitadas
+          </span>
+          <button
+            onClick={() => setModoSeed(false)}
+            className="bg-white text-red-700 px-3 py-1 border-2 border-red-900 text-xs font-black hover:bg-red-100"
+          >
+            Desactivar
+          </button>
+        </div>
+      )}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="font-sketch text-3xl sm:text-4xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
@@ -618,6 +635,19 @@ export const Admin: React.FC = () => {
           )}
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={() => {
+              if (modoSeed) { setModoSeed(false); return; }
+              const ok = confirm('Activar MODO SEED?\n\nVa a aparecer un boton para sembrar datasets demo en cada empresa. Es destructivo si te equivocas de fila. Solo activalo cuando lo necesites.\n\nSe desactiva automaticamente al cerrar la pestaña.');
+              if (ok) setModoSeed(true);
+            }}
+            className={`flex items-center gap-2 px-4 py-2 font-sketch font-bold uppercase border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-sm ${
+              modoSeed ? 'bg-red-600 text-white' : 'bg-white text-slate-700'
+            }`}
+            title="Habilita herramientas de seed (destructivas). Oculto por default."
+          >
+            <Sparkles size={15} /> Seed: {modoSeed ? 'ON' : 'OFF'}
+          </button>
           <button
             onClick={async () => {
               try {
@@ -887,21 +917,30 @@ export const Admin: React.FC = () => {
                     </button>
                   )}
 
-                  <button
-                    onClick={async () => {
-                      if (!confirm(`Sembrar dataset demo "Escuela Nueva Austral" en ${emp.nombre}?\n\nCrea 50 activos con prefijo AUS-, 18 meses de mediciones y tareas, incluyendo casos de tendencia para el modulo predictivo.\n\nIdempotente: re-corre sin duplicar. Los activos del cliente sin prefijo AUS- no se tocan.`)) return;
-                      try {
-                        const res = await apiFetch(`admin/empresas/${emp.id}/seed-austral`, { method: 'POST' });
-                        if (!res.ok) { alert('Error al sembrar dataset.'); return; }
-                        const r = await res.json();
-                        alert(`Listo.\n\nSectores nuevos: ${r.sectoresCreados}\nTipos nuevos: ${r.tiposCreados}\nActivos nuevos: ${r.activosCreados}\nActivos reseedeados: ${r.activosExistentes}\nMediciones: ${r.medicionesCreadas}\nTareas: ${r.tareasCreadas}`);
-                        cargar();
-                      } catch { alert('Error al sembrar dataset.'); }
-                    }}
-                    className="w-full flex items-center gap-2 border-2 border-violet-300 bg-white px-3 py-2 text-sm font-bold text-violet-700 hover:border-violet-600 transition-colors"
-                  >
-                    <Sparkles size={15} /> Sembrar dataset Austral
-                  </button>
+                  {modoSeed && (
+                    <button
+                      onClick={async () => {
+                        const confirmacion = prompt(
+                          `SEMBRAR DATASET "Escuela Nueva Austral" EN:\n\n${emp.nombre}\n\nVa a crear 50 activos con prefijo AUS-, 18 meses de mediciones y tareas, incluyendo casos de tendencia para el predictivo.\n\nIdempotente: si lo corres de nuevo no duplica. Los activos del cliente SIN prefijo AUS- NO se tocan.\n\nPara confirmar, escribi el nombre EXACTO de la empresa:`,
+                        );
+                        if (confirmacion == null) return;
+                        if (confirmacion.trim().toLowerCase() !== emp.nombre.trim().toLowerCase()) {
+                          alert('Nombre no coincide. Operacion cancelada.');
+                          return;
+                        }
+                        try {
+                          const res = await apiFetch(`admin/empresas/${emp.id}/seed-austral`, { method: 'POST' });
+                          if (!res.ok) { alert('Error al sembrar dataset.'); return; }
+                          const r = await res.json();
+                          alert(`Listo en ${emp.nombre}.\n\nSectores nuevos: ${r.sectoresCreados}\nTipos nuevos: ${r.tiposCreados}\nActivos nuevos: ${r.activosCreados}\nActivos reseedeados: ${r.activosExistentes}\nMediciones: ${r.medicionesCreadas}\nTareas: ${r.tareasCreadas}`);
+                          cargar();
+                        } catch { alert('Error al sembrar dataset.'); }
+                      }}
+                      className="w-full flex items-center gap-2 border-2 border-violet-400 bg-violet-50 px-3 py-2 text-sm font-bold text-violet-800 hover:border-violet-700 transition-colors"
+                    >
+                      <Sparkles size={15} /> Sembrar dataset Austral
+                    </button>
+                  )}
 
                   <button
                     onClick={() => borrar(emp)}
