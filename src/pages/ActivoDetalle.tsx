@@ -1,11 +1,12 @@
 // v1.1.0
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ArrowLeft, Printer, ClipboardList, Pencil, Trash2, FileDown } from 'lucide-react';
 import { exportarFichaActivoPdf } from '../utils/exportPdf';
+import { imprimirEtiquetaQR } from '../utils/imprimirEtiqueta';
 import { useActivos } from '../hooks/useActivos';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { EstadoOperativoBadge, ESTADOS_OPERATIVOS } from '../components/ui/EstadoOperativoBadge';
@@ -56,8 +57,23 @@ export const ActivoDetalle: React.FC = () => {
     window.alert('Tarea predictiva creada y agregada al historial de mantenimiento.');
   };
 
+  const qrRef = useRef<SVGSVGElement | null>(null);
   const handlePrint = () => {
-    window.print();
+    const svg = qrRef.current;
+    if (!svg) {
+      alert('No se pudo generar el QR. Recarga la pagina y reintenta.');
+      return;
+    }
+    const viewBox = svg.getAttribute('viewBox') ?? '0 0 29 29';
+    const inner = svg.innerHTML;
+    const empresaNombre = (usuario?.empresa as { nombre?: string } | null)?.nombre;
+    imprimirEtiquetaQR({
+      codigo: activo.codigo,
+      nombre: activo.nombre,
+      qrSvgString: inner,
+      qrViewBox: viewBox,
+      empresaNombre,
+    });
   };
 
   const handleDelete = () => {
@@ -205,7 +221,7 @@ export const ActivoDetalle: React.FC = () => {
           <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4 text-center">
             <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-3">Código QR</h2>
             <div className="inline-block border-4 border-slate-800 p-3 bg-white mb-3">
-              <QRCodeSVG value={qrValue} size={140} className="w-full max-w-[160px] h-auto" />
+              <QRCodeSVG ref={qrRef} value={qrValue} size={140} className="w-full max-w-[160px] h-auto" />
             </div>
             <div className="font-mono text-xs text-slate-500 mb-4 break-all">{activo.codigo}</div>
             <button
