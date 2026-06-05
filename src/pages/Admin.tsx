@@ -26,6 +26,7 @@ import {
   Smartphone,
   Monitor,
   Tablet,
+  Sparkles,
 } from 'lucide-react';
 import { exportarCsv } from '../utils/exportCsv';
 import {
@@ -885,6 +886,22 @@ export const Admin: React.FC = () => {
                       {permisos[emp.id]?.estado === 'activo' ? 'Abrir panel remoto' : permisos[emp.id]?.estado === 'pendiente' ? 'Acceso remoto pendiente' : 'Solicitar acceso remoto'}
                     </button>
                   )}
+
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`Sembrar dataset demo "Escuela Nueva Austral" en ${emp.nombre}?\n\nCrea 50 activos con prefijo AUS-, 18 meses de mediciones y tareas, incluyendo casos de tendencia para el modulo predictivo.\n\nIdempotente: re-corre sin duplicar. Los activos del cliente sin prefijo AUS- no se tocan.`)) return;
+                      try {
+                        const res = await apiFetch(`admin/empresas/${emp.id}/seed-austral`, { method: 'POST' });
+                        if (!res.ok) { alert('Error al sembrar dataset.'); return; }
+                        const r = await res.json();
+                        alert(`Listo.\n\nSectores nuevos: ${r.sectoresCreados}\nTipos nuevos: ${r.tiposCreados}\nActivos nuevos: ${r.activosCreados}\nActivos reseedeados: ${r.activosExistentes}\nMediciones: ${r.medicionesCreadas}\nTareas: ${r.tareasCreadas}`);
+                        cargar();
+                      } catch { alert('Error al sembrar dataset.'); }
+                    }}
+                    className="w-full flex items-center gap-2 border-2 border-violet-300 bg-white px-3 py-2 text-sm font-bold text-violet-700 hover:border-violet-600 transition-colors"
+                  >
+                    <Sparkles size={15} /> Sembrar dataset Austral
+                  </button>
 
                   <button
                     onClick={() => borrar(emp)}

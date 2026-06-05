@@ -582,4 +582,14 @@ router.post('/seed-demo', async (_req: AuthRequest, res: Response, next: NextFun
   }
 });
 
+router.post('/empresas/:id/seed-austral', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { seedAustral } = await import('../seedAustral');
+    const resultado = await seedAustral(req.params.id);
+    res.json(resultado);
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
