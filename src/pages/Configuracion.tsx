@@ -312,6 +312,23 @@ const TiposSection: React.FC<TiposProps> = ({ tipos, addTipo, updateTipo, delete
               ))}
             </div>
           </div>
+          {(() => {
+            const algunFlag = MIDE_FIELDS.some(({ key }) => !!form[key]);
+            const tieneCategoria = !!form.categoriaId;
+            if (algunFlag || tieneCategoria) return null;
+            return (
+              <div className="border-2 border-amber-400 bg-amber-50 p-3 text-sm">
+                <p className="font-bold text-amber-800 mb-1">Este tipo no medira ningun parametro.</p>
+                <p className="text-amber-700 text-xs leading-snug">
+                  Si tu rubro encaja en los fijos (temperatura, amperaje, etc.), tildalos arriba.
+                  Si tu rubro tiene parametros propios (ej. piscina: pH, cloro, salinidad;
+                  panaderia: presion de vapor; alquiler: km recorridos), ir a la pestaña
+                  <strong> Categorias</strong>, crear una nueva con tus parametros y
+                  asignarsela en el selector de arriba.
+                </p>
+              </div>
+            );
+          })()}
           <div className="flex justify-end gap-3">
             <button type="button" onClick={cancel} className="px-4 min-h-[44px] border-2 border-slate-400 font-bold text-slate-600">Cancelar</button>
             <button type="submit" className="px-4 min-h-[44px] bg-orange-500 text-white border-2 border-slate-800 font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)]">{editing ? 'Guardar' : 'Crear'}</button>
