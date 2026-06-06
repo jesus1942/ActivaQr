@@ -23,9 +23,23 @@ code, .font-mono {
 
 html, body {
   background-color: #FAFAF7;
-  overflow-x: hidden;
+  overflow-x: clip;
   overscroll-behavior: none;
+  max-width: 100vw;
+  width: 100%;
+}
+
+/* En mobile, ningun nieto puede meter scroll horizontal en la pagina.
+   Tablas y graficos que de verdad necesiten scroll lateral lo manejan
+   adentro de SU propio contenedor con overflow-x-auto. */
+#root {
+  max-width: 100vw;
+  overflow-x: clip;
+}
+
+img, video, svg {
   max-width: 100%;
+  height: auto;
 }
 
 /* Evita que inputs en iOS hagan zoom al enfocar (font < 16px lo dispara) */
