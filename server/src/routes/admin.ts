@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { Router, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import { Prisma } from '@prisma/client';
@@ -5,7 +6,8 @@ import { prisma } from '../prisma';
 import { requireAuth, requireSuperadmin, AuthRequest } from '../auth';
 import { crearPreapproval, cancelarPreapproval, crearLinkPago, mpConfigurado } from '../mercadopago';
 import { stripeConfigurado, crearStripeSubscripcion, crearStripePagoUnico } from '../stripe';
-import { enviarEmailSuscripcion } from '../email';
+import { enviarEmailSuscripcion, enviarEmailResetPassword } from '../email';
+import { enviarLinkRecuperacion, notificarAdminRecuperacion } from '../telegram';
 import { enviarPushAEmpresa } from '../push';
 
 const router = Router();
@@ -132,20 +134,98 @@ router.delete('/empresas/:id', async (req: AuthRequest, res: Response, next: Nex
   }
 });
 
-// POST /api/admin/empresas/:id/reset-password — resetea la clave del admin
+// POST /api/admin/empresas/:id/reset-password
+//
+// Flujo (cambiado el 5 jun 2026):
+// 1. El superadmin se RE-AUTENTICA enviando su currentPassword en el body.
+//    Esto es step-up auth para que un click sin querer no rompa la cuenta
+//    de un cliente real.
+// 2. Si la pwd del super es correcta:
+//    a) Se invalida la contraseña actual del admin del cliente (hash random).
+//    b) Se genera resetToken con TTL 1h.
+//    c) Se le envia al cliente por Telegram (preferido), email y push.
+//       Texto explica: "fue reseteada por seguridad, crea una nueva".
+// 3. NO se acepta una "nueva password" desde el panel — el super NUNCA
+//    elige la pwd del cliente. Solo el cliente la define en el link.
 router.post('/empresas/:id/reset-password', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { password } = req.body ?? {};
-    if (!password) return res.status(400).json({ error: 'Falta la nueva contraseña.' });
+    const { currentPassword } = req.body ?? {};
+    if (!currentPassword || typeof currentPassword !== 'string') {
+      return res.status(400).json({ error: 'Reingresa tu contraseña actual para confirmar.' });
+    }
 
+    // 1. Re-autenticar al super
+    const super_ = await prisma.usuario.findUnique({ where: { id: req.auth!.userId } });
+    if (!super_) return res.status(401).json({ error: 'Sesion invalida.' });
+    const passwordOk = await bcrypt.compare(currentPassword, super_.passwordHash);
+    if (!passwordOk) return res.status(401).json({ error: 'Tu contraseña no coincide.' });
+
+    // 2. Buscar al admin del cliente
     const admin = await prisma.usuario.findFirst({
       where: { empresaId: req.params.id, rol: 'admin' },
+      include: { empresa: { select: { nombre: true } } },
     });
-    if (!admin) return res.status(404).json({ error: 'Usuario administrador no encontrado.' });
+    if (!admin) return res.status(404).json({ error: 'La empresa no tiene un administrador.' });
 
-    const passwordHash = await bcrypt.hash(password, 10);
-    await prisma.usuario.update({ where: { id: admin.id }, data: { passwordHash } });
-    res.json({ ok: true });
+    // 3. Invalidar la pwd actual + emitir token de reset
+    const tokenAleatorio = crypto.randomBytes(48).toString('hex'); // imposible adivinar
+    const passwordHashInvalido = await bcrypt.hash(tokenAleatorio, 10);
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
+    await prisma.usuario.update({
+      where: { id: admin.id },
+      data: { passwordHash: passwordHashInvalido, resetToken, resetTokenExpiry },
+    });
+
+    // 4. Notificar al cliente con motivo "admin-reset"
+    const appPublicUrl = process.env.APP_PUBLIC_URL || 'https://jesus1942.github.io/ActivaQr/';
+    const resetUrl = `${appPublicUrl}#/reset-password?token=${resetToken}`;
+    let canalUsado: 'telegram' | 'email' | 'admin-fallback' = 'email';
+
+    if (admin.telegramChatId) {
+      await enviarLinkRecuperacion({
+        chatId: admin.telegramChatId,
+        nombre: admin.nombre,
+        resetUrl,
+        motivo: 'admin-reset',
+      }).catch((e) => console.error('[admin reset-password] telegram error:', e));
+      canalUsado = 'telegram';
+    }
+
+    // Mandar email igual (doble canal para que llegue seguro)
+    await enviarEmailResetPassword({
+      destinatario: admin.email,
+      adminNombre: admin.nombre,
+      token: resetToken,
+      resetUrl,
+      motivo: 'admin-reset',
+    }).catch((e) => console.error('[admin reset-password] email error:', e));
+
+    // Push a la empresa para que aparezca en el celular si tienen la PWA abierta
+    await enviarPushAEmpresa(req.params.id, {
+      title: 'Tu contrasena fue reseteada',
+      body: 'Por seguridad la contraseña actual ya no funciona. Revisa tu email o Telegram para crear una nueva.',
+    }, ['admin']).catch((e) => console.error('[admin reset-password] push error:', e));
+
+    // Fallback al super por Telegram si el cliente no tiene canal de Telegram
+    if (!admin.telegramChatId) {
+      const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID ?? '';
+      if (adminChatId) {
+        await notificarAdminRecuperacion({
+          adminChatId,
+          clienteNombre: admin.nombre,
+          clienteEmail: admin.email,
+          resetUrl,
+        }).catch((e) => console.error('[admin reset-password] telegram-admin error:', e));
+      }
+    }
+
+    res.json({
+      ok: true,
+      canal: canalUsado,
+      email: admin.email,
+      telegram: !!admin.telegramChatId,
+    });
   } catch (err) {
     next(err);
   }

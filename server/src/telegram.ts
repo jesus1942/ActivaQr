@@ -20,9 +20,16 @@ export async function enviarLinkRecuperacion(opts: {
   chatId: string;
   nombre: string;
   resetUrl: string;
+  motivo?: 'autoservicio' | 'admin-reset';
 }): Promise<void> {
-  const texto = `<b>ActivaQR — Recuperar contraseña</b>\n\nHola ${opts.nombre}, recibimos una solicitud para restablecer tu contraseña.\n\nHacé clic en el siguiente enlace (válido por 1 hora):\n${opts.resetUrl}\n\nSi no lo pediste vos, ignorá este mensaje.`;
-  await sendMessage(opts.chatId, texto);
+  const esAdminReset = opts.motivo === 'admin-reset';
+  const titulo = esAdminReset
+    ? '<b>ActivaQR — Contraseña reseteada por seguridad</b>'
+    : '<b>ActivaQR — Recuperar contraseña</b>';
+  const cuerpo = esAdminReset
+    ? `Hola ${opts.nombre}, por seguridad el equipo de soporte de ActivaQR reseteó tu contraseña actual. Ya no funciona para iniciar sesión.\n\nCreá una nueva en este enlace (válido por 1 hora):\n${opts.resetUrl}\n\nDespués de creada, podés volver a entrar normalmente.`
+    : `Hola ${opts.nombre}, recibimos una solicitud para restablecer tu contraseña.\n\nHacé clic en el siguiente enlace (válido por 1 hora):\n${opts.resetUrl}\n\nSi no lo pediste vos, ignorá este mensaje.`;
+  await sendMessage(opts.chatId, `${titulo}\n\n${cuerpo}`);
 }
 
 export async function notificarAdminRecuperacion(opts: {

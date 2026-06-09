@@ -225,7 +225,7 @@ const ModalCobro: React.FC<{
 };
 
 // ── Modal reset password ───────────────────────────────────────────────────────
-const ModalResetPass: React.FC<{ empresa: EmpresaAdmin; onClose: () => void; onConfirm: (pass: string) => Promise<void> }> = ({
+const ModalResetPass: React.FC<{ empresa: EmpresaAdmin; onClose: () => void; onConfirm: (currentPassword: string) => Promise<void> }> = ({
   empresa, onClose, onConfirm,
 }) => {
   const [pass, setPass] = useState('');
@@ -234,7 +234,7 @@ const ModalResetPass: React.FC<{ empresa: EmpresaAdmin; onClose: () => void; onC
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pass.length < 6) { setErr('La contraseña debe tener al menos 6 caracteres.'); return; }
+    if (!pass) { setErr('Reingresa tu contrasena para confirmar.'); return; }
     setErr(''); setCargando(true);
     try { await onConfirm(pass); onClose(); }
     catch (e) { setErr(e instanceof Error ? e.message : 'Error.'); }
@@ -243,20 +243,34 @@ const ModalResetPass: React.FC<{ empresa: EmpresaAdmin; onClose: () => void; onC
 
   return (
     <Modal titulo="Resetear contraseña" icono={<KeyRound size={16} />} onClose={onClose}>
-      <p className="text-sm text-slate-600 mb-5">Nueva contraseña para el administrador de <strong>{empresa.nombre}</strong>.</p>
+      <div className="space-y-3 mb-5">
+        <p className="text-sm text-slate-700">
+          Vamos a resetear la contraseña del administrador de <strong>{empresa.nombre}</strong>.
+        </p>
+        <div className="border-2 border-amber-300 bg-amber-50 p-3 text-xs text-amber-800 leading-snug space-y-1">
+          <p className="font-bold">Que va a pasar:</p>
+          <ul className="list-disc list-inside space-y-0.5">
+            <li>La contraseña actual del cliente queda invalidada al instante.</li>
+            <li>Al cliente le llega un link por Telegram (si tiene) y por email para crear una contraseña nueva.</li>
+            <li>El link expira en 1 hora.</li>
+            <li>Vos NO eliges su nueva contraseña — la define el cliente.</li>
+          </ul>
+        </div>
+        <p className="text-xs text-slate-500">Reingresa <strong>tu</strong> contrasena para confirmar la operacion.</p>
+      </div>
       <form onSubmit={submit} className="space-y-4">
-        <Field label="Nueva contraseña">
+        <Field label="Tu contraseña (la del superadmin)">
           <input
-            type="text"
+            type="password"
             autoFocus
             value={pass}
             onChange={(e) => setPass(e.target.value)}
-            placeholder="Min. 6 caracteres"
+            placeholder="••••••••"
             className={inputCls + ' font-mono'}
           />
         </Field>
         {err && <p className="text-xs font-bold text-red-600 bg-red-50 border-2 border-red-200 px-3 py-2">{err}</p>}
-        <button type="submit" disabled={cargando} className={btnPrimary}>{cargando ? 'Guardando...' : 'Actualizar contraseña'}</button>
+        <button type="submit" disabled={cargando} className={btnPrimary}>{cargando ? 'Reseteando...' : 'Resetear y notificar al cliente'}</button>
         <button type="button" onClick={onClose} className={btnSecondary}>Cancelar</button>
       </form>
     </Modal>
@@ -473,9 +487,14 @@ export const Admin: React.FC = () => {
 
   const resetear = (emp: EmpresaAdmin) => setModalResetPass(emp);
 
-  const confirmarResetPass = async (pass: string) => {
+  const confirmarResetPass = async (currentPassword: string) => {
     if (!modalResetPass) return;
-    await resetPassword(modalResetPass.id, pass);
+    const r = await resetPassword(modalResetPass.id, currentPassword);
+    const canalTxt =
+      r.canal === 'telegram' ? 'Telegram + email (doble canal)' :
+      r.canal === 'admin-fallback' ? 'email del cliente (Telegram no configurado, link enviado a tu Telegram de soporte)' :
+      'email del cliente';
+    alert(`Contraseña reseteada en ${modalResetPass.nombre}.\n\nNotificacion enviada al cliente por:\n${canalTxt}\n\nEmail: ${r.email}\nTelegram cliente: ${r.telegram ? 'si' : 'no'}\n\nEl link expira en 1 hora. El cliente define su nueva contraseña.`);
   };
 
   const suscribir = (emp: EmpresaAdmin) => setModalCobro(emp);

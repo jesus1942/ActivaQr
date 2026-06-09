@@ -54,12 +54,23 @@ export async function eliminarEmpresa(id: string): Promise<void> {
   await parse(await apiFetch(`admin/empresas/${id}`, { method: 'DELETE' }));
 }
 
-export async function resetPassword(id: string, password: string): Promise<void> {
-  await parse(
+export interface ResetPasswordResult {
+  ok: boolean;
+  canal: 'telegram' | 'email' | 'admin-fallback';
+  email: string;
+  telegram: boolean;
+}
+
+// El super NO elige la pwd del cliente. Reingresa la SUYA para confirmar
+// que la accion la hace el dueño de la sesion. El backend invalida la
+// pwd del cliente y le manda un link de "crea una nueva" por Telegram
+// y email.
+export async function resetPassword(id: string, currentPassword: string): Promise<ResetPasswordResult> {
+  return parse(
     await apiFetch(`admin/empresas/${id}/reset-password`, {
       method: 'POST',
       headers: JSON_HEADERS,
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ currentPassword }),
     })
   );
 }
