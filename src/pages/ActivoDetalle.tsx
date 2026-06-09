@@ -1,10 +1,10 @@
 // v1.1.0
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ArrowLeft, Printer, ClipboardList, Pencil, Trash2, FileDown } from 'lucide-react';
+import { ArrowLeft, Printer, ClipboardList, Pencil, Trash2, FileDown, FileText } from 'lucide-react';
 import { exportarFichaActivoPdf } from '../utils/exportPdf';
 import { imprimirEtiquetaQR } from '../utils/imprimirEtiqueta';
 import { useActivos } from '../hooks/useActivos';
@@ -16,6 +16,7 @@ import { FallasActivo } from '../components/FallasActivo';
 import { UbicacionesActivo } from '../components/UbicacionesActivo';
 import { AnalisisActivo } from '../components/analitica/AnalisisActivo';
 import { EstadoOperativo, TareaMantenimiento } from '../data/types';
+import { CategoriaEquipo, getCategoria } from '../data/categoriasApi';
 import { API_URL } from '../data/auth';
 import { useAuth } from '../context/AuthContext';
 import { puedeEliminarActivos } from '../data/permisos';
@@ -42,6 +43,30 @@ export const ActivoDetalle: React.FC = () => {
   const activoTareas = tareas.filter((t) => t.activoId === id);
   const tipoActual = tipos.find((t) => t.id === activo.tipoId);
   const qrValue = `${window.location.origin}${import.meta.env.BASE_URL}#/ficha/${activo.id}`;
+
+  // Naturaleza del activo: operativo (tiene parametros fisicos que cambian
+  // con el uso) vs patrimonial/documental (mueble, piscina, instalacion).
+  // La decide el TipoActivo + su CategoriaEquipo. Si no mide nada fisico,
+  // el activo se trata como patrimonial: nada de horas/intervalos/gauges/
+  // predictivo, foco en legajo documental e historial de tareas por fecha.
+  const [categoriaTipo, setCategoriaTipo] = useState<CategoriaEquipo | null>(null);
+  useEffect(() => {
+    const catId = tipoActual?.categoriaId;
+    if (!catId) { setCategoriaTipo(null); return; }
+    getCategoria(catId).then(setCategoriaTipo).catch(() => setCategoriaTipo(null));
+  }, [tipoActual?.categoriaId]);
+
+  const mideAlgoFijo = !!(
+    tipoActual?.mideTemperatura || tipoActual?.mideAmperaje || tipoActual?.midePresion ||
+    tipoActual?.mideVibracion || tipoActual?.mideBateria || tipoActual?.mideToner ||
+    tipoActual?.mideContador || tipoActual?.mideVoltaje
+  );
+  const mideAlgoCategoria = !!(categoriaTipo && categoriaTipo.parametros.length > 0);
+  const esOperativo = mideAlgoFijo || mideAlgoCategoria;
+  const mideHorasMarcha = !!(
+    tipoActual?.mideAmperaje || tipoActual?.midePresion || tipoActual?.mideVibracion ||
+    tipoActual?.mideContador
+  );
 
   const handleCrearTareaPredictiva = (texto: string) => {
     const nueva: TareaMantenimiento = {
@@ -92,11 +117,14 @@ export const ActivoDetalle: React.FC = () => {
     { label: 'Ubicación', value: activo.ubicacion },
     { label: 'Responsable', value: getTecnicoNombre(activo.responsableId) },
     { label: 'Fecha Ingreso', value: format(parseISO(activo.fechaIngreso), 'dd/MM/yyyy', { locale: es }) },
-    { label: 'Horas Actuales', value: `${activo.horasActuales} hs` },
-    { label: 'Intervalo Medición', value: `${activo.intervaloMedicionHoras} hs` },
-    { label: 'Intervalo Lubricación', value: activo.intervaloLubricacionHoras ? `${activo.intervaloLubricacionHoras} hs` : 'N/A' },
+    { label: 'Naturaleza', value: esOperativo ? 'Operativo' : 'Patrimonial / documental' },
+    ...(mideHorasMarcha ? [
+      { label: 'Horas Actuales', value: `${activo.horasActuales} hs` },
+      { label: 'Intervalo Medición', value: `${activo.intervaloMedicionHoras} hs` },
+      { label: 'Intervalo Lubricación', value: activo.intervaloLubricacionHoras ? `${activo.intervaloLubricacionHoras} hs` : 'N/A' },
+    ] : []),
     { label: 'Prox. Mantenimiento', value: format(parseISO(activo.proximoMantenimiento), 'dd/MM/yyyy', { locale: es }) },
-    { label: 'Tipo de desplazamiento', value: activo.esItinerante ? 'Itinerante' : 'Estatico' },
+    { label: 'Desplazamiento', value: activo.esItinerante ? 'Itinerante' : 'Fijo' },
     ...(activo.esItinerante ? [
       { label: 'Locacion base', value: activo.locacionBase ?? undefined },
       { label: 'Locacion actual', value: activo.locacionActual ?? undefined },
@@ -175,45 +203,72 @@ export const ActivoDetalle: React.FC = () => {
             )}
           </div>
 
-          {/* Value Gauges */}
-          <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
-            <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-3 border-b-2 border-slate-200 pb-2">Parámetros de Operación</h2>
-            {activoMediciones.length > 0 && (
-              <>
-                <ValueGauge
-                  label="Temperatura"
-                  value={activoMediciones[activoMediciones.length - 1].temperatura}
-                  min={activo.temperaturaMin}
-                  max={activo.temperaturaMax}
-                  alertThreshold={activo.temperaturaAlerta}
-                  criticalThreshold={activo.temperaturaCritica}
-                  unit="°C"
-                />
-                {activo.amperajeNormal > 0 && (
-                  <ValueGauge
-                    label="Amperaje"
-                    value={activoMediciones[activoMediciones.length - 1].amperaje}
-                    min={0}
-                    max={activo.amperajeNormal * 1.5}
-                    alertThreshold={activo.amperajeNormal * 1.1}
-                    criticalThreshold={activo.amperajeNormal * 1.3}
-                    unit="A"
-                  />
-                )}
-                {activo.presionNormal > 0 && (
-                  <ValueGauge
-                    label="Presión"
-                    value={activoMediciones[activoMediciones.length - 1].presion}
-                    min={0}
-                    max={activo.presionNormal * 1.5}
-                    alertThreshold={activo.presionNormal * 1.1}
-                    criticalThreshold={activo.presionNormal * 1.3}
-                    unit=" bar"
-                  />
-                )}
-              </>
-            )}
-          </div>
+          {/* Value Gauges: solo para activos operativos (motores, herramientas,
+              equipos electricos). Activos patrimoniales (mueble, piscina, etc.)
+              no tienen "parametros de operacion" — su valor esta en el legajo
+              documental, no en gauges. */}
+          {esOperativo ? (
+            <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
+              <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-3 border-b-2 border-slate-200 pb-2">Parámetros de Operación</h2>
+              {activoMediciones.length > 0 ? (
+                <>
+                  {tipoActual?.mideTemperatura && (
+                    <ValueGauge
+                      label="Temperatura"
+                      value={activoMediciones[activoMediciones.length - 1].temperatura}
+                      min={activo.temperaturaMin}
+                      max={activo.temperaturaMax}
+                      alertThreshold={activo.temperaturaAlerta}
+                      criticalThreshold={activo.temperaturaCritica}
+                      unit="°C"
+                    />
+                  )}
+                  {tipoActual?.mideAmperaje && activo.amperajeNormal > 0 && (
+                    <ValueGauge
+                      label="Amperaje"
+                      value={activoMediciones[activoMediciones.length - 1].amperaje}
+                      min={0}
+                      max={activo.amperajeNormal * 1.5}
+                      alertThreshold={activo.amperajeNormal * 1.1}
+                      criticalThreshold={activo.amperajeNormal * 1.3}
+                      unit="A"
+                    />
+                  )}
+                  {tipoActual?.midePresion && activo.presionNormal > 0 && (
+                    <ValueGauge
+                      label="Presión"
+                      value={activoMediciones[activoMediciones.length - 1].presion}
+                      min={0}
+                      max={activo.presionNormal * 1.5}
+                      alertThreshold={activo.presionNormal * 1.1}
+                      criticalThreshold={activo.presionNormal * 1.3}
+                      unit=" bar"
+                    />
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-slate-400">Sin mediciones cargadas todavía.</p>
+              )}
+            </div>
+          ) : (
+            <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
+              <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-3 border-b-2 border-slate-200 pb-2 flex items-center gap-2">
+                <FileText size={14} /> Legajo del activo
+              </h2>
+              <p className="text-sm text-slate-600 leading-snug">
+                Este activo es patrimonial / documental: no tiene parametros operativos
+                medibles. Su seguimiento se hace por <strong>fotos, documentos e
+                historial de tareas por fecha</strong>. Las inspecciones se registran
+                como observaciones, no como mediciones de motor.
+              </p>
+              {activoTareas.length > 0 && (
+                <p className="text-xs text-slate-500 mt-2">
+                  Tareas registradas: {activoTareas.length} · Proxima:{' '}
+                  {format(parseISO(activo.proximoMantenimiento), 'dd/MM/yyyy', { locale: es })}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right: QR + Actions */}
@@ -250,7 +305,7 @@ export const ActivoDetalle: React.FC = () => {
               className="w-full flex items-center justify-center gap-2 bg-orange-500 text-white px-4 py-2.5 font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:bg-orange-400 transition-colors"
             >
               <ClipboardList size={16} />
-              Tomar Medición
+              {esOperativo ? 'Tomar Medición' : 'Registrar Inspección'}
             </button>
           </div>
 
@@ -291,51 +346,90 @@ export const ActivoDetalle: React.FC = () => {
         </div>
       </div>
 
-      {/* Analisis predictivo: graficos con tendencias, umbrales y proyeccion */}
-      <AnalisisActivo
-        activo={activo}
-        tipo={tipoActual}
-        mediciones={activoMediciones}
-        tareas={activoTareas}
-        onCrearTareaPredictiva={handleCrearTareaPredictiva}
-      />
+      {/* Analisis predictivo: solo para activos operativos. Un mueble o una
+          piscina no tienen tendencia de temperatura motor que proyectar. */}
+      {esOperativo && (
+        <AnalisisActivo
+          activo={activo}
+          tipo={tipoActual}
+          mediciones={activoMediciones}
+          tareas={activoTareas}
+          onCrearTareaPredictiva={handleCrearTareaPredictiva}
+        />
+      )}
 
-      <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-slate-900 text-white">
-              {['Fecha', 'Temp.', 'Amperaje', 'Presión', 'Vibración', 'Estado', 'Técnico', 'Observaciones', ''].map((h, idx) => (
-                <th key={h || idx} className="text-left px-3 py-2.5 text-xs font-black uppercase tracking-wider whitespace-nowrap">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {[...last10].reverse().map((m, i) => (
-              <tr key={m.id} className={`border-b border-slate-100 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
-                <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">{format(parseISO(m.fecha), 'dd/MM/yyyy', { locale: es })}</td>
-                <td className="px-3 py-2 font-mono font-bold whitespace-nowrap">{m.temperatura}°C</td>
-                <td className="px-3 py-2 font-mono whitespace-nowrap">{m.amperaje > 0 ? `${m.amperaje}A` : '-'}</td>
-                <td className="px-3 py-2 font-mono whitespace-nowrap">{m.presion > 0 ? `${m.presion} bar` : '-'}</td>
-                <td className="px-3 py-2 capitalize text-xs">{m.vibracion}</td>
-                <td className="px-3 py-2"><StatusBadge estado={m.estado} size="sm" /></td>
-                <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap">{getTecnicoNombre(m.tecnicoId)}</td>
-                <td className="px-3 py-2 text-xs text-slate-500 max-w-48 truncate">{m.observaciones || '-'}</td>
-                <td className="px-3 py-2">
-                  <button
-                    onClick={() => {
-                      if (window.confirm('¿Eliminar esta medición?')) deleteMedicion(m.id);
-                    }}
-                    title="Eliminar medición"
-                    className="text-red-600 hover:bg-red-50 p-1.5 border-2 border-transparent hover:border-red-200"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </td>
+      {/* Tabla de mediciones: solo si es operativo. Para patrimoniales el
+          historial relevante son las TAREAS por fecha (Historial de
+          Mantenimiento, mas arriba en la columna derecha), no mediciones
+          de motor. */}
+      {esOperativo && last10.length > 0 && (
+        <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-slate-900 text-white">
+                {['Fecha', 'Temp.', 'Amperaje', 'Presión', 'Vibración', 'Estado', 'Técnico', 'Observaciones', ''].map((h, idx) => (
+                  <th key={h || idx} className="text-left px-3 py-2.5 text-xs font-black uppercase tracking-wider whitespace-nowrap">{h}</th>
+                ))}
               </tr>
+            </thead>
+            <tbody>
+              {[...last10].reverse().map((m, i) => (
+                <tr key={m.id} className={`border-b border-slate-100 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
+                  <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">{format(parseISO(m.fecha), 'dd/MM/yyyy', { locale: es })}</td>
+                  <td className="px-3 py-2 font-mono font-bold whitespace-nowrap">{m.temperatura}°C</td>
+                  <td className="px-3 py-2 font-mono whitespace-nowrap">{m.amperaje > 0 ? `${m.amperaje}A` : '-'}</td>
+                  <td className="px-3 py-2 font-mono whitespace-nowrap">{m.presion > 0 ? `${m.presion} bar` : '-'}</td>
+                  <td className="px-3 py-2 capitalize text-xs">{m.vibracion}</td>
+                  <td className="px-3 py-2"><StatusBadge estado={m.estado} size="sm" /></td>
+                  <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap">{getTecnicoNombre(m.tecnicoId)}</td>
+                  <td className="px-3 py-2 text-xs text-slate-500 max-w-48 truncate">{m.observaciones || '-'}</td>
+                  <td className="px-3 py-2">
+                    <button
+                      onClick={() => {
+                        if (window.confirm('¿Eliminar esta medición?')) deleteMedicion(m.id);
+                      }}
+                      title="Eliminar medición"
+                      className="text-red-600 hover:bg-red-50 p-1.5 border-2 border-transparent hover:border-red-200"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Para patrimoniales: una lista simple de inspecciones (observaciones
+          de cada visita), sin columnas de motor que no aplican. */}
+      {!esOperativo && activoMediciones.length > 0 && (
+        <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
+          <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-3 border-b-2 border-slate-200 pb-2">
+            Inspecciones registradas
+          </h2>
+          <div className="space-y-2">
+            {[...last10].reverse().map((m) => (
+              <div key={m.id} className="border-2 border-slate-200 p-2 flex items-start gap-3">
+                <span className="text-xs font-mono font-bold text-slate-700 flex-shrink-0">
+                  {format(parseISO(m.fecha), 'dd/MM/yy', { locale: es })}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-slate-700 leading-snug">{m.observaciones || 'Sin observaciones.'}</p>
+                  <p className="text-[11px] text-slate-500 mt-1">{getTecnicoNombre(m.tecnicoId)}</p>
+                </div>
+                <button
+                  onClick={() => { if (window.confirm('¿Eliminar esta inspección?')) deleteMedicion(m.id); }}
+                  title="Eliminar inspeccion"
+                  className="text-red-600 hover:bg-red-50 p-1 border-2 border-transparent hover:border-red-200 flex-shrink-0"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
