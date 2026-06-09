@@ -104,6 +104,84 @@ router.post('/:id/parametros', async (req: AuthRequest, res: Response, next: Nex
   }
 });
 
+// ─── PUT /api/categorias/:id ── editar categoría propia ─────────────────────
+router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!req.auth || (req.auth.rol !== 'admin' && req.auth.rol !== 'superadmin')) {
+      return res.status(403).json({ error: 'Solo administradores pueden editar categorías.' });
+    }
+    const empresaId = await resolveEmpresaId(req);
+    const cat = await prisma.categoriaEquipo.findFirst({
+      where: { id: req.params.id, empresaId },
+    });
+    if (!cat) return res.status(404).json({ error: 'Categoría no encontrada o no editable.' });
+    const { nombre, icono, descripcion, orden } = req.body ?? {};
+    const actualizada = await prisma.categoriaEquipo.update({
+      where: { id: req.params.id },
+      data: { nombre, icono, descripcion, orden },
+      include: includeParametros,
+    });
+    res.json(actualizada);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ─── PUT /api/categorias/:id/parametros/:paramId ── editar parámetro ─────────
+router.put('/:id/parametros/:paramId', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!req.auth || (req.auth.rol !== 'admin' && req.auth.rol !== 'superadmin')) {
+      return res.status(403).json({ error: 'Solo administradores pueden editar parámetros.' });
+    }
+    const empresaId = await resolveEmpresaId(req);
+    const cat = await prisma.categoriaEquipo.findFirst({
+      where: { id: req.params.id, empresaId },
+    });
+    if (!cat) return res.status(404).json({ error: 'Categoría no encontrada o no editable.' });
+    const existente = await prisma.parametroCategoria.findFirst({
+      where: { id: req.params.paramId, categoriaId: req.params.id },
+    });
+    if (!existente) return res.status(404).json({ error: 'Parámetro no encontrado.' });
+
+    const {
+      nombre, clave, unidad, tipo, obligatorio, orden,
+      minNormal, maxNormal, umbralAlerta, umbralCritico, umbralUrgente, invertido,
+    } = req.body ?? {};
+    const param = await prisma.parametroCategoria.update({
+      where: { id: req.params.paramId },
+      data: {
+        nombre, clave, unidad, tipo, obligatorio, orden,
+        minNormal, maxNormal, umbralAlerta, umbralCritico, umbralUrgente, invertido,
+      },
+    });
+    res.json(param);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ─── DELETE /api/categorias/:id/parametros/:paramId ──────────────────────────
+router.delete('/:id/parametros/:paramId', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!req.auth || (req.auth.rol !== 'admin' && req.auth.rol !== 'superadmin')) {
+      return res.status(403).json({ error: 'Solo administradores pueden eliminar parámetros.' });
+    }
+    const empresaId = await resolveEmpresaId(req);
+    const cat = await prisma.categoriaEquipo.findFirst({
+      where: { id: req.params.id, empresaId },
+    });
+    if (!cat) return res.status(404).json({ error: 'Categoría no encontrada o no editable.' });
+    const existente = await prisma.parametroCategoria.findFirst({
+      where: { id: req.params.paramId, categoriaId: req.params.id },
+    });
+    if (!existente) return res.status(404).json({ error: 'Parámetro no encontrado.' });
+    await prisma.parametroCategoria.delete({ where: { id: req.params.paramId } });
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ─── DELETE /api/categorias/:id ── solo categorías propias ───────────────────
 router.delete('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {

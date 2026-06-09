@@ -60,6 +60,21 @@ export async function eliminarCategoria(id: string): Promise<void> {
   }
 }
 
+export async function actualizarCategoria(
+  id: string,
+  data: Partial<CategoriaEquipo>
+): Promise<CategoriaEquipo> {
+  const res = await apiFetch(`categorias/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error || 'Error al actualizar categoría');
+  }
+  return res.json();
+}
+
 export async function agregarParametro(
   categoriaId: string,
   data: Partial<ParametroCategoria>
@@ -73,4 +88,30 @@ export async function agregarParametro(
     throw new Error(err?.error || 'Error al agregar parámetro');
   }
   return res.json();
+}
+
+export async function actualizarParametro(
+  categoriaId: string,
+  paramId: string,
+  data: Partial<ParametroCategoria>
+): Promise<ParametroCategoria> {
+  const res = await apiFetch(`categorias/${categoriaId}/parametros/${paramId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error || 'Error al actualizar parámetro');
+  }
+  return res.json();
+}
+
+export async function eliminarParametro(categoriaId: string, paramId: string): Promise<void> {
+  const res = await apiFetch(`categorias/${categoriaId}/parametros/${paramId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error || 'Error al eliminar parámetro');
+  }
 }

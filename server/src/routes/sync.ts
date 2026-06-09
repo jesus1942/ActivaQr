@@ -192,6 +192,18 @@ router.put('/mediciones', asyncHandler(async (req, res) => {
   const empresaId = await resolveEmpresaId(req);
   const items: any[] = Array.isArray(req.body) ? req.body : [];
   const ids = items.map((i) => i.id);
+
+  // Defensa: tecnicoId con ID que no es Usuario real rompe la FK y tira
+  // la transaccion entera (se pierde TODO el sync). Mismo criterio que
+  // responsableId en activos.
+  const tecIds = items
+    .map((i) => i.tecnicoId)
+    .filter((id): id is string => typeof id === 'string' && id.trim().length > 0);
+  const usuariosOk = tecIds.length > 0
+    ? await prisma.usuario.findMany({ where: { id: { in: tecIds }, empresaId }, select: { id: true } })
+    : [];
+  const tecnicosValidos = new Set(usuariosOk.map((u) => u.id));
+
   await prisma.$transaction([
     ...(ids.length
       ? [prisma.medicion.deleteMany({ where: { activo: { empresaId }, id: { notIn: ids } } })]
@@ -199,13 +211,23 @@ router.put('/mediciones', asyncHandler(async (req, res) => {
     ...items.map((i) => {
       const data = {
         activoId: i.activoId,
-        tecnicoId: i.tecnicoId ?? null,
+        tecnicoId: typeof i.tecnicoId === 'string' && tecnicosValidos.has(i.tecnicoId) ? i.tecnicoId : null,
         fecha: toDate(i.fecha) ?? new Date(),
         temperatura: toNum(i.temperatura),
         amperaje: toNum(i.amperaje),
         presion: toNum(i.presion),
         vibracion: i.vibracion ?? 'ninguna',
         horasMarcha: toNum(i.horasMarcha),
+        voltaje: toNum(i.voltaje),
+        porcentajeBateria: toNum(i.porcentajeBateria) != null ? Math.round(toNum(i.porcentajeBateria)!) : null,
+        nivelToner: toNum(i.nivelToner) != null ? Math.round(toNum(i.nivelToner)!) : null,
+        contador: toNum(i.contador) != null ? Math.round(toNum(i.contador)!) : null,
+        // Valores de parametros de categoria (pH, cloro, etc.) — sin esto,
+        // todo lo que el usuario cargue en parametros custom se pierde.
+        parametrosExtra:
+          i.parametrosExtra && typeof i.parametrosExtra === 'object' && !Array.isArray(i.parametrosExtra)
+            ? i.parametrosExtra
+            : undefined,
         estado: i.estado ?? 'normal',
         observaciones: i.observaciones ?? null,
         origen: i.origen ?? 'manual',
