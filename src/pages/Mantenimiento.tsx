@@ -3,6 +3,17 @@ import React, { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Plus, CheckCircle, X, AlertTriangle, Clock, Pencil, Trash2, Download } from 'lucide-react';
+
+function fmtFecha(fecha: string | null | undefined, fmtStr = 'dd/MM/yyyy'): string {
+  if (!fecha) return '—';
+  try {
+    const d = parseISO(String(fecha));
+    if (isNaN(d.getTime())) return '—';
+    return format(d, fmtStr, { locale: es });
+  } catch {
+    return '—';
+  }
+}
 import { exportarCsv } from '../utils/exportCsv';
 import { useActivos } from '../hooks/useActivos';
 import { StatusBadge } from '../components/ui/StatusBadge';
@@ -140,7 +151,7 @@ export const Mantenimiento: React.FC = () => {
         <div className="mt-2 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 text-xs text-slate-500">
           <div className="flex items-center gap-1">
             <Clock size={12} />
-            <span>Programado: {format(parseISO(tarea.fechaProgramada), 'dd/MM/yyyy', { locale: es })}</span>
+            <span>Programado: {fmtFecha(tarea.fechaProgramada)}</span>
           </div>
           <span>{getTecnicoNombre(tarea.responsableId)}</span>
         </div>
@@ -155,7 +166,7 @@ export const Mantenimiento: React.FC = () => {
         )}
         {tarea.fechaRealizada && (
           <div className="mt-1 text-xs text-emerald-600 font-semibold">
-            Realizado: {format(parseISO(tarea.fechaRealizada), 'dd/MM/yyyy', { locale: es })}
+            Realizado: {fmtFecha(tarea.fechaRealizada)}
           </div>
         )}
         {tarea.estado !== 'completado' && (
@@ -214,7 +225,7 @@ export const Mantenimiento: React.FC = () => {
                 Activo: activo?.codigo ?? '', Nombre: activo?.nombre ?? '',
                 Tipo: t.tipo, Estado: t.estado,
                 'Fecha Programada': t.fechaProgramada,
-                'Fecha Realizada': t.fechaRealizada ? format(parseISO(t.fechaRealizada), 'dd/MM/yyyy', { locale: es }) : '',
+                'Fecha Realizada': t.fechaRealizada ? fmtFecha(t.fechaRealizada) : '',
                 Responsable: getTecnicoNombre(t.responsableId),
                 Observaciones: t.observaciones,
               };

@@ -4,6 +4,22 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+
+// parseISO + format defensivo: si la fecha es null/undefined/invalida,
+// devuelve "—" en vez de tirar excepcion y dejar la pagina en blanco.
+// Razon: campos como proximoMantenimiento son opcionales en schema y
+// algunos activos viejos quedaron sin fecha. Sin esta guarda, el cliente
+// no podia ENTRAR a su activo (la ficha crasheaba al render).
+function fmt(fecha: string | null | undefined, fmtStr = 'dd/MM/yyyy'): string {
+  if (!fecha) return '—';
+  try {
+    const d = parseISO(String(fecha));
+    if (isNaN(d.getTime())) return '—';
+    return format(d, fmtStr, { locale: es });
+  } catch {
+    return '—';
+  }
+}
 import { ArrowLeft, Printer, ClipboardList, Pencil, Trash2, FileDown, FileText } from 'lucide-react';
 import { exportarFichaActivoPdf } from '../utils/exportPdf';
 import { imprimirEtiquetaQR } from '../utils/imprimirEtiqueta';
@@ -120,14 +136,14 @@ export const ActivoDetalle: React.FC = () => {
     { label: 'Modelo', value: activo.modelo },
     { label: 'Ubicación', value: activo.ubicacion },
     { label: 'Responsable', value: getTecnicoNombre(activo.responsableId) },
-    { label: 'Fecha Ingreso', value: format(parseISO(activo.fechaIngreso), 'dd/MM/yyyy', { locale: es }) },
+    { label: 'Fecha Ingreso', value: fmt(activo.fechaIngreso) },
     { label: 'Naturaleza', value: esOperativo ? 'Operativo' : 'Patrimonial / documental' },
     ...(mideHorasMarcha ? [
       { label: 'Horas Actuales', value: `${activo.horasActuales} hs` },
       { label: 'Intervalo Medición', value: `${activo.intervaloMedicionHoras} hs` },
       { label: 'Intervalo Lubricación', value: activo.intervaloLubricacionHoras ? `${activo.intervaloLubricacionHoras} hs` : 'N/A' },
     ] : []),
-    { label: 'Prox. Mantenimiento', value: format(parseISO(activo.proximoMantenimiento), 'dd/MM/yyyy', { locale: es }) },
+    { label: 'Prox. Mantenimiento', value: fmt(activo.proximoMantenimiento) },
     { label: 'Desplazamiento', value: activo.esItinerante ? 'Itinerante' : 'Fijo' },
     ...(activo.esItinerante ? [
       { label: 'Locacion base', value: activo.locacionBase ?? undefined },
@@ -276,7 +292,7 @@ export const ActivoDetalle: React.FC = () => {
               {activoTareas.length > 0 && (
                 <p className="text-xs text-slate-500 mt-2">
                   Tareas registradas: {activoTareas.length} · Proxima:{' '}
-                  {format(parseISO(activo.proximoMantenimiento), 'dd/MM/yyyy', { locale: es })}
+                  {fmt(activo.proximoMantenimiento)}
                 </p>
               )}
             </div>
@@ -341,7 +357,7 @@ export const ActivoDetalle: React.FC = () => {
                   <div key={tarea.id} className="border-2 border-slate-200 p-2">
                     <div className="text-xs font-bold text-slate-700">{tarea.tipo}</div>
                     <div className="flex justify-between mt-1">
-                      <span className="text-xs text-slate-500">{format(parseISO(tarea.fechaProgramada), 'dd/MM/yyyy', { locale: es })}</span>
+                      <span className="text-xs text-slate-500">{fmt(tarea.fechaProgramada)}</span>
                       <StatusBadge
                         estado={tarea.estado === 'completado' ? 'normal' : tarea.estado === 'vencido' ? 'critico' : 'alerta'}
                         size="sm"
@@ -387,7 +403,7 @@ export const ActivoDetalle: React.FC = () => {
             <tbody>
               {[...last10].reverse().map((m, i) => (
                 <tr key={m.id} className={`border-b border-slate-100 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
-                  <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">{format(parseISO(m.fecha), 'dd/MM/yyyy', { locale: es })}</td>
+                  <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">{fmt(m.fecha)}</td>
                   <td className="px-3 py-2 font-mono font-bold whitespace-nowrap">{m.temperatura}°C</td>
                   <td className="px-3 py-2 font-mono whitespace-nowrap">{m.amperaje > 0 ? `${m.amperaje}A` : '-'}</td>
                   <td className="px-3 py-2 font-mono whitespace-nowrap">{m.presion > 0 ? `${m.presion} bar` : '-'}</td>
@@ -424,7 +440,7 @@ export const ActivoDetalle: React.FC = () => {
             {[...last10].reverse().map((m) => (
               <div key={m.id} className="border-2 border-slate-200 p-2 flex items-start gap-3">
                 <span className="text-xs font-mono font-bold text-slate-700 flex-shrink-0">
-                  {format(parseISO(m.fecha), 'dd/MM/yy', { locale: es })}
+                  {fmt(m.fecha, 'dd/MM/yy')}
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-slate-700 leading-snug">{m.observaciones || 'Sin observaciones.'}</p>

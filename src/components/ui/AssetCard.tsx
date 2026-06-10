@@ -4,6 +4,18 @@ import { useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+
+// Defensivo: si la fecha viene null/invalida no rompe la card entera.
+function fmtFecha(fecha: string | null | undefined): string {
+  if (!fecha) return '—';
+  try {
+    const d = parseISO(String(fecha));
+    if (isNaN(d.getTime())) return '—';
+    return format(d, 'dd/MM/yyyy', { locale: es });
+  } catch {
+    return '—';
+  }
+}
 import { Activo, Medicion } from '../../data/types';
 import { StatusBadge } from './StatusBadge';
 import { EstadoOperativoBadge } from './EstadoOperativoBadge';
@@ -97,12 +109,12 @@ export const AssetCard: React.FC<AssetCardProps> = ({ activo, lastMedicion, sect
         {lastMedicion && (
           <div className="flex items-center gap-1.5 text-xs text-slate-500">
             <Clock size={11} />
-            <span>Última medición: {format(parseISO(lastMedicion.fecha), 'dd/MM/yyyy', { locale: es })}</span>
+            <span>Última medición: {fmtFecha(lastMedicion.fecha)}</span>
           </div>
         )}
         <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
           <Clock size={11} />
-          <span>Prox. mant.: {format(parseISO(activo.proximoMantenimiento), 'dd/MM/yyyy', { locale: es })}</span>
+          <span>Prox. mant.: {fmtFecha(activo.proximoMantenimiento)}</span>
         </div>
       </div>
     </div>
