@@ -33,6 +33,22 @@ export const ActivoDetalle: React.FC = () => {
   const qrRef = useRef<SVGSVGElement | null>(null);
 
   const activo = activos.find((a) => a.id === id);
+  const tipoActual = tipos.find((t) => t.id === activo?.tipoId);
+
+  // Naturaleza del activo: operativo (tiene parametros fisicos que cambian
+  // con el uso) vs patrimonial/documental (mueble, piscina, instalacion).
+  // La decide el TipoActivo + su CategoriaEquipo. Si no mide nada fisico,
+  // el activo se trata como patrimonial: nada de horas/intervalos/gauges/
+  // predictivo, foco en legajo documental e historial de tareas por fecha.
+  // OJO: estos hooks van ANTES del early return de "Activo no encontrado"
+  // — un hook condicional revienta con react error #310.
+  const [categoriaTipo, setCategoriaTipo] = useState<CategoriaEquipo | null>(null);
+  useEffect(() => {
+    const catId = tipoActual?.categoriaId;
+    if (!catId) { setCategoriaTipo(null); return; }
+    getCategoria(catId).then(setCategoriaTipo).catch(() => setCategoriaTipo(null));
+  }, [tipoActual?.categoriaId]);
+
   if (!activo) return <div className="p-8 text-red-600 font-bold">Activo no encontrado</div>;
 
   const activoMediciones = mediciones
@@ -41,20 +57,7 @@ export const ActivoDetalle: React.FC = () => {
 
   const last10 = activoMediciones.slice(-10);
   const activoTareas = tareas.filter((t) => t.activoId === id);
-  const tipoActual = tipos.find((t) => t.id === activo.tipoId);
   const qrValue = `${window.location.origin}${import.meta.env.BASE_URL}#/ficha/${activo.id}`;
-
-  // Naturaleza del activo: operativo (tiene parametros fisicos que cambian
-  // con el uso) vs patrimonial/documental (mueble, piscina, instalacion).
-  // La decide el TipoActivo + su CategoriaEquipo. Si no mide nada fisico,
-  // el activo se trata como patrimonial: nada de horas/intervalos/gauges/
-  // predictivo, foco en legajo documental e historial de tareas por fecha.
-  const [categoriaTipo, setCategoriaTipo] = useState<CategoriaEquipo | null>(null);
-  useEffect(() => {
-    const catId = tipoActual?.categoriaId;
-    if (!catId) { setCategoriaTipo(null); return; }
-    getCategoria(catId).then(setCategoriaTipo).catch(() => setCategoriaTipo(null));
-  }, [tipoActual?.categoriaId]);
 
   const mideAlgoFijo = !!(
     tipoActual?.mideTemperatura || tipoActual?.mideAmperaje || tipoActual?.midePresion ||
