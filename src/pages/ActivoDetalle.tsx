@@ -12,6 +12,7 @@ import { StatusBadge } from '../components/ui/StatusBadge';
 import { EstadoOperativoBadge, ESTADOS_OPERATIVOS } from '../components/ui/EstadoOperativoBadge';
 import { ValueGauge } from '../components/ui/ValueGauge';
 import { DocumentosActivo } from '../components/DocumentosActivo';
+import { FotoActivo } from '../components/FotoActivo';
 import { FallasActivo } from '../components/FallasActivo';
 import { UbicacionesActivo } from '../components/UbicacionesActivo';
 import { AnalisisActivo } from '../components/analitica/AnalisisActivo';
@@ -186,8 +187,16 @@ export const ActivoDetalle: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Left: Ficha técnica */}
+        {/* Left: Foto + Ficha técnica */}
         <div className="lg:col-span-2 space-y-4">
+          {API_URL && (
+            <FotoActivo
+              activoId={activo.id}
+              fotoUrl={activo.fotoUrl}
+              nombre={activo.nombre}
+              onChange={(fotoUrl) => updateActivo(activo.id, { fotoUrl })}
+            />
+          )}
           <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
             <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-3 border-b-2 border-slate-200 pb-2">Ficha Técnica</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">

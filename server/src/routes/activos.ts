@@ -293,4 +293,60 @@ router.delete('/:id', requireAdmin as any, async (req: Request, res: Response, n
   }
 });
 
+// ───────── Foto principal del activo ─────────
+// Data URL JPEG/PNG/WebP comprimida en el cliente. Limite chico a proposito:
+// si llega algo mas grande es que el cliente no comprimio (bug) o es abuso.
+const FOTO_MAX_CHARS = 400_000; // ~300KB binario en base64
+const FOTO_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
+
+// POST /api/activos/:id/foto
+router.post('/:id/foto', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const empresaId = await resolveEmpresaId(req);
+    const existing = await prisma.activo.findFirst({
+      where: { id: req.params.id, empresaId },
+    });
+    if (!existing) return res.status(404).json({ error: 'Activo no encontrado' });
+
+    const { url } = req.body ?? {};
+    if (typeof url !== 'string' || !url.startsWith('data:')) {
+      return res.status(400).json({ error: 'Falta la imagen (data URL).' });
+    }
+    const m = url.match(/^data:([^;,]+)[;,]/i);
+    if (!m || !FOTO_MIMES.includes(m[1].toLowerCase())) {
+      return res.status(415).json({ error: 'Formato no permitido. Solo JPEG, PNG o WebP.' });
+    }
+    if (url.length > FOTO_MAX_CHARS) {
+      return res.status(413).json({ error: 'La imagen es demasiado grande. Reintenta (la app la comprime sola).' });
+    }
+
+    const activo = await prisma.activo.update({
+      where: { id: existing.id },
+      data: { fotoUrl: url },
+      include: includeRelaciones,
+    });
+    void auditar(req as AuthRequest, 'editar', 'activo', activo.id, `Foto actualizada en ${activo.codigo}`);
+    res.json(activo);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/activos/:id/foto
+router.delete('/:id/foto', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const empresaId = await resolveEmpresaId(req);
+    const existing = await prisma.activo.findFirst({
+      where: { id: req.params.id, empresaId },
+    });
+    if (!existing) return res.status(404).json({ error: 'Activo no encontrado' });
+
+    await prisma.activo.update({ where: { id: existing.id }, data: { fotoUrl: null } });
+    void auditar(req as AuthRequest, 'editar', 'activo', existing.id, `Foto eliminada en ${existing.codigo}`);
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

@@ -345,6 +345,10 @@ model Activo {
   intervaloRodamientoHoras  Int?
   proximoMantenimiento      DateTime?
   notas                     String?
+  // Foto principal del activo: data URL JPEG comprimida client-side
+  // (max ~640px). Se gestiona SOLO via POST/DELETE /api/activos/:id/foto;
+  // el sync masivo no la toca para no inflar el array que viaja en cada save.
+  fotoUrl                   String?      @db.Text
   visibilidadPublica        Json?
   esItinerante              Boolean      @default(false)
   locacionBase              String?

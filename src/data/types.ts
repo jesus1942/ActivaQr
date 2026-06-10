@@ -43,6 +43,7 @@ export interface Activo {
   modelo: string;
   fechaIngreso: string;
   ubicacion: string;
+  fotoUrl?: string | null;
   responsableId: string;
   horasActuales: number;
   estado: EstadoActivo;

@@ -56,6 +56,18 @@ export const AssetCard: React.FC<AssetCardProps> = ({ activo, lastMedicion, sect
         )}
       </div>
 
+      {/* Foto del activo, como pegada en el legajo */}
+      {activo.fotoUrl && (
+        <div className="mb-3 border-2 border-slate-300 bg-white p-1 shadow-[2px_2px_6px_rgba(0,0,0,0.12)] rotate-[-0.5deg]">
+          <img
+            src={activo.fotoUrl}
+            alt={activo.nombre}
+            loading="lazy"
+            className="w-full h-32 object-cover block"
+          />
+        </div>
+      )}
+
       {/* Code & Name */}
       <div className="flex gap-3 items-start">
         <div className="flex-1">
