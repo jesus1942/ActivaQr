@@ -80,3 +80,37 @@ img, video, svg {
   .sidebar { display: none !important; }
   body { background: white; }
 }
+
+/* Animaciones globales: fade-up suave para entrada de cards/secciones.
+   Pensadas para que la app respire sin ser disco — duracion corta,
+   curva ease-out estandar, opacity + 8px de offset. */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.anim-fadeup {
+  animation: fadeUp 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.anim-fadein {
+  animation: fadeIn 220ms ease-out both;
+}
+
+/* Stagger via custom property: <div style={{'--i': 2}}> arranca 80ms despues. */
+.anim-fadeup[style*="--i"] {
+  animation-delay: calc(var(--i) * 60ms);
+}
+
+/* Respeta usuarios que prefieren cero movimiento (accessibility). */
+@media (prefers-reduced-motion: reduce) {
+  .anim-fadeup, .anim-fadein {
+    animation: none !important;
+  }
+  * {
+    transition-duration: 0ms !important;
+  }
+}
