@@ -66,15 +66,15 @@ function write<T>(key: string, value: T): void {
 // API helpers
 // ─────────────────────────────────────────────────────────────
 
+// IMPORTANTE: NO atrapar errores aca y devolver []. Si la red falla y este
+// helper devuelve [] silenciosamente, el hook cree que la BD esta vacia
+// y al primer cambio del usuario el sync borra TODO en backend. Pasa la
+// excepcion para que useStorage decida (no marcar cargado=true, mostrar
+// banner, bloquear sync).
 async function apiGet<T>(path: string): Promise<T[]> {
-  try {
-    const res = await fetch(`${API_URL}/${path}`, { headers: { ...authHeaders() } });
-    if (!res.ok) throw new Error(`GET ${path} → ${res.status}`);
-    return (await res.json()) as T[];
-  } catch (e) {
-    console.error('Error consultando la API:', e);
-    return [];
-  }
+  const res = await fetch(`${API_URL}/${path}`, { headers: { ...authHeaders() } });
+  if (!res.ok) throw new Error(`GET ${path} → ${res.status}`);
+  return (await res.json()) as T[];
 }
 
 async function apiSync<T>(entidad: string, data: T[]): Promise<void> {

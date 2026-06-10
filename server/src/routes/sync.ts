@@ -33,6 +33,13 @@ router.put('/sectores', asyncHandler(async (req, res) => {
   const empresaId = await resolveEmpresaId(req);
   const items: any[] = Array.isArray(req.body) ? req.body : [];
   const ids = items.map((i) => i.id);
+
+  const totalEnBd = await prisma.sector.count({ where: { empresaId } });
+  if (totalEnBd > 3 && items.length < totalEnBd * 0.75) {
+    console.error(`[sync/sectores] CANCELADO empresa=${empresaId}: ${items.length} vs ${totalEnBd}.`);
+    return res.status(409).json({ code: 'sync_inconsistente', error: 'Sectores faltantes — recarga la pagina.', enBd: totalEnBd, enCliente: items.length });
+  }
+
   await prisma.$transaction([
     ...(ids.length
       ? [prisma.sector.deleteMany({ where: { empresaId, id: { notIn: ids } } })]
@@ -59,6 +66,13 @@ router.put('/tipos', asyncHandler(async (req, res) => {
   const empresaId = await resolveEmpresaId(req);
   const items: any[] = Array.isArray(req.body) ? req.body : [];
   const ids = items.map((i) => i.id);
+
+  const totalEnBd = await prisma.tipoActivo.count({ where: { empresaId } });
+  if (totalEnBd > 3 && items.length < totalEnBd * 0.75) {
+    console.error(`[sync/tipos] CANCELADO empresa=${empresaId}: ${items.length} vs ${totalEnBd}.`);
+    return res.status(409).json({ code: 'sync_inconsistente', error: 'Tipos faltantes — recarga la pagina.', enBd: totalEnBd, enCliente: items.length });
+  }
+
   await prisma.$transaction([
     ...(ids.length
       ? [prisma.tipoActivo.deleteMany({ where: { empresaId, id: { notIn: ids } } })]
@@ -97,6 +111,26 @@ router.put('/activos', asyncHandler(async (req, res) => {
   const empresaId = await resolveEmpresaId(req);
   const items: any[] = Array.isArray(req.body) ? req.body : [];
   const ids = items.map((i) => i.id);
+
+  // Defensa anti-borrado masivo: si el cliente sincroniza un array que
+  // omite mas del 25% de los activos existentes en BD, es casi seguro
+  // que es un bug del frontend (carga fallida + creacion sobre estado
+  // vacio). Cancelar el sync entero antes de perder datos del cliente.
+  // El frontend deberia mandar un flag explicito si de verdad quiere
+  // borrar muchos activos a la vez.
+  const totalEnBd = await prisma.activo.count({ where: { empresaId } });
+  if (totalEnBd > 5 && items.length < totalEnBd * 0.75) {
+    console.error(
+      `[sync/activos] CANCELADO empresa=${empresaId}: cliente envio ${items.length} activos pero la BD tiene ${totalEnBd}. Probable bug del frontend.`
+    );
+    return res.status(409).json({
+      code: 'sync_inconsistente',
+      error: 'El navegador envio menos activos de los que hay registrados. Recarga la pagina y reintenta.',
+      enBd: totalEnBd,
+      enCliente: items.length,
+    });
+  }
+
 
   // ─── Defensa contra IDs falsos del frontend ───────────────────────
   // El frontend tiene un store local de 'tecnicos' con IDs que no existen
@@ -193,6 +227,12 @@ router.put('/mediciones', asyncHandler(async (req, res) => {
   const items: any[] = Array.isArray(req.body) ? req.body : [];
   const ids = items.map((i) => i.id);
 
+  const totalEnBd = await prisma.medicion.count({ where: { activo: { empresaId } } });
+  if (totalEnBd > 10 && items.length < totalEnBd * 0.75) {
+    console.error(`[sync/mediciones] CANCELADO empresa=${empresaId}: ${items.length} vs ${totalEnBd}.`);
+    return res.status(409).json({ code: 'sync_inconsistente', error: 'Mediciones faltantes — recarga.', enBd: totalEnBd, enCliente: items.length });
+  }
+
   // Defensa: tecnicoId con ID que no es Usuario real rompe la FK y tira
   // la transaccion entera (se pierde TODO el sync). Mismo criterio que
   // responsableId en activos.
@@ -247,6 +287,12 @@ router.put('/tareas', asyncHandler(async (req, res) => {
   const empresaId = await resolveEmpresaId(req);
   const items: any[] = Array.isArray(req.body) ? req.body : [];
   const ids = items.map((i) => i.id);
+
+  const totalEnBd = await prisma.tareaMantenimiento.count({ where: { activo: { empresaId } } });
+  if (totalEnBd > 5 && items.length < totalEnBd * 0.75) {
+    console.error(`[sync/tareas] CANCELADO empresa=${empresaId}: ${items.length} vs ${totalEnBd}.`);
+    return res.status(409).json({ code: 'sync_inconsistente', error: 'Tareas faltantes — recarga.', enBd: totalEnBd, enCliente: items.length });
+  }
   await prisma.$transaction([
     ...(ids.length
       ? [prisma.tareaMantenimiento.deleteMany({ where: { activo: { empresaId }, id: { notIn: ids } } })]

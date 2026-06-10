@@ -12,6 +12,25 @@ export const cargaRemotaStore = {
 export function useCargaRemota() {
   return useSyncExternalStore(cargaRemotaStore.subscribe, cargaRemotaStore.getSnapshot);
 }
+
+// ── Estado global de errores de sincronizacion ────────────────────────────
+// Si CUALQUIER entidad fallo al cargar desde el backend, el flag se
+// enciende y bloquea TODOS los syncs subsiguientes. Sin esto, una falla
+// de red en el GET inicial hacia que el sync borrara la BD del cliente
+// (deleteMany con array vacio).
+let _errorSync: string | null = null;
+const _errorListeners = new Set<() => void>();
+const _notificarError = () => _errorListeners.forEach((fn) => fn());
+export const errorSyncStore = {
+  subscribe: (fn: () => void) => { _errorListeners.add(fn); return () => _errorListeners.delete(fn); },
+  getSnapshot: () => _errorSync,
+};
+export function useErrorSync() {
+  return useSyncExternalStore(errorSyncStore.subscribe, errorSyncStore.getSnapshot);
+}
+export function syncEstaBloqueado(): boolean {
+  return _errorSync !== null;
+}
 import {
   useRemote,
   getActivos,
@@ -85,6 +104,13 @@ export function useStorage<T>(key: string, initialValue: T) {
       omitirGuardado.current = true;
       setValueState(data as T);
       cargado.current = true;
+    }).catch((e) => {
+      if (cancelado) return;
+      // CRITICO: si el GET falla, NO marcar cargado=true. Eso disparaba
+      // el sync con el array inicial vacio y BORRABA la BD del cliente.
+      console.error(`[useStorage] Error cargando "${key}":`, e);
+      _errorSync = `No se pudieron cargar los ${key} del servidor. Recargá la página o revisá tu conexión.`;
+      _notificarError();
     }).finally(() => {
       if (!cancelado) { _pendientes = Math.max(0, _pendientes - 1); _notificar(); }
     });
@@ -103,6 +129,13 @@ export function useStorage<T>(key: string, initialValue: T) {
       return;
     }
     if (useRemote) {
+      // CRITICO: si CUALQUIER entidad fallo al cargar, no persistir
+      // NADA. El estado local puede ser inconsistente con el backend
+      // y el sync de delete-rest borraria datos del cliente.
+      if (_errorSync) {
+        console.warn(`[useStorage] Sync bloqueado por error previo, descartando save de "${key}".`);
+        return;
+      }
       const fn = remoteSave[key];
       if (fn) void fn(value);
     } else {
