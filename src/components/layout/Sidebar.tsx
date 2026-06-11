@@ -25,21 +25,21 @@ import { getNotificacionesCliente } from '../../data/accesoRemotoApi';
 const LOGO_LIGHT = '/ActivaQr/company-logo-hd.png';   // negro, para fondo claro
 const LOGO_DARK  = '/ActivaQr/company-logo1.png';      // claro, para fondo oscuro (sidebar navy)
 
-const navEmpresa = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/indicadores', icon: BarChart3, label: 'Indicadores' },
-  { to: '/activos', icon: Package, label: 'Activos' },
-  { to: '/medicion', icon: ClipboardList, label: 'Mediciones' },
-  { to: '/mantenimiento', icon: Wrench, label: 'Mantenimiento' },
-  { to: '/reportes', icon: FileText, label: 'Reportes' },
-  { to: '/auditoria', icon: ScrollText, label: 'Auditoría' },
-  { to: '/importar', icon: Upload, label: 'Importar Datos' },
-  { to: '/qr', icon: QrCode, label: 'QR / Etiquetas' },
+const navEmpresa: Array<{ to: string; icon: typeof LayoutDashboard; label: string; sub?: string }> = [
+  { to: '/', icon: LayoutDashboard, label: 'Dashboard', sub: 'Resumen del día' },
+  { to: '/indicadores', icon: BarChart3, label: 'Indicadores', sub: 'KPIs y gráficos' },
+  { to: '/activos', icon: Package, label: 'Activos', sub: 'Tus equipos' },
+  { to: '/medicion', icon: ClipboardList, label: 'Mediciones', sub: 'Cargar lectura' },
+  { to: '/mantenimiento', icon: Wrench, label: 'Mantenimiento', sub: 'Tareas y planes' },
+  { to: '/reportes', icon: FileText, label: 'Reportes', sub: 'Exportar PDF/CSV' },
+  { to: '/auditoria', icon: ScrollText, label: 'Auditoría', sub: 'Quién hizo qué' },
+  { to: '/importar', icon: Upload, label: 'Importar Datos', sub: 'Carga masiva' },
+  { to: '/qr', icon: QrCode, label: 'QR / Etiquetas', sub: 'Imprimir códigos' },
   { to: '/mensajes', icon: MessageSquare, label: 'Mensajes' },
-  { to: '/configuracion', icon: Settings, label: 'Configuración' },
+  { to: '/configuracion', icon: Settings, label: 'Configuración', sub: 'Sectores, tipos, usuarios' },
 ];
 
-const navSuperadmin = [
+const navSuperadmin: Array<{ to: string; icon: typeof LayoutDashboard; label: string; sub?: string }> = [
   { to: '/', icon: Building2, label: 'Empresas' },
   { to: '/analitica', icon: LineChart, label: 'Analítica' },
   { to: '/mensajes', icon: MessageSquare, label: 'Mensajes' },
@@ -67,15 +67,25 @@ export const Sidebar: React.FC = () => {
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-slate-900 text-white">
-      {/* Logo */}
-      <div className="px-5 py-5 border-b-2 border-slate-700">
-        <img src={LOGO_DARK} alt="Logo" className="h-12 w-auto object-contain" />
-        <div className="text-slate-400 text-xs mt-2 font-medium tracking-wider uppercase">Activos bajo control</div>
+      {/* Logo + X mobile */}
+      <div className="px-5 py-5 border-b-2 border-slate-700 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <img src={LOGO_DARK} alt="Logo" className="h-12 w-auto object-contain" />
+          <div className="text-slate-400 text-xs mt-2 font-medium tracking-wider uppercase">Activos bajo control</div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="md:hidden flex-shrink-0 w-11 h-11 flex items-center justify-center bg-orange-500 text-white border-2 border-orange-400 active:translate-y-[1px]"
+          aria-label="Cerrar menú"
+        >
+          <X size={22} />
+        </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems.map(({ to, icon: Icon, label }) => {
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        {navItems.map(({ to, icon: Icon, label, sub }) => {
           const esMensajes = to === '/mensajes';
           const badge = esMensajes
             ? (notif.mensajesNoLeidos > 0 ? notif.mensajesNoLeidos : notif.tienePermisoPendiente ? '!' : 0)
@@ -86,7 +96,7 @@ export const Sidebar: React.FC = () => {
               to={to}
               end={to === '/'}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 min-h-[48px] font-sketch text-lg font-semibold transition-colors ${
+                `flex items-center gap-3 px-3 py-2 min-h-[52px] font-sketch font-semibold transition-colors ${
                   isActive
                     ? 'bg-orange-500 text-white border-2 border-orange-400'
                     : 'text-slate-300 hover:bg-slate-800 hover:text-white border-2 border-transparent'
@@ -94,10 +104,13 @@ export const Sidebar: React.FC = () => {
               }
               onClick={() => setOpen(false)}
             >
-              <Icon size={18} />
-              <span className="flex-1">{label}</span>
+              <Icon size={20} className="flex-shrink-0" />
+              <span className="flex-1 min-w-0 leading-tight">
+                <span className="block text-lg">{label}</span>
+                {sub && <span className="block text-[11px] font-normal opacity-70 normal-case tracking-normal">{sub}</span>}
+              </span>
               {!!badge && (
-                <span className="min-w-[20px] h-5 flex items-center justify-center bg-orange-500 text-white text-xs font-black rounded-none px-1 border border-orange-400">
+                <span className="min-w-[20px] h-5 flex items-center justify-center bg-orange-500 text-white text-xs font-black rounded-none px-1 border border-orange-400 flex-shrink-0">
                   {badge}
                 </span>
               )}
@@ -156,10 +169,12 @@ export const Sidebar: React.FC = () => {
             <ClipboardList size={18} />
           </button>
           <button
-            className="bg-slate-800 text-white p-2 border-2 border-slate-600"
+            className="flex items-center gap-1.5 bg-slate-800 text-white px-3 h-10 border-2 border-slate-600 font-black uppercase text-xs tracking-wider"
             onClick={() => setOpen(!open)}
+            aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
           >
-            {open ? <X size={20} /> : <Menu size={20} />}
+            {open ? <X size={18} /> : <Menu size={18} />}
+            <span>{open ? 'Cerrar' : 'Menú'}</span>
           </button>
         </div>
       </div>
