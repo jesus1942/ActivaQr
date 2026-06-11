@@ -1,7 +1,7 @@
 // v1.1.0
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { Search, Plus, LayoutGrid, List, X, ChevronDown, ChevronUp, Download, FileDown, Lightbulb } from 'lucide-react';
 import { exportarCsv } from '../utils/exportCsv';
 import { exportarResumenActivosPdf } from '../utils/exportPdf';
@@ -10,6 +10,8 @@ import { useAuth } from '../context/AuthContext';
 import { AssetCard } from '../components/ui/AssetCard';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { ModalCrearRapido } from '../components/ModalCrearRapido';
+import { ModalPlantillaMantenimiento } from '../components/ModalPlantillaMantenimiento';
+import { buscarPlantilla, PlantillaMantenimiento, TareaSugerida } from '../data/plantillasMantenimiento';
 import { ESTADOS_OPERATIVOS } from '../components/ui/EstadoOperativoBadge';
 import { Activo, EstadoActivo, EstadoOperativo, TipoActivo, ClaveVisibilidad, VISIBILIDAD_DEFAULT, VISIBILIDAD_LABELS } from '../data/types';
 
@@ -30,7 +32,7 @@ const ESTADOS: { value: string; label: string }[] = [
 export const Activos: React.FC = () => {
   const {
     activos, mediciones, sectores, tipos, tecnicos,
-    addActivo, updateActivo, addSector, addTipo,
+    addActivo, updateActivo, addSector, addTipo, addTarea,
     getSectorNombre, getTipoNombre, getTecnicoNombre,
   } = useActivos();
   const { usuario } = useAuth();
@@ -94,6 +96,7 @@ export const Activos: React.FC = () => {
   const [form, setForm] = useState<Omit<Activo, 'id'>>(emptyActivo);
   const [crearSectorAbierto, setCrearSectorAbierto] = useState(false);
   const [crearTipoAbierto, setCrearTipoAbierto] = useState(false);
+  const [plantillaSugerida, setPlantillaSugerida] = useState<{ plantilla: PlantillaMantenimiento; activoId: string } | null>(null);
 
   const crearSectorInline = (nombre: string) => {
     const id = `sec-${Date.now()}`;
@@ -166,11 +169,37 @@ export const Activos: React.FC = () => {
     if (editId) {
       updateActivo(editId, form);
     } else {
-      addActivo({ ...form, id: `act-${Date.now()}` });
+      const nuevoId = `act-${Date.now()}`;
+      addActivo({ ...form, id: nuevoId });
+      // Al crear (no editar), buscar plantilla por el nombre del tipo
+      // y ofrecerla. Si el usuario la ignora, no pasa nada.
+      const nombreTipo = tipos.find((t) => t.id === form.tipoId)?.nombre;
+      const plantilla = buscarPlantilla(nombreTipo);
+      if (plantilla) {
+        setPlantillaSugerida({ plantilla, activoId: nuevoId });
+      }
     }
     setShowModal(false);
     setEditId(null);
     setForm(emptyActivo);
+  };
+
+  const aplicarPlantilla = (tareas: TareaSugerida[]) => {
+    if (!plantillaSugerida) return;
+    const hoy = new Date();
+    tareas.forEach((t, i) => {
+      addTarea({
+        id: `tar-${Date.now()}-${i}`,
+        activoId: plantillaSugerida.activoId,
+        tipo: t.tipo,
+        prioridad: t.prioridad ?? 'media',
+        fechaProgramada: format(addDays(hoy, t.cadaDias), 'yyyy-MM-dd'),
+        estado: 'pendiente',
+        responsableId: tecnicosActivos[0]?.id ?? '',
+        observaciones: t.observaciones,
+      });
+    });
+    setPlantillaSugerida(null);
   };
 
   return (
@@ -570,6 +599,14 @@ export const Activos: React.FC = () => {
         onCerrar={() => setCrearTipoAbierto(false)}
         onCrear={crearTipoInline}
       />
+      {plantillaSugerida && (
+        <ModalPlantillaMantenimiento
+          abierto
+          plantilla={plantillaSugerida.plantilla}
+          onCerrar={() => setPlantillaSugerida(null)}
+          onAplicar={aplicarPlantilla}
+        />
+      )}
     </div>
   );
 };
