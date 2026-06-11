@@ -1,22 +1,20 @@
-// Imprime una etiqueta autocontenida (solo QR + codigo + nombre) en una
-// ventana nueva, sin tocar el resto de la pagina. Pensado para:
+// Imprime una etiqueta autocontenida (solo QR + codigo + nombre) en un
+// IFRAME oculto en la misma pagina. Por que iframe y no window.open:
+// iOS Safari bloquea agresivamente window.open() y muchos usuarios
+// reportaban "no imprime nada". El iframe NO requiere permiso de popup,
+// vive escondido, dispara print(), y se autodestruye despues.
 //
-// - Etiquetadoras Brother QL (62mm o 29mm continuo, o DK precortado).
-// - Impresoras laser A4 (la etiqueta queda chica centrada, podes
-//   recortar y pegar o configurar la impresora con tamaño custom).
-//
-// Por que ventana nueva en vez de @media print global: porque @media print
-// que oculte 80% del DOM es fragil — un componente nuevo en la pagina sin
-// "hide-on-print" rompe la etiqueta. Window-isolated es bulletproof.
+// Etiqueta dimensionada para:
+// - Etiquetadoras Brother QL (62mm o 29mm continuo, DK precortado).
+// - Impresoras laser A4 (la etiqueta queda chica centrada, recortable).
+//   Cuando llegue la Brother, ajustamos anchoMm/altoMm al rollo exacto.
 
 interface ImprimirEtiquetaOpts {
   codigo: string;
   nombre: string;
-  qrSvgString: string; // SVG serializado del QR (innerHTML del <svg>)
-  qrViewBox?: string;  // ej "0 0 29 29"
+  qrSvgString: string;
+  qrViewBox?: string;
   empresaNombre?: string;
-  // Tamaño de la etiqueta. Default 50x50mm — anda bien en Brother 62mm
-  // y en laser A4. Se puede sobrescribir si Jesus quiere otro formato.
   anchoMm?: number;
   altoMm?: number;
 }
@@ -34,7 +32,7 @@ export function imprimirEtiquetaQR({
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<title>Etiqueta ${codigo}</title>
+<title>Etiqueta ${escapeHtml(codigo)}</title>
 <style>
   @page { size: ${anchoMm}mm ${altoMm}mm; margin: 0; }
   * { box-sizing: border-box; }
@@ -55,42 +53,65 @@ export function imprimirEtiquetaQR({
   .codigo { font-size: 3mm; font-weight: 900; letter-spacing: 0.5mm; font-family: ui-monospace, Menlo, Consolas, monospace; margin-top: 1mm; text-align: center; }
   .nombre { font-size: 2.4mm; font-weight: 600; text-align: center; line-height: 1.1; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pie   { font-size: 1.8mm; opacity: 0.55; text-align: center; }
-  @media screen {
-    body { box-shadow: 0 0 0 1px #ccc; margin: 2mm auto; }
-  }
 </style>
 </head>
 <body>
   <div class="qr"><svg viewBox="${qrViewBox}" xmlns="http://www.w3.org/2000/svg">${qrSvgString}</svg></div>
-  <div class="codigo">${escape(codigo)}</div>
-  <div class="nombre">${escape(nombre)}</div>
-  <div class="pie">${escape(empresaNombre ?? 'ActivaQR')}</div>
-  <script>
-    window.addEventListener('load', function() {
-      setTimeout(function() {
-        window.focus();
-        window.print();
-      }, 100);
-    });
-    window.addEventListener('afterprint', function() { window.close(); });
-  </script>
+  <div class="codigo">${escapeHtml(codigo)}</div>
+  <div class="nombre">${escapeHtml(nombre)}</div>
+  <div class="pie">${escapeHtml(empresaNombre ?? 'ActivaQR')}</div>
 </body>
 </html>`;
 
-  // En iOS Safari window.open requiere ser disparado en el handler de un
-  // click — por eso esta funcion DEBE invocarse directo desde el onClick,
-  // no detras de un await.
-  const win = window.open('', '_blank', 'width=420,height=520');
-  if (!win) {
-    alert('El navegador bloqueo la ventana de impresion. Habilitala en la configuracion del navegador y reintenta.');
-    return;
-  }
-  win.document.open();
-  win.document.write(html);
-  win.document.close();
+  // Crear iframe escondido FUERA del flujo de scroll/render. Tamaño 0,
+  // posicion fixed para no mover layout, opacity 0 por las dudas.
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden', 'true');
+  iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;pointer-events:none;';
+  document.body.appendChild(iframe);
+
+  const limpiar = () => {
+    // Damos tiempo a que el dialog de impresion termine antes de quitar
+    // el iframe — en algunos navegadores quitarlo antes cancela el job.
+    setTimeout(() => {
+      try { iframe.remove(); } catch { /* noop */ }
+    }, 500);
+  };
+
+  // Cargar el HTML al iframe via srcdoc (mejor compat que document.write,
+  // funciona en iOS y respeta el sandbox por defecto).
+  iframe.srcdoc = html;
+
+  iframe.onload = () => {
+    try {
+      const win = iframe.contentWindow;
+      if (!win) {
+        alert('No se pudo preparar la etiqueta para imprimir. Probá de nuevo.');
+        limpiar();
+        return;
+      }
+      // Pequeño delay para que las fonts/styles se apliquen antes de print.
+      setTimeout(() => {
+        try {
+          win.focus();
+          win.print();
+        } catch (e) {
+          console.error('[imprimirEtiqueta] print error:', e);
+          alert('No se pudo abrir el dialogo de impresion. Si estas en iPhone, podes tocar Compartir → Imprimir desde la ficha.');
+        }
+        // En la mayoria de navegadores afterprint se dispara aca; igual
+        // limpiamos a los 500ms por las dudas.
+        win.addEventListener('afterprint', limpiar);
+        setTimeout(limpiar, 60000);
+      }, 100);
+    } catch (e) {
+      console.error('[imprimirEtiqueta] onload error:', e);
+      limpiar();
+    }
+  };
 }
 
-function escape(s: string): string {
+function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
