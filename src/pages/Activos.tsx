@@ -2,13 +2,14 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Search, Plus, LayoutGrid, List, X, ChevronDown, ChevronUp, Download, FileDown } from 'lucide-react';
+import { Search, Plus, LayoutGrid, List, X, ChevronDown, ChevronUp, Download, FileDown, Lightbulb } from 'lucide-react';
 import { exportarCsv } from '../utils/exportCsv';
 import { exportarResumenActivosPdf } from '../utils/exportPdf';
 import { useActivos } from '../hooks/useActivos';
 import { useAuth } from '../context/AuthContext';
 import { AssetCard } from '../components/ui/AssetCard';
 import { StatusBadge } from '../components/ui/StatusBadge';
+import { ModalCrearRapido } from '../components/ModalCrearRapido';
 import { ESTADOS_OPERATIVOS } from '../components/ui/EstadoOperativoBadge';
 import { Activo, EstadoActivo, EstadoOperativo, TipoActivo, ClaveVisibilidad, VISIBILIDAD_DEFAULT, VISIBILIDAD_LABELS } from '../data/types';
 
@@ -29,7 +30,7 @@ const ESTADOS: { value: string; label: string }[] = [
 export const Activos: React.FC = () => {
   const {
     activos, mediciones, sectores, tipos, tecnicos,
-    addActivo, updateActivo,
+    addActivo, updateActivo, addSector, addTipo,
     getSectorNombre, getTipoNombre, getTecnicoNombre,
   } = useActivos();
   const { usuario } = useAuth();
@@ -91,6 +92,27 @@ export const Activos: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Omit<Activo, 'id'>>(emptyActivo);
+  const [crearSectorAbierto, setCrearSectorAbierto] = useState(false);
+  const [crearTipoAbierto, setCrearTipoAbierto] = useState(false);
+
+  const crearSectorInline = (nombre: string) => {
+    const id = `sec-${Date.now()}`;
+    addSector({ id, nombre, color: '#F97316', activo: true });
+    setForm((prev) => ({ ...prev, sectorId: id }));
+    setCrearSectorAbierto(false);
+  };
+
+  const crearTipoInline = (nombre: string) => {
+    const id = `tip-${Date.now()}`;
+    addTipo({
+      id, nombre, categoriaId: null,
+      mideTemperatura: true, mideAmperaje: false, midePresion: false,
+      mideVibracion: false, mideBateria: false, mideToner: false,
+      mideContador: false, mideVoltaje: false, activo: true,
+    });
+    setForm((prev) => ({ ...prev, tipoId: id }));
+    setCrearTipoAbierto(false);
+  };
 
   const filtered = activos
     .filter((a) => {
@@ -303,6 +325,15 @@ export const Activos: React.FC = () => {
               <button onClick={() => setShowModal(false)}><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {(sectoresActivos.length === 0 || tiposActivos.length === 0) && (
+                <div className="sm:col-span-2 bg-orange-50 border-2 border-orange-500 p-3 flex gap-3 items-start">
+                  <Lightbulb size={18} className="text-orange-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-slate-800 leading-snug">
+                    <strong className="font-black uppercase text-xs tracking-wider block mb-1 text-orange-700">Primer paso</strong>
+                    Antes de guardar, tocá el botón <span className="inline-flex items-center justify-center w-5 h-5 bg-orange-500 text-white border border-slate-800 font-black"><Plus size={12} /></span> al lado de <strong>Tipo</strong> y <strong>Sector</strong> para crear el primero. Después podés cargar todos los activos que quieras.
+                  </div>
+                </div>
+              )}
               {[
                 { label: 'Código', key: 'codigo', required: true },
                 { label: 'Nombre', key: 'nombre', required: true },
@@ -334,23 +365,45 @@ export const Activos: React.FC = () => {
               </div>
               <div>
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Tipo</label>
-                <select
-                  value={form.tipoId}
-                  onChange={(e) => setForm((prev) => ({ ...prev, tipoId: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
-                >
-                  {tiposActivos.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
-                </select>
+                <div className="flex gap-1.5">
+                  <select
+                    value={form.tipoId}
+                    onChange={(e) => setForm((prev) => ({ ...prev, tipoId: e.target.value }))}
+                    className="flex-1 min-w-0 border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
+                  >
+                    {tiposActivos.length === 0 && <option value="">— Crear primero →</option>}
+                    {tiposActivos.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setCrearTipoAbierto(true)}
+                    title="Crear nuevo tipo"
+                    className="w-11 h-11 flex-shrink-0 bg-orange-500 text-white border-2 border-slate-800 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.8)] flex items-center justify-center hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] transition-all"
+                  >
+                    <Plus size={18} />
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Sector</label>
-                <select
-                  value={form.sectorId}
-                  onChange={(e) => setForm((prev) => ({ ...prev, sectorId: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
-                >
-                  {sectoresActivos.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
-                </select>
+                <div className="flex gap-1.5">
+                  <select
+                    value={form.sectorId}
+                    onChange={(e) => setForm((prev) => ({ ...prev, sectorId: e.target.value }))}
+                    className="flex-1 min-w-0 border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
+                  >
+                    {sectoresActivos.length === 0 && <option value="">— Crear primero →</option>}
+                    {sectoresActivos.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setCrearSectorAbierto(true)}
+                    title="Crear nuevo sector"
+                    className="w-11 h-11 flex-shrink-0 bg-orange-500 text-white border-2 border-slate-800 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.8)] flex items-center justify-center hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] transition-all"
+                  >
+                    <Plus size={18} />
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Estado Inicial</label>
@@ -500,6 +553,23 @@ export const Activos: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ModalCrearRapido
+        abierto={crearSectorAbierto}
+        titulo="Nuevo sector"
+        label="¿Cómo se llama?"
+        placeholder="Ej: Cocina, Patio, Sala 1"
+        onCerrar={() => setCrearSectorAbierto(false)}
+        onCrear={crearSectorInline}
+      />
+      <ModalCrearRapido
+        abierto={crearTipoAbierto}
+        titulo="Nuevo tipo de activo"
+        label="¿Qué tipo de cosa es?"
+        placeholder="Ej: Heladera, Cortadora, Pileta"
+        onCerrar={() => setCrearTipoAbierto(false)}
+        onCrear={crearTipoInline}
+      />
     </div>
   );
 };

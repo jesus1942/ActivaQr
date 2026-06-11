@@ -14,14 +14,14 @@ import {
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
-  Package, AlertTriangle, ChevronRight, CalendarClock, CheckCircle2, Wrench, ClipboardList,
+  Package, AlertTriangle, ChevronRight, CalendarClock, CheckCircle2, Wrench, ClipboardList, Sparkles,
 } from 'lucide-react';
 import { useActivos } from '../hooks/useActivos';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { OnboardingTour } from '../components/OnboardingTour';
 
 export const Dashboard: React.FC = () => {
-  const { activos, mediciones, tareas, getSectorNombre, getTecnicoNombre } = useActivos();
+  const { activos, mediciones, tareas, sectores, tipos, getSectorNombre, getTecnicoNombre } = useActivos();
   const navigate = useNavigate();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -99,6 +99,34 @@ export const Dashboard: React.FC = () => {
           {format(today, "EEEE d 'de' MMMM", { locale: es })}
         </div>
       </div>
+
+      {activos.length === 0 && (
+        <div className="bg-orange-500 text-white border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4 sm:p-5 mb-6 flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex gap-3 items-start flex-1 min-w-0">
+            <Sparkles size={24} className="flex-shrink-0 mt-0.5" />
+            <div>
+              <h2 className="font-black uppercase tracking-wide text-base sm:text-lg leading-tight">¡Bienvenido a ActivaQR!</h2>
+              <p className="text-sm mt-1 leading-snug">
+                Cargá tu primer activo. Te vamos a guiar paso a paso, no hace falta configurar nada de antes.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/activos')}
+            className="flex items-center justify-center gap-2 bg-white text-orange-600 px-5 min-h-[48px] font-black uppercase tracking-wide border-2 border-slate-900 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] transition-all text-sm whitespace-nowrap"
+          >
+            Cargar mi primer activo
+            <ChevronRight size={18} />
+          </button>
+        </div>
+      )}
+
+      {activos.length > 0 && (sectores.length === 0 || tipos.length === 0) && (
+        <div className="bg-yellow-100 border-2 border-yellow-600 p-3 mb-6 text-sm text-slate-800 flex items-center gap-3">
+          <AlertTriangle size={18} className="text-yellow-700 flex-shrink-0" />
+          <span>Hay activos cargados pero sin sectores o tipos definidos. Editá un activo para crearlos.</span>
+        </div>
+      )}
 
       {/* ───────── Franjas accionables ───────── */}
       <div className="space-y-3 mb-8">
