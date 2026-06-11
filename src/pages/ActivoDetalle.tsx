@@ -322,6 +322,7 @@ export const ActivoDetalle: React.FC = () => {
                 sectorNombre: getSectorNombre(activo.sectorId),
                 tipoNombre: getTipoNombre(activo.tipoId),
                 responsableNombre: getTecnicoNombre(activo.responsableId ?? ''),
+                tipo: tipoActual ?? null,
               })}
               className="w-full flex items-center justify-center gap-2 border-2 border-slate-800 bg-white px-4 py-2.5 font-bold text-slate-700 hover:bg-slate-50 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] transition-colors mb-2"
             >

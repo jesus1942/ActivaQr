@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { Activo, Medicion, TareaMantenimiento } from '../data/types';
+import type { Activo, Medicion, TareaMantenimiento, TipoActivo } from '../data/types';
 import type { Kpis } from '../data/indicadoresApi';
 
 const SLATE900: [number, number, number] = [30, 41, 59];
@@ -86,6 +86,30 @@ export interface FichaActivoPdfParams {
   tipoNombre: string;
   responsableNombre: string;
   empresaNombre?: string;
+  // Si se pasa el tipo, la ficha respeta los flags mide* y oculta los
+  // parametros que no aplican. Para activos estaticos (piscina, mueble,
+  // pileta), sin flags activos, NO se imprime la columna derecha de
+  // motor ni columnas de mediciones que no se cargan. Sin tipo, vuelve
+  // al comportamiento legacy (compatibilidad con llamadas viejas).
+  tipo?: TipoActivo | null;
+}
+
+interface FlagsMedicion {
+  temperatura: boolean;
+  amperaje: boolean;
+  presion: boolean;
+  vibracion: boolean;
+}
+
+function flagsDeTipo(tipo: TipoActivo | null | undefined): FlagsMedicion {
+  // Si no hay tipo, asumimos que mide todo (legacy).
+  if (!tipo) return { temperatura: true, amperaje: true, presion: true, vibracion: true };
+  return {
+    temperatura: !!tipo.mideTemperatura,
+    amperaje: !!tipo.mideAmperaje,
+    presion: !!tipo.midePresion,
+    vibracion: !!tipo.mideVibracion,
+  };
 }
 
 export function exportarFichaActivoPdf(p: FichaActivoPdfParams) {
@@ -109,6 +133,8 @@ export function exportarFichaActivoPdf(p: FichaActivoPdfParams) {
   let y = 36;
 
   // ── Bloque identidad + parámetros ──────────────────────────────────
+  const flags = flagsDeTipo(p.tipo);
+  const llevaHoras = flags.temperatura || flags.amperaje || flags.presion || flags.vibracion;
   const izq: [string, string][] = [
     ['Tipo', p.tipoNombre],
     ['Sector', p.sectorNombre],
@@ -117,23 +143,31 @@ export function exportarFichaActivoPdf(p: FichaActivoPdfParams) {
     ['Ubicacion', p.activo.ubicacion || '—'],
     ['Responsable', p.responsableNombre || '—'],
     ['Fecha ingreso', fmtFecha(p.activo.fechaIngreso)],
-    ['Horas actuales', fmtNum(p.activo.horasActuales, ' hs')],
+    ...(llevaHoras ? [['Horas actuales', fmtNum(p.activo.horasActuales, ' hs')] as [string, string]] : []),
     ['Prox. mantenimiento', fmtFecha(p.activo.proximoMantenimiento)],
     ['Estado operativo', labelEstado(p.activo.estadoOperativo ?? 'operativo')],
   ];
 
-  const der: [string, string][] = [
-    ['Temp. min/max', `${fmtNum(p.activo.temperaturaMin)}°C / ${fmtNum(p.activo.temperaturaMax)}°C`],
-    ['Temp. alerta', fmtNum(p.activo.temperaturaAlerta, '°C')],
-    ['Temp. critica', fmtNum(p.activo.temperaturaCritica, '°C')],
-    ['Amperaje normal', fmtNum(p.activo.amperajeNormal, ' A')],
-    ['Amperaje alerta', fmtNum(p.activo.amperajeAlerta, ' A')],
-    ['Amperaje critico', fmtNum(p.activo.amperajeCritico, ' A')],
-    ['Presion normal', fmtNum(p.activo.presionNormal, ' bar')],
-    ['Presion alerta', fmtNum(p.activo.presionAlerta, ' bar')],
-    ['Presion critica', fmtNum(p.activo.presionCritica, ' bar')],
-    ['Intervalo medicion', fmtNum(p.activo.intervaloMedicionHoras, ' hs')],
-  ];
+  const der: [string, string][] = [];
+  if (flags.temperatura) {
+    der.push(['Temp. min/max', `${fmtNum(p.activo.temperaturaMin)}°C / ${fmtNum(p.activo.temperaturaMax)}°C`]);
+    der.push(['Temp. alerta', fmtNum(p.activo.temperaturaAlerta, '°C')]);
+    der.push(['Temp. critica', fmtNum(p.activo.temperaturaCritica, '°C')]);
+  }
+  if (flags.amperaje) {
+    der.push(['Amperaje normal', fmtNum(p.activo.amperajeNormal, ' A')]);
+    der.push(['Amperaje alerta', fmtNum(p.activo.amperajeAlerta, ' A')]);
+    der.push(['Amperaje critico', fmtNum(p.activo.amperajeCritico, ' A')]);
+  }
+  if (flags.presion) {
+    der.push(['Presion normal', fmtNum(p.activo.presionNormal, ' bar')]);
+    der.push(['Presion alerta', fmtNum(p.activo.presionAlerta, ' bar')]);
+    der.push(['Presion critica', fmtNum(p.activo.presionCritica, ' bar')]);
+  }
+  // Intervalo de medicion solo si el equipo lleva horas (algo que medir).
+  if (flags.temperatura || flags.amperaje || flags.presion || flags.vibracion) {
+    der.push(['Intervalo medicion', fmtNum(p.activo.intervaloMedicionHoras, ' hs')]);
+  }
 
   doc.setFontSize(8);
   const startY = y;
@@ -185,16 +219,38 @@ export function exportarFichaActivoPdf(p: FichaActivoPdfParams) {
     if (y > 220) { doc.addPage(); y = 20; }
     y = seccionTitulo(doc, y, `Ultimas ${p.mediciones.length} mediciones`);
 
-    const cols = ['Fecha', 'Temp', 'Amp', 'Presion', 'Vibracion', 'Estado', 'Observaciones'];
-    const colX = [MAR + 2, MAR + 28, MAR + 46, MAR + 64, MAR + 82, MAR + 103, MAR + 122];
-    const colW = [25, 17, 17, 17, 20, 18, W - MAR - 122 - 2];
+    // Armar columnas dinamicamente segun los flags del tipo. Estaticas:
+    // Fecha + Estado + Observaciones. Las columnas de motor solo si
+    // aplican.
+    type Col = { label: string; getter: (m: Medicion) => string; width: number };
+    const dynamicCols: Col[] = [];
+    if (flags.temperatura) dynamicCols.push({ label: 'Temp',      getter: (m) => fmtNum(m.temperatura, '°'), width: 18 });
+    if (flags.amperaje)    dynamicCols.push({ label: 'Amp',       getter: (m) => fmtNum(m.amperaje, 'A'),    width: 18 });
+    if (flags.presion)     dynamicCols.push({ label: 'Presion',   getter: (m) => fmtNum(m.presion, 'b'),     width: 18 });
+    if (flags.vibracion)   dynamicCols.push({ label: 'Vibracion', getter: (m) => m.vibracion ?? '—',         width: 20 });
+
+    const FECHA_W = 26;
+    const ESTADO_W = 22;
+    const dynamicW = dynamicCols.reduce((s, c) => s + c.width, 0);
+    const OBS_W = Math.max(20, W - MAR * 2 - FECHA_W - dynamicW - ESTADO_W - 4);
+
+    // Construir array de posiciones X
+    let cursor = MAR + 2;
+    const xFecha = cursor; cursor += FECHA_W;
+    const xDyn: number[] = [];
+    dynamicCols.forEach((c) => { xDyn.push(cursor); cursor += c.width; });
+    const xEstado = cursor; cursor += ESTADO_W;
+    const xObs = cursor;
 
     doc.setFillColor(...SLATE900);
     doc.rect(MAR, y - 2, W - MAR * 2, 7, 'F');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7);
     doc.setTextColor(...WHITE);
-    cols.forEach((c, i) => doc.text(c, colX[i], y + 2.5));
+    doc.text('Fecha', xFecha, y + 2.5);
+    dynamicCols.forEach((c, i) => doc.text(c.label, xDyn[i], y + 2.5));
+    doc.text('Estado', xEstado, y + 2.5);
+    doc.text('Observaciones', xObs, y + 2.5);
     doc.setTextColor(...BLACK);
     y += 8;
 
@@ -207,20 +263,17 @@ export function exportarFichaActivoPdf(p: FichaActivoPdfParams) {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
       doc.setTextColor(...BLACK);
-      doc.text(fmtFecha(m.fecha), colX[0], y + 2);
-      doc.text(fmtNum(m.temperatura, '°'), colX[1], y + 2);
-      doc.text(fmtNum(m.amperaje, 'A'), colX[2], y + 2);
-      doc.text(fmtNum(m.presion, 'b'), colX[3], y + 2);
-      doc.text(m.vibracion ?? '—', colX[4], y + 2);
+      doc.text(fmtFecha(m.fecha), xFecha, y + 2);
+      dynamicCols.forEach((c, i) => doc.text(c.getter(m), xDyn[i], y + 2));
 
       const ec = colorEstado(m.estado);
       doc.setTextColor(...ec);
       doc.setFont('helvetica', 'bold');
-      doc.text(labelEstado(m.estado), colX[5], y + 2);
+      doc.text(labelEstado(m.estado), xEstado, y + 2);
       doc.setTextColor(...BLACK);
       doc.setFont('helvetica', 'normal');
-      const obs = doc.splitTextToSize(m.observaciones ?? '', colW[6]);
-      doc.text(obs[0] ?? '', colX[6], y + 2);
+      const obs = doc.splitTextToSize(m.observaciones ?? '', OBS_W);
+      doc.text(obs[0] ?? '', xObs, y + 2);
       y += 6.5;
     });
     y += 4;

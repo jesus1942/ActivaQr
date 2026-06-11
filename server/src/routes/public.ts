@@ -19,7 +19,19 @@ router.get('/activos/:id', async (req: Request, res: Response, next: NextFunctio
       include: {
         empresa: { select: { id: true, nombre: true, logoUrl: true, estado: true, plan: true } }, // estado/plan solo para chequeo interno, no se devuelven al cliente
         sector: { select: { nombre: true } },
-        tipo: { select: { nombre: true } },
+        tipo: {
+          select: {
+            nombre: true,
+            mideTemperatura: true,
+            mideAmperaje: true,
+            midePresion: true,
+            mideVibracion: true,
+            mideBateria: true,
+            mideToner: true,
+            mideContador: true,
+            mideVoltaje: true,
+          },
+        },
         responsable: { select: { nombre: true, email: true, telefono: true } },
         mediciones: {
           orderBy: { fecha: 'desc' },

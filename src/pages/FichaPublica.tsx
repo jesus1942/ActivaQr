@@ -33,7 +33,13 @@ interface FichaActivo {
   fechaRetorno?: string | null;
   empresa: { id: string; nombre: string; logoUrl?: string | null };
   sector: { nombre: string } | null;
-  tipo: { nombre: string } | null;
+  tipo: {
+    nombre: string;
+    mideTemperatura?: boolean;
+    mideAmperaje?: boolean;
+    midePresion?: boolean;
+    mideVibracion?: boolean;
+  } | null;
   responsable: { nombre: string; email?: string; telefono?: string } | null;
   mediciones: { temperatura: number; amperaje: number; presion: number; vibracion: number; fecha: string; estado: string }[];
 }
@@ -115,6 +121,17 @@ export const FichaPublica: React.FC = () => {
 
   const ultimaMedicion = activo.mediciones[0];
 
+  // Si el tipo viene con flags, respeta. Si no viene tipo, fallback
+  // legacy: asume que mide todo (compatibilidad con seed local sin tipo).
+  const mide = {
+    temp:      activo.tipo?.mideTemperatura ?? !activo.tipo,
+    amp:       activo.tipo?.mideAmperaje ?? !activo.tipo,
+    presion:   activo.tipo?.midePresion ?? !activo.tipo,
+    vibracion: activo.tipo?.mideVibracion ?? !activo.tipo,
+  };
+  const llevaHoras = mide.temp || mide.amp || mide.presion || mide.vibracion;
+  const tieneParametros = mide.temp || mide.amp || mide.presion;
+
   // Si el equipo está en mantenimiento o fuera de servicio, el badge principal lo refleja
   const estadoVisual =
     activo.estadoOperativo === 'mantenimiento' ? 'mantenimiento' :
@@ -193,7 +210,7 @@ export const FichaPublica: React.FC = () => {
           <Fila label="Ubicación" value={activo.ubicacion} />
           <Fila label="Responsable" value={activo.responsable?.nombre} />
           <Fila label="Tel. responsable" value={activo.responsable?.telefono} />
-          <Fila label="Horas actuales" value={activo.horasActuales ? `${activo.horasActuales} hs` : undefined} />
+          <Fila label="Horas actuales" value={llevaHoras && activo.horasActuales ? `${activo.horasActuales} hs` : undefined} />
           <Fila label="Fecha ingreso" value={activo.fechaIngreso ? activo.fechaIngreso.slice(0, 10) : undefined} />
           <Fila label="Proximo mant." value={activo.proximoMantenimiento ? activo.proximoMantenimiento.slice(0, 10) : undefined} />
           {activo.esItinerante && (
@@ -207,29 +224,33 @@ export const FichaPublica: React.FC = () => {
           )}
         </div>
 
-        {/* Parámetros operativos */}
-        {(activo.temperaturaMin || activo.temperaturaMax || activo.amperajeNormal || activo.presionNormal) ? (
+        {/* Parámetros operativos — solo si el tipo los mide */}
+        {tieneParametros && (
           <div className="bg-white border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-5">
             <p className="text-xs font-black uppercase tracking-wider text-orange-500 mb-3">Parámetros operativos</p>
-            <Fila label="Temperatura normal" value={`${activo.temperaturaMin}°C – ${activo.temperaturaMax}°C`} />
-            <Fila label="Alerta temperatura" value={activo.temperaturaAlerta ? `${activo.temperaturaAlerta}°C` : undefined} />
-            <Fila label="Crítica temperatura" value={activo.temperaturaCritica ? `${activo.temperaturaCritica}°C` : undefined} />
-            <Fila label="Amperaje normal"    value={activo.amperajeNormal ? `${activo.amperajeNormal} A` : undefined} />
-            <Fila label="Presión normal"     value={activo.presionNormal ? `${activo.presionNormal} bar` : undefined} />
+            {mide.temp && (
+              <>
+                <Fila label="Temperatura normal" value={`${activo.temperaturaMin}°C – ${activo.temperaturaMax}°C`} />
+                <Fila label="Alerta temperatura" value={activo.temperaturaAlerta ? `${activo.temperaturaAlerta}°C` : undefined} />
+                <Fila label="Crítica temperatura" value={activo.temperaturaCritica ? `${activo.temperaturaCritica}°C` : undefined} />
+              </>
+            )}
+            {mide.amp && <Fila label="Amperaje normal" value={activo.amperajeNormal ? `${activo.amperajeNormal} A` : undefined} />}
+            {mide.presion && <Fila label="Presión normal" value={activo.presionNormal ? `${activo.presionNormal} bar` : undefined} />}
           </div>
-        ) : null}
+        )}
 
-        {/* Última medición */}
-        {ultimaMedicion && (
+        {/* Última medición — solo si tiene mediciones que mostrar segun el tipo */}
+        {ultimaMedicion && (mide.temp || mide.amp || mide.presion || mide.vibracion) && (
           <div className="bg-white border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-5">
             <p className="text-xs font-black uppercase tracking-wider text-orange-500 mb-3">
               Última medición — {ultimaMedicion.fecha.slice(0, 10)}
             </p>
-            <Fila label="Temperatura" value={ultimaMedicion.temperatura ? `${ultimaMedicion.temperatura}°C` : undefined} />
-            <Fila label="Amperaje"    value={ultimaMedicion.amperaje ? `${ultimaMedicion.amperaje} A` : undefined} />
-            <Fila label="Presión"     value={ultimaMedicion.presion ? `${ultimaMedicion.presion} bar` : undefined} />
-            <Fila label="Vibración"   value={ultimaMedicion.vibracion ? `${ultimaMedicion.vibracion} mm/s` : undefined} />
-            <Fila label="Estado"      value={ultimaMedicion.estado} />
+            {mide.temp      && <Fila label="Temperatura" value={ultimaMedicion.temperatura ? `${ultimaMedicion.temperatura}°C` : undefined} />}
+            {mide.amp       && <Fila label="Amperaje"    value={ultimaMedicion.amperaje ? `${ultimaMedicion.amperaje} A` : undefined} />}
+            {mide.presion   && <Fila label="Presión"     value={ultimaMedicion.presion ? `${ultimaMedicion.presion} bar` : undefined} />}
+            {mide.vibracion && <Fila label="Vibración"   value={ultimaMedicion.vibracion ? `${ultimaMedicion.vibracion} mm/s` : undefined} />}
+            <Fila label="Estado" value={ultimaMedicion.estado} />
           </div>
         )}
 
