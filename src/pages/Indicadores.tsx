@@ -13,6 +13,8 @@ import {
   FileDown,
 } from 'lucide-react';
 import { getKpis, Kpis } from '../data/indicadoresApi';
+import { hasFeature } from '../data/planes';
+import { FeatureLock } from '../components/FeatureLock';
 import { exportarInformeMensualPdf } from '../utils/exportPdf';
 import { useAuth } from '../context/AuthContext';
 
@@ -36,6 +38,16 @@ export const Indicadores: React.FC = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { usuario } = useAuth();
+
+  if (!hasFeature(usuario?.empresa?.plan, 'indicadores')) {
+    return (
+      <FeatureLock
+        feature="indicadores"
+        titulo="Indicadores"
+        descripcion="Disponibilidad, cumplimiento de tareas, equipos con más fallas y tendencias. Una vista de control mensual para tomar decisiones sobre tu mantenimiento."
+      />
+    );
+  }
 
   const generarInforme = () => {
     if (!kpis) return;

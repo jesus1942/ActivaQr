@@ -18,21 +18,23 @@ import {
   BarChart3,
   ScrollText,
   LineChart,
+  Lock,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getNotificacionesCliente } from '../../data/accesoRemotoApi';
+import { hasFeature, planLabel, planRequerido, type Feature } from '../../data/planes';
 
 const LOGO_LIGHT = '/ActivaQr/company-logo-hd.png';   // negro, para fondo claro
 const LOGO_DARK  = '/ActivaQr/company-logo1.png';      // claro, para fondo oscuro (sidebar navy)
 
-const navEmpresa: Array<{ to: string; icon: typeof LayoutDashboard; label: string; sub?: string }> = [
+const navEmpresa: Array<{ to: string; icon: typeof LayoutDashboard; label: string; sub?: string; feature?: Feature }> = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', sub: 'Resumen del día' },
-  { to: '/indicadores', icon: BarChart3, label: 'Indicadores', sub: 'KPIs y gráficos' },
+  { to: '/indicadores', icon: BarChart3, label: 'Indicadores', sub: 'KPIs y gráficos', feature: 'indicadores' },
   { to: '/activos', icon: Package, label: 'Activos', sub: 'Tus equipos' },
   { to: '/medicion', icon: ClipboardList, label: 'Mediciones', sub: 'Cargar lectura' },
   { to: '/mantenimiento', icon: Wrench, label: 'Mantenimiento', sub: 'Tareas y planes' },
   { to: '/reportes', icon: FileText, label: 'Reportes', sub: 'Exportar PDF/CSV' },
-  { to: '/auditoria', icon: ScrollText, label: 'Auditoría', sub: 'Quién hizo qué' },
+  { to: '/auditoria', icon: ScrollText, label: 'Auditoría', sub: 'Quién hizo qué', feature: 'auditoria' },
   { to: '/importar', icon: Upload, label: 'Importar Datos', sub: 'Carga masiva' },
   { to: '/qr', icon: QrCode, label: 'QR / Etiquetas', sub: 'Imprimir códigos' },
   { to: '/mensajes', icon: MessageSquare, label: 'Mensajes' },
@@ -52,6 +54,7 @@ export const Sidebar: React.FC = () => {
   const { usuario, logout } = useAuth();
 
   const navItems = usuario?.rol === 'superadmin' ? navSuperadmin : navEmpresa;
+  const planActual = usuario?.empresa?.plan ?? 'inicial';
 
   // Polling de notificaciones para clientes con plan empresa/industrial.
   useEffect(() => {
@@ -85,11 +88,14 @@ export const Sidebar: React.FC = () => {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navItems.map(({ to, icon: Icon, label, sub }) => {
+        {navItems.map((item) => {
+          const { to, icon: Icon, label, sub } = item;
+          const feature: Feature | undefined = ('feature' in item ? item.feature : undefined) as Feature | undefined;
           const esMensajes = to === '/mensajes';
           const badge = esMensajes
             ? (notif.mensajesNoLeidos > 0 ? notif.mensajesNoLeidos : notif.tienePermisoPendiente ? '!' : 0)
             : 0;
+          const bloqueado = feature ? !hasFeature(planActual, feature) : false;
           return (
             <NavLink
               key={to}
@@ -99,7 +105,9 @@ export const Sidebar: React.FC = () => {
                 `flex items-center gap-3 px-3 py-2 min-h-[52px] font-sketch font-semibold transition-colors ${
                   isActive
                     ? 'bg-orange-500 text-white border-2 border-orange-400'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white border-2 border-transparent'
+                    : bloqueado
+                      ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300 border-2 border-transparent'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white border-2 border-transparent'
                 }`
               }
               onClick={() => setOpen(false)}
@@ -109,6 +117,9 @@ export const Sidebar: React.FC = () => {
                 <span className="block text-lg">{label}</span>
                 {sub && <span className="block text-[11px] font-normal opacity-70 normal-case tracking-normal">{sub}</span>}
               </span>
+              {bloqueado && (
+                <Lock size={14} className="text-slate-500 flex-shrink-0" />
+              )}
               {!!badge && (
                 <span className="min-w-[20px] h-5 flex items-center justify-center bg-orange-500 text-white text-xs font-black rounded-none px-1 border border-orange-400 flex-shrink-0">
                   {badge}

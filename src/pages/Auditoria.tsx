@@ -3,6 +3,9 @@ import { ScrollText } from 'lucide-react';
 import { getAuditoria, RegistroAuditoria } from '../data/indicadoresApi';
 import { exportarCsv } from '../utils/exportCsv';
 import { Download } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { hasFeature } from '../data/planes';
+import { FeatureLock } from '../components/FeatureLock';
 
 const ACCION_LABEL: Record<string, string> = {
   crear: 'Creó',
@@ -29,10 +32,24 @@ export const Auditoria: React.FC = () => {
   const [registros, setRegistros] = useState<RegistroAuditoria[]>([]);
   const [entidad, setEntidad] = useState('');
   const [error, setError] = useState('');
+  const { usuario } = useAuth();
+
+  const bloqueada = !hasFeature(usuario?.empresa?.plan, 'auditoria');
 
   useEffect(() => {
+    if (bloqueada) return;
     getAuditoria(entidad ? { entidad } : undefined).then(setRegistros).catch((e) => setError(e.message));
-  }, [entidad]);
+  }, [entidad, bloqueada]);
+
+  if (bloqueada) {
+    return (
+      <FeatureLock
+        feature="auditoria"
+        titulo="Auditoría"
+        descripcion="Trazabilidad completa: quién creó, editó o eliminó cada activo, quién registró cada medición, quién accedió al soporte remoto. Indispensable para certificaciones y compliance."
+      />
+    );
+  }
 
   const fmt = (iso: string) => new Date(iso).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
 
