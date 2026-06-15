@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { LogIn, Lock, Mail, UserPlus, Building2, User, Phone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { apiFetch, logout as clearSession } from '../data/auth';
+import { MuroTestimonios } from '../components/landing/MuroTestimonios';
+import { SeccionApoyo } from '../components/landing/SeccionApoyo';
 
 const LOGO = '/ActivaQr/company-logo-hd.png';
 
@@ -85,7 +87,8 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FAFAF7] p-4">
+    <div className="min-h-screen flex flex-col items-center bg-[#FAFAF7]">
+      <div className="w-full flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="bg-white border-2 border-slate-900 shadow-[6px_6px_0px_0px_#1e293b] p-8">
           <div className="text-center mb-6">
@@ -304,6 +307,14 @@ export const Login: React.FC = () => {
           <span className="mx-2">·</span>
           <a href={`${apiBase}/politica-privacidad`} target="_blank" rel="noopener noreferrer" className="hover:text-orange-500 underline">Política de Privacidad</a>
         </p>
+        </div>
+      </div>
+
+      <div className="w-full border-t-2 border-slate-200 bg-white">
+        <MuroTestimonios />
+      </div>
+      <div className="w-full bg-[#FAFAF7]">
+        <SeccionApoyo />
       </div>
     </div>
   );

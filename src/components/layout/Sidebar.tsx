@@ -19,6 +19,7 @@ import {
   ScrollText,
   LineChart,
   Lock,
+  Star,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getNotificacionesCliente } from '../../data/accesoRemotoApi';
@@ -45,6 +46,7 @@ const navSuperadmin: Array<{ to: string; icon: typeof LayoutDashboard; label: st
   { to: '/', icon: Building2, label: 'Empresas' },
   { to: '/analitica', icon: LineChart, label: 'Analítica' },
   { to: '/mensajes', icon: MessageSquare, label: 'Mensajes' },
+  { to: '/testimonios', icon: Star, label: 'Testimonios', sub: 'Moderar landing' },
 ];
 
 export const Sidebar: React.FC = () => {

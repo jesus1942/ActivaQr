@@ -508,3 +508,24 @@ model PagoMP {
   @@index([empresaId])
   @@index([fecha])
 }
+
+// Testimonios publicos de la landing. Cualquiera puede enviar uno
+// (sin login); queda pendiente hasta que el superadmin lo aprueba.
+// Solo los aprobados son visibles al publico. NO confundir con clientes
+// pagos: aca puede comentar gente que vio el proyecto, lo apoya, da
+// experiencia del rubro, etc.
+model Testimonio {
+  id         String    @id @default(uuid())
+  nombre     String
+  rol        String?
+  email      String?
+  mensaje    String    @db.Text
+  estado     String    @default("pendiente")  // pendiente | aprobado | rechazado
+  destacado  Boolean   @default(false)
+  ip         String?
+  userAgent  String?   @db.Text
+  aprobadoEn DateTime?
+  creadoEn   DateTime  @default(now())
+
+  @@index([estado, creadoEn])
+}

@@ -28,6 +28,7 @@ import auditoriaRouter from './routes/auditoria';
 import kpisRouter from './routes/kpis';
 import documentosRouter from './routes/documentos';
 import cuentaRouter from './routes/cuenta';
+import testimoniosRouter, { adminTestimoniosRouter } from './routes/testimonios';
 import { enviarPushASuperadmin } from './push';
 import { requireAuth, requireAuthAndActiveEmpresa, requireSuperadmin } from './auth';
 import { seedCategorias } from './seedCategorias';
@@ -223,6 +224,8 @@ app.use('/api/documentos', requireAuthAndActiveEmpresa, documentosRouter);
 // Push: la ruta public-key no requiere auth, las demás aplican requireAuth por-ruta.
 app.use('/api/push', pushRouter);
 app.use('/api/admin/categorias-globales', requireAuth, requireSuperadmin, adminCategoriasRouter);
+app.use('/api/testimonios', testimoniosRouter);
+app.use('/api/admin/testimonios', requireAuth, requireSuperadmin, adminTestimoniosRouter);
 
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   const isProd = process.env.NODE_ENV === 'production';

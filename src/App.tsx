@@ -21,6 +21,7 @@ import { GestionQR } from './pages/GestionQR';
 import { Configuracion } from './pages/Configuracion';
 import { Mensajes } from './pages/Mensajes';
 import { MensajesAdmin } from './pages/MensajesAdmin';
+import { AdminTestimonios } from './pages/AdminTestimonios';
 import { Admin } from './pages/Admin';
 import { Analitica } from './pages/Analitica';
 import { Login } from './pages/Login';
@@ -115,6 +116,7 @@ function AuthedApp() {
             <Route path="admin" element={<RutaProtegida scope="Administracion"><Admin /></RutaProtegida>} />
             <Route path="analitica" element={<RutaProtegida scope="Analitica"><Analitica /></RutaProtegida>} />
             <Route path="mensajes" element={<RutaProtegida scope="Mensajes"><MensajesAdmin /></RutaProtegida>} />
+            <Route path="testimonios" element={<RutaProtegida scope="Testimonios"><AdminTestimonios /></RutaProtegida>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </>
         ) : (
