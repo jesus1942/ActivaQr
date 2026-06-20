@@ -32,9 +32,6 @@ jobs:
         run: npm run build
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          VITE_CAFECITO_URL: ${{ vars.VITE_CAFECITO_URL }}
-          VITE_MP_APOYO_URL: ${{ vars.VITE_MP_APOYO_URL }}
-          VITE_STRIPE_APOYO_URL: ${{ vars.VITE_STRIPE_APOYO_URL }}
 
       - name: Configurar Pages
         uses: actions/configure-pages@v4

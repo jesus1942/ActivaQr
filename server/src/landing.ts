@@ -4,13 +4,38 @@
  * Sin emojis. El formulario de contacto postea a /api/leads.
  */
 
-export function renderLanding(appUrl: string, whatsapp?: string): string {
+export function renderLanding(appUrl: string, whatsapp?: string, apoyo?: { cafecito?: string; mp?: string; stripe?: string }): string {
   // whatsapp: numero en formato internacional sin signos (ej: 5491112345678)
   const wa = (whatsapp || '').replace(/\D/g, '');
   const waMsg = encodeURIComponent('Hola! Vi ActivaQR y quiero conocer mas sobre la app.');
   const botonWhatsapp = wa
     ? `<a class="btn btn-negro" href="https://wa.me/${wa}?text=${waMsg}" target="_blank" rel="noopener">Escribinos por WhatsApp</a>`
     : '';
+
+  // Botones de apoyo economico. Cada uno solo aparece si su link esta
+  // configurado por env. Si ninguno lo esta, la seccion no se renderiza.
+  const ap = apoyo || {};
+  const botonApoyo = (href: string, bg: string, titulo: string, sub: string) =>
+    `<a class="apoyo-btn" href="${href}" target="_blank" rel="noopener" style="--ab:${bg}">
+       <span class="apoyo-tit">${titulo}</span>
+       <span class="apoyo-sub">${sub}</span>
+     </a>`;
+  const botonesApoyo = [
+    ap.cafecito ? botonApoyo(ap.cafecito, '#8a5a18', 'Invitame un cafe', 'Cafecito &middot; ARS, simple y rapido') : '',
+    ap.mp ? botonApoyo(ap.mp, '#0c84cc', 'Mercado Pago', 'Monto a eleccion &middot; ARS') : '',
+    ap.stripe ? botonApoyo(ap.stripe, '#7c3aed', 'Stripe', 'Aporte internacional &middot; USD') : '',
+  ].join('');
+  const seccionApoyo = (ap.cafecito || ap.mp || ap.stripe)
+    ? `<section id="apoyo" class="reveal" style="background:#fff;border-top:3px solid var(--negro)">
+  <div class="wrap" style="max-width:760px">
+    <h2 class="titulo">Apoy&aacute; el proyecto</h2>
+    <p class="bajada">ActivaQR lo construye una persona, Jes&uacute;s, desde Neuqu&eacute;n. Cada aporte ayuda a que pueda seguir mejorando la herramienta y mantenerla accesible para las PYMES que la necesitan.</p>
+    <div class="apoyo-grid">${botonesApoyo}</div>
+    <p style="font-size:13px;color:var(--gris-c);margin-top:20px">Si quer&eacute;s apoyar de otra manera (experiencia, contactos, feedback t&eacute;cnico), dej&aacute; tu testimonio aqu&iacute; arriba o escribinos por WhatsApp.</p>
+  </div>
+</section>`
+    : '';
+
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -214,6 +239,27 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   /* FADE-IN SCROLL */
   .reveal{opacity:0;transform:translateY(32px);transition:opacity .6s ease,transform .6s ease}
   .reveal.visible{opacity:1;transform:translateY(0)}
+
+  /* TESTIMONIOS */
+  .testi-card{background:#fff;border:2px solid var(--negro);box-shadow:3px 3px 0 var(--negro);padding:22px;display:flex;flex-direction:column}
+  .testi-card.destacado{border-color:var(--naranja);box-shadow:3px 3px 0 var(--naranja)}
+  .testi-badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:10px}
+  .testi-msg{color:var(--negro);font-size:15px;line-height:1.6;white-space:pre-line;flex:1}
+  .testi-autor{margin-top:14px;padding-top:14px;border-top:2px dashed #e2e8f0}
+  .testi-autor .n{font-weight:800;font-size:14px}
+  .testi-autor .r{font-size:12px;color:var(--gris-c);font-family:monospace}
+  .testi-empty{background:#fff;border:2px dashed #cbd5e1;padding:28px;text-align:center;color:var(--gris);font-size:15px}
+  #testiFormBox label{margin-top:14px}
+  #testiFormBox label:first-child{margin-top:0}
+  .testi-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:560px){.testi-row{grid-template-columns:1fr}}
+
+  /* APOYO */
+  .apoyo-grid{display:flex;flex-direction:column;gap:14px}
+  .apoyo-btn{display:flex;flex-direction:column;gap:2px;text-decoration:none;background:var(--ab);color:#fff;padding:16px 20px;border:2px solid var(--negro);box-shadow:4px 4px 0 var(--negro);transition:transform .15s,box-shadow .15s}
+  .apoyo-btn:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--negro)}
+  .apoyo-tit{font-weight:900;font-size:16px;text-transform:uppercase;letter-spacing:.5px}
+  .apoyo-sub{font-size:13px;opacity:.92}
 </style>
 </head>
 <body>
@@ -224,6 +270,7 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
     <div class="links">
       <a class="nav-link" href="#ultimo-km">Por qué</a>
       <a class="nav-link" href="#casos">Para quién</a>
+      <a class="nav-link" href="#voces">Voces</a>
       <a class="nav-link" href="#planes">Planes</a>
       <a class="nav-link" href="#servicio">Servicio</a>
       <a class="btn btn-naranja" href="${appUrl}" target="_blank" rel="noopener">Ingresar</a>
@@ -355,6 +402,40 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   </div>
 </section>
 
+<section id="voces" class="reveal" style="background:#f8fafc;border-top:3px solid var(--negro)">
+  <div class="wrap">
+    <h2 class="titulo">Voces de la comunidad</h2>
+    <p class="bajada">T&eacute;cnicos, due&ntilde;os de PYMES, mantenedores, contratistas. Si trabaj&aacute;s con activos, contanos tu experiencia: qu&eacute; te frustra, qu&eacute; te ayudar&iacute;a, c&oacute;mo lo resolv&eacute;s hoy.</p>
+    <div id="muroTestimonios" class="grid g2" style="margin-bottom:36px">
+      <div class="testi-empty" style="grid-column:1/-1">Cargando voces...</div>
+    </div>
+    <div id="testiCta" style="text-align:center">
+      <button class="btn btn-negro" id="btnAbrirTesti" type="button">Dejar mi testimonio</button>
+    </div>
+    <div id="testiFormBox" class="form-box" style="display:none;max-width:600px;margin:0 auto">
+      <form id="testiForm">
+        <div class="testi-row">
+          <div>
+            <label for="tNombre">Nombre</label>
+            <input id="tNombre" name="nombre" required maxlength="80" placeholder="Tu nombre" />
+          </div>
+          <div>
+            <label for="tRol">Rol / empresa</label>
+            <input id="tRol" name="rol" maxlength="80" placeholder="Ej: T&eacute;cnico, Due&ntilde;a de gimnasio" />
+          </div>
+        </div>
+        <label for="tEmail">Email (opcional, no se publica)</label>
+        <input id="tEmail" name="email" type="email" maxlength="120" placeholder="vos@email.com" />
+        <label for="tMensaje">Tu mensaje</label>
+        <textarea id="tMensaje" name="mensaje" rows="4" required maxlength="1500" placeholder="Cont&aacute; tu experiencia con el mantenimiento..."></textarea>
+        <button type="submit" class="btn btn-naranja" id="testiBtn">Enviar testimonio</button>
+        <div class="form-msg" id="testiMsg"></div>
+        <p style="font-size:12px;color:var(--gris-c);margin-top:12px">Tu mensaje ser&aacute; revisado antes de aparecer p&uacute;blico. Al enviar aceptás nuestras pol&iacute;ticas.</p>
+      </form>
+    </div>
+  </div>
+</section>
+
 <section id="planes" class="reveal">
   <div class="wrap">
     <h2 class="titulo">Planes</h2>
@@ -455,6 +536,8 @@ export function renderLanding(appUrl: string, whatsapp?: string): string {
   </div>
 </section>
 
+${seccionApoyo}
+
 <footer>
   <div class="wrap">
     <span class="brand">ActivaQR</span>
@@ -519,6 +602,84 @@ const observer = new IntersectionObserver(function(entries){
 }, {threshold:0.12});
 document.querySelectorAll('.reveal').forEach(function(el){ observer.observe(el); });
 
+</script>
+
+<script>
+// Muro de testimonios: carga los aprobados desde la API.
+function escTesti(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+(function cargarMuro(){
+  var cont = document.getElementById('muroTestimonios');
+  if(!cont) return;
+  fetch('/api/testimonios').then(function(r){ return r.ok ? r.json() : []; }).then(function(lista){
+    if(!Array.isArray(lista) || lista.length === 0){
+      cont.innerHTML = '<div class="testi-empty" style="grid-column:1/-1">A&uacute;n no hay testimonios publicados. S&eacute; el primero en dejar el tuyo.</div>';
+      return;
+    }
+    cont.innerHTML = lista.map(function(t){
+      var badge = t.destacado ? '<span class="testi-badge">&#9733; Destacado</span>' : '';
+      var rol = t.rol ? '<div class="r">' + escTesti(t.rol) + '</div>' : '';
+      return '<article class="testi-card' + (t.destacado ? ' destacado' : '') + '">' +
+        badge +
+        '<p class="testi-msg">' + escTesti(t.mensaje) + '</p>' +
+        '<div class="testi-autor"><div class="n">' + escTesti(t.nombre) + '</div>' + rol + '</div>' +
+      '</article>';
+    }).join('');
+  }).catch(function(){
+    cont.innerHTML = '<div class="testi-empty" style="grid-column:1/-1">No se pudieron cargar los testimonios.</div>';
+  });
+})();
+
+// Toggle del formulario de testimonio.
+var btnAbrirTesti = document.getElementById('btnAbrirTesti');
+if(btnAbrirTesti){
+  btnAbrirTesti.addEventListener('click', function(){
+    var box = document.getElementById('testiFormBox');
+    document.getElementById('testiCta').style.display = 'none';
+    box.style.display = 'block';
+    box.scrollIntoView({behavior:'smooth', block:'center'});
+  });
+}
+
+// Envio del testimonio (queda pendiente de moderacion).
+var testiForm = document.getElementById('testiForm');
+if(testiForm){
+  testiForm.addEventListener('submit', async function(e){
+    e.preventDefault();
+    var btn = document.getElementById('testiBtn');
+    var msg = document.getElementById('testiMsg');
+    var datos = {
+      nombre: this.nombre.value.trim(),
+      rol: this.rol.value.trim(),
+      email: this.email.value.trim(),
+      mensaje: this.mensaje.value.trim()
+    };
+    btn.disabled = true; btn.textContent = 'Enviando...';
+    msg.className = 'form-msg';
+    try {
+      var r = await fetch('/api/testimonios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datos)
+      });
+      if (!r.ok) {
+        var j = await r.json().catch(function(){ return {}; });
+        throw new Error(j.error || 'fallo');
+      }
+      msg.className = 'form-msg ok';
+      msg.textContent = 'Gracias! Tu testimonio quedo pendiente de revision y va a aparecer cuando lo aprobemos.';
+      this.reset();
+    } catch (err) {
+      msg.className = 'form-msg err';
+      msg.textContent = err && err.message && err.message !== 'fallo' ? err.message : 'No pudimos enviar tu testimonio. Proba de nuevo en un rato.';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Enviar testimonio';
+    }
+  });
+}
 </script>
 
 </body>

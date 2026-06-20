@@ -86,7 +86,11 @@ app.get('/', (req, res) => {
   // Registrar visita a la landing (fire-and-forget, nunca demora la página).
   registrarVisita(req, 'landing').catch(() => {});
   res.set('Content-Type', 'text/html; charset=utf-8');
-  res.send(renderLanding(APP_PUBLIC_URL, process.env.WHATSAPP_NUMERO || '5492804018359'));
+  res.send(renderLanding(APP_PUBLIC_URL, process.env.WHATSAPP_NUMERO || '5492804018359', {
+    cafecito: process.env.APOYO_CAFECITO_URL,
+    mp: process.env.APOYO_MP_URL,
+    stripe: process.env.APOYO_STRIPE_URL,
+  }));
 });
 
 // Paginas legales publicas: requisito para aceptacion previa al pago.
