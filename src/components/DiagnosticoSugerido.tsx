@@ -78,9 +78,9 @@ const SEV_ICON: Record<string, React.ReactNode> = {
   info: <Info size={12} />,
 };
 const SEV_COLOR: Record<string, string> = {
-  critico: 'border-red-500 bg-red-50 text-red-700',
-  advertencia: 'border-amber-400 bg-amber-50 text-amber-700',
-  info: 'border-slate-300 bg-slate-50 text-slate-600',
+  critico: 'border-danger bg-danger/10 text-danger-strong dark:text-danger',
+  advertencia: 'border-warn bg-warn/10 text-warn-strong dark:text-warn',
+  info: 'border-line bg-subtle text-muted',
 };
 
 export const DiagnosticoSugerido: React.FC<Props> = ({ activoId, sintomas }) => {
@@ -110,39 +110,39 @@ export const DiagnosticoSugerido: React.FC<Props> = ({ activoId, sintomas }) => 
   if (sugeridas.length === 0) return null;
 
   return (
-    <div className="border-2 border-orange-400 bg-orange-50/50 p-3 space-y-2">
-      <p className="text-xs font-black uppercase tracking-wider text-orange-700 flex items-center gap-1.5">
+    <div className="border border-brand-600 bg-brand-50/50 p-3 space-y-2">
+      <p className="text-xs font-black uppercase tracking-wider text-brand-700 flex items-center gap-1.5">
         <Stethoscope size={13} /> Diagnostico asistido — segun lo que estas viendo
       </p>
-      <p className="text-xs text-orange-700/80">Posibles fallas que coinciden con tu lectura. Tocá una para ver causas y solucion.</p>
+      <p className="text-xs text-brand-700/80">Posibles fallas que coinciden con tu lectura. Tocá una para ver causas y solucion.</p>
       <div className="space-y-1.5">
         {sugeridas.map((f) => {
           const open = abierta === f.id;
           return (
-            <div key={f.id} className="bg-white border-2 border-slate-200">
+            <div key={f.id} className="bg-surface border border-line">
               <button
                 type="button"
                 onClick={() => setAbierta(open ? null : f.id)}
-                className="w-full text-left px-2.5 py-2 flex items-start gap-2 hover:bg-slate-50 transition-colors"
+                className="w-full text-left px-2.5 py-2 flex items-start gap-2 hover:bg-subtle transition-colors"
               >
                 <span className={`text-[10px] font-black uppercase px-1 py-0.5 border flex items-center gap-0.5 whitespace-nowrap flex-shrink-0 ${SEV_COLOR[f.severidad] ?? SEV_COLOR.info}`}>
                   {SEV_ICON[f.severidad] ?? SEV_ICON.info}
                   {f.severidad}
                 </span>
                 <span className="flex-1 min-w-0">
-                  {f.codigo && <span className="text-[10px] font-mono text-slate-400 block">{f.codigo}</span>}
-                  <span className="text-xs font-semibold text-slate-800 leading-snug">{f.sintoma}</span>
+                  {f.codigo && <span className="text-[10px] font-mono text-faint block">{f.codigo}</span>}
+                  <span className="text-xs font-semibold text-content leading-snug">{f.sintoma}</span>
                 </span>
-                <ChevronDown size={14} className={`text-slate-400 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+                <ChevronDown size={14} className={`text-faint flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
               </button>
               {open && (
-                <div className="border-t border-slate-200 px-2.5 py-2 bg-slate-50 space-y-2 text-xs">
+                <div className="border-t border-line px-2.5 py-2 bg-subtle space-y-2 text-xs">
                   <div>
-                    <p className="font-black uppercase tracking-wider text-slate-500 mb-1">Causas probables</p>
+                    <p className="font-black uppercase tracking-wider text-muted mb-1">Causas probables</p>
                     <ul className="space-y-0.5">
                       {f.causas.map((c, i) => (
-                        <li key={i} className="text-slate-700 leading-snug">
-                          <span className={`text-[9px] font-black uppercase mr-1 ${c.probabilidad === 'alta' ? 'text-red-700' : c.probabilidad === 'media' ? 'text-amber-700' : 'text-slate-500'}`}>
+                        <li key={i} className="text-content leading-snug">
+                          <span className={`text-[9px] font-black uppercase mr-1 ${c.probabilidad === 'alta' ? 'text-danger-strong dark:text-danger' : c.probabilidad === 'media' ? 'text-warn-strong dark:text-warn' : 'text-muted'}`}>
                             [{c.probabilidad}]
                           </span>
                           {c.causa}
@@ -151,8 +151,8 @@ export const DiagnosticoSugerido: React.FC<Props> = ({ activoId, sintomas }) => 
                     </ul>
                   </div>
                   <div>
-                    <p className="font-black uppercase tracking-wider text-slate-500 mb-1">Solucion</p>
-                    <pre className="text-slate-700 leading-relaxed whitespace-pre-wrap font-sans">{f.solucion}</pre>
+                    <p className="font-black uppercase tracking-wider text-muted mb-1">Solucion</p>
+                    <pre className="text-content leading-relaxed whitespace-pre-wrap font-sans">{f.solucion}</pre>
                   </div>
                 </div>
               )}

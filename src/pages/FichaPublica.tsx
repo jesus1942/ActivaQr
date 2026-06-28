@@ -45,18 +45,18 @@ interface FichaActivo {
 }
 
 const ESTADO_COLORS: Record<string, string> = {
-  normal:        'bg-emerald-50 border-emerald-400 text-emerald-700',
-  alerta:        'bg-amber-50 border-amber-400 text-amber-700',
-  critico:       'bg-red-50 border-red-500 text-red-700',
-  mantenimiento: 'bg-blue-50 border-blue-400 text-blue-700',
+  normal:        'bg-ok/10 border-ok text-ok-strong dark:text-ok',
+  alerta:        'bg-warn/10 border-warn text-warn-strong dark:text-warn',
+  critico:       'bg-danger/10 border-danger text-danger-strong dark:text-danger',
+  mantenimiento: 'bg-brand-50 dark:bg-brand-600/15 border-brand-600 text-brand-700 dark:text-brand-300',
 };
 
 function Fila({ label, value }: { label: string; value?: string | number | null }) {
   if (value === undefined || value === null || value === '') return null;
   return (
-    <div className="flex justify-between gap-4 py-2 border-b border-slate-100 last:border-none">
-      <span className="text-xs font-black uppercase tracking-wider text-slate-500 shrink-0">{label}</span>
-      <span className="text-sm font-semibold text-slate-800 text-right">{value}</span>
+    <div className="flex justify-between gap-4 py-2 border-b border-line last:border-none">
+      <span className="text-xs font-black uppercase tracking-wider text-muted shrink-0">{label}</span>
+      <span className="text-sm font-semibold text-content text-right">{value}</span>
     </div>
   );
 }
@@ -102,18 +102,18 @@ export const FichaPublica: React.FC = () => {
 
   if (cargando) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <p className="font-black uppercase tracking-widest text-slate-500 animate-pulse">Cargando ficha...</p>
+      <div className="min-h-screen bg-subtle flex items-center justify-center">
+        <p className="font-black uppercase tracking-widest text-muted animate-pulse">Cargando ficha...</p>
       </div>
     );
   }
 
   if (error || !activo) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
-        <div className="bg-white border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] max-w-sm w-full p-6 text-center">
-          <p className="font-black text-lg text-slate-800 mb-2">ERROR</p>
-          <p className="font-semibold text-slate-700">{error || 'Activo no encontrado.'}</p>
+      <div className="min-h-screen bg-subtle flex items-center justify-center p-4">
+        <div className="bg-surface border border-line shadow-soft max-w-sm w-full p-6 text-center">
+          <p className="font-black text-lg text-content mb-2">ERROR</p>
+          <p className="font-semibold text-content">{error || 'Activo no encontrado.'}</p>
         </div>
       </div>
     );
@@ -138,19 +138,19 @@ export const FichaPublica: React.FC = () => {
     activo.estadoOperativo === 'fuera_servicio' ? 'fuera de servicio' :
     activo.estado;
   const estadoColor =
-    activo.estadoOperativo === 'mantenimiento' ? 'bg-blue-50 border-blue-400 text-blue-700' :
-    activo.estadoOperativo === 'fuera_servicio' ? 'bg-red-50 border-red-400 text-red-700' :
-    ESTADO_COLORS[activo.estado] ?? 'bg-slate-50 border-slate-300 text-slate-600';
+    activo.estadoOperativo === 'mantenimiento' ? 'bg-brand-50 dark:bg-brand-600/15 border-brand-600 text-brand-700 dark:text-brand-300' :
+    activo.estadoOperativo === 'fuera_servicio' ? 'bg-danger/10 border-danger text-danger-strong dark:text-danger' :
+    ESTADO_COLORS[activo.estado] ?? 'bg-subtle border-line text-muted';
 
   return (
-    <div className="min-h-screen bg-slate-100 py-6 px-4">
+    <div className="min-h-screen bg-subtle py-6 px-4">
       <div className="max-w-md mx-auto space-y-4">
 
         {/* Nav bar */}
         <div className="flex items-center justify-between gap-2">
           <button
             onClick={() => window.history.length > 1 ? window.history.back() : undefined}
-            className="flex items-center gap-1.5 bg-white border-2 border-slate-900 shadow-[2px_2px_0px_0px_#1e293b] px-3 py-2 text-xs font-black uppercase tracking-wider hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_#1e293b] active:shadow-none transition-all"
+            className="flex items-center gap-1.5 bg-surface border border-line shadow-soft px-3 py-2 text-xs font-black uppercase tracking-wider hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-soft active:shadow-none transition-all"
           >
             <ArrowLeft size={14} />
             Volver
@@ -158,7 +158,7 @@ export const FichaPublica: React.FC = () => {
           {usuarioLogueado && (
             <a
               href="#/activos"
-              className="flex items-center gap-1.5 bg-slate-900 text-white border-2 border-slate-900 shadow-[2px_2px_0px_0px_#1e293b] px-3 py-2 text-xs font-black uppercase tracking-wider hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_#1e293b] active:shadow-none transition-all"
+              className="flex items-center gap-1.5 bg-content text-white border border-line shadow-soft px-3 py-2 text-xs font-black uppercase tracking-wider hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-soft active:shadow-none transition-all"
             >
               <LayoutDashboard size={14} />
               Panel
@@ -167,30 +167,30 @@ export const FichaPublica: React.FC = () => {
         </div>
 
         {/* Header empresa */}
-        <div className="bg-slate-900 text-white px-5 py-4 border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] flex items-center gap-3">
+        <div className="bg-content text-white px-5 py-4 border border-line shadow-soft flex items-center gap-3">
           {activo.empresa.logoUrl && (
             <img src={activo.empresa.logoUrl} alt="" className="w-10 h-10 object-contain" />
           )}
           <div>
-            <p className="text-xs font-black uppercase tracking-wider text-orange-400">ActivaQR</p>
+            <p className="text-xs font-black uppercase tracking-wider text-brand-400">ActivaQR</p>
             <p className="font-black text-lg leading-tight">{activo.empresa.nombre}</p>
           </div>
         </div>
 
         {/* Identidad del activo */}
-        <div className="bg-white border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-5">
+        <div className="bg-surface border border-line shadow-soft p-5">
           <div className="flex items-start justify-between gap-2 mb-4">
             <div>
-              <p className="text-xs font-black uppercase tracking-wider text-orange-500 mb-1">
+              <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-1">
                 {activo.codigo}
               </p>
-              <h1 className="font-black text-2xl text-slate-900 leading-tight">{activo.nombre}</h1>
+              <h1 className="font-black text-2xl text-content leading-tight">{activo.nombre}</h1>
               {activo.tipo && (
-                <p className="text-sm text-slate-500 mt-1">{activo.tipo.nombre}</p>
+                <p className="text-sm text-muted mt-1">{activo.tipo.nombre}</p>
               )}
             </div>
             {activo.estado && (
-              <span className={`text-xs font-black uppercase px-2 py-1 border-2 whitespace-nowrap ${estadoColor}`}>
+              <span className={`text-xs font-black uppercase px-2 py-1 border whitespace-nowrap ${estadoColor}`}>
                 {estadoVisual}
               </span>
             )}
@@ -199,7 +199,7 @@ export const FichaPublica: React.FC = () => {
           {/* Estado operativo — visible para el visitante que escanea el QR */}
           {activo.estadoOperativo && (
             <div className="mb-4 -mt-1">
-              <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-1.5">Estado operativo</p>
+              <p className="text-xs font-black uppercase tracking-wider text-muted mb-1.5">Estado operativo</p>
               <EstadoOperativoBadge estado={activo.estadoOperativo} size="lg" />
             </div>
           )}
@@ -226,8 +226,8 @@ export const FichaPublica: React.FC = () => {
 
         {/* Parámetros operativos — solo si el tipo los mide */}
         {tieneParametros && (
-          <div className="bg-white border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-5">
-            <p className="text-xs font-black uppercase tracking-wider text-orange-500 mb-3">Parámetros operativos</p>
+          <div className="bg-surface border border-line shadow-soft p-5">
+            <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-3">Parámetros operativos</p>
             {mide.temp && (
               <>
                 <Fila label="Temperatura normal" value={`${activo.temperaturaMin}°C – ${activo.temperaturaMax}°C`} />
@@ -242,8 +242,8 @@ export const FichaPublica: React.FC = () => {
 
         {/* Última medición — solo si tiene mediciones que mostrar segun el tipo */}
         {ultimaMedicion && (mide.temp || mide.amp || mide.presion || mide.vibracion) && (
-          <div className="bg-white border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-5">
-            <p className="text-xs font-black uppercase tracking-wider text-orange-500 mb-3">
+          <div className="bg-surface border border-line shadow-soft p-5">
+            <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-3">
               Última medición — {ultimaMedicion.fecha.slice(0, 10)}
             </p>
             {mide.temp      && <Fila label="Temperatura" value={ultimaMedicion.temperatura ? `${ultimaMedicion.temperatura}°C` : undefined} />}
@@ -259,22 +259,22 @@ export const FichaPublica: React.FC = () => {
 
         {/* Notas */}
         {activo.notas && (
-          <div className="bg-white border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-5">
-            <p className="text-xs font-black uppercase tracking-wider text-orange-500 mb-2">Notas</p>
-            <p className="text-sm text-slate-700 leading-relaxed">{activo.notas}</p>
+          <div className="bg-surface border border-line shadow-soft p-5">
+            <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-2">Notas</p>
+            <p className="text-sm text-content leading-relaxed">{activo.notas}</p>
           </div>
         )}
 
         {puedeRegistrar && (
           <a
             href={`#/medicion/${activo.id}`}
-            className="block w-full min-h-[56px] bg-orange-500 text-white font-black text-center border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] text-base uppercase tracking-wide flex items-center justify-center hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
+            className="block w-full min-h-[56px] bg-brand-600 text-white font-black text-center border border-line shadow-soft text-base uppercase tracking-wide flex items-center justify-center hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
           >
             Registrar medicion
           </a>
         )}
 
-        <p className="text-center text-xs text-slate-400 pb-4">
+        <p className="text-center text-xs text-faint pb-4">
           Ficha generada por ActivaQR · Solo lectura
         </p>
       </div>

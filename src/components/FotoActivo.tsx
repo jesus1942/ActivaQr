@@ -55,7 +55,7 @@ export const FotoActivo: React.FC<FotoActivoProps> = ({ activoId, fotoUrl, nombr
   };
 
   return (
-    <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] overflow-hidden">
+    <div className="bg-surface border border-line shadow-soft overflow-hidden">
       {fotoUrl ? (
         <div className="relative">
           <img
@@ -67,13 +67,13 @@ export const FotoActivo: React.FC<FotoActivoProps> = ({ activoId, fotoUrl, nombr
             <button
               onClick={() => inputRef.current?.click()}
               disabled={subiendo}
-              className="flex items-center gap-1.5 bg-white/95 border-2 border-slate-800 px-2.5 py-1.5 text-xs font-black uppercase shadow-[2px_2px_0px_0px_#1e293b] disabled:opacity-60"
+              className="flex items-center gap-1.5 bg-surface/95 border border-line px-2.5 py-1.5 text-xs font-black uppercase shadow-soft disabled:opacity-60"
             >
               <Camera size={13} /> {subiendo ? 'Subiendo...' : 'Cambiar'}
             </button>
             <button
               onClick={handleDelete}
-              className="flex items-center gap-1.5 bg-white/95 border-2 border-red-500 text-red-600 px-2.5 py-1.5 text-xs font-black uppercase shadow-[2px_2px_0px_0px_#7f1d1d]"
+              className="flex items-center gap-1.5 bg-surface/95 border border-danger text-danger px-2.5 py-1.5 text-xs font-black uppercase shadow-soft"
             >
               <Trash2 size={13} />
             </button>
@@ -83,7 +83,7 @@ export const FotoActivo: React.FC<FotoActivoProps> = ({ activoId, fotoUrl, nombr
         <button
           onClick={() => inputRef.current?.click()}
           disabled={subiendo}
-          className="w-full aspect-video flex flex-col items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 transition-colors text-slate-400 disabled:opacity-60"
+          className="w-full aspect-video flex flex-col items-center justify-center gap-2 bg-subtle hover:bg-subtle transition-colors text-faint disabled:opacity-60"
         >
           {subiendo ? (
             <span className="text-sm font-bold">Subiendo...</span>
@@ -93,12 +93,12 @@ export const FotoActivo: React.FC<FotoActivoProps> = ({ activoId, fotoUrl, nombr
               <span className="text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
                 <Camera size={14} /> Agregar foto del activo
               </span>
-              <span className="text-[11px] text-slate-400">Se comprime sola, podes sacarla con el celular</span>
+              <span className="text-[11px] text-faint">Se comprime sola, podes sacarla con el celular</span>
             </>
           )}
         </button>
       )}
-      {err && <p className="text-xs font-bold text-red-600 bg-red-50 border-t-2 border-red-200 px-3 py-2">{err}</p>}
+      {err && <p className="text-xs font-bold text-danger bg-danger/10 border-t border-danger px-3 py-2">{err}</p>}
       {/* Sin atributo capture: deja elegir camara O galeria en mobile */}
       <input
         ref={inputRef}

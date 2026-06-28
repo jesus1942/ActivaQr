@@ -63,16 +63,16 @@ const PLANES = ['inicial', 'empresa', 'industrial'] as const;
 const Modal: React.FC<{ titulo: string; icono?: React.ReactNode; onClose: () => void; children: React.ReactNode; maxW?: string }> = ({
   titulo, icono, onClose, children, maxW = 'max-w-md',
 }) => (
-  <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-4 pb-safe" onClick={onClose}>
+  <div className="fixed inset-0 z-50 bg-content/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 pb-safe" onClick={onClose}>
     <div
-      className={`bg-white border-2 border-slate-900 shadow-[6px_6px_0px_0px_#1e293b] w-full ${maxW} max-h-[92vh] overflow-y-auto`}
+      className={`bg-surface border border-line shadow-soft w-full ${maxW} max-h-[92vh] overflow-y-auto`}
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="flex items-center justify-between bg-slate-900 text-white px-5 py-4 sticky top-0">
-        <h2 className="font-sketch font-black text-base uppercase tracking-wide flex items-center gap-2">
+      <div className="flex items-center justify-between bg-content text-white px-5 py-4 sticky top-0">
+        <h2 className="font-display font-black text-base uppercase tracking-wide flex items-center gap-2">
           {icono}{titulo}
         </h2>
-        <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors"><X size={20} /></button>
+        <button onClick={onClose} className="text-faint hover:text-white transition-colors"><X size={20} /></button>
       </div>
       <div className="p-5">{children}</div>
     </div>
@@ -82,15 +82,15 @@ const Modal: React.FC<{ titulo: string; icono?: React.ReactNode; onClose: () => 
 // ── Campo helper ───────────────────────────────────────────────────────────────
 const Field: React.FC<{ label: string; hint?: string; children: React.ReactNode }> = ({ label, hint, children }) => (
   <div>
-    <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-1">{label}</label>
+    <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">{label}</label>
     {children}
-    {hint && <p className="text-xs text-slate-400 mt-1">{hint}</p>}
+    {hint && <p className="text-xs text-faint mt-1">{hint}</p>}
   </div>
 );
 
-const inputCls = "w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500 bg-white font-medium";
-const btnPrimary = "w-full bg-orange-500 text-white h-12 font-sketch font-black uppercase tracking-wide border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all disabled:opacity-40 disabled:pointer-events-none";
-const btnSecondary = "w-full h-12 border-2 border-slate-400 text-sm font-bold text-slate-600 hover:border-slate-800 transition-colors";
+const inputCls = "w-full border border-line px-3 h-11 text-sm outline-none focus:border-brand-600 bg-surface font-medium";
+const btnPrimary = "w-full bg-brand-600 text-white h-12 font-display font-black uppercase tracking-wide border border-line shadow-soft hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all disabled:opacity-40 disabled:pointer-events-none";
+const btnSecondary = "w-full h-12 border border-line-strong text-sm font-bold text-muted hover:border-content transition-colors";
 
 // ── Modal cobro ────────────────────────────────────────────────────────────────
 type Moneda = 'ARS' | 'USD' | 'UYU';
@@ -142,13 +142,13 @@ const ModalCobro: React.FC<{
   return (
     <Modal titulo="Generar cobro" icono={<CreditCard size={16} />} onClose={onClose}>
       {/* Selector de moneda */}
-      <div className="flex gap-0 mb-4 border-2 border-slate-900">
+      <div className="flex gap-0 mb-4 border border-line">
         {(['ARS', 'USD', 'UYU'] as Moneda[]).map((m, i) => (
           <button
             key={m}
             type="button"
             onClick={() => setMoneda(m)}
-            className={`flex-1 py-2 text-xs font-black uppercase tracking-wide transition-colors ${i > 0 ? 'border-l-2 border-slate-900' : ''} ${moneda === m ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+            className={`flex-1 py-2 text-xs font-black uppercase tracking-wide transition-colors ${i > 0 ? 'border-l-2 border-line' : ''} ${moneda === m ? 'bg-content text-white' : 'bg-surface text-muted hover:bg-subtle'}`}
           >
             {m}
           </button>
@@ -156,26 +156,26 @@ const ModalCobro: React.FC<{
       </div>
 
       {/* Selector de modo */}
-      <div className="flex gap-0 mb-6 border-2 border-slate-900">
+      <div className="flex gap-0 mb-6 border border-line">
         <button
           type="button"
           onClick={() => setModo('suscripcion')}
-          className={`flex-1 py-3 text-xs font-black uppercase tracking-wide transition-colors ${modo === 'suscripcion' ? 'bg-orange-500 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+          className={`flex-1 py-3 text-xs font-black uppercase tracking-wide transition-colors ${modo === 'suscripcion' ? 'bg-brand-600 text-white' : 'bg-surface text-muted hover:bg-subtle'}`}
         >
           Suscripcion mensual
         </button>
         <button
           type="button"
           onClick={() => setModo('unico')}
-          className={`flex-1 py-3 text-xs font-black uppercase tracking-wide border-l-2 border-slate-900 transition-colors ${modo === 'unico' ? 'bg-orange-500 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+          className={`flex-1 py-3 text-xs font-black uppercase tracking-wide border-l-2 border-line transition-colors ${modo === 'unico' ? 'bg-brand-600 text-white' : 'bg-surface text-muted hover:bg-subtle'}`}
         >
           Pago unico
         </button>
       </div>
 
       <form onSubmit={submit} className="space-y-4">
-        <div className="bg-slate-50 border-2 border-slate-200 px-4 py-3 mb-2">
-          <p className="text-xs text-slate-500 font-semibold">{infoTexto}</p>
+        <div className="bg-subtle border border-line px-4 py-3 mb-2">
+          <p className="text-xs text-muted font-semibold">{infoTexto}</p>
         </div>
 
         <Field label={`Monto (${moneda})`} hint={modo === 'suscripcion' ? 'Se debitará automáticamente cada mes' : 'Pago por única vez'}>
@@ -213,7 +213,7 @@ const ModalCobro: React.FC<{
           </Field>
         )}
 
-        {err && <p className="text-xs font-bold text-red-600 bg-red-50 border-2 border-red-200 px-3 py-2">{err}</p>}
+        {err && <p className="text-xs font-bold text-danger bg-danger/10 border border-danger px-3 py-2">{err}</p>}
 
         <button type="submit" disabled={cargando} className={btnPrimary}>
           {cargando ? 'Generando...' : 'Generar link de cobro'}
@@ -244,10 +244,10 @@ const ModalResetPass: React.FC<{ empresa: EmpresaAdmin; onClose: () => void; onC
   return (
     <Modal titulo="Resetear contraseña" icono={<KeyRound size={16} />} onClose={onClose}>
       <div className="space-y-3 mb-5">
-        <p className="text-sm text-slate-700">
+        <p className="text-sm text-content">
           Vamos a resetear la contraseña del administrador de <strong>{empresa.nombre}</strong>.
         </p>
-        <div className="border-2 border-amber-300 bg-amber-50 p-3 text-xs text-amber-800 leading-snug space-y-1">
+        <div className="border border-warn bg-warn/10 p-3 text-xs text-warn-strong dark:text-warn leading-snug space-y-1">
           <p className="font-bold">Que va a pasar:</p>
           <ul className="list-disc list-inside space-y-0.5">
             <li>La contraseña actual del cliente queda invalidada al instante.</li>
@@ -256,7 +256,7 @@ const ModalResetPass: React.FC<{ empresa: EmpresaAdmin; onClose: () => void; onC
             <li>Vos NO eliges su nueva contraseña — la define el cliente.</li>
           </ul>
         </div>
-        <p className="text-xs text-slate-500">Reingresa <strong>tu</strong> contrasena para confirmar la operacion.</p>
+        <p className="text-xs text-muted">Reingresa <strong>tu</strong> contrasena para confirmar la operacion.</p>
       </div>
       <form onSubmit={submit} className="space-y-4">
         <Field label="Tu contraseña (la del superadmin)">
@@ -269,7 +269,7 @@ const ModalResetPass: React.FC<{ empresa: EmpresaAdmin; onClose: () => void; onC
             className={inputCls + ' font-mono'}
           />
         </Field>
-        {err && <p className="text-xs font-bold text-red-600 bg-red-50 border-2 border-red-200 px-3 py-2">{err}</p>}
+        {err && <p className="text-xs font-bold text-danger bg-danger/10 border border-danger px-3 py-2">{err}</p>}
         <button type="submit" disabled={cargando} className={btnPrimary}>{cargando ? 'Reseteando...' : 'Resetear y notificar al cliente'}</button>
         <button type="button" onClick={onClose} className={btnSecondary}>Cancelar</button>
       </form>
@@ -306,23 +306,23 @@ const ModalWhatsapp: React.FC<{
   const completo = soloDigitos ? `${pais.codigo}${soloDigitos}` : '';
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black/60 flex items-end sm:items-center justify-center p-4 pb-safe">
-      <div className="bg-white border-2 border-slate-900 shadow-[6px_6px_0px_0px_#1e293b] w-full max-w-sm max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between border-b-2 border-slate-900 px-5 py-3 bg-slate-900 text-white">
-          <h2 className="font-sketch font-black text-base uppercase tracking-wide">{titulo}</h2>
+    <div className="fixed inset-0 z-[60] bg-content/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 pb-safe">
+      <div className="bg-surface border border-line shadow-soft w-full max-w-sm max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between border border-line px-5 py-3 bg-content text-white">
+          <h2 className="font-display font-black text-base uppercase tracking-wide">{titulo}</h2>
           <button onClick={onOmitir}><X size={18} /></button>
         </div>
         <div className="p-5 space-y-4">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted">
             WhatsApp de <strong>{nombreEmpresa}</strong> para enviar el link directamente.
           </p>
 
           <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-1">Pais</label>
+            <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Pais</label>
             <select
               value={pais.codigo}
               onChange={(e) => setPais(CODIGOS_PAIS.find((c) => c.codigo === e.target.value) ?? CODIGOS_PAIS[0])}
-              className="w-full border-2 border-slate-300 px-3 h-11 text-sm font-semibold outline-none focus:border-orange-500 bg-white"
+              className="w-full border border-line px-3 h-11 text-sm font-semibold outline-none focus:border-brand-600 bg-surface"
             >
               {CODIGOS_PAIS.map((c) => (
                 <option key={c.codigo} value={c.codigo}>
@@ -333,11 +333,11 @@ const ModalWhatsapp: React.FC<{
           </div>
 
           <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-1">
+            <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">
               Numero (sin 0, sin codigo de pais)
             </label>
             <div className="flex gap-2 items-center">
-              <span className="border-2 border-slate-300 px-3 h-11 flex items-center font-mono font-black text-slate-700 text-sm bg-slate-50 whitespace-nowrap">
+              <span className="border border-line px-3 h-11 flex items-center font-mono font-black text-content text-sm bg-subtle whitespace-nowrap">
                 +{pais.codigo}
               </span>
               <input
@@ -346,12 +346,12 @@ const ModalWhatsapp: React.FC<{
                 value={numero}
                 onChange={(e) => setNumero(e.target.value)}
                 placeholder="1112345678"
-                className="flex-1 border-2 border-slate-300 px-3 h-11 text-base font-mono outline-none focus:border-orange-500 text-center min-w-0"
+                className="flex-1 border border-line px-3 h-11 text-base font-mono outline-none focus:border-brand-600 text-center min-w-0"
               />
             </div>
             {preview && (
-              <p className="text-xs text-slate-500 mt-1.5 font-mono">
-                Numero completo: <span className="font-black text-slate-800">{preview}</span>
+              <p className="text-xs text-muted mt-1.5 font-mono">
+                Numero completo: <span className="font-black text-content">{preview}</span>
               </p>
             )}
           </div>
@@ -359,14 +359,14 @@ const ModalWhatsapp: React.FC<{
           <div className="flex gap-2 pt-1">
             <button
               onClick={onOmitir}
-              className="flex-1 py-2.5 border-2 border-slate-300 text-sm font-bold text-slate-600 hover:border-slate-500 transition-colors"
+              className="flex-1 py-2.5 border border-line text-sm font-bold text-muted hover:border-content transition-colors"
             >
               Omitir
             </button>
             <button
               onClick={() => completo && onConfirm(completo)}
               disabled={!soloDigitos}
-              className="flex-1 py-2.5 bg-slate-900 text-white border-2 border-slate-900 text-sm font-black uppercase tracking-wide hover:bg-slate-700 transition-colors disabled:opacity-40"
+              className="flex-1 py-2.5 bg-content text-white border border-line text-sm font-black uppercase tracking-wide hover:bg-content transition-colors disabled:opacity-40"
             >
               Abrir WhatsApp
             </button>
@@ -624,13 +624,13 @@ export const Admin: React.FC = () => {
   return (
     <div className="space-y-6">
       {modoSeed && (
-        <div className="flex items-center justify-between gap-3 bg-red-600 text-white border-2 border-red-900 px-4 py-2 font-black uppercase tracking-wider text-sm shadow-[4px_4px_0px_0px_#7f1d1d]">
+        <div className="flex items-center justify-between gap-3 bg-danger text-white border border-danger px-4 py-2 font-black uppercase tracking-wider text-sm shadow-soft">
           <span className="flex items-center gap-2">
             <AlertTriangle size={16} /> Modo seed activo — operaciones destructivas habilitadas
           </span>
           <button
             onClick={() => setModoSeed(false)}
-            className="bg-white text-red-700 px-3 py-1 border-2 border-red-900 text-xs font-black hover:bg-red-100"
+            className="bg-surface text-danger-strong dark:text-danger px-3 py-1 border border-danger text-xs font-black hover:bg-danger/10"
           >
             Desactivar
           </button>
@@ -638,17 +638,17 @@ export const Admin: React.FC = () => {
       )}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="font-sketch text-3xl sm:text-4xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+          <h1 className="font-display text-3xl sm:text-4xl font-black text-content uppercase tracking-tight flex items-center gap-2">
             <Building2 size={32} /> Administración
             {solicitudes.length > 0 && (
-              <span className="inline-flex items-center justify-center w-6 h-6 bg-orange-500 text-white text-xs font-black border-2 border-slate-900">
+              <span className="inline-flex items-center justify-center w-6 h-6 bg-brand-600 text-white text-xs font-black border border-line">
                 {solicitudes.length}
               </span>
             )}
           </h1>
-          <p className="text-slate-500 text-sm mt-1">{empresas.length} empresas registradas</p>
+          <p className="text-muted text-sm mt-1">{empresas.length} empresas registradas</p>
           {stripeOk === false && (
-            <div className="flex items-center gap-1.5 mt-1 text-xs font-black uppercase tracking-wide text-amber-700 bg-amber-50 border-2 border-amber-400 px-2 py-1 w-fit">
+            <div className="flex items-center gap-1.5 mt-1 text-xs font-black uppercase tracking-wide text-warn-strong dark:text-warn bg-warn/10 border border-warn px-2 py-1 w-fit">
               <AlertTriangle size={13} /> Stripe no configurado — USD/UYU no disponible
             </div>
           )}
@@ -660,8 +660,8 @@ export const Admin: React.FC = () => {
               const ok = confirm('Activar MODO SEED?\n\nVa a aparecer un boton para sembrar datasets demo en cada empresa. Es destructivo si te equivocas de fila. Solo activalo cuando lo necesites.\n\nSe desactiva automaticamente al cerrar la pestaña.');
               if (ok) setModoSeed(true);
             }}
-            className={`flex items-center gap-2 px-4 py-2 font-sketch font-bold uppercase border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-sm ${
-              modoSeed ? 'bg-red-600 text-white' : 'bg-white text-slate-700'
+            className={`flex items-center gap-2 px-4 py-2 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-sm ${
+              modoSeed ? 'bg-danger text-white' : 'bg-surface text-content'
             }`}
             title="Habilita herramientas de seed (destructivas). Oculto por default."
           >
@@ -674,7 +674,7 @@ export const Admin: React.FC = () => {
                 if (res.ok) { cargar(); } else { alert('Error al recrear demo'); }
               } catch { alert('Error al recrear demo'); }
             }}
-            className="flex items-center gap-2 bg-white text-slate-700 px-4 py-2 font-sketch font-bold uppercase border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-sm"
+            className="flex items-center gap-2 bg-surface text-content px-4 py-2 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-sm"
             title="Recrear empresa y usuario demo si fueron eliminados"
           >
             Recrear demo
@@ -693,14 +693,14 @@ export const Admin: React.FC = () => {
               'Ultimo Pago': e.mpUltimoPago ?? '',
               'Creada': e.creadaEn,
             })))}
-            className="flex items-center gap-2 bg-white text-slate-700 px-4 py-2 font-sketch font-bold uppercase border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-sm"
+            className="flex items-center gap-2 bg-surface text-content px-4 py-2 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-sm"
             title="Exportar lista de empresas a CSV"
           >
             <Download size={16} /> CSV
           </button>
           <button
             onClick={() => setModalAbierto(true)}
-            className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 font-sketch font-bold uppercase border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all"
+            className="flex items-center gap-2 bg-brand-600 text-white px-4 py-2 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all"
           >
             <Plus size={18} /> Nueva empresa
           </button>
@@ -711,29 +711,29 @@ export const Admin: React.FC = () => {
 
       {/* Barra de búsqueda */}
       <div className="relative">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-faint pointer-events-none" />
         <input
           type="search"
           placeholder="Buscar empresa por nombre, CUIT o email..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          className="w-full border-2 border-slate-300 pl-9 pr-4 h-11 text-sm outline-none focus:border-orange-500 bg-white font-medium"
+          className="w-full border border-line pl-9 pr-4 h-11 text-sm outline-none focus:border-brand-600 bg-surface font-medium"
         />
       </div>
 
 
       {error && (
-        <div className="bg-red-50 border-2 border-red-300 text-red-700 px-4 py-3 font-semibold">
+        <div className="bg-danger/10 border border-danger text-danger-strong dark:text-danger px-4 py-3 font-semibold">
           {error}
         </div>
       )}
 
       {/* Solicitudes de upgrade */}
       {solicitudes.length > 0 && (
-        <div className="border-2 border-orange-400 bg-orange-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
-          <h2 className="font-sketch font-black text-lg uppercase tracking-tight text-slate-900 flex items-center gap-2 mb-4">
-            <TrendingUp size={20} className="text-orange-500" /> Solicitudes de upgrade
-            <span className="inline-flex items-center justify-center w-5 h-5 bg-orange-500 text-white text-xs font-black border-2 border-slate-900">
+        <div className="border border-brand-600 bg-brand-50 shadow-soft p-4">
+          <h2 className="font-display font-black text-lg uppercase tracking-tight text-content flex items-center gap-2 mb-4">
+            <TrendingUp size={20} className="text-brand-600" /> Solicitudes de upgrade
+            <span className="inline-flex items-center justify-center w-5 h-5 bg-brand-600 text-white text-xs font-black border border-line">
               {solicitudes.length}
             </span>
           </h2>
@@ -766,7 +766,7 @@ export const Admin: React.FC = () => {
       )}
 
       {cargando ? (
-        <p className="text-slate-400 py-8 text-center font-sketch text-xl">Cargando…</p>
+        <p className="text-faint py-8 text-center font-display text-xl">Cargando…</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {empresas.filter((e) => {
@@ -782,31 +782,31 @@ export const Admin: React.FC = () => {
             return (
             <div
               key={emp.id}
-              className="bg-white border-2 border-slate-900 shadow-[4px_4px_0px_0px_#1e293b]"
+              className="bg-surface border border-line shadow-soft"
             >
               {/* Cabecera clicable */}
               <button
                 onClick={() => toggleExpand(emp.id)}
-                className="w-full text-left p-4 hover:bg-slate-50 transition-colors"
+                className="w-full text-left p-4 hover:bg-subtle transition-colors"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <h3 className="font-sketch font-black text-lg text-slate-900 leading-tight truncate">
+                    <h3 className="font-display font-black text-lg text-content leading-tight truncate">
                       {emp.nombre}
                     </h3>
-                    {emp.cuit && <p className="text-xs font-mono text-slate-500">{emp.cuit}</p>}
+                    {emp.cuit && <p className="text-xs font-mono text-muted">{emp.cuit}</p>}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <span
-                      className={`text-xs font-black uppercase px-2 py-1 border-2 ${
+                      className={`text-xs font-black uppercase px-2 py-1 border ${
                         emp.estado === 'activa'
-                          ? 'bg-emerald-50 border-emerald-400 text-emerald-700'
-                          : 'bg-red-50 border-red-400 text-red-700'
+                          ? 'bg-ok/10 border-ok text-ok-strong dark:text-ok'
+                          : 'bg-danger/10 border-danger text-danger-strong dark:text-danger'
                       }`}
                     >
                       {emp.estado}
                     </span>
-                    <ChevronDown size={16} className={`text-slate-400 transition-transform ${abierta ? 'rotate-180' : ''}`} />
+                    <ChevronDown size={16} className={`text-faint transition-transform ${abierta ? 'rotate-180' : ''}`} />
                   </div>
                 </div>
 
@@ -818,10 +818,10 @@ export const Admin: React.FC = () => {
                   const diasCompleto = fase === 'activo' ? Math.ceil((fin - ahora) / 86400000) : 0;
                   const diasLectura = fase === 'lectura' ? Math.ceil((lecturaFin - ahora) / 86400000) : 0;
                   return (
-                    <div className={`mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 border-2 text-xs font-black uppercase ${
-                      fase === 'activo' ? 'border-orange-400 bg-orange-50 text-orange-700'
-                      : fase === 'lectura' ? 'border-amber-400 bg-amber-50 text-amber-700'
-                      : 'border-red-400 bg-red-50 text-red-700'
+                    <div className={`mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 border text-xs font-black uppercase ${
+                      fase === 'activo' ? 'border-brand-600 bg-brand-50 text-brand-700'
+                      : fase === 'lectura' ? 'border-warn bg-warn/10 text-warn-strong dark:text-warn'
+                      : 'border-danger bg-danger/10 text-danger-strong dark:text-danger'
                     }`}>
                       <Clock size={11} />
                       {fase === 'activo' && `Trial — ${diasCompleto}d restantes`}
@@ -831,42 +831,42 @@ export const Admin: React.FC = () => {
                   );
                 })()}
 
-                <div className="flex gap-3 mt-2 text-xs font-mono text-slate-600 flex-wrap">
+                <div className="flex gap-3 mt-2 text-xs font-mono text-muted flex-wrap">
                   <span className="flex items-center gap-1">
                     <Package size={13} /> {emp._count.activos} activos
                   </span>
                   <span className="flex items-center gap-1">
                     <Users size={13} /> {emp._count.usuarios}
                   </span>
-                  <span className="ml-auto uppercase font-black text-orange-600">{emp.plan}</span>
+                  <span className="ml-auto uppercase font-black text-brand-600">{emp.plan}</span>
                 </div>
 
                 {emp.usuarios[0] && (
-                  <p className="text-xs text-slate-500 mt-1 font-mono truncate">
+                  <p className="text-xs text-muted mt-1 font-mono truncate">
                     {emp.usuarios[0].email}
                     {emp.usuarios[0].telefono && (
-                      <span className="ml-2 text-slate-400">· {emp.usuarios[0].telefono}</span>
+                      <span className="ml-2 text-faint">· {emp.usuarios[0].telefono}</span>
                     )}
                   </p>
                 )}
 
                 {emp.mpEstadoSub && (
-                  <p className="text-xs mt-1 font-mono text-slate-600">
-                    <span className="uppercase font-black text-slate-400">Sub:</span>{' '}
-                    <span className={emp.mpEstadoSub === 'authorized' ? 'text-emerald-600' : 'text-amber-600'}>
+                  <p className="text-xs mt-1 font-mono text-muted">
+                    <span className="uppercase font-black text-faint">Sub:</span>{' '}
+                    <span className={emp.mpEstadoSub === 'authorized' ? 'text-ok-strong dark:text-ok' : 'text-warn-strong dark:text-warn'}>
                       {emp.mpEstadoSub}
                     </span>
                     {emp.mpMonto ? ` · $${emp.mpMonto}/mes` : ''}
                   </p>
                 )}
-                <p className="text-[10px] font-mono text-slate-400 mt-1">
+                <p className="text-[10px] font-mono text-faint mt-1">
                   Alta: {new Date(emp.creadaEn).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                 </p>
               </button>
 
               {/* Panel de operaciones desplegable */}
               {abierta && (
-                <div className="border-t-2 border-slate-900 p-3 bg-slate-50 space-y-2">
+                <div className="border border-line p-3 bg-subtle space-y-2">
                   {/* Cambio de plan manual */}
                   <div className="flex gap-2">
                     {(['inicial', 'empresa', 'industrial'] as const).map((p) => (
@@ -877,10 +877,10 @@ export const Admin: React.FC = () => {
                           await actualizarEmpresa(emp.id, { plan: p });
                           cargar();
                         }}
-                        className={`flex-1 py-1.5 text-xs font-black uppercase border-2 transition-colors ${
+                        className={`flex-1 py-1.5 text-xs font-black uppercase border transition-colors ${
                           emp.plan === p
-                            ? 'bg-slate-900 text-white border-slate-900'
-                            : 'bg-white border-slate-300 hover:border-orange-500 hover:text-orange-600'
+                            ? 'bg-content text-white border-line'
+                            : 'bg-surface border-line hover:border-brand-600 hover:text-brand-600'
                         }`}
                       >
                         {p}
@@ -891,7 +891,7 @@ export const Admin: React.FC = () => {
                   <button
                     onClick={() => toggleEstado(emp)}
                     disabled={toggling.has(emp.id)}
-                    className="w-full flex items-center gap-2 border-2 border-slate-300 bg-white px-3 py-2 text-sm font-bold hover:border-slate-900 transition-colors disabled:opacity-50"
+                    className="w-full flex items-center gap-2 border border-line bg-surface px-3 py-2 text-sm font-bold hover:border-content transition-colors disabled:opacity-50"
                   >
                     <Power size={15} className={toggling.has(emp.id) ? 'animate-spin' : ''} />
                     {toggling.has(emp.id) ? 'Procesando...' : emp.estado === 'activa' ? 'Suspender empresa' : 'Activar empresa'}
@@ -899,7 +899,7 @@ export const Admin: React.FC = () => {
 
                   <button
                     onClick={() => suscribir(emp)}
-                    className="w-full flex items-center gap-2 border-2 border-slate-300 bg-white px-3 py-2 text-sm font-bold hover:border-emerald-600 hover:text-emerald-700 transition-colors"
+                    className="w-full flex items-center gap-2 border border-line bg-surface px-3 py-2 text-sm font-bold hover:border-emerald-600 hover:text-ok-strong dark:text-ok transition-colors"
                   >
                     <CreditCard size={15} /> Generar cobro
                   </button>
@@ -907,7 +907,7 @@ export const Admin: React.FC = () => {
                   {emp.mpPreapprovalId && emp.mpEstadoSub !== 'cancelled' && (
                     <button
                       onClick={() => cancelar(emp)}
-                      className="w-full flex items-center gap-2 border-2 border-red-200 bg-white px-3 py-2 text-sm font-bold text-red-600 hover:border-red-600 transition-colors"
+                      className="w-full flex items-center gap-2 border border-danger bg-surface px-3 py-2 text-sm font-bold text-danger hover:border-danger transition-colors"
                     >
                       <XCircle size={15} /> Cancelar suscripcion
                     </button>
@@ -915,7 +915,7 @@ export const Admin: React.FC = () => {
 
                   <button
                     onClick={() => resetear(emp)}
-                    className="w-full flex items-center gap-2 border-2 border-slate-300 bg-white px-3 py-2 text-sm font-bold hover:border-slate-900 transition-colors"
+                    className="w-full flex items-center gap-2 border border-line bg-surface px-3 py-2 text-sm font-bold hover:border-content transition-colors"
                   >
                     <KeyRound size={15} /> Resetear contrasena
                   </button>
@@ -923,12 +923,12 @@ export const Admin: React.FC = () => {
                   {(['empresa', 'industrial'].includes(emp.plan) || permisos[emp.id] != null) && (
                     <button
                       onClick={() => abrirAccesoRemoto(emp)}
-                      className={`w-full flex items-center gap-2 border-2 bg-white px-3 py-2 text-sm font-bold transition-colors ${
+                      className={`w-full flex items-center gap-2 border bg-surface px-3 py-2 text-sm font-bold transition-colors ${
                         permisos[emp.id]?.estado === 'activo'
-                          ? 'border-emerald-400 text-emerald-700 hover:border-emerald-600'
+                          ? 'border-ok text-ok-strong dark:text-ok hover:border-emerald-600'
                           : permisos[emp.id]?.estado === 'pendiente'
-                            ? 'border-amber-400 text-amber-700 hover:border-amber-600'
-                            : 'border-slate-300 hover:border-orange-500 hover:text-orange-600'
+                            ? 'border-warn text-warn-strong dark:text-warn hover:border-warn'
+                            : 'border-line hover:border-brand-600 hover:text-brand-600'
                       }`}
                     >
                       <MonitorSmartphone size={15} />
@@ -989,7 +989,7 @@ export const Admin: React.FC = () => {
                           alert(`Error al sembrar dataset.\n\n${e instanceof Error ? e.message : String(e)}`);
                         }
                       }}
-                      className="w-full flex items-center gap-2 border-2 border-violet-400 bg-violet-50 px-3 py-2 text-sm font-bold text-violet-800 hover:border-violet-700 transition-colors"
+                      className="w-full flex items-center gap-2 border border-violet-400 bg-violet-50 px-3 py-2 text-sm font-bold text-violet-800 hover:border-violet-700 transition-colors"
                     >
                       <Sparkles size={15} /> Sembrar dataset ESCUELA (Austral)
                     </button>
@@ -997,7 +997,7 @@ export const Admin: React.FC = () => {
 
                   <button
                     onClick={() => borrar(emp)}
-                    className="w-full flex items-center gap-2 border-2 border-red-300 bg-white px-3 py-2 text-sm font-bold text-red-600 hover:border-red-600 transition-colors"
+                    className="w-full flex items-center gap-2 border border-danger bg-surface px-3 py-2 text-sm font-bold text-danger hover:border-danger transition-colors"
                   >
                     <Trash2 size={15} /> Eliminar empresa
                   </button>
@@ -1119,10 +1119,10 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white border-2 border-slate-900 shadow-[6px_6px_0px_0px_#1e293b] w-full max-w-md my-8">
-        <div className="flex items-center justify-between border-b-2 border-slate-900 px-5 py-3">
-          <h2 className="font-sketch font-black text-xl uppercase">Nueva empresa</h2>
+    <div className="fixed inset-0 z-50 bg-content/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-surface border border-line shadow-soft w-full max-w-md my-8">
+        <div className="flex items-center justify-between border border-line px-5 py-3">
+          <h2 className="font-display font-black text-xl uppercase">Nueva empresa</h2>
           <button onClick={onClose}>
             <X size={22} />
           </button>
@@ -1150,8 +1150,8 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
             </select>
           </Campo>
 
-          <div className="pt-2 border-t-2 border-slate-100">
-            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2">
+          <div className="pt-2 border border-line">
+            <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-2">
               Usuario administrador de la empresa
             </p>
             <Campo label="Nombre">
@@ -1190,7 +1190,7 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
           </div>
 
           {error && (
-            <div className="bg-red-50 border-2 border-red-300 text-red-700 text-sm px-3 py-2 font-semibold">
+            <div className="bg-danger/10 border border-danger text-danger-strong dark:text-danger text-sm px-3 py-2 font-semibold">
               {error}
             </div>
           )}
@@ -1198,7 +1198,7 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
           <button
             type="submit"
             disabled={guardando}
-            className="w-full bg-orange-500 text-white h-11 font-sketch font-black uppercase border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all disabled:opacity-50"
+            className="w-full bg-brand-600 text-white h-11 font-display font-black uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all disabled:opacity-50"
           >
             {guardando ? 'Creando…' : 'Crear empresa'}
           </button>
@@ -1221,19 +1221,19 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
 // ── Shared link result row ─────────────────────────────────────────────────────
 const EstadoRow: React.FC<{ ok: boolean; textoOk: string; textoNo: string }> = ({ ok, textoOk, textoNo }) => (
   <div className="flex items-center gap-3 px-4 py-3">
-    <span className={`w-6 h-6 flex items-center justify-center text-xs font-black border-2 flex-shrink-0 ${ok ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-amber-50 border-amber-300 text-amber-600'}`}>
+    <span className={`w-6 h-6 flex items-center justify-center text-xs font-black border flex-shrink-0 ${ok ? 'bg-ok/10 border-ok text-ok-strong dark:text-ok' : 'bg-warn/10 border-warn text-warn-strong dark:text-warn'}`}>
       {ok ? '✓' : '!'}
     </span>
-    <span className="text-sm font-semibold text-slate-700">{ok ? textoOk : textoNo}</span>
+    <span className="text-sm font-semibold text-content">{ok ? textoOk : textoNo}</span>
   </div>
 );
 
 const LinkCopiable: React.FC<{ label: string; value: string }> = ({ label, value }) => (
   <div>
-    <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">{label}</p>
+    <p className="text-xs font-black uppercase tracking-wider text-muted mb-2">{label}</p>
     <div className="flex gap-2">
-      <input readOnly value={value} className="flex-1 border-2 border-slate-300 px-3 py-2 text-xs font-mono truncate outline-none bg-slate-50" onFocus={(e) => e.target.select()} />
-      <button onClick={() => navigator.clipboard?.writeText(value)} className="border-2 border-slate-900 px-4 text-xs font-black bg-white hover:bg-slate-100 transition-colors whitespace-nowrap">
+      <input readOnly value={value} className="flex-1 border border-line px-3 py-2 text-xs font-mono truncate outline-none bg-subtle" onFocus={(e) => e.target.select()} />
+      <button onClick={() => navigator.clipboard?.writeText(value)} className="border border-line px-4 text-xs font-black bg-surface hover:bg-subtle transition-colors whitespace-nowrap">
         Copiar
       </button>
     </div>
@@ -1245,8 +1245,8 @@ const ModalResultadoSuscripcion: React.FC<{
 }> = ({ empresaNombre, link, emailEnviado, waEnviado, onClose }) => (
   <Modal titulo="Link generado" icono={<CreditCard size={16} />} onClose={onClose}>
     <div className="space-y-4">
-      <p className="text-sm text-slate-600">Link para <strong className="text-slate-900">{empresaNombre}</strong> copiado al portapapeles.</p>
-      <div className="border-2 border-slate-200 divide-y-2 divide-slate-200">
+      <p className="text-sm text-muted">Link para <strong className="text-content">{empresaNombre}</strong> copiado al portapapeles.</p>
+      <div className="border border-line divide-y-2 divide-slate-200">
         <EstadoRow ok={waEnviado} textoOk="WhatsApp abierto con el mensaje listo" textoNo="WhatsApp no enviado" />
         <EstadoRow ok={emailEnviado} textoOk="Email enviado automaticamente" textoNo="Email no enviado (sin RESEND_API_KEY)" />
       </div>
@@ -1261,16 +1261,16 @@ const ModalResultadoRemoto: React.FC<{
 }> = ({ empresaNombre, link, emailEnviado, waAbierto, onClose }) => (
   <Modal titulo="Solicitud enviada" icono={<MonitorSmartphone size={16} />} onClose={onClose}>
     <div className="space-y-4">
-      <p className="text-sm text-slate-600">
-        Solicitud de acceso remoto para <strong className="text-slate-900">{empresaNombre}</strong>. El cliente debe aprobar desde el link.
+      <p className="text-sm text-muted">
+        Solicitud de acceso remoto para <strong className="text-content">{empresaNombre}</strong>. El cliente debe aprobar desde el link.
       </p>
-      <div className="border-2 border-slate-200 divide-y-2 divide-slate-200">
+      <div className="border border-line divide-y-2 divide-slate-200">
         <EstadoRow ok={waAbierto} textoOk="WhatsApp abierto con mensaje listo" textoNo="WhatsApp bloqueado — copiá el link manualmente" />
         <EstadoRow ok={emailEnviado} textoOk="Email de aprobacion enviado" textoNo="Email no enviado (sin RESEND_API_KEY)" />
       </div>
       <LinkCopiable label="Link de aprobacion para el cliente" value={link} />
       {!waAbierto && (
-        <div className="bg-amber-50 border-2 border-amber-300 px-3 py-2 text-xs text-amber-800 font-semibold">
+        <div className="bg-warn/10 border border-warn px-3 py-2 text-xs text-warn-strong dark:text-warn font-semibold">
           Copiá el link de arriba y envialo manualmente por WhatsApp.
         </div>
       )}
@@ -1291,18 +1291,18 @@ const SolicitudUpgradeRow: React.FC<{
   const [descartando, setDescartando] = useState(false);
 
   return (
-    <div className="bg-white border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)] p-4 flex items-center justify-between flex-wrap gap-3">
+    <div className="bg-surface border border-line shadow-soft p-4 flex items-center justify-between flex-wrap gap-3">
       <div className="min-w-0">
-        <p className="font-sketch font-black text-slate-900 text-base leading-tight">{solicitud.nombre}</p>
+        <p className="font-display font-black text-content text-base leading-tight">{solicitud.nombre}</p>
         {solicitud.adminEmail && (
-          <p className="text-xs font-mono text-slate-500 mt-0.5">{solicitud.adminEmail}</p>
+          <p className="text-xs font-mono text-muted mt-0.5">{solicitud.adminEmail}</p>
         )}
         <div className="flex items-center gap-2 mt-1">
-          <span className="text-xs font-black uppercase px-2 py-0.5 border-2 border-slate-300 text-slate-600">
+          <span className="text-xs font-black uppercase px-2 py-0.5 border border-line text-muted">
             {PLAN_LABEL[solicitud.plan] ?? solicitud.plan}
           </span>
-          <ArrowRight size={14} className="text-orange-500 flex-shrink-0" />
-          <span className="text-xs font-black uppercase px-2 py-0.5 border-2 border-orange-400 bg-orange-50 text-orange-700">
+          <ArrowRight size={14} className="text-brand-600 flex-shrink-0" />
+          <span className="text-xs font-black uppercase px-2 py-0.5 border border-brand-600 bg-brand-50 text-brand-700">
             {PLAN_LABEL[solicitud.planSolicitado] ?? solicitud.planSolicitado}
           </span>
         </div>
@@ -1311,14 +1311,14 @@ const SolicitudUpgradeRow: React.FC<{
         <button
           onClick={async () => { setProcesando(true); try { await onProcesar(); } finally { setProcesando(false); } }}
           disabled={procesando || descartando}
-          className="px-4 py-2 bg-orange-500 text-white border-2 border-slate-900 font-black uppercase text-xs shadow-[2px_2px_0px_0px_#1e293b] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all disabled:opacity-50"
+          className="px-4 py-2 bg-brand-600 text-white border border-line font-black uppercase text-xs shadow-soft hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all disabled:opacity-50"
         >
           {procesando ? '...' : 'Procesar'}
         </button>
         <button
           onClick={async () => { setDescartando(true); try { await onDescartar(); } finally { setDescartando(false); } }}
           disabled={procesando || descartando}
-          className="px-4 py-2 border-2 border-red-300 text-red-600 font-bold text-xs hover:border-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+          className="px-4 py-2 border border-danger text-danger font-bold text-xs hover:border-danger hover:bg-danger/10 transition-colors disabled:opacity-50"
         >
           {descartando ? '...' : 'Descartar'}
         </button>
@@ -1328,9 +1328,9 @@ const SolicitudUpgradeRow: React.FC<{
 };
 
 const StatCard: React.FC<{ label: string; valor: number }> = ({ label, valor }) => (
-  <div className="bg-white border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b] p-3 text-center">
-    <p className="font-sketch font-black text-3xl sm:text-4xl text-orange-500 leading-none">{valor}</p>
-    <p className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-slate-500 mt-1">{label}</p>
+  <div className="bg-surface border border-line shadow-soft p-3 text-center">
+    <p className="font-display font-black text-3xl sm:text-4xl text-brand-600 leading-none">{valor}</p>
+    <p className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-muted mt-1">{label}</p>
   </div>
 );
 
@@ -1338,21 +1338,21 @@ export const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReinici
   const maxVisitas = estadisticas.topFichas.reduce((m, f) => Math.max(m, f.visitas), 0) || 1;
   const maxSeccion = (estadisticas.topSecciones ?? []).reduce((m, s) => Math.max(m, s.visitas), 0) || 1;
   return (
-    <div className="border-2 border-slate-900 bg-slate-50 shadow-[4px_4px_0px_0px_#1e293b] p-4 space-y-4">
+    <div className="border border-line bg-subtle shadow-soft p-4 space-y-4">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <h2 className="font-sketch font-black text-lg uppercase tracking-tight text-slate-900 flex items-center gap-2">
-          <BarChart3 size={20} className="text-orange-500" /> Visitas
+        <h2 className="font-display font-black text-lg uppercase tracking-tight text-content flex items-center gap-2">
+          <BarChart3 size={20} className="text-brand-600" /> Visitas
         </h2>
         <button
           onClick={onReiniciar}
-          className="text-xs font-bold uppercase tracking-wide text-slate-500 border-2 border-slate-300 px-3 py-1.5 hover:border-red-400 hover:text-red-500 transition-colors"
+          className="text-xs font-bold uppercase tracking-wide text-muted border border-line px-3 py-1.5 hover:border-danger hover:text-danger transition-colors"
         >
           Reiniciar contador
         </button>
       </div>
 
       <div>
-        <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+        <p className="text-xs font-black uppercase tracking-wider text-muted mb-2 flex items-center gap-1.5">
           <Globe size={14} /> Landing
         </p>
         <div className="grid grid-cols-3 gap-2">
@@ -1363,7 +1363,7 @@ export const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReinici
       </div>
 
       <div>
-        <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+        <p className="text-xs font-black uppercase tracking-wider text-muted mb-2 flex items-center gap-1.5">
           <QrCode size={14} /> Fichas QR
         </p>
         <div className="grid grid-cols-3 gap-2">
@@ -1374,27 +1374,27 @@ export const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReinici
       </div>
 
       <div>
-        <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Equipos mas escaneados</p>
+        <p className="text-xs font-black uppercase tracking-wider text-muted mb-2">Equipos mas escaneados</p>
         {estadisticas.topFichas.length === 0 ? (
-          <p className="text-sm text-slate-400 font-semibold py-2">Aun no hay escaneos registrados.</p>
+          <p className="text-sm text-faint font-semibold py-2">Aun no hay escaneos registrados.</p>
         ) : (
           <div className="space-y-2">
             {estadisticas.topFichas.map((f) => (
               <div
                 key={f.activoId}
-                className="bg-white border-2 border-slate-900 shadow-[2px_2px_0px_0px_#1e293b] p-2.5"
+                className="bg-surface border border-line shadow-soft p-2.5"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-orange-500">{f.codigo}</p>
-                    <p className="font-sketch font-black text-sm text-slate-900 leading-tight truncate">{f.nombre}</p>
-                    <p className="text-xs text-slate-500 truncate">{f.empresa}</p>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-brand-600">{f.codigo}</p>
+                    <p className="font-display font-black text-sm text-content leading-tight truncate">{f.nombre}</p>
+                    <p className="text-xs text-muted truncate">{f.empresa}</p>
                   </div>
-                  <span className="font-sketch font-black text-2xl text-slate-900 shrink-0">{f.visitas}</span>
+                  <span className="font-display font-black text-2xl text-content shrink-0">{f.visitas}</span>
                 </div>
-                <div className="mt-2 h-2 bg-slate-100 border border-slate-300">
+                <div className="mt-2 h-2 bg-subtle border border-line">
                   <div
-                    className="h-full bg-orange-500"
+                    className="h-full bg-brand-600"
                     style={{ width: `${Math.round((f.visitas / maxVisitas) * 100)}%` }}
                   />
                 </div>
@@ -1406,14 +1406,14 @@ export const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReinici
 
       {estadisticas.topCiudades?.length > 0 && (
         <div>
-          <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+          <p className="text-xs font-black uppercase tracking-wider text-muted mb-2 flex items-center gap-1.5">
             <MapPin size={14} /> Ciudades de origen
           </p>
           <div className="space-y-1.5">
             {estadisticas.topCiudades.map((c) => (
-              <div key={c.ciudad} className="flex items-center justify-between gap-2 bg-white border-2 border-slate-200 px-3 py-1.5">
-                <span className="text-sm font-semibold text-slate-800">{c.ciudad} <span className="text-slate-400 font-normal text-xs">{c.pais}</span></span>
-                <span className="font-black text-slate-900 text-sm">{c.visitas}</span>
+              <div key={c.ciudad} className="flex items-center justify-between gap-2 bg-surface border border-line px-3 py-1.5">
+                <span className="text-sm font-semibold text-content">{c.ciudad} <span className="text-faint font-normal text-xs">{c.pais}</span></span>
+                <span className="font-black text-content text-sm">{c.visitas}</span>
               </div>
             ))}
           </div>
@@ -1422,22 +1422,22 @@ export const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReinici
 
       {estadisticas.dispositivos && (
         <div>
-          <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Dispositivos</p>
+          <p className="text-xs font-black uppercase tracking-wider text-muted mb-2">Dispositivos</p>
           <div className="grid grid-cols-3 gap-2">
-            <div className="bg-white border-2 border-slate-900 shadow-[2px_2px_0px_0px_#1e293b] p-2.5 flex flex-col items-center gap-1">
-              <Smartphone size={16} className="text-orange-500" />
-              <span className="font-black text-xl text-slate-900">{estadisticas.dispositivos.mobile}</span>
-              <span className="text-[10px] font-black uppercase text-slate-500">Celular</span>
+            <div className="bg-surface border border-line shadow-soft p-2.5 flex flex-col items-center gap-1">
+              <Smartphone size={16} className="text-brand-600" />
+              <span className="font-black text-xl text-content">{estadisticas.dispositivos.mobile}</span>
+              <span className="text-[10px] font-black uppercase text-muted">Celular</span>
             </div>
-            <div className="bg-white border-2 border-slate-900 shadow-[2px_2px_0px_0px_#1e293b] p-2.5 flex flex-col items-center gap-1">
-              <Monitor size={16} className="text-orange-500" />
-              <span className="font-black text-xl text-slate-900">{estadisticas.dispositivos.desktop}</span>
-              <span className="text-[10px] font-black uppercase text-slate-500">Desktop</span>
+            <div className="bg-surface border border-line shadow-soft p-2.5 flex flex-col items-center gap-1">
+              <Monitor size={16} className="text-brand-600" />
+              <span className="font-black text-xl text-content">{estadisticas.dispositivos.desktop}</span>
+              <span className="text-[10px] font-black uppercase text-muted">Desktop</span>
             </div>
-            <div className="bg-white border-2 border-slate-900 shadow-[2px_2px_0px_0px_#1e293b] p-2.5 flex flex-col items-center gap-1">
-              <Tablet size={16} className="text-orange-500" />
-              <span className="font-black text-xl text-slate-900">{estadisticas.dispositivos.tablet}</span>
-              <span className="text-[10px] font-black uppercase text-slate-500">Tablet</span>
+            <div className="bg-surface border border-line shadow-soft p-2.5 flex flex-col items-center gap-1">
+              <Tablet size={16} className="text-brand-600" />
+              <span className="font-black text-xl text-content">{estadisticas.dispositivos.tablet}</span>
+              <span className="text-[10px] font-black uppercase text-muted">Tablet</span>
             </div>
           </div>
         </div>
@@ -1445,23 +1445,23 @@ export const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReinici
 
       {estadisticas.trials && (
         <div>
-          <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Cuentas de prueba</p>
+          <p className="text-xs font-black uppercase tracking-wider text-muted mb-2">Cuentas de prueba</p>
           <div className="grid grid-cols-4 gap-2">
-            <div className="bg-white border-2 border-slate-900 shadow-[2px_2px_0px_0px_#1e293b] p-2.5 flex flex-col items-center gap-0.5">
-              <span className="font-black text-xl text-slate-900">{estadisticas.trials.total}</span>
-              <span className="text-[10px] font-black uppercase text-slate-500">Total</span>
+            <div className="bg-surface border border-line shadow-soft p-2.5 flex flex-col items-center gap-0.5">
+              <span className="font-black text-xl text-content">{estadisticas.trials.total}</span>
+              <span className="text-[10px] font-black uppercase text-muted">Total</span>
             </div>
-            <div className="bg-white border-2 border-emerald-500 shadow-[2px_2px_0px_0px_#1e293b] p-2.5 flex flex-col items-center gap-0.5">
-              <span className="font-black text-xl text-emerald-600">{estadisticas.trials.activos}</span>
-              <span className="text-[10px] font-black uppercase text-slate-500">Activos</span>
+            <div className="bg-surface border border-ok shadow-soft p-2.5 flex flex-col items-center gap-0.5">
+              <span className="font-black text-xl text-ok-strong dark:text-ok">{estadisticas.trials.activos}</span>
+              <span className="text-[10px] font-black uppercase text-muted">Activos</span>
             </div>
-            <div className="bg-white border-2 border-amber-500 shadow-[2px_2px_0px_0px_#1e293b] p-2.5 flex flex-col items-center gap-0.5">
-              <span className="font-black text-xl text-amber-600">{estadisticas.trials.lectura}</span>
-              <span className="text-[10px] font-black uppercase text-slate-500">Lectura</span>
+            <div className="bg-surface border border-warn shadow-soft p-2.5 flex flex-col items-center gap-0.5">
+              <span className="font-black text-xl text-warn-strong dark:text-warn">{estadisticas.trials.lectura}</span>
+              <span className="text-[10px] font-black uppercase text-muted">Lectura</span>
             </div>
-            <div className="bg-white border-2 border-red-400 shadow-[2px_2px_0px_0px_#1e293b] p-2.5 flex flex-col items-center gap-0.5">
-              <span className="font-black text-xl text-red-600">{estadisticas.trials.vencidos}</span>
-              <span className="text-[10px] font-black uppercase text-slate-500">Vencidos</span>
+            <div className="bg-surface border border-danger shadow-soft p-2.5 flex flex-col items-center gap-0.5">
+              <span className="font-black text-xl text-danger">{estadisticas.trials.vencidos}</span>
+              <span className="text-[10px] font-black uppercase text-muted">Vencidos</span>
             </div>
           </div>
         </div>
@@ -1469,16 +1469,16 @@ export const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReinici
 
       {estadisticas.topSecciones?.length > 0 && (
         <div>
-          <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Secciones más usadas</p>
+          <p className="text-xs font-black uppercase tracking-wider text-muted mb-2">Secciones más usadas</p>
           <div className="space-y-1.5">
             {estadisticas.topSecciones.map((s) => (
-              <div key={s.seccion} className="bg-white border-2 border-slate-200 px-3 py-1.5">
+              <div key={s.seccion} className="bg-surface border border-line px-3 py-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-semibold text-slate-800">{s.seccion}</span>
-                  <span className="font-black text-slate-900 text-sm">{s.visitas}</span>
+                  <span className="text-sm font-semibold text-content">{s.seccion}</span>
+                  <span className="font-black text-content text-sm">{s.visitas}</span>
                 </div>
-                <div className="mt-1 h-1.5 bg-slate-100">
-                  <div className="h-full bg-orange-500" style={{ width: `${Math.round((s.visitas / maxSeccion) * 100)}%` }} />
+                <div className="mt-1 h-1.5 bg-subtle">
+                  <div className="h-full bg-brand-600" style={{ width: `${Math.round((s.visitas / maxSeccion) * 100)}%` }} />
                 </div>
               </div>
             ))}
@@ -1491,7 +1491,7 @@ export const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReinici
 
 const Campo: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <div className="mb-2">
-    <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
+    <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">
       {label}
     </label>
     {children}

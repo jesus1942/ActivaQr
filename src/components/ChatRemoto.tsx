@@ -161,23 +161,23 @@ export const ChatRemoto: React.FC<Props> = ({ mensajes, miRol, onEnviar, cargand
   };
 
   return (
-    <div className="flex flex-col border-2 border-slate-900 bg-white" style={{ height: '360px' }}>
+    <div className="flex flex-col border border-line bg-surface" style={{ height: '360px' }}>
       {/* Mensajes */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50">
-        {cargando && <p className="text-xs text-slate-400 text-center animate-pulse">Cargando mensajes...</p>}
+      <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-subtle">
+        {cargando && <p className="text-xs text-faint text-center animate-pulse">Cargando mensajes...</p>}
         {!cargando && mensajes.length === 0 && (
-          <p className="text-xs text-slate-400 text-center mt-8">Sin mensajes aún.</p>
+          <p className="text-xs text-faint text-center mt-8">Sin mensajes aún.</p>
         )}
         {mensajes.map((m) => {
           const esMio = m.autorRol === miRol;
           return (
             <div key={m.id} className={`flex ${esMio ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[80%] ${esMio
-                ? 'bg-orange-500 text-white border-2 border-orange-700'
-                : 'bg-white text-slate-800 border-2 border-slate-300'
-              } px-3 py-2 shadow-[2px_2px_0px_rgba(0,0,0,0.15)]`}>
+                ? 'bg-brand-600 text-white border border-orange-700'
+                : 'bg-surface text-content border border-line'
+              } px-3 py-2 shadow-soft`}>
                 {!esMio && (
-                  <p className="text-xs font-black uppercase tracking-wider mb-1 text-orange-600">{m.autorNombre}</p>
+                  <p className="text-xs font-black uppercase tracking-wider mb-1 text-brand-600">{m.autorNombre}</p>
                 )}
                 {m.tipo === 'imagen' && m.adjunto ? (
                   <>
@@ -185,7 +185,7 @@ export const ChatRemoto: React.FC<Props> = ({ mensajes, miRol, onEnviar, cargand
                       src={m.adjunto}
                       alt="Adjunto"
                       onClick={() => window.open(m.adjunto!, '_blank')}
-                      className="max-w-full max-h-48 border-2 border-slate-900 cursor-pointer rounded"
+                      className="max-w-full max-h-48 border border-line cursor-pointer rounded"
                     />
                     {((m as MensajeRemoto & DatosEvidencia).capturedLat != null ||
                       (m as MensajeRemoto & DatosEvidencia).capturedAt ||
@@ -200,7 +200,7 @@ export const ChatRemoto: React.FC<Props> = ({ mensajes, miRol, onEnviar, cargand
                 ) : (
                   <p className="text-sm leading-relaxed">{m.contenido}</p>
                 )}
-                <p className={`text-xs mt-1 ${esMio ? 'text-orange-200' : 'text-slate-400'}`}>
+                <p className={`text-xs mt-1 ${esMio ? 'text-orange-200' : 'text-faint'}`}>
                   {new Date(m.creadoEn).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
                   {esMio && !m.leido && ' · no leído'}
                 </p>
@@ -212,33 +212,33 @@ export const ChatRemoto: React.FC<Props> = ({ mensajes, miRol, onEnviar, cargand
       </div>
 
       {error && (
-        <p className="px-3 py-1.5 text-xs font-bold text-red-700 bg-red-50 border-t-2 border-red-300">{error}</p>
+        <p className="px-3 py-1.5 text-xs font-bold text-danger-strong dark:text-danger bg-danger/10 border-t border-danger">{error}</p>
       )}
 
       {/* Input */}
       {grabando ? (
-        <div className="border-t-2 border-slate-900 flex items-center gap-3 px-3 py-2">
-          <span className="flex items-center gap-2 text-sm font-black text-red-600">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse" />
+        <div className="border border-line flex items-center gap-3 px-3 py-2">
+          <span className="flex items-center gap-2 text-sm font-black text-danger">
+            <span className="w-2.5 h-2.5 rounded-full bg-danger animate-pulse" />
             Grabando {String(Math.floor(segundos / 60)).padStart(2, '0')}:{String(segundos % 60).padStart(2, '0')}
           </span>
           <button
             type="button"
             onClick={detenerGrabacion}
-            className="ml-auto flex items-center gap-1 px-3 py-1.5 bg-orange-500 text-white border-2 border-slate-900 font-bold text-sm hover:bg-orange-600"
+            className="ml-auto flex items-center gap-1 px-3 py-1.5 bg-brand-600 text-white border border-line font-bold text-sm hover:bg-brand-700"
           >
             <Square size={14} /> Detener
           </button>
         </div>
       ) : (
-        <form onSubmit={handleEnviarTexto} className="border-t-2 border-slate-900 flex">
+        <form onSubmit={handleEnviarTexto} className="border border-line flex">
           <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handleArchivo} className="hidden" />
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={enviando}
             title="Enviar foto"
-            className="px-3 border-r-2 border-slate-900 text-slate-700 hover:text-orange-600 disabled:opacity-40"
+            className="px-3 border-r-2 border-line text-content hover:text-brand-600 disabled:opacity-40"
           >
             <ImagePlus size={16} />
           </button>
@@ -247,7 +247,7 @@ export const ChatRemoto: React.FC<Props> = ({ mensajes, miRol, onEnviar, cargand
             onClick={iniciarGrabacion}
             disabled={enviando}
             title="Grabar audio"
-            className="px-3 border-r-2 border-slate-900 text-slate-700 hover:text-orange-600 disabled:opacity-40"
+            className="px-3 border-r-2 border-line text-content hover:text-brand-600 disabled:opacity-40"
           >
             <Mic size={16} />
           </button>
@@ -256,13 +256,13 @@ export const ChatRemoto: React.FC<Props> = ({ mensajes, miRol, onEnviar, cargand
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
             placeholder="Escribí un mensaje..."
-            className="flex-1 px-3 py-2 text-sm outline-none bg-white"
+            className="flex-1 px-3 py-2 text-sm outline-none bg-surface"
             disabled={enviando}
           />
           <button
             type="submit"
             disabled={!texto.trim() || enviando}
-            className="px-4 bg-orange-500 text-white border-l-2 border-slate-900 font-bold disabled:opacity-40 hover:bg-orange-600 transition-colors"
+            className="px-4 bg-brand-600 text-white border-l-2 border-line font-bold disabled:opacity-40 hover:bg-brand-700 transition-colors"
           >
             <Send size={16} />
           </button>

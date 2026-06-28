@@ -28,7 +28,7 @@ export const TrialBanner: React.FC = () => {
   if (emp.fase === 'lectura') {
     const dias = diasRestantes(emp.trialLecturaFin);
     return (
-      <div className="bg-amber-100 border-b-2 border-amber-500 px-4 py-2 flex items-center justify-between gap-3 flex-wrap">
+      <div className="bg-warn/10 border-b border-line px-4 py-2 flex items-center justify-between gap-3 flex-wrap">
         <span className="text-sm font-bold text-amber-900 flex items-center gap-2">
           <Eye size={16} /> Modo solo lectura — podés ver tus activos pero no cargar datos. Quedan {dias} {dias === 1 ? 'día' : 'días'} de consulta.
         </span>
@@ -36,7 +36,7 @@ export const TrialBanner: React.FC = () => {
           href={linkWhatsapp(emp.nombre)}
           target="_blank"
           rel="noopener"
-          className="text-xs font-black uppercase tracking-wide bg-slate-900 text-white px-3 py-1.5 border-2 border-slate-900 hover:bg-orange-500 transition-colors"
+          className="text-xs font-black uppercase tracking-wide bg-content text-white px-3 py-1.5 border border-line hover:bg-brand-600 transition-colors"
         >
           Suscribirme
         </a>
@@ -46,7 +46,7 @@ export const TrialBanner: React.FC = () => {
 
   const dias = diasRestantes(emp.trialFin);
   return (
-    <div className="bg-orange-50 border-b-2 border-orange-400 px-4 py-2 flex items-center justify-between gap-3 flex-wrap">
+    <div className="bg-brand-50 border-b border-line px-4 py-2 flex items-center justify-between gap-3 flex-wrap">
       <span className="text-sm font-bold text-orange-800 flex items-center gap-2">
         <Clock size={16} /> Prueba gratis — quedan {dias} {dias === 1 ? 'día' : 'días'} de acceso completo.
       </span>
@@ -54,7 +54,7 @@ export const TrialBanner: React.FC = () => {
         href={linkWhatsapp(emp.nombre)}
         target="_blank"
         rel="noopener"
-        className="text-xs font-black uppercase tracking-wide bg-orange-500 text-white px-3 py-1.5 border-2 border-slate-900 shadow-[2px_2px_0px_0px_#1e293b] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
+        className="text-xs font-black uppercase tracking-wide bg-brand-600 text-white px-3 py-1.5 border border-line shadow-soft hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
       >
         Suscribirme
       </a>
@@ -67,30 +67,30 @@ export const PantallaTrialVencido: React.FC = () => {
   const { usuario, logout } = useAuth();
   const nombre = usuario?.empresa?.nombre ?? 'tu empresa';
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div className="bg-white border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.8)] max-w-md w-full">
-        <div className="bg-orange-500 px-6 py-4 border-b-4 border-slate-900 flex items-center gap-3">
+    <div className="min-h-screen bg-content flex items-center justify-center p-4">
+      <div className="bg-surface border border-line shadow-soft max-w-md w-full">
+        <div className="bg-brand-600 px-6 py-4 border-b-4 border-line flex items-center gap-3">
           <Lock size={28} className="text-white" />
           <h1 className="font-black text-white text-2xl uppercase tracking-wide">Prueba finalizada</h1>
         </div>
         <div className="p-6 space-y-4">
-          <p className="text-slate-700 font-semibold text-base leading-relaxed">
+          <p className="text-content font-semibold text-base leading-relaxed">
             Terminó tu período de prueba de ActivaQR. Tus datos quedaron guardados — al suscribirte recuperás todo tal como lo dejaste.
           </p>
-          <p className="text-slate-500 text-sm">
+          <p className="text-muted text-sm">
             Escribinos por WhatsApp y activamos tu suscripción en el día. Elegí entre suscripción mensual o el paquete completo de visita + app.
           </p>
           <a
             href={linkWhatsapp(nombre)}
             target="_blank"
             rel="noopener"
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-orange-500 text-white font-black uppercase tracking-wide border-2 border-slate-900 shadow-[4px_4px_0px_0px_#1e293b] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all text-sm"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-brand-600 text-white font-black uppercase tracking-wide border border-line shadow-soft hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all text-sm"
           >
             <MessageCircle size={18} /> Quiero suscribirme
           </a>
           <button
             onClick={logout}
-            className="w-full px-4 py-3 border-2 border-slate-400 font-bold text-slate-600 hover:border-slate-700 transition-colors text-sm uppercase tracking-wide"
+            className="w-full px-4 py-3 border border-line-strong font-bold text-muted hover:border-content transition-colors text-sm uppercase tracking-wide"
           >
             Cerrar sesión
           </button>

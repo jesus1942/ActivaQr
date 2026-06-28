@@ -23,12 +23,12 @@ export const GestionQR: React.FC = () => {
     <div>
       <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
         <div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 uppercase tracking-tight">QR / Etiquetas</h1>
-          <p className="text-slate-500 text-sm mt-1">{activos.length} activos</p>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-content uppercase tracking-tight">QR / Etiquetas</h1>
+          <p className="text-muted text-sm mt-1">{activos.length} activos</p>
         </div>
         <button
           onClick={handlePrintAll}
-          className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:bg-slate-700 transition-colors"
+          className="flex items-center gap-2 bg-content text-white px-4 py-2 font-bold border border-line shadow-soft hover:bg-content transition-colors"
         >
           <Printer size={16} />
           Imprimir Todas
@@ -41,17 +41,17 @@ export const GestionQR: React.FC = () => {
           return (
             <div
               key={activo.id}
-              className="bg-white border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] p-3 text-center print:shadow-none print:border print:break-inside-avoid"
+              className="bg-surface border border-line shadow-soft p-3 text-center print:shadow-none print:border print:break-inside-avoid"
             >
               {/* QR Code */}
-              <div className="inline-block border-2 border-slate-200 p-2 mb-2">
+              <div className="inline-block border border-line p-2 mb-2">
                 <QRCodeSVG value={qrValue} size={100} />
               </div>
 
               {/* Info */}
-              <div className="font-mono font-black text-xs text-slate-900 leading-tight">{activo.codigo}</div>
-              <div className="text-xs text-slate-600 mt-0.5 leading-snug truncate">{activo.nombre}</div>
-              <div className="text-xs text-slate-400 mt-0.5">{getSectorNombre(activo.sectorId)}</div>
+              <div className="font-mono font-black text-xs text-content leading-tight">{activo.codigo}</div>
+              <div className="text-xs text-muted mt-0.5 leading-snug truncate">{activo.nombre}</div>
+              <div className="text-xs text-faint mt-0.5">{getSectorNombre(activo.sectorId)}</div>
 
               <div className="mt-2">
                 <StatusBadge estado={activo.estado} size="sm" />
@@ -86,7 +86,7 @@ export const GestionQR: React.FC = () => {
                     printWindow.document.close();
                   }
                 }}
-                className="mt-2 w-full flex items-center justify-center gap-1 text-xs font-bold border-2 border-slate-300 py-1 hover:border-orange-500 hover:text-orange-600 transition-colors print:hidden"
+                className="mt-2 w-full flex items-center justify-center gap-1 text-xs font-bold border border-line py-1 hover:border-brand-600 hover:text-brand-600 transition-colors print:hidden"
               >
                 <Download size={11} />
                 Imprimir

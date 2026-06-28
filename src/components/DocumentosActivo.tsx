@@ -45,14 +45,14 @@ export const DocumentosActivo: React.FC<{ activoId: string }> = ({ activoId }) =
   };
 
   return (
-    <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
-      <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-3">Documentación</h2>
+    <div className="bg-surface border border-line shadow-soft p-4">
+      <h2 className="text-sm font-black uppercase tracking-wider text-content mb-3">Documentación</h2>
 
       <div className="flex gap-2 mb-3">
         <select
           value={tipo}
           onChange={(e) => setTipo(e.target.value)}
-          className="border-2 border-slate-300 px-2 h-10 text-xs font-bold outline-none"
+          className="border border-line px-2 h-10 text-xs font-bold outline-none"
         >
           {TIPOS.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
@@ -60,31 +60,31 @@ export const DocumentosActivo: React.FC<{ activoId: string }> = ({ activoId }) =
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={subiendo}
-          className="flex-1 flex items-center justify-center gap-2 bg-slate-900 text-white px-3 h-10 font-bold border-2 border-slate-800 text-xs disabled:opacity-50"
+          className="flex-1 flex items-center justify-center gap-2 bg-content text-white px-3 h-10 font-bold border border-line text-xs disabled:opacity-50"
         >
           <Upload size={14} /> {subiendo ? 'Subiendo...' : 'Subir archivo'}
         </button>
         <input ref={inputRef} type="file" className="hidden" onChange={onFile}
           accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx" />
       </div>
-      {error && <p className="text-xs font-bold text-red-600 mb-2">{error}</p>}
+      {error && <p className="text-xs font-bold text-danger mb-2">{error}</p>}
 
       {docs.length === 0 ? (
-        <p className="text-sm text-slate-400">Sin documentos adjuntos</p>
+        <p className="text-sm text-faint">Sin documentos adjuntos</p>
       ) : (
         <div className="space-y-2">
           {docs.map((d) => (
-            <div key={d.id} className="flex items-center gap-2 border-2 border-slate-200 p-2">
-              <FileText size={16} className="text-orange-500 shrink-0" />
+            <div key={d.id} className="flex items-center gap-2 border border-line p-2">
+              <FileText size={16} className="text-brand-600 shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-slate-700 truncate">{d.nombre}</p>
-                <p className="text-[10px] uppercase tracking-wider text-slate-400">{d.tipo}</p>
+                <p className="text-xs font-bold text-content truncate">{d.nombre}</p>
+                <p className="text-[10px] uppercase tracking-wider text-faint">{d.tipo}</p>
               </div>
               <a href={d.url} target="_blank" rel="noopener noreferrer" download={d.nombre}
-                className="p-1.5 border-2 border-slate-300 text-slate-600 hover:border-slate-800" title="Abrir">
+                className="p-1.5 border border-line text-muted hover:border-content" title="Abrir">
                 <ExternalLink size={13} />
               </a>
-              <button onClick={() => borrar(d.id)} className="p-1.5 border-2 border-slate-300 text-red-600 hover:border-red-600" title="Eliminar">
+              <button onClick={() => borrar(d.id)} className="p-1.5 border border-line text-danger hover:border-danger" title="Eliminar">
                 <Trash2 size={13} />
               </button>
             </div>

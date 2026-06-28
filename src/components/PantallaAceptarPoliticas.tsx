@@ -34,10 +34,10 @@ export const PantallaAceptarPoliticas: React.FC<Props> = ({ onAceptada }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div className="bg-white border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.8)] max-w-2xl w-full max-h-[92vh] overflow-y-auto">
-        <div className="bg-orange-500 px-6 py-4 border-b-4 border-slate-900">
-          <h1 className="font-sketch font-black text-white text-2xl uppercase tracking-tight flex items-center gap-2">
+    <div className="min-h-screen bg-content flex items-center justify-center p-4">
+      <div className="bg-surface border border-line shadow-soft max-w-2xl w-full max-h-[92vh] overflow-y-auto">
+        <div className="bg-brand-600 px-6 py-4 border-b-4 border-line">
+          <h1 className="font-display font-black text-white text-2xl uppercase tracking-tight flex items-center gap-2">
             <ShieldCheck size={26} /> Aceptacion de politicas
           </h1>
           <p className="text-white text-sm font-semibold mt-1 opacity-95">
@@ -46,16 +46,16 @@ export const PantallaAceptarPoliticas: React.FC<Props> = ({ onAceptada }) => {
         </div>
 
         <div className="p-6 space-y-5">
-          <p className="text-slate-700 text-sm leading-relaxed">
+          <p className="text-content text-sm leading-relaxed">
             Para seguir usando ActivaQR y antes de activar tu suscripcion, necesitamos que leas y
             aceptes la <strong>Politica de Uso</strong> y la <strong>Politica de Privacidad</strong>.
             La aceptacion queda registrada con fecha, hora e IP, conforme a la Ley 25.326.
           </p>
 
           {!esAdmin && (
-            <div className="bg-red-50 border-2 border-red-300 p-3 flex gap-2">
-              <AlertTriangle size={18} className="text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-700 font-semibold">
+            <div className="bg-danger/10 border border-danger p-3 flex gap-2">
+              <AlertTriangle size={18} className="text-danger flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-danger-strong dark:text-danger font-semibold">
                 Solo el administrador de la empresa puede aceptar las politicas. Pedile que ingrese y las acepte.
               </p>
             </div>
@@ -66,48 +66,48 @@ export const PantallaAceptarPoliticas: React.FC<Props> = ({ onAceptada }) => {
               href={`${API_BASE}/politica-uso`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-between border-2 border-slate-300 hover:border-orange-500 px-4 py-3 transition-colors group"
+              className="flex items-center justify-between border border-line hover:border-brand-600 px-4 py-3 transition-colors group"
             >
-              <span className="text-sm font-bold text-slate-700 group-hover:text-orange-600">
+              <span className="text-sm font-bold text-content group-hover:text-brand-600">
                 Leer Politica de Uso
               </span>
-              <ExternalLink size={16} className="text-slate-400 group-hover:text-orange-500" />
+              <ExternalLink size={16} className="text-faint group-hover:text-brand-600" />
             </a>
             <a
               href={`${API_BASE}/politica-privacidad`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-between border-2 border-slate-300 hover:border-orange-500 px-4 py-3 transition-colors group"
+              className="flex items-center justify-between border border-line hover:border-brand-600 px-4 py-3 transition-colors group"
             >
-              <span className="text-sm font-bold text-slate-700 group-hover:text-orange-600">
+              <span className="text-sm font-bold text-content group-hover:text-brand-600">
                 Leer Politica de Privacidad
               </span>
-              <ExternalLink size={16} className="text-slate-400 group-hover:text-orange-500" />
+              <ExternalLink size={16} className="text-faint group-hover:text-brand-600" />
             </a>
           </div>
 
-          <div className="space-y-2 pt-2 border-t-2 border-slate-100">
-            <label className={`flex items-start gap-3 p-3 border-2 cursor-pointer transition-colors ${esAdmin ? 'border-slate-300 hover:border-orange-400' : 'border-slate-200 opacity-50 cursor-not-allowed'}`}>
+          <div className="space-y-2 pt-2 border border-line">
+            <label className={`flex items-start gap-3 p-3 border cursor-pointer transition-colors ${esAdmin ? 'border-line hover:border-brand-600' : 'border-line opacity-50 cursor-not-allowed'}`}>
               <input
                 type="checkbox"
                 checked={aceptoUso}
                 onChange={(e) => setAceptoUso(e.target.checked)}
                 disabled={!esAdmin}
-                className="mt-0.5 w-4 h-4 accent-orange-500"
+                className="mt-0.5 w-4 h-4 accent-brand-600"
               />
-              <span className="text-sm text-slate-700">
+              <span className="text-sm text-content">
                 Lei y acepto la <strong>Politica de Uso</strong> de ActivaQR.
               </span>
             </label>
-            <label className={`flex items-start gap-3 p-3 border-2 cursor-pointer transition-colors ${esAdmin ? 'border-slate-300 hover:border-orange-400' : 'border-slate-200 opacity-50 cursor-not-allowed'}`}>
+            <label className={`flex items-start gap-3 p-3 border cursor-pointer transition-colors ${esAdmin ? 'border-line hover:border-brand-600' : 'border-line opacity-50 cursor-not-allowed'}`}>
               <input
                 type="checkbox"
                 checked={aceptoPriv}
                 onChange={(e) => setAceptoPriv(e.target.checked)}
                 disabled={!esAdmin}
-                className="mt-0.5 w-4 h-4 accent-orange-500"
+                className="mt-0.5 w-4 h-4 accent-brand-600"
               />
-              <span className="text-sm text-slate-700">
+              <span className="text-sm text-content">
                 Lei y acepto la <strong>Politica de Privacidad</strong> y autorizo el tratamiento de
                 datos personales descripto en ella.
               </span>
@@ -115,7 +115,7 @@ export const PantallaAceptarPoliticas: React.FC<Props> = ({ onAceptada }) => {
           </div>
 
           {error && (
-            <div className="bg-red-50 border-2 border-red-300 px-3 py-2 text-sm font-semibold text-red-700">
+            <div className="bg-danger/10 border border-danger px-3 py-2 text-sm font-semibold text-danger-strong dark:text-danger">
               {error}
             </div>
           )}
@@ -123,14 +123,14 @@ export const PantallaAceptarPoliticas: React.FC<Props> = ({ onAceptada }) => {
           <div className="flex gap-3 pt-2">
             <button
               onClick={logout}
-              className="px-4 py-3 border-2 border-slate-400 font-bold text-slate-600 hover:border-slate-700 transition-colors text-sm uppercase tracking-wide"
+              className="px-4 py-3 border border-line-strong font-bold text-muted hover:border-content transition-colors text-sm uppercase tracking-wide"
             >
               Cerrar sesion
             </button>
             <button
               onClick={handleAceptar}
               disabled={!puedeAceptar}
-              className="flex-1 bg-orange-500 text-white font-sketch font-black text-lg uppercase border-2 border-slate-900 shadow-[4px_4px_0px_0px_#1e293b] py-3 hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#1e293b] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0px_0px_#1e293b]"
+              className="flex-1 bg-brand-600 text-white font-display font-black text-lg uppercase border border-line shadow-soft py-3 hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-soft transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-soft"
             >
               {enviando ? 'Registrando...' : 'Acepto y continuo'}
             </button>

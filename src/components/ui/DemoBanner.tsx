@@ -55,7 +55,7 @@ export const DemoBanner: React.FC = () => {
       {expirado && (
         <button
           onClick={logout}
-          className="ml-4 border-2 border-orange-500 text-orange-400 px-3 py-0.5 text-xs font-bold hover:bg-orange-500 hover:text-white transition-colors"
+          className="ml-4 border border-brand-600 text-brand-400 px-3 py-0.5 text-xs font-bold hover:bg-brand-600 hover:text-white transition-colors"
         >
           Cerrar sesion
         </button>

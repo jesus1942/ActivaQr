@@ -206,13 +206,13 @@ export const Activos: React.FC = () => {
     <div>
       <div className="flex items-center justify-between mb-6 gap-3">
         <div>
-          <h1 className="font-sketch text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 uppercase tracking-tight">Activos</h1>
-          <p className="text-slate-500 text-sm mt-1">{filtered.length} activos encontrados</p>
+          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-black text-content uppercase tracking-tight">Activos</h1>
+          <p className="text-muted text-sm mt-1">{filtered.length} activos encontrados</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => exportarResumenActivosPdf({ activos: filtered, getSectorNombre, getTipoNombre, getTecnicoNombre: (id) => getTecnicoNombre(id ?? '') })}
-            className="flex items-center gap-2 bg-white text-slate-700 px-3 min-h-[44px] font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] transition-all text-sm"
+            className="flex items-center gap-2 bg-surface text-content px-3 min-h-[44px] font-bold border border-line shadow-soft hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-soft transition-all text-sm"
             title="Exportar lista a PDF"
           >
             <FileDown size={15} />
@@ -227,7 +227,7 @@ export const Activos: React.FC = () => {
               Responsable: getTecnicoNombre(a.responsableId ?? null),
               Ubicacion: a.ubicacion ?? '', Notas: a.notas ?? '',
             })))}
-            className="flex items-center gap-2 bg-white text-slate-700 px-3 min-h-[44px] font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] transition-all text-sm"
+            className="flex items-center gap-2 bg-surface text-content px-3 min-h-[44px] font-bold border border-line shadow-soft hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-soft transition-all text-sm"
             title="Exportar lista a CSV"
           >
             <Download size={15} />
@@ -235,7 +235,7 @@ export const Activos: React.FC = () => {
           </button>
           <button
             onClick={openNew}
-            className="flex items-center gap-2 bg-orange-500 text-white px-4 min-h-[44px] font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] transition-all"
+            className="flex items-center gap-2 bg-brand-600 text-white px-4 min-h-[44px] font-bold border border-line shadow-soft hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-soft transition-all"
           >
             <Plus size={16} />
             <span className="hidden sm:inline">Nuevo Activo</span>
@@ -245,9 +245,9 @@ export const Activos: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4 mb-6 flex flex-wrap gap-3 items-center">
-        <div className="flex items-center gap-2 border-2 border-slate-300 px-3 h-11 flex-1 min-w-0 w-full sm:w-auto sm:min-w-48">
-          <Search size={15} className="text-slate-400 flex-shrink-0" />
+      <div className="bg-surface border border-line shadow-soft p-4 mb-6 flex flex-wrap gap-3 items-center">
+        <div className="flex items-center gap-2 border border-line px-3 h-11 flex-1 min-w-0 w-full sm:w-auto sm:min-w-48">
+          <Search size={15} className="text-faint flex-shrink-0" />
           <input
             type="text"
             placeholder="Buscar por nombre o código..."
@@ -259,7 +259,7 @@ export const Activos: React.FC = () => {
         <select
           value={sectorFiltro}
           onChange={(e) => setSectorFiltro(e.target.value)}
-          className="border-2 border-slate-300 px-3 h-11 text-sm font-semibold outline-none flex-1 sm:flex-none min-w-0"
+          className="border border-line px-3 h-11 text-sm font-semibold outline-none flex-1 sm:flex-none min-w-0"
         >
           <option value="Todos">Todos los sectores</option>
           {sectoresActivos.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
@@ -267,29 +267,29 @@ export const Activos: React.FC = () => {
         <select
           value={estado}
           onChange={(e) => setEstado(e.target.value)}
-          className="border-2 border-slate-300 px-3 h-11 text-sm font-semibold outline-none flex-1 sm:flex-none min-w-0"
+          className="border border-line px-3 h-11 text-sm font-semibold outline-none flex-1 sm:flex-none min-w-0"
         >
           {ESTADOS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value)}
-          className="border-2 border-slate-300 px-3 h-11 text-sm font-semibold outline-none flex-1 sm:flex-none min-w-0"
+          className="border border-line px-3 h-11 text-sm font-semibold outline-none flex-1 sm:flex-none min-w-0"
         >
           <option value="estado">Ordenar: Estado</option>
           <option value="nombre">Ordenar: Nombre</option>
           <option value="sector">Ordenar: Sector</option>
         </select>
-        <div className="flex border-2 border-slate-300 h-11">
+        <div className="flex border border-line h-11">
           <button
             onClick={() => setView('grid')}
-            className={`px-3 ${view === 'grid' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}
+            className={`px-3 ${view === 'grid' ? 'bg-content text-white' : 'text-muted'}`}
           >
             <LayoutGrid size={16} />
           </button>
           <button
             onClick={() => setView('table')}
-            className={`px-3 ${view === 'table' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}
+            className={`px-3 ${view === 'table' ? 'bg-content text-white' : 'text-muted'}`}
           >
             <List size={16} />
           </button>
@@ -315,10 +315,10 @@ export const Activos: React.FC = () => {
           })}
         </div>
       ) : (
-        <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] overflow-x-auto">
+        <div className="bg-surface border border-line shadow-soft overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-slate-900 text-white">
+              <tr className="bg-content text-white">
                 {['Código', 'Nombre', 'Tipo', 'Sector', 'Responsable', 'Estado', 'Próx. Mant.'].map((h) => (
                   <th key={h} className="text-left px-3 py-2.5 text-xs font-black uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
@@ -329,15 +329,15 @@ export const Activos: React.FC = () => {
                 <tr
                   key={a.id}
                   onClick={() => navigate(`/activos/${a.id}`)}
-                  className={`border-b border-slate-100 hover:bg-orange-50 cursor-pointer ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}
+                  className={`border-b border-line hover:bg-brand-50 cursor-pointer ${i % 2 === 0 ? 'bg-surface' : 'bg-subtle/50'}`}
                 >
-                  <td className="px-3 py-2 font-mono font-bold text-slate-800 whitespace-nowrap">{a.codigo}</td>
-                  <td className="px-3 py-2 font-semibold text-slate-700">{a.nombre}</td>
-                  <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{getTipoNombre(a.tipoId)}</td>
-                  <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{getSectorNombre(a.sectorId)}</td>
-                  <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{getTecnicoNombre(a.responsableId)}</td>
+                  <td className="px-3 py-2 font-mono font-bold text-content whitespace-nowrap">{a.codigo}</td>
+                  <td className="px-3 py-2 font-semibold text-content">{a.nombre}</td>
+                  <td className="px-3 py-2 text-muted whitespace-nowrap">{getTipoNombre(a.tipoId)}</td>
+                  <td className="px-3 py-2 text-muted whitespace-nowrap">{getSectorNombre(a.sectorId)}</td>
+                  <td className="px-3 py-2 text-muted whitespace-nowrap">{getTecnicoNombre(a.responsableId)}</td>
                   <td className="px-3 py-2"><StatusBadge estado={a.estado} size="sm" /></td>
-                  <td className="px-3 py-2 text-slate-600 font-mono text-xs whitespace-nowrap">{a.proximoMantenimiento}</td>
+                  <td className="px-3 py-2 text-muted font-mono text-xs whitespace-nowrap">{a.proximoMantenimiento}</td>
                 </tr>
               ))}
             </tbody>
@@ -347,19 +347,19 @@ export const Activos: React.FC = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-2 sm:p-4">
-          <div className="bg-white border-2 border-slate-800 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.8)] w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b-2 border-slate-800 bg-slate-900 text-white sticky top-0 z-10">
+        <div className="fixed inset-0 bg-content/40 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-surface border border-line shadow-soft w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border border-line bg-content text-white sticky top-0 z-10">
               <h2 className="font-black uppercase tracking-wide">{editId ? 'Editar Activo' : 'Nuevo Activo'}</h2>
               <button onClick={() => setShowModal(false)}><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {(sectoresActivos.length === 0 || tiposActivos.length === 0) && (
-                <div className="sm:col-span-2 bg-orange-50 border-2 border-orange-500 p-3 flex gap-3 items-start">
-                  <Lightbulb size={18} className="text-orange-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-slate-800 leading-snug">
-                    <strong className="font-black uppercase text-xs tracking-wider block mb-1 text-orange-700">Primer paso</strong>
-                    Antes de guardar, tocá el botón <span className="inline-flex items-center justify-center w-5 h-5 bg-orange-500 text-white border border-slate-800 font-black"><Plus size={12} /></span> al lado de <strong>Tipo</strong> y <strong>Sector</strong> para crear el primero. Después podés cargar todos los activos que quieras.
+                <div className="sm:col-span-2 bg-brand-50 border border-brand-600 p-3 flex gap-3 items-start">
+                  <Lightbulb size={18} className="text-brand-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-content leading-snug">
+                    <strong className="font-black uppercase text-xs tracking-wider block mb-1 text-brand-700">Primer paso</strong>
+                    Antes de guardar, tocá el botón <span className="inline-flex items-center justify-center w-5 h-5 bg-brand-600 text-white border border-line font-black"><Plus size={12} /></span> al lado de <strong>Tipo</strong> y <strong>Sector</strong> para crear el primero. Después podés cargar todos los activos que quieras.
                   </div>
                 </div>
               )}
@@ -371,34 +371,34 @@ export const Activos: React.FC = () => {
                 { label: 'Ubicación', key: 'ubicacion' },
               ].map(({ label, key, required }) => (
                 <div key={key}>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">{label}</label>
+                  <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">{label}</label>
                   <input
                     type="text"
                     required={required}
                     value={(form as Record<string, unknown>)[key] as string}
                     onChange={(e) => setForm((prev) => ({ ...prev, [key]: e.target.value }))}
-                    className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
+                    className="w-full border border-line px-3 h-11 text-sm outline-none focus:border-brand-600"
                   />
                 </div>
               ))}
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Responsable</label>
+                <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Responsable</label>
                 <select
                   value={form.responsableId}
                   onChange={(e) => setForm((prev) => ({ ...prev, responsableId: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
+                  className="w-full border border-line px-3 h-11 text-sm outline-none focus:border-brand-600"
                 >
                   <option value="">Sin asignar</option>
                   {tecnicosActivos.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Tipo</label>
+                <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Tipo</label>
                 <div className="flex gap-1.5">
                   <select
                     value={form.tipoId}
                     onChange={(e) => setForm((prev) => ({ ...prev, tipoId: e.target.value }))}
-                    className="flex-1 min-w-0 border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
+                    className="flex-1 min-w-0 border border-line px-3 h-11 text-sm outline-none focus:border-brand-600"
                   >
                     {tiposActivos.length === 0 && <option value="">— Crear primero →</option>}
                     {tiposActivos.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
@@ -407,19 +407,19 @@ export const Activos: React.FC = () => {
                     type="button"
                     onClick={() => setCrearTipoAbierto(true)}
                     title="Crear nuevo tipo"
-                    className="w-11 h-11 flex-shrink-0 bg-orange-500 text-white border-2 border-slate-800 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.8)] flex items-center justify-center hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] transition-all"
+                    className="w-11 h-11 flex-shrink-0 bg-brand-600 text-white border border-line shadow-soft flex items-center justify-center hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-soft transition-all"
                   >
                     <Plus size={18} />
                   </button>
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Sector</label>
+                <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Sector</label>
                 <div className="flex gap-1.5">
                   <select
                     value={form.sectorId}
                     onChange={(e) => setForm((prev) => ({ ...prev, sectorId: e.target.value }))}
-                    className="flex-1 min-w-0 border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
+                    className="flex-1 min-w-0 border border-line px-3 h-11 text-sm outline-none focus:border-brand-600"
                   >
                     {sectoresActivos.length === 0 && <option value="">— Crear primero →</option>}
                     {sectoresActivos.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
@@ -428,70 +428,70 @@ export const Activos: React.FC = () => {
                     type="button"
                     onClick={() => setCrearSectorAbierto(true)}
                     title="Crear nuevo sector"
-                    className="w-11 h-11 flex-shrink-0 bg-orange-500 text-white border-2 border-slate-800 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.8)] flex items-center justify-center hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] transition-all"
+                    className="w-11 h-11 flex-shrink-0 bg-brand-600 text-white border border-line shadow-soft flex items-center justify-center hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-soft transition-all"
                   >
                     <Plus size={18} />
                   </button>
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Estado Inicial</label>
+                <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Estado Inicial</label>
                 <select
                   value={form.estado}
                   onChange={(e) => setForm((prev) => ({ ...prev, estado: e.target.value as EstadoActivo }))}
-                  className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
+                  className="w-full border border-line px-3 h-11 text-sm outline-none focus:border-brand-600"
                 >
                   {['normal', 'alerta', 'critico', 'mantenimiento'].map((s) => <option key={s}>{s}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Estado Operativo</label>
+                <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Estado Operativo</label>
                 <select
                   value={form.estadoOperativo ?? 'operativo'}
                   onChange={(e) => setForm((prev) => ({ ...prev, estadoOperativo: e.target.value as EstadoOperativo }))}
-                  className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
+                  className="w-full border border-line px-3 h-11 text-sm outline-none focus:border-brand-600"
                 >
                   {ESTADOS_OPERATIVOS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Fecha Ingreso</label>
+                <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Fecha Ingreso</label>
                 <input
                   type="date"
                   value={form.fechaIngreso}
                   onChange={(e) => setForm((prev) => ({ ...prev, fechaIngreso: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
+                  className="w-full border border-line px-3 h-11 text-sm outline-none focus:border-brand-600"
                 />
               </div>
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Próximo Mantenimiento</label>
+                <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Próximo Mantenimiento</label>
                 <input
                   type="date"
                   value={form.proximoMantenimiento}
                   onChange={(e) => setForm((prev) => ({ ...prev, proximoMantenimiento: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
+                  className="w-full border border-line px-3 h-11 text-sm outline-none focus:border-brand-600"
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Notas</label>
+                <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Notas</label>
                 <textarea
                   value={form.notas}
                   onChange={(e) => setForm((prev) => ({ ...prev, notas: e.target.value }))}
                   rows={2}
-                  className="w-full border-2 border-slate-300 px-3 py-2 text-sm outline-none focus:border-orange-500"
+                  className="w-full border border-line px-3 py-2 text-sm outline-none focus:border-brand-600"
                 />
               </div>
 
               {/* Activo itinerante */}
               <div className="sm:col-span-2">
-                <label className="flex items-center gap-3 cursor-pointer border-2 border-slate-200 px-4 py-3 hover:border-slate-400 transition-colors">
+                <label className="flex items-center gap-3 cursor-pointer border border-line px-4 py-3 hover:border-content transition-colors">
                   <input
                     type="checkbox"
                     checked={!!form.esItinerante}
                     onChange={(e) => setForm((prev) => ({ ...prev, esItinerante: e.target.checked }))}
-                    className="w-4 h-4 accent-orange-500 border-2 border-slate-800"
+                    className="w-4 h-4 accent-brand-600 border border-line"
                   />
-                  <span className="text-sm font-black uppercase tracking-wider text-slate-700">
+                  <span className="text-sm font-black uppercase tracking-wider text-content">
                     Activo itinerante (se traslada entre ubicaciones)
                   </span>
                 </label>
@@ -499,53 +499,53 @@ export const Activos: React.FC = () => {
               {form.esItinerante && (
                 <>
                   <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Locacion base (donde se guarda normalmente)</label>
+                    <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Locacion base (donde se guarda normalmente)</label>
                     <input
                       type="text"
                       value={form.locacionBase ?? ''}
                       onChange={(e) => setForm((prev) => ({ ...prev, locacionBase: e.target.value }))}
-                      className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
+                      className="w-full border border-line px-3 h-11 text-sm outline-none focus:border-brand-600"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Locacion actual</label>
+                    <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Locacion actual</label>
                     <input
                       type="text"
                       value={form.locacionActual ?? ''}
                       onChange={(e) => setForm((prev) => ({ ...prev, locacionActual: e.target.value }))}
-                      className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
+                      className="w-full border border-line px-3 h-11 text-sm outline-none focus:border-brand-600"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Fecha de salida</label>
+                    <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Fecha de salida</label>
                     <input
                       type="date"
                       value={form.fechaSalida ?? ''}
                       onChange={(e) => setForm((prev) => ({ ...prev, fechaSalida: e.target.value }))}
-                      className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
+                      className="w-full border border-line px-3 h-11 text-sm outline-none focus:border-brand-600"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Fecha de retorno estimada</label>
+                    <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Fecha de retorno estimada</label>
                     <input
                       type="date"
                       value={form.fechaRetorno ?? ''}
                       onChange={(e) => setForm((prev) => ({ ...prev, fechaRetorno: e.target.value }))}
-                      className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
+                      className="w-full border border-line px-3 h-11 text-sm outline-none focus:border-brand-600"
                     />
                   </div>
                 </>
               )}
 
               {/* Visibilidad en la ficha pública (QR) */}
-              <div className="sm:col-span-2 border-2 border-slate-200 p-4">
-                <p className="text-sm font-black uppercase tracking-wider text-slate-700 mb-1">Visibilidad en el QR publico</p>
-                <p className="text-xs text-slate-500 mb-3">Eleg&iacute; qu&eacute; informaci&oacute;n ve cualquier persona que escanee el QR sin login.</p>
+              <div className="sm:col-span-2 border border-line p-4">
+                <p className="text-sm font-black uppercase tracking-wider text-content mb-1">Visibilidad en el QR publico</p>
+                <p className="text-xs text-muted mb-3">Eleg&iacute; qu&eacute; informaci&oacute;n ve cualquier persona que escanee el QR sin login.</p>
                 <div className="grid sm:grid-cols-2 gap-2">
                   {(Object.keys(VISIBILIDAD_LABELS) as ClaveVisibilidad[]).map((clave) => {
                     const vis = form.visibilidadPublica ?? VISIBILIDAD_DEFAULT;
                     return (
-                      <label key={clave} className="flex items-center gap-3 cursor-pointer border-2 border-slate-200 px-3 py-2 hover:border-slate-400 transition-colors">
+                      <label key={clave} className="flex items-center gap-3 cursor-pointer border border-line px-3 py-2 hover:border-content transition-colors">
                         <input
                           type="checkbox"
                           checked={!!vis[clave]}
@@ -558,9 +558,9 @@ export const Activos: React.FC = () => {
                               },
                             }))
                           }
-                          className="w-4 h-4 accent-orange-500 border-2 border-slate-800"
+                          className="w-4 h-4 accent-brand-600 border border-line"
                         />
-                        <span className="text-xs font-bold text-slate-700">{VISIBILIDAD_LABELS[clave]}</span>
+                        <span className="text-xs font-bold text-content">{VISIBILIDAD_LABELS[clave]}</span>
                       </label>
                     );
                   })}
@@ -571,10 +571,10 @@ export const Activos: React.FC = () => {
               <ParametrosMedicion form={form} setForm={setForm} tipoActivo={tiposActivos.find((t) => t.id === form.tipoId)} />
 
               <div className="sm:col-span-2 flex justify-end gap-3 mt-2">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 min-h-[44px] border-2 border-slate-400 font-bold text-slate-600">
+                <button type="button" onClick={() => setShowModal(false)} className="px-4 min-h-[44px] border border-line-strong font-bold text-muted">
                   Cancelar
                 </button>
-                <button type="submit" className="px-4 min-h-[44px] bg-orange-500 text-white border-2 border-slate-800 font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)]">
+                <button type="submit" className="px-4 min-h-[44px] bg-brand-600 text-white border border-line font-bold shadow-soft">
                   {editId ? 'Guardar Cambios' : 'Crear Activo'}
                 </button>
               </div>
@@ -622,14 +622,14 @@ const CampoNum: React.FC<{
   unidad?: string;
 }> = ({ label, campo, form, setForm, unidad }) => (
   <div>
-    <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-1">
-      {label}{unidad && <span className="text-slate-400 font-normal normal-case"> ({unidad})</span>}
+    <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">
+      {label}{unidad && <span className="text-faint font-normal normal-case"> ({unidad})</span>}
     </label>
     <input
       type="number"
       value={(form[campo] as number) ?? ''}
       onChange={(e) => setForm((prev) => ({ ...prev, [campo]: e.target.value === '' ? null : Number(e.target.value) }))}
-      className="w-full border-2 border-slate-300 px-3 h-10 text-sm outline-none focus:border-orange-500"
+      className="w-full border border-line px-3 h-10 text-sm outline-none focus:border-brand-600"
     />
   </div>
 );
@@ -656,13 +656,13 @@ const ParametrosMedicion: React.FC<{
     mide.bateria || mide.toner;
 
   return (
-    <div className="sm:col-span-2 border-2 border-slate-200">
+    <div className="sm:col-span-2 border border-line">
       <button
         type="button"
         onClick={() => setAbierto((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 bg-subtle hover:bg-subtle transition-colors"
       >
-        <span className="text-xs font-black uppercase tracking-wider text-slate-600">
+        <span className="text-xs font-black uppercase tracking-wider text-muted">
           Parámetros y mantenimiento
         </span>
         {abierto ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -671,20 +671,20 @@ const ParametrosMedicion: React.FC<{
       {abierto && (
         <div className="p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
           {!tipoActivo && (
-            <div className="col-span-2 sm:col-span-4 text-xs text-slate-500 italic">
+            <div className="col-span-2 sm:col-span-4 text-xs text-muted italic">
               Elegí un tipo de activo arriba para ver los parámetros que aplican.
             </div>
           )}
 
           {tipoActivo && !algunParametro && (
-            <div className="col-span-2 sm:col-span-4 text-xs text-slate-500 italic">
+            <div className="col-span-2 sm:col-span-4 text-xs text-muted italic">
               Este tipo de activo no tiene parámetros de medición configurados. Podés agregarlos desde Configuración → Categorías.
             </div>
           )}
 
           {mide.temperatura && (
             <div className="col-span-2 sm:col-span-4">
-              <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2">Temperatura</p>
+              <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-2">Temperatura</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <CampoNum label="Mín normal" campo="temperaturaMin" form={form} setForm={setForm} unidad="°C" />
                 <CampoNum label="Máx normal" campo="temperaturaMax" form={form} setForm={setForm} unidad="°C" />
@@ -696,7 +696,7 @@ const ParametrosMedicion: React.FC<{
 
           {mide.amperaje && (
             <div className="col-span-2 sm:col-span-4">
-              <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Amperaje</p>
+              <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-2 mt-2">Amperaje</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <CampoNum label="Normal"  campo="amperajeNormal"  form={form} setForm={setForm} unidad="A" />
                 <CampoNum label="Alerta"  campo="amperajeAlerta"  form={form} setForm={setForm} unidad="A" />
@@ -707,7 +707,7 @@ const ParametrosMedicion: React.FC<{
 
           {mide.voltaje && (
             <div className="col-span-2 sm:col-span-4">
-              <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Voltaje</p>
+              <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-2 mt-2">Voltaje</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <CampoNum label="Mín"    campo="voltajeMin"   form={form} setForm={setForm} unidad="V" />
                 <CampoNum label="Máx"    campo="voltajeMax"   form={form} setForm={setForm} unidad="V" />
@@ -718,7 +718,7 @@ const ParametrosMedicion: React.FC<{
 
           {mide.presion && (
             <div className="col-span-2 sm:col-span-4">
-              <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Presión</p>
+              <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-2 mt-2">Presión</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <CampoNum label="Normal"  campo="presionNormal"  form={form} setForm={setForm} unidad="bar" />
                 <CampoNum label="Alerta"  campo="presionAlerta"  form={form} setForm={setForm} unidad="bar" />
@@ -729,7 +729,7 @@ const ParametrosMedicion: React.FC<{
 
           {mide.bateria && (
             <div className="col-span-2 sm:col-span-4">
-              <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Batería <span className="font-normal normal-case text-slate-500">(valores bajos = peor)</span></p>
+              <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-2 mt-2">Batería <span className="font-normal normal-case text-muted">(valores bajos = peor)</span></p>
               <div className="grid grid-cols-2 gap-3">
                 <CampoNum label="Alerta"  campo="bateriaAlerta"  form={form} setForm={setForm} unidad="%" />
                 <CampoNum label="Crítica" campo="bateriaCritica" form={form} setForm={setForm} unidad="%" />
@@ -739,7 +739,7 @@ const ParametrosMedicion: React.FC<{
 
           {mide.toner && (
             <div className="col-span-2 sm:col-span-4">
-              <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Tóner / Consumible</p>
+              <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-2 mt-2">Tóner / Consumible</p>
               <div className="grid grid-cols-2 gap-3">
                 <CampoNum label="Alerta"  campo="tonerAlerta"  form={form} setForm={setForm} unidad="%" />
                 <CampoNum label="Crítico" campo="tonerCritico" form={form} setForm={setForm} unidad="%" />
@@ -748,7 +748,7 @@ const ParametrosMedicion: React.FC<{
           )}
 
           <div className="col-span-2 sm:col-span-4">
-            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">
+            <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-2 mt-2">
               Intervalos de mantenimiento
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -761,7 +761,7 @@ const ParametrosMedicion: React.FC<{
               )}
             </div>
             {!mide.vibracion && !mide.amperaje && !mide.presion && (
-              <p className="text-xs text-slate-500 italic mt-2">
+              <p className="text-xs text-muted italic mt-2">
                 Para equipos electrónicos / consumibles, el intervalo suele ser por meses, no por horas. Usá el campo "Próximo mantenimiento" arriba.
               </p>
             )}

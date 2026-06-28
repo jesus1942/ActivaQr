@@ -18,7 +18,7 @@ export const PantallaCarga: React.FC = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center gap-10">
+    <div className="fixed inset-0 z-[200] bg-content flex flex-col items-center justify-center gap-10">
       {/* Motor SVG */}
       <div className="relative flex items-center justify-center">
         {/* Engranaje exterior — gira lento */}
@@ -49,19 +49,19 @@ export const PantallaCarga: React.FC = () => {
           <GearPath r={30} teeth={8} color="#f97316" opacity={1} />
         </svg>
         {/* Logo en el centro */}
-        <div className="absolute flex items-center justify-center w-10 h-10 bg-slate-900 rounded-full">
+        <div className="absolute flex items-center justify-center w-10 h-10 bg-content rounded-full">
           <span className="text-white font-black text-xs tracking-tighter">AQ</span>
         </div>
       </div>
 
       {/* Texto */}
       <div className="text-center space-y-2">
-        <p className="text-orange-400 font-black text-xl uppercase tracking-widest animate-pulse">
+        <p className="text-brand-400 font-black text-xl uppercase tracking-widest animate-pulse">
           ActivaQR
         </p>
         <p
           key={frase}
-          className="text-slate-400 text-sm font-mono tracking-wide transition-opacity duration-500"
+          className="text-faint text-sm font-mono tracking-wide transition-opacity duration-500"
         >
           {FRASES[frase]}
         </p>
@@ -69,7 +69,7 @@ export const PantallaCarga: React.FC = () => {
 
       {/* Barra de progreso pulsante */}
       <div className="w-48 h-1 bg-slate-700 overflow-hidden">
-        <div className="h-full bg-orange-500 animate-[progress_1.5s_ease-in-out_infinite]" />
+        <div className="h-full bg-brand-600 animate-[progress_1.5s_ease-in-out_infinite]" />
       </div>
 
       <style>{`

@@ -146,11 +146,11 @@ export const AnalisisActivo: React.FC<AnalisisActivoProps> = ({
 
   if (params.length === 0) {
     return (
-      <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4 mb-6">
-        <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-2 flex items-center gap-2">
+      <div className="bg-surface border border-line shadow-soft p-4 mb-6">
+        <h2 className="text-sm font-black uppercase tracking-wider text-content mb-2 flex items-center gap-2">
           <LineChartIcon size={16} /> Analisis predictivo
         </h2>
-        <p className="text-sm text-slate-500 italic">
+        <p className="text-sm text-muted italic">
           La categoria de este activo no tiene parametros de medicion configurados. Configuralo en Configuracion -&gt; Categorias para que aparezcan los graficos de tendencia.
         </p>
       </div>
@@ -158,20 +158,20 @@ export const AnalisisActivo: React.FC<AnalisisActivoProps> = ({
   }
 
   return (
-    <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] mb-6">
+    <div className="bg-surface border border-line shadow-soft mb-6">
       {/* Header de la seccion */}
-      <div className="p-3 sm:p-4 border-b-2 border-slate-200">
+      <div className="p-3 sm:p-4 border border-line">
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
+          <h2 className="text-sm font-black uppercase tracking-wider text-content flex items-center gap-2">
             <LineChartIcon size={16} /> Analisis predictivo
           </h2>
-          <div className="flex border-2 border-slate-300 flex-wrap">
+          <div className="flex border border-line flex-wrap">
             {RANGOS.map((r) => (
               <button
                 key={r.dias}
                 onClick={() => setRangoDias(r.dias)}
                 className={`px-2 py-1 text-[11px] font-black uppercase ${
-                  rangoDias === r.dias ? 'bg-slate-900 text-white' : 'bg-white text-slate-600'
+                  rangoDias === r.dias ? 'bg-content text-white' : 'bg-surface text-muted'
                 }`}
               >
                 {r.label}
@@ -182,12 +182,12 @@ export const AnalisisActivo: React.FC<AnalisisActivoProps> = ({
 
         {/* Resumen del estado */}
         <div className="mt-2 flex items-center gap-2 flex-wrap text-[11px] sm:text-xs">
-          <span className="font-bold text-slate-600">{params.length} parametros</span>
-          {conteo.critico > 0 && <span className="px-1.5 py-0.5 bg-red-100 text-red-800 font-black rounded">{conteo.critico} CRITICO</span>}
-          {conteo.alerta > 0 && <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 font-black rounded">{conteo.alerta} ALERTA</span>}
+          <span className="font-bold text-muted">{params.length} parametros</span>
+          {conteo.critico > 0 && <span className="px-1.5 py-0.5 bg-danger/10 text-danger-strong dark:text-danger font-black rounded">{conteo.critico} CRITICO</span>}
+          {conteo.alerta > 0 && <span className="px-1.5 py-0.5 bg-warn/10 text-warn-strong dark:text-warn font-black rounded">{conteo.alerta} ALERTA</span>}
           {conteo.observar > 0 && <span className="px-1.5 py-0.5 bg-sky-100 text-sky-800 font-black rounded">{conteo.observar} OBSERVAR</span>}
-          {conteo.normal === params.length && <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 font-black rounded">TODO OK</span>}
-          <span className="ml-auto text-slate-400">{medicionesFiltradas.length} mediciones</span>
+          {conteo.normal === params.length && <span className="px-1.5 py-0.5 bg-ok/10 text-ok-strong dark:text-ok font-black rounded">TODO OK</span>}
+          <span className="ml-auto text-faint">{medicionesFiltradas.length} mediciones</span>
         </div>
       </div>
 
@@ -199,7 +199,7 @@ export const AnalisisActivo: React.FC<AnalisisActivoProps> = ({
             <div key={p.key}>
               <button
                 onClick={() => toggle(p.key)}
-                className="w-full flex items-center gap-2 px-3 sm:px-4 py-2.5 hover:bg-slate-50 active:bg-slate-100 transition-colors"
+                className="w-full flex items-center gap-2 px-3 sm:px-4 py-2.5 hover:bg-subtle active:bg-subtle transition-colors"
               >
                 <ResumenParametro
                   parametro={p.parametro}
@@ -209,7 +209,7 @@ export const AnalisisActivo: React.FC<AnalisisActivoProps> = ({
                   critico={p.critico}
                   direccion={p.direccion}
                 />
-                {abierto ? <ChevronUp size={16} className="text-slate-400 flex-shrink-0" /> : <ChevronDown size={16} className="text-slate-400 flex-shrink-0" />}
+                {abierto ? <ChevronUp size={16} className="text-faint flex-shrink-0" /> : <ChevronDown size={16} className="text-faint flex-shrink-0" />}
               </button>
               {abierto && (
                 <PanelParametro

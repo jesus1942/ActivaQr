@@ -43,11 +43,11 @@ export const ModalPlantillaMantenimiento: React.FC<Props> = ({
   const cantidadSel = seleccion.filter(Boolean).length;
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-2 sm:p-4">
-      <div className="bg-white border-2 border-slate-800 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.8)] w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-4 border-b-2 border-slate-800 bg-slate-900 text-white sticky top-0 z-10">
+    <div className="fixed inset-0 bg-content/40 backdrop-blur-sm z-[60] flex items-center justify-center p-2 sm:p-4">
+      <div className="bg-surface border border-line shadow-soft w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-4 border border-line bg-content text-white sticky top-0 z-10">
           <div className="flex items-center gap-2 min-w-0">
-            <Sparkles size={18} className="text-orange-400 flex-shrink-0" />
+            <Sparkles size={18} className="text-brand-400 flex-shrink-0" />
             <h3 className="font-black uppercase tracking-wide text-sm truncate">Plan sugerido</h3>
           </div>
           <button type="button" onClick={onCerrar} aria-label="Cerrar"><X size={20} /></button>
@@ -55,18 +55,18 @@ export const ModalPlantillaMantenimiento: React.FC<Props> = ({
 
         <div className="p-4 space-y-4">
           <div>
-            <h2 className="font-sketch text-2xl font-black text-slate-900 uppercase leading-tight">{plantilla.titulo}</h2>
-            <p className="text-sm text-slate-600 mt-1 leading-snug">{plantilla.descripcion}</p>
+            <h2 className="font-display text-2xl font-black text-content uppercase leading-tight">{plantilla.titulo}</h2>
+            <p className="text-sm text-muted mt-1 leading-snug">{plantilla.descripcion}</p>
           </div>
 
-          <div className="bg-orange-50 border-2 border-orange-300 p-3 text-sm text-slate-800 leading-snug">
+          <div className="bg-brand-50 border border-orange-300 p-3 text-sm text-content leading-snug">
             Marca las tareas que querés programar. Las fechas se calculan a partir de hoy. Después podés ajustar cada una desde Mantenimiento.
           </div>
 
           <button
             type="button"
             onClick={toggleTodas}
-            className="text-xs font-black uppercase tracking-wider text-slate-600 underline"
+            className="text-xs font-black uppercase tracking-wider text-muted underline"
           >
             {todasSelectado ? 'Desmarcar todas' : 'Marcar todas'}
           </button>
@@ -75,36 +75,36 @@ export const ModalPlantillaMantenimiento: React.FC<Props> = ({
             {plantilla.tareas.map((t, i) => (
               <label
                 key={i}
-                className={`flex items-start gap-3 p-3 border-2 cursor-pointer transition-colors ${
-                  seleccion[i] ? 'border-orange-500 bg-orange-50' : 'border-slate-300 bg-white'
+                className={`flex items-start gap-3 p-3 border cursor-pointer transition-colors ${
+                  seleccion[i] ? 'border-brand-600 bg-brand-50' : 'border-line bg-surface'
                 }`}
               >
                 <input
                   type="checkbox"
                   checked={seleccion[i]}
                   onChange={() => toggle(i)}
-                  className="mt-1 w-5 h-5 flex-shrink-0 accent-orange-500"
+                  className="mt-1 w-5 h-5 flex-shrink-0 accent-brand-600"
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="font-black text-slate-900 text-sm">{t.tipo}</span>
-                    <span className="text-[11px] font-black uppercase tracking-wider text-orange-600">{fmtCada(t.cadaDias)}</span>
+                    <span className="font-black text-content text-sm">{t.tipo}</span>
+                    <span className="text-[11px] font-black uppercase tracking-wider text-brand-600">{fmtCada(t.cadaDias)}</span>
                     {t.prioridad === 'alta' && (
-                      <span className="text-[10px] font-black uppercase bg-red-100 text-red-700 border border-red-300 px-1.5 py-0.5">Prioridad alta</span>
+                      <span className="text-[10px] font-black uppercase bg-danger/10 text-danger-strong dark:text-danger border border-danger px-1.5 py-0.5">Prioridad alta</span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-600 mt-1 leading-snug">{t.observaciones}</p>
+                  <p className="text-xs text-muted mt-1 leading-snug">{t.observaciones}</p>
                 </div>
               </label>
             ))}
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 p-4 border-t-2 border-slate-200 bg-slate-50 sticky bottom-0">
+        <div className="flex justify-end gap-2 p-4 border border-line bg-subtle sticky bottom-0">
           <button
             type="button"
             onClick={onCerrar}
-            className="px-4 min-h-[44px] border-2 border-slate-400 font-bold text-slate-600 text-sm"
+            className="px-4 min-h-[44px] border border-line-strong font-bold text-muted text-sm"
           >
             Omitir
           </button>
@@ -112,7 +112,7 @@ export const ModalPlantillaMantenimiento: React.FC<Props> = ({
             type="button"
             onClick={aplicar}
             disabled={cantidadSel === 0}
-            className="flex items-center gap-2 px-4 min-h-[44px] bg-orange-500 text-white border-2 border-slate-800 font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] text-sm disabled:opacity-40 disabled:shadow-none"
+            className="flex items-center gap-2 px-4 min-h-[44px] bg-brand-600 text-white border border-line font-bold shadow-soft text-sm disabled:opacity-40 disabled:shadow-none"
           >
             Programar {cantidadSel} {cantidadSel === 1 ? 'tarea' : 'tareas'}
             <ChevronRight size={16} />

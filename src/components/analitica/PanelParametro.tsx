@@ -36,10 +36,10 @@ const COLOR_PARAMETRO: Record<string, string> = {
 };
 
 const COLOR_SEVERIDAD: Record<Severidad, { bg: string; border: string; text: string; icon: string; chip: string }> = {
-  normal:   { bg: 'bg-emerald-50', border: 'border-emerald-400', text: 'text-emerald-700', icon: 'text-emerald-600', chip: 'bg-emerald-100 text-emerald-800' },
+  normal:   { bg: 'bg-ok/10', border: 'border-ok', text: 'text-ok-strong dark:text-ok', icon: 'text-ok-strong dark:text-ok', chip: 'bg-ok/10 text-ok-strong dark:text-ok' },
   observar: { bg: 'bg-sky-50',     border: 'border-sky-400',     text: 'text-sky-700',     icon: 'text-sky-600',     chip: 'bg-sky-100 text-sky-800' },
-  alerta:   { bg: 'bg-amber-50',   border: 'border-amber-400',   text: 'text-amber-700',   icon: 'text-amber-600',   chip: 'bg-amber-100 text-amber-800' },
-  critico:  { bg: 'bg-red-50',     border: 'border-red-400',     text: 'text-red-700',     icon: 'text-red-600',     chip: 'bg-red-100 text-red-800' },
+  alerta:   { bg: 'bg-warn/10',   border: 'border-warn',   text: 'text-warn-strong dark:text-warn',   icon: 'text-warn-strong dark:text-warn',   chip: 'bg-warn/10 text-warn-strong dark:text-warn' },
+  critico:  { bg: 'bg-danger/10',     border: 'border-danger',     text: 'text-danger-strong dark:text-danger',     icon: 'text-danger',     chip: 'bg-danger/10 text-danger-strong dark:text-danger' },
 };
 
 // Exportado para que AnalisisActivo pueda calcular severidad sin renderizar.
@@ -79,9 +79,9 @@ export const PanelParametro: React.FC<PanelParametroProps> = ({
                        : Minus;
 
   return (
-    <div className="bg-white">
+    <div className="bg-surface">
       {data.length < 2 ? (
-        <p className="text-sm text-slate-500 italic px-3 py-4">
+        <p className="text-sm text-muted italic px-3 py-4">
           Se necesitan al menos 2 mediciones para mostrar tendencia. Actual: {data.length}.
         </p>
       ) : (
@@ -119,15 +119,15 @@ export const PanelParametro: React.FC<PanelParametroProps> = ({
               </LineChart>
             </ResponsiveContainer>
 
-            <div className="flex items-center justify-end gap-3 text-[10px] text-slate-500 mt-1 flex-wrap">
-              {alerta != null && <span className="flex items-center gap-1"><span className="inline-block w-3 h-0.5 bg-amber-500"></span>Alerta {alerta}{unidad}</span>}
-              {critico != null && <span className="flex items-center gap-1"><span className="inline-block w-3 h-0.5 bg-red-600"></span>Critico {critico}{unidad}</span>}
+            <div className="flex items-center justify-end gap-3 text-[10px] text-muted mt-1 flex-wrap">
+              {alerta != null && <span className="flex items-center gap-1"><span className="inline-block w-3 h-0.5 bg-warn"></span>Alerta {alerta}{unidad}</span>}
+              {critico != null && <span className="flex items-center gap-1"><span className="inline-block w-3 h-0.5 bg-danger"></span>Critico {critico}{unidad}</span>}
               {rangoNormal && <span className="flex items-center gap-1"><span className="inline-block w-3 h-0.5 bg-slate-500"></span>Rango {rangoNormal.min}-{rangoNormal.max}{unidad}</span>}
-              {marcadoresConFecha.length > 0 && <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-slate-900 border border-orange-500"></span>Tarea</span>}
+              {marcadoresConFecha.length > 0 && <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-content border border-brand-600"></span>Tarea</span>}
             </div>
           </div>
 
-          <div className={`mx-2 sm:mx-3 mt-2 mb-2 p-2.5 border-2 ${colorSev.border} ${colorSev.bg}`}>
+          <div className={`mx-2 sm:mx-3 mt-2 mb-2 p-2.5 border ${colorSev.border} ${colorSev.bg}`}>
             <div className="flex items-start gap-2">
               <div className="flex flex-col items-center pt-0.5">
                 <TendenciaIcon size={14} className={colorSev.icon} />
@@ -135,7 +135,7 @@ export const PanelParametro: React.FC<PanelParametroProps> = ({
               <div className="flex-1 min-w-0">
                 <p className={`text-xs sm:text-sm font-bold ${colorSev.text} leading-snug`}>{analisis.resumen}</p>
                 {analisis.pendienteMensual != null && Math.abs(analisis.pendienteMensual) > 0.01 && (
-                  <p className="text-[11px] text-slate-600 mt-1 leading-snug">
+                  <p className="text-[11px] text-muted mt-1 leading-snug">
                     {analisis.pendienteMensual > 0 ? '+' : ''}{analisis.pendienteMensual.toFixed(2)}{unidad}/mes
                     {analisis.diasHastaAlerta != null && ` · ${analisis.diasHastaAlerta}d hasta alerta`}
                     {analisis.diasHastaCritico != null && ` · ${analisis.diasHastaCritico}d hasta critico`}
@@ -143,13 +143,13 @@ export const PanelParametro: React.FC<PanelParametroProps> = ({
                 )}
                 {analisis.recomendacion && (
                   <div className="mt-2">
-                    <p className="text-[11px] sm:text-xs text-slate-700 italic leading-snug">
+                    <p className="text-[11px] sm:text-xs text-content italic leading-snug">
                       {analisis.recomendacion}
                     </p>
                     {onCrearTareaPredictiva && (
                       <button
                         onClick={() => onCrearTareaPredictiva(analisis.recomendacion!)}
-                        className="mt-2 inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider bg-slate-900 text-white px-2.5 py-1.5 border-2 border-slate-900 shadow-[2px_2px_0px_0px_#1e293b] active:shadow-none active:translate-x-[1px] active:translate-y-[1px]"
+                        className="mt-2 inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider bg-content text-white px-2.5 py-1.5 border border-line shadow-soft active:shadow-none active:translate-x-[1px] active:translate-y-[1px]"
                       >
                         <Plus size={12} /> Crear tarea predictiva
                       </button>
@@ -181,9 +181,9 @@ export const ResumenParametro: React.FC<{
                        : Minus;
   return (
     <div className="flex items-center gap-2 min-w-0 flex-1">
-      <span className="text-xs sm:text-sm font-black uppercase tracking-wide text-slate-700 truncate">{parametro}</span>
+      <span className="text-xs sm:text-sm font-black uppercase tracking-wide text-content truncate">{parametro}</span>
       {analisis.ultimoValor != null && (
-        <span className="text-xs sm:text-sm font-mono font-bold text-slate-900 flex-shrink-0">
+        <span className="text-xs sm:text-sm font-mono font-bold text-content flex-shrink-0">
           {analisis.ultimoValor.toFixed(1)}{unidad}
         </span>
       )}

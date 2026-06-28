@@ -22,13 +22,13 @@ export const SyncBadge: React.FC = () => {
   // Caso 2: offline.
   if (!online) {
     return (
-      <div className="w-full border-b-2 border-slate-900 bg-slate-700 text-white flex items-center justify-between px-4 py-2 text-sm font-medium gap-3">
+      <div className="w-full border border-line bg-slate-700 text-white flex items-center justify-between px-4 py-2 text-sm font-medium gap-3">
         <span className="flex items-center gap-2 font-semibold">
           <CloudOff size={14} />
           Sin conexion — tus mediciones se guardan en el celular
         </span>
         {pendientes > 0 && (
-          <span className="text-xs font-black uppercase tracking-wider whitespace-nowrap bg-white text-slate-900 px-2 py-0.5">
+          <span className="text-xs font-black uppercase tracking-wider whitespace-nowrap bg-surface text-content px-2 py-0.5">
             {pendientes} pendiente{pendientes === 1 ? '' : 's'}
           </span>
         )}
@@ -39,7 +39,7 @@ export const SyncBadge: React.FC = () => {
   // Caso 3: online + pendientes → drenando o aviso.
   if (errorSync && pendientes > 0) {
     return (
-      <div className="w-full border-b-2 border-slate-900 bg-amber-500 text-white flex items-center justify-between px-4 py-2 text-sm font-medium gap-3">
+      <div className="w-full border border-line bg-warn text-white flex items-center justify-between px-4 py-2 text-sm font-medium gap-3">
         <span className="flex items-center gap-2 font-semibold">
           <AlertTriangle size={14} />
           {pendientes} medicion{pendientes === 1 ? '' : 'es'} sin enviar — el servidor las rechazo
@@ -55,7 +55,7 @@ export const SyncBadge: React.FC = () => {
   }
 
   return (
-    <div className="w-full border-b-2 border-slate-900 bg-emerald-600 text-white flex items-center justify-between px-4 py-2 text-sm font-medium gap-3">
+    <div className="w-full border border-line bg-ok text-white flex items-center justify-between px-4 py-2 text-sm font-medium gap-3">
       <span className="flex items-center gap-2 font-semibold">
         <UploadCloud size={14} className={drenando ? 'animate-pulse' : ''} />
         {drenando

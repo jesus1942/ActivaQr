@@ -50,8 +50,8 @@ export const UbicacionesActivo: React.FC<{ activoId: string }> = ({ activoId }) 
 
   if (cargando) {
     return (
-      <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
-        <p className="text-sm text-slate-400 animate-pulse text-center">Cargando ubicaciones...</p>
+      <div className="bg-surface border border-line shadow-soft p-4">
+        <p className="text-sm text-faint animate-pulse text-center">Cargando ubicaciones...</p>
       </div>
     );
   }
@@ -66,13 +66,13 @@ export const UbicacionesActivo: React.FC<{ activoId: string }> = ({ activoId }) 
   const linkGoogleMaps = `https://www.google.com/maps?q=${ultima.lat},${ultima.lng}`;
 
   return (
-    <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)]">
-      <div className="border-b-2 border-slate-200 px-4 py-3 flex items-start justify-between gap-2">
+    <div className="bg-surface border border-line shadow-soft">
+      <div className="border border-line px-4 py-3 flex items-start justify-between gap-2">
         <div>
-          <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
-            <MapPin size={14} className="text-orange-500" /> Cadena de custodia: ubicaciones registradas
+          <h2 className="text-sm font-black uppercase tracking-wider text-content flex items-center gap-2">
+            <MapPin size={14} className="text-brand-600" /> Cadena de custodia: ubicaciones registradas
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">{datos.puntos.length} punto{datos.puntos.length === 1 ? '' : 's'} con GPS</p>
+          <p className="text-xs text-muted mt-0.5">{datos.puntos.length} punto{datos.puntos.length === 1 ? '' : 's'} con GPS</p>
         </div>
         <button
           onClick={() => exportarCadenaCustodiaPdf({
@@ -80,7 +80,7 @@ export const UbicacionesActivo: React.FC<{ activoId: string }> = ({ activoId }) 
             activoNombre: datos.activo.nombre,
             puntos: datos.puntos,
           })}
-          className="flex items-center gap-1 border-2 border-slate-300 hover:border-orange-500 hover:text-orange-600 px-2.5 py-1.5 text-xs font-bold whitespace-nowrap transition-colors"
+          className="flex items-center gap-1 border border-line hover:border-brand-600 hover:text-brand-600 px-2.5 py-1.5 text-xs font-bold whitespace-nowrap transition-colors"
           title="Exportar reporte PDF de cadena de custodia"
         >
           <FileDown size={12} /> PDF
@@ -88,7 +88,7 @@ export const UbicacionesActivo: React.FC<{ activoId: string }> = ({ activoId }) 
       </div>
 
       {/* Mapa de la ultima ubicacion */}
-      <div className="border-b-2 border-slate-200 bg-slate-100">
+      <div className="border border-line bg-subtle">
         <iframe
           title="Ultima ubicacion en OpenStreetMap"
           src={iframeSrc}
@@ -96,8 +96,8 @@ export const UbicacionesActivo: React.FC<{ activoId: string }> = ({ activoId }) 
           loading="lazy"
         />
         <div className="px-4 py-2 flex items-center justify-between gap-2 text-xs">
-          <span className="font-bold text-slate-700">Ultima ubicacion: {formatearFecha(ultima.capturedAt ?? ultima.subidoEn)}</span>
-          <a href={linkGoogleMaps} target="_blank" rel="noopener noreferrer" className="text-orange-600 font-bold hover:underline">Abrir en Google Maps</a>
+          <span className="font-bold text-content">Ultima ubicacion: {formatearFecha(ultima.capturedAt ?? ultima.subidoEn)}</span>
+          <a href={linkGoogleMaps} target="_blank" rel="noopener noreferrer" className="text-brand-600 font-bold hover:underline">Abrir en Google Maps</a>
         </div>
       </div>
 
@@ -109,36 +109,36 @@ export const UbicacionesActivo: React.FC<{ activoId: string }> = ({ activoId }) 
           return (
             <div key={p.id} className="px-4 py-2.5 text-xs space-y-1">
               <div className="flex items-center justify-between gap-2">
-                <span className="font-bold text-slate-700 flex items-center gap-1.5">
-                  <Clock size={11} className="text-slate-400" />
+                <span className="font-bold text-content flex items-center gap-1.5">
+                  <Clock size={11} className="text-faint" />
                   {formatearFecha(fechaReal)}
                 </span>
                 {i === 0 && (
-                  <span className="text-[10px] font-black uppercase tracking-wider bg-orange-500 text-white px-1.5 py-0.5">Mas reciente</span>
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-brand-600 text-white px-1.5 py-0.5">Mas reciente</span>
                 )}
               </div>
               <div className="flex items-center gap-1.5">
-                <MapPin size={11} className="text-slate-400" />
-                <a href={`https://www.google.com/maps?q=${p.lat},${p.lng}`} target="_blank" rel="noopener noreferrer" className="font-mono text-slate-700 hover:text-orange-600 underline">
+                <MapPin size={11} className="text-faint" />
+                <a href={`https://www.google.com/maps?q=${p.lat},${p.lng}`} target="_blank" rel="noopener noreferrer" className="font-mono text-content hover:text-brand-600 underline">
                   {p.lat.toFixed(5)}, {p.lng.toFixed(5)}
                 </a>
                 {verificado ? (
-                  <span className="ml-auto flex items-center gap-0.5 text-emerald-700 text-[10px] font-black uppercase">
+                  <span className="ml-auto flex items-center gap-0.5 text-ok-strong dark:text-ok text-[10px] font-black uppercase">
                     <ShieldCheck size={10} /> EXIF
                   </span>
                 ) : (
-                  <span className="ml-auto flex items-center gap-0.5 text-amber-700 text-[10px] font-black uppercase">
+                  <span className="ml-auto flex items-center gap-0.5 text-warn-strong dark:text-warn text-[10px] font-black uppercase">
                     <ShieldAlert size={10} /> Navegador
                   </span>
                 )}
               </div>
               {p.device && (
-                <div className="flex items-center gap-1.5 text-slate-500">
+                <div className="flex items-center gap-1.5 text-muted">
                   <Camera size={11} />
                   <span className="truncate">{p.device}</span>
                 </div>
               )}
-              <div className="flex items-center gap-1.5 text-slate-500">
+              <div className="flex items-center gap-1.5 text-muted">
                 <FileText size={11} />
                 <span className="truncate">
                   {p.origen === 'medicion' ? 'Medicion' : 'Mensaje de soporte'}
