@@ -130,7 +130,16 @@ export const FichaPublica: React.FC = () => {
     vibracion: activo.tipo?.mideVibracion ?? !activo.tipo,
   };
   const llevaHoras = mide.temp || mide.amp || mide.presion || mide.vibracion;
-  const tieneParametros = mide.temp || mide.amp || mide.presion;
+  // Solo mostramos la tarjeta de parámetros si el tipo los mide Y hay al menos
+  // un valor cargado (evita tarjetas vacías o filas con "null").
+  const tieneParametros =
+    (mide.temp && (
+      (activo.temperaturaMin != null && activo.temperaturaMax != null) ||
+      activo.temperaturaAlerta != null ||
+      activo.temperaturaCritica != null
+    )) ||
+    (mide.amp && activo.amperajeNormal != null) ||
+    (mide.presion && activo.presionNormal != null);
 
   // Si el equipo está en mantenimiento o fuera de servicio, el badge principal lo refleja
   const estadoVisual =
@@ -230,7 +239,14 @@ export const FichaPublica: React.FC = () => {
             <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-3">Parámetros operativos</p>
             {mide.temp && (
               <>
-                <Fila label="Temperatura normal" value={`${activo.temperaturaMin}°C – ${activo.temperaturaMax}°C`} />
+                <Fila
+                  label="Temperatura normal"
+                  value={
+                    activo.temperaturaMin != null && activo.temperaturaMax != null
+                      ? `${activo.temperaturaMin}°C – ${activo.temperaturaMax}°C`
+                      : undefined
+                  }
+                />
                 <Fila label="Alerta temperatura" value={activo.temperaturaAlerta ? `${activo.temperaturaAlerta}°C` : undefined} />
                 <Fila label="Crítica temperatura" value={activo.temperaturaCritica ? `${activo.temperaturaCritica}°C` : undefined} />
               </>
