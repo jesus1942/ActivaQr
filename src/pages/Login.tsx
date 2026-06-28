@@ -96,8 +96,8 @@ export const Login: React.FC = () => {
       <div className="w-full max-w-md animate-page-in">
         <div className="bg-surface/85 backdrop-blur-xl border border-line rounded-xl shadow-lift p-8">
           <div className="text-center mb-6">
-            <img src={LOGO} alt="ActivaQR" className="h-20 mx-auto mb-3 object-contain drop-shadow-[0_0_16px_rgba(45,212,191,0.55)] dark:hidden" />
-            <img src={LOGO_DARK_SRC} alt="ActivaQR" className="h-20 mx-auto mb-3 object-contain drop-shadow-[0_0_16px_rgba(45,212,191,0.55)] hidden dark:block" />
+            <img src={LOGO} alt="ActivaQR" className="h-24 mx-auto mb-3 object-contain drop-shadow-[0_0_24px_rgba(45,212,191,0.7)] dark:hidden" />
+            <img src={LOGO_DARK_SRC} alt="ActivaQR" className="h-24 mx-auto mb-3 object-contain drop-shadow-[0_0_24px_rgba(45,212,191,0.7)] hidden dark:block" />
             <h1 className="font-display text-3xl font-bold text-content tracking-tight">
               ActivaQR
             </h1>
