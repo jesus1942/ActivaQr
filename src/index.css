@@ -64,10 +64,14 @@ html, body {
   color: rgb(var(--c-content));
   overflow-x: hidden;
   overscroll-behavior: none;
+  overscroll-behavior-x: none;   /* mobile-first: sin desplazamiento lateral */
+  width: 100%;
   max-width: 100%;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+
+#root { overflow-x: hidden; max-width: 100%; }
 
 body {
   background-color: transparent;

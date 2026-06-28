@@ -16,12 +16,12 @@ export const Layout: React.FC = () => {
   const location = useLocation();
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-transparent overflow-hidden">
+    <div className="flex flex-col md:flex-row h-screen max-w-full bg-transparent overflow-hidden">
       <AuroraBg />
       <DemoBanner />
       {cargando && <PantallaCarga />}
       <Sidebar />
-      <main id="app-scroll" className="flex-1 overflow-y-auto">
+      <main id="app-scroll" className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
         <div className="md:hidden h-safe-header" />
         <TrialBanner />
         <SyncBadge />
@@ -44,7 +44,7 @@ export const Layout: React.FC = () => {
             </button>
           </div>
         )}
-        <div key={location.pathname} className="p-4 md:p-8 pb-28 md:pb-8 min-h-full animate-page-in">
+        <div key={location.pathname} className="p-4 md:p-8 pb-28 md:pb-8 min-h-full max-w-full overflow-x-hidden animate-page-in">
           <Outlet />
         </div>
       </main>

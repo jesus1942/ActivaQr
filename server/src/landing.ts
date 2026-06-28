@@ -261,8 +261,108 @@ export function renderLanding(appUrl: string, whatsapp?: string, apoyo?: { cafec
   .apoyo-tit{font-weight:900;font-size:16px;text-transform:uppercase;letter-spacing:.5px}
   .apoyo-sub{font-size:13px;opacity:.92}
 </style>
+
+<!-- ===== TEMA OSCURO / TURQUESA (override del mockup) ===== -->
+<style>
+  :root{
+    --naranja:#14B8A6;--teal:#14B8A6;--tealbr:#2DD4BF;
+    --negro:#0B1120;--fondo:#0B1120;
+    --gris:#9CA7BA;--gris-c:#6b7790;
+    --surface:rgba(20,24,34,.72);--line:#26303f;--text:#E6EAF2;
+  }
+  body{color:var(--text);background:var(--fondo)}
+  h1,h2,h3{color:var(--text)}
+  .brand{color:var(--tealbr)}
+  /* Fondo aurora (líneas verticales + glow) */
+  .aurora{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+  .aurora .g{position:absolute;border-radius:50%;filter:blur(110px)}
+  .aurora svg{position:absolute;inset:0;width:100%;height:100%}
+  /* Botones */
+  .btn{border:1px solid var(--line);box-shadow:none;border-radius:10px}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 0 18px rgba(45,212,191,.35)}
+  .btn-naranja,.btn-blanco{background:var(--tealbr);color:#06231f;border-color:transparent;box-shadow:0 0 18px rgba(45,212,191,.35)}
+  .btn-negro{background:var(--surface);color:var(--text);backdrop-filter:blur(12px)}
+  /* Nav */
+  nav{background:rgba(11,17,32,.7);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+  nav .links a.nav-link{color:var(--gris)}
+  nav .links a.nav-link:hover{color:var(--tealbr)}
+  nav .btn,nav .btn:hover{box-shadow:none}
+  /* Roadmap / banners */
+  .roadmap,.capital-banner,.dif,.contacto,footer{background:transparent;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .roadmap .fase-item{border-bottom:1px solid var(--line)}
+  .roadmap .fase-badge{background:var(--surface);color:var(--tealbr);border:1px solid var(--line)}
+  .roadmap .fase-badge.activo{background:var(--tealbr);color:#06231f;border-color:transparent}
+  .roadmap .fase-badge.proximo{background:var(--surface);color:var(--text);border-color:var(--line)}
+  .roadmap .fase-badge.futuro{background:var(--surface);color:var(--gris);border-color:var(--line)}
+  .roadmap .fase-content p,.capital-banner p{color:var(--gris)}
+  /* Hero */
+  .hero .tag{background:rgba(45,212,191,.12);border:1px solid rgba(45,212,191,.4);color:var(--tealbr);border-radius:999px}
+  .hero h1 .o{color:var(--tealbr)}
+  .hero p.sub,.bajada{color:var(--gris)}
+  .scroll-hint span{color:var(--gris)}
+  .scroll-arrow{border-color:var(--tealbr)}
+  /* Cards */
+  .card{background:var(--surface);backdrop-filter:blur(12px);border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.25);border-radius:14px}
+  .card:hover{transform:translateY(-2px);box-shadow:0 0 22px rgba(45,212,191,.25);border-color:rgba(45,212,191,.4)}
+  .card p{color:var(--gris)}
+  .card .num{color:var(--tealbr)}
+  .dif .card{background:var(--surface);border-color:var(--line)}
+  .dif .card h3{color:var(--tealbr)}
+  .dif .card p{color:var(--gris)}
+  .chip{background:var(--surface);backdrop-filter:blur(12px);border:1px solid var(--line);box-shadow:none;border-radius:999px;color:var(--text)}
+  /* Planes */
+  .plan{background:var(--surface);backdrop-filter:blur(12px);border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.25);border-radius:16px}
+  .plan.destacado{background:linear-gradient(160deg,rgba(20,184,166,.18),var(--surface));border-color:rgba(45,212,191,.45);box-shadow:0 0 26px rgba(45,212,191,.2)}
+  .plan .precio{color:var(--tealbr)}
+  .plan li{border-bottom:1px solid var(--line);color:var(--gris)}
+  /* Pasos */
+  .paso{border-bottom:1px solid var(--line)}
+  .paso .n{background:var(--tealbr);color:#06231f;border:none;border-radius:12px}
+  .paso p{color:var(--gris)}
+  /* Contacto / form */
+  .contacto .titulo,.contacto .bajada{color:var(--text)}
+  .form-box{background:var(--surface);backdrop-filter:blur(12px);border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.25);border-radius:16px}
+  .form-box label{color:var(--gris)}
+  .form-box input,.form-box textarea{background:rgba(9,11,18,.5);border:1px solid var(--line);color:var(--text);border-radius:10px}
+  .form-box input:focus,.form-box textarea:focus{border-color:var(--tealbr)}
+  .form-msg.ok{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.5);color:#34d399}
+  .form-msg.err{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.5);color:#f87171}
+  footer{color:var(--gris)}
+  /* Testimonios */
+  .testi-card{background:var(--surface);backdrop-filter:blur(12px);border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.25);border-radius:14px}
+  .testi-card.destacado{border-color:rgba(45,212,191,.45);box-shadow:0 0 22px rgba(45,212,191,.2)}
+  .testi-badge{color:var(--tealbr)}
+  .testi-msg{color:var(--text)}
+  .testi-autor{border-top:1px solid var(--line)}
+  .testi-autor .r{color:var(--gris-c)}
+  .testi-empty{background:var(--surface);border:1px dashed var(--line);color:var(--gris)}
+  /* Apoyo */
+  .apoyo-btn{border:1px solid var(--line);box-shadow:0 8px 20px rgba(0,0,0,.25);border-radius:12px}
+  .apoyo-btn:hover{transform:translateY(-1px);box-shadow:0 0 18px rgba(45,212,191,.25)}
+  @media print{.aurora{display:none}}
+</style>
 </head>
 <body>
+
+<div class="aurora" aria-hidden="true">
+  <div class="g" style="top:-15%;left:8%;width:24vw;height:130vh;background:#14B8A6;opacity:.45"></div>
+  <div class="g" style="top:-15%;left:50%;width:22vw;height:130vh;background:#22D3EE;opacity:.32"></div>
+  <div class="g" style="top:-15%;left:84%;width:22vw;height:130vh;background:#2DD4BF;opacity:.3"></div>
+  <svg viewBox="0 0 1440 1000" preserveAspectRatio="xMidYMid slice">
+    <defs><linearGradient id="lv" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2DD4BF" stop-opacity="0"/>
+      <stop offset="35%" stop-color="#5EEAD4" stop-opacity="0.5"/>
+      <stop offset="70%" stop-color="#22D3EE" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#0FB5A6" stop-opacity="0"/>
+    </linearGradient></defs>
+    <g stroke="url(#lv)" fill="none">
+      <path d="M 180 -60 C 300 230, 90 520, 230 790 C 330 990, 150 1140, 250 1320" stroke-width="2"/>
+      <path d="M 560 -60 C 440 250, 660 540, 500 800 C 380 1010, 600 1150, 470 1320" stroke-width="1.6"/>
+      <path d="M 900 -60 C 1030 240, 770 540, 940 800 C 1070 1020, 820 1150, 960 1320" stroke-width="1.6"/>
+      <path d="M 1240 -60 C 1120 260, 1340 540, 1190 810 C 1070 1020, 1300 1160, 1170 1320" stroke-width="1.4"/>
+    </g>
+  </svg>
+</div>
 
 <nav>
   <div class="wrap">

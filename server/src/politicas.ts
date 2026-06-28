@@ -38,6 +38,28 @@ const ESTILOS = `
   footer{background:#0f172a;color:#94a3b8;padding:32px 0;text-align:center;font-size:13px}
   footer .brand{font-weight:900;color:#f97316;font-size:18px;text-transform:uppercase;letter-spacing:2px;display:block;margin-bottom:8px}
   footer a{color:#f97316;text-decoration:none;font-weight:700}
+
+  /* ===== TEMA OSCURO / TURQUESA (override del mockup) ===== */
+  html{background:#0B1120}
+  body{color:#E6EAF2;background:#0B1120}
+  nav{background:rgba(11,17,32,.7);backdrop-filter:blur(14px);border-bottom:1px solid #26303f}
+  nav .brand{color:#2DD4BF}
+  nav a.volver{color:#9CA7BA}
+  nav a.volver:hover{color:#2DD4BF}
+  header{background:transparent;border-bottom:1px solid #26303f}
+  header .tag{background:rgba(45,212,191,.12);border:1px solid rgba(45,212,191,.4);color:#2DD4BF}
+  header .meta{color:#9CA7BA}
+  main{background:transparent;border-bottom:1px solid #26303f}
+  main h2{border-left:4px solid #2DD4BF;color:#E6EAF2}
+  main h3{color:#E6EAF2}
+  main p,main ul{color:#9CA7BA}
+  main strong{color:#E6EAF2}
+  main code{background:rgba(20,24,34,.7);border:1px solid #26303f;color:#E6EAF2}
+  .info-box{background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.35);color:#cfe9e4}
+  .info-box strong{color:#E6EAF2}
+  footer{background:transparent;border-top:1px solid #26303f;color:#9CA7BA}
+  footer .brand{color:#2DD4BF}
+  footer a{color:#2DD4BF}
 `;
 
 function navHtml(): string {
