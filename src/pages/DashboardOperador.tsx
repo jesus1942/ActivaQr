@@ -285,7 +285,7 @@ export const DashboardOperador: React.FC = () => {
               </div>
             ) : (
               <div className="bg-surface border border-ok shadow-soft p-6 text-center space-y-4">
-                <CheckCircle2 size={40} className="mx-auto text-emerald-500" />
+                <CheckCircle2 size={40} className="mx-auto text-ok" />
                 <p className="font-black text-2xl text-ok-strong dark:text-ok uppercase">Registrada</p>
                 <p className="text-muted text-sm">La medición fue guardada correctamente.</p>
                 <button onClick={() => { setVista('activos'); setExito(false); }} className="w-full min-h-[52px] bg-slate-900 text-white font-black border border-line shadow-soft text-base uppercase tracking-wide">
@@ -411,7 +411,7 @@ export const DashboardOperador: React.FC = () => {
               </div>
             ) : (
               <div className="bg-surface border border-ok shadow-soft p-6 text-center space-y-4">
-                <CheckCircle2 size={40} className="mx-auto text-emerald-500" />
+                <CheckCircle2 size={40} className="mx-auto text-ok" />
                 <p className="font-black text-2xl text-ok-strong dark:text-ok uppercase">OT cerrada</p>
                 <p className="text-muted text-sm">La orden de trabajo fue marcada como completada.</p>
                 <button onClick={() => { setVista('tareas'); setExito(false); }} className="w-full min-h-[52px] bg-slate-900 text-white font-black border border-line shadow-soft text-base uppercase tracking-wide">
@@ -473,7 +473,7 @@ export const DashboardOperador: React.FC = () => {
             className={`flex-1 py-3 text-sm font-black uppercase tracking-wider border-r-2 border-line last:border-r-0 transition-colors relative ${vista === id ? 'bg-brand-600 text-white border-b border-line' : 'text-muted hover:bg-subtle'}`}
           >
             {label}
-            <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full font-bold ${vista === id ? 'bg-surface/20' : alerta ? 'bg-danger text-white' : 'bg-slate-200 text-muted'}`}>
+            <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full font-bold ${vista === id ? 'bg-surface/20' : alerta ? 'bg-danger text-white' : 'bg-line text-muted'}`}>
               {count}
             </span>
           </button>
@@ -545,7 +545,7 @@ export const DashboardOperador: React.FC = () => {
           /* Lista de tareas/OTs */
           tareas.length === 0 ? (
             <div className="text-center py-10 space-y-2">
-              <CheckCircle2 size={40} className="mx-auto text-emerald-400" />
+              <CheckCircle2 size={40} className="mx-auto text-ok" />
               <p className="font-black text-muted uppercase">Sin tareas pendientes</p>
             </div>
           ) : (

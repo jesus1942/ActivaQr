@@ -67,7 +67,7 @@ function PanelFacturacion({ data }: { data: Facturacion }) {
               <div key={m.mes} className="flex-1 flex flex-col items-center gap-1">
                 <span className="text-xs font-bold text-muted">{m.total > 0 ? ARS(m.total).replace('$', '$') : ''}</span>
                 <div
-                  className={`w-full border border-line transition-all ${esActual ? 'bg-brand-600' : 'bg-slate-200'}`}
+                  className={`w-full border border-line transition-all ${esActual ? 'bg-brand-600' : 'bg-line'}`}
                   style={{ height: `${Math.max(altura, m.total > 0 ? 8 : 2)}%` }}
                 />
                 <span className="text-[10px] text-faint font-mono">{m.mes.slice(5)}</span>

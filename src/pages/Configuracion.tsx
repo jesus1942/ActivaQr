@@ -1023,7 +1023,7 @@ const SeccionTelegram: React.FC = () => {
         <p className="font-bold">Cómo obtener tu Chat ID:</p>
         <ol className="list-decimal list-inside space-y-1 text-muted">
           <li>Abrí Telegram y buscá <a href={`https://t.me/${BOT_NAME}`} target="_blank" rel="noopener noreferrer" className="font-mono text-brand-600 underline">@{BOT_NAME}</a></li>
-          <li>Tocá <span className="font-mono bg-slate-200 px-1">Iniciar / Start</span></li>
+          <li>Tocá <span className="font-mono bg-line px-1">Iniciar / Start</span></li>
           <li>El bot te responde con tu Chat ID — copialo y pegalo abajo</li>
         </ol>
       </div>

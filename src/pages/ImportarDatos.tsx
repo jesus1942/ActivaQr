@@ -230,7 +230,7 @@ COM-XXX-001,Compresor Ejemplo,compresor,Taller,Schulz,CSL 10,Pedro López,Taller
             </div>
           ))}
         </div>
-        <div className="bg-slate-900 text-emerald-400 font-mono text-xs p-3 overflow-x-auto">
+        <div className="bg-slate-900 text-ok font-mono text-xs p-3 overflow-x-auto">
           <pre>{csvExample}</pre>
         </div>
         <p className="text-xs text-muted mt-2">Los valores de <span className="font-mono">tipo</span>, <span className="font-mono">sector</span> y <span className="font-mono">responsable</span> se asocian por nombre a las entidades existentes; si no existen, se crean automáticamente.</p>

@@ -74,7 +74,7 @@ function BarraUmbral({ valor, min, alerta, critico, max, invertido = false }: {
     : evalMax(v, alerta, critico, max);
 
   const color = nivel === 'urgente' ? 'bg-danger'
-    : nivel === 'critico' ? 'bg-red-400'
+    : nivel === 'critico' ? 'bg-danger/70'
     : nivel === 'alerta' ? 'bg-warn'
     : 'bg-ok';
 
@@ -351,7 +351,7 @@ export const Medicion: React.FC = () => {
     return (
       <div className="max-w-lg mx-auto">
         <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-6 text-center">
-          <CheckCircle size={48} className="text-emerald-500 mx-auto mb-3" />
+          <CheckCircle size={48} className="text-ok mx-auto mb-3" />
           <h2 className="font-display text-4xl font-black text-content uppercase mb-1">Medición Registrada</h2>
           <div className="font-display font-bold text-brand-600 text-2xl mb-4">{activo.codigo}</div>
           <div className="text-left bg-subtle border border-line p-4 space-y-2 mb-4">
