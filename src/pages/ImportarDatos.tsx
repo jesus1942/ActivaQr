@@ -207,7 +207,7 @@ COM-XXX-001,Compresor Ejemplo,compresor,Taller,Schulz,CSL 10,Pedro López,Taller
           </div>
           <button
             onClick={descargarPlantilla}
-            className="flex items-center gap-2 bg-content text-white px-3 py-1.5 text-xs font-bold border border-line shadow-soft hover:bg-content transition-colors"
+            className="flex items-center gap-2 bg-slate-900 text-white px-3 py-1.5 text-xs font-bold border border-line shadow-soft hover:bg-slate-800 transition-colors"
           >
             <Download size={13} />
             Descargar plantilla
@@ -230,7 +230,7 @@ COM-XXX-001,Compresor Ejemplo,compresor,Taller,Schulz,CSL 10,Pedro López,Taller
             </div>
           ))}
         </div>
-        <div className="bg-content text-emerald-400 font-mono text-xs p-3 overflow-x-auto">
+        <div className="bg-slate-900 text-emerald-400 font-mono text-xs p-3 overflow-x-auto">
           <pre>{csvExample}</pre>
         </div>
         <p className="text-xs text-muted mt-2">Los valores de <span className="font-mono">tipo</span>, <span className="font-mono">sector</span> y <span className="font-mono">responsable</span> se asocian por nombre a las entidades existentes; si no existen, se crean automáticamente.</p>
@@ -254,7 +254,7 @@ COM-XXX-001,Compresor Ejemplo,compresor,Taller,Schulz,CSL 10,Pedro López,Taller
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="bg-content text-white">
+                <tr className="bg-slate-900 text-white">
                   {['Código', 'Nombre', 'Tipo', 'Sector', 'Marca', 'Responsable'].map((h) => (
                     <th key={h} className="text-left px-3 py-2 font-black uppercase">{h}</th>
                   ))}

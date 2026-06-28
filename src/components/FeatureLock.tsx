@@ -29,7 +29,7 @@ export const FeatureLock: React.FC<Props> = ({ feature, titulo, descripcion }) =
           </div>
         </div>
         <p className="text-content leading-relaxed mb-6">{descripcion}</p>
-        <div className="bg-brand-50 border border-orange-300 p-4 mb-6">
+        <div className="bg-brand-50 border border-brand-200 p-4 mb-6">
           <div className="flex items-start gap-2">
             <Sparkles size={18} className="text-brand-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-content">

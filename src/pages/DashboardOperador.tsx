@@ -260,7 +260,7 @@ export const DashboardOperador: React.FC = () => {
       <div className="min-h-screen bg-subtle">
         <SyncBadge />
         <div className="max-w-lg mx-auto space-y-4 px-4 py-6">
-          <div className="bg-content text-white px-5 py-4 border border-line shadow-soft flex items-start justify-between">
+          <div className="bg-slate-900 text-white px-5 py-4 border border-line shadow-soft flex items-start justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-wider text-brand-400 mb-0.5">Registrar medición</p>
               <h1 className="font-black text-xl leading-tight">{activoSeleccionado.nombre}</h1>
@@ -279,7 +279,7 @@ export const DashboardOperador: React.FC = () => {
                 <p className="text-muted text-sm">
                   No habia conexion. La medición quedó en tu celular y se va a enviar sola cuando agarres senal.
                 </p>
-                <button onClick={() => { setVista('activos'); setExito(false); setGuardadoOffline(false); }} className="w-full min-h-[52px] bg-content text-white font-black border border-line shadow-soft text-base uppercase tracking-wide">
+                <button onClick={() => { setVista('activos'); setExito(false); setGuardadoOffline(false); }} className="w-full min-h-[52px] bg-slate-900 text-white font-black border border-line shadow-soft text-base uppercase tracking-wide">
                   Seguir trabajando
                 </button>
               </div>
@@ -288,7 +288,7 @@ export const DashboardOperador: React.FC = () => {
                 <CheckCircle2 size={40} className="mx-auto text-emerald-500" />
                 <p className="font-black text-2xl text-ok-strong dark:text-ok uppercase">Registrada</p>
                 <p className="text-muted text-sm">La medición fue guardada correctamente.</p>
-                <button onClick={() => { setVista('activos'); setExito(false); }} className="w-full min-h-[52px] bg-content text-white font-black border border-line shadow-soft text-base uppercase tracking-wide">
+                <button onClick={() => { setVista('activos'); setExito(false); }} className="w-full min-h-[52px] bg-slate-900 text-white font-black border border-line shadow-soft text-base uppercase tracking-wide">
                   Volver a la lista
                 </button>
               </div>
@@ -342,7 +342,7 @@ export const DashboardOperador: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => { setFoto(null); setEvidenciaFoto(null); }}
-                        className="absolute top-1 right-1 bg-content/80 text-white p-1 hover:bg-danger transition-colors"
+                        className="absolute top-1 right-1 bg-slate-900/80 text-white p-1 hover:bg-danger transition-colors"
                         title="Quitar foto"
                       >
                         <X size={14} />
@@ -388,7 +388,7 @@ export const DashboardOperador: React.FC = () => {
       <div className="min-h-screen bg-subtle">
         <SyncBadge />
         <div className="max-w-lg mx-auto space-y-4 px-4 py-6">
-          <div className="bg-content text-white px-5 py-4 border border-line shadow-soft flex items-start justify-between">
+          <div className="bg-slate-900 text-white px-5 py-4 border border-line shadow-soft flex items-start justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-wider text-brand-400 mb-0.5">Cerrar orden de trabajo</p>
               <h1 className="font-black text-xl leading-tight">OT-{String(tareaSeleccionada.numero).padStart(5, '0')}</h1>
@@ -405,7 +405,7 @@ export const DashboardOperador: React.FC = () => {
                 <CloudOff size={40} className="mx-auto text-muted" />
                 <p className="font-black text-2xl text-content uppercase">Cierre offline</p>
                 <p className="text-muted text-sm">No habia conexion. El cierre quedó en tu celular y se va a confirmar al servidor cuando agarres senal.</p>
-                <button onClick={() => { setVista('tareas'); setExito(false); setGuardadoOffline(false); }} className="w-full min-h-[52px] bg-content text-white font-black border border-line shadow-soft text-base uppercase tracking-wide">
+                <button onClick={() => { setVista('tareas'); setExito(false); setGuardadoOffline(false); }} className="w-full min-h-[52px] bg-slate-900 text-white font-black border border-line shadow-soft text-base uppercase tracking-wide">
                   Volver a tareas
                 </button>
               </div>
@@ -414,7 +414,7 @@ export const DashboardOperador: React.FC = () => {
                 <CheckCircle2 size={40} className="mx-auto text-emerald-500" />
                 <p className="font-black text-2xl text-ok-strong dark:text-ok uppercase">OT cerrada</p>
                 <p className="text-muted text-sm">La orden de trabajo fue marcada como completada.</p>
-                <button onClick={() => { setVista('tareas'); setExito(false); }} className="w-full min-h-[52px] bg-content text-white font-black border border-line shadow-soft text-base uppercase tracking-wide">
+                <button onClick={() => { setVista('tareas'); setExito(false); }} className="w-full min-h-[52px] bg-slate-900 text-white font-black border border-line shadow-soft text-base uppercase tracking-wide">
                   Volver a tareas
                 </button>
               </div>
@@ -450,7 +450,7 @@ export const DashboardOperador: React.FC = () => {
       <SyncBadge />
 
       {/* Header */}
-      <div className="bg-content text-white px-5 py-4 border border-line flex items-center justify-between">
+      <div className="bg-slate-900 text-white px-5 py-4 border border-line flex items-center justify-between">
         <div>
           <p className="text-xs font-black uppercase tracking-wider text-brand-400">ActivaQR · Operador</p>
           <p className="font-black text-lg leading-tight">{usuario?.nombre}</p>
@@ -486,7 +486,7 @@ export const DashboardOperador: React.FC = () => {
         {vista === 'activos' && (
           <button
             onClick={() => setScannerAbierto(true)}
-            className="w-full flex items-center justify-center gap-2 bg-content text-white min-h-[52px] font-black text-base uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-soft transition-all"
+            className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white min-h-[52px] font-black text-base uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-soft transition-all"
           >
             <ScanLine size={20} />
             Escanear QR del equipo
@@ -571,7 +571,7 @@ export const DashboardOperador: React.FC = () => {
                   </div>
                   <button
                     onClick={() => abrirCerrarOT(tarea)}
-                    className="w-full flex items-center justify-center gap-2 min-h-[44px] bg-content text-white font-black border border-line text-sm uppercase tracking-wide shadow-soft"
+                    className="w-full flex items-center justify-center gap-2 min-h-[44px] bg-slate-900 text-white font-black border border-line text-sm uppercase tracking-wide shadow-soft"
                   >
                     <ClipboardList size={15} />
                     Marcar como realizada

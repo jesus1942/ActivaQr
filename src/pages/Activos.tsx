@@ -283,13 +283,13 @@ export const Activos: React.FC = () => {
         <div className="flex border border-line h-11">
           <button
             onClick={() => setView('grid')}
-            className={`px-3 ${view === 'grid' ? 'bg-content text-white' : 'text-muted'}`}
+            className={`px-3 ${view === 'grid' ? 'bg-slate-900 text-white' : 'text-muted'}`}
           >
             <LayoutGrid size={16} />
           </button>
           <button
             onClick={() => setView('table')}
-            className={`px-3 ${view === 'table' ? 'bg-content text-white' : 'text-muted'}`}
+            className={`px-3 ${view === 'table' ? 'bg-slate-900 text-white' : 'text-muted'}`}
           >
             <List size={16} />
           </button>
@@ -318,7 +318,7 @@ export const Activos: React.FC = () => {
         <div className="bg-surface border border-line shadow-soft overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-content text-white">
+              <tr className="bg-slate-900 text-white">
                 {['Código', 'Nombre', 'Tipo', 'Sector', 'Responsable', 'Estado', 'Próx. Mant.'].map((h) => (
                   <th key={h} className="text-left px-3 py-2.5 text-xs font-black uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
@@ -347,9 +347,9 @@ export const Activos: React.FC = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-content/40 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
           <div className="bg-surface border border-line shadow-soft w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border border-line bg-content text-white sticky top-0 z-10">
+            <div className="flex items-center justify-between p-4 border border-line bg-slate-900 text-white sticky top-0 z-10">
               <h2 className="font-black uppercase tracking-wide">{editId ? 'Editar Activo' : 'Nuevo Activo'}</h2>
               <button onClick={() => setShowModal(false)}><X size={20} /></button>
             </div>

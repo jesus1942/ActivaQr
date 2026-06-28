@@ -43,9 +43,9 @@ export const ModalPlantillaMantenimiento: React.FC<Props> = ({
   const cantidadSel = seleccion.filter(Boolean).length;
 
   return (
-    <div className="fixed inset-0 bg-content/40 backdrop-blur-sm z-[60] flex items-center justify-center p-2 sm:p-4">
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] flex items-center justify-center p-2 sm:p-4">
       <div className="bg-surface border border-line shadow-soft w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-4 border border-line bg-content text-white sticky top-0 z-10">
+        <div className="flex items-center justify-between p-4 border border-line bg-slate-900 text-white sticky top-0 z-10">
           <div className="flex items-center gap-2 min-w-0">
             <Sparkles size={18} className="text-brand-400 flex-shrink-0" />
             <h3 className="font-black uppercase tracking-wide text-sm truncate">Plan sugerido</h3>
@@ -59,7 +59,7 @@ export const ModalPlantillaMantenimiento: React.FC<Props> = ({
             <p className="text-sm text-muted mt-1 leading-snug">{plantilla.descripcion}</p>
           </div>
 
-          <div className="bg-brand-50 border border-orange-300 p-3 text-sm text-content leading-snug">
+          <div className="bg-brand-50 border border-brand-200 p-3 text-sm text-content leading-snug">
             Marca las tareas que querés programar. Las fechas se calculan a partir de hoy. Después podés ajustar cada una desde Mantenimiento.
           </div>
 

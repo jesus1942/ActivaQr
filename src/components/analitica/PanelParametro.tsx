@@ -123,7 +123,7 @@ export const PanelParametro: React.FC<PanelParametroProps> = ({
               {alerta != null && <span className="flex items-center gap-1"><span className="inline-block w-3 h-0.5 bg-warn"></span>Alerta {alerta}{unidad}</span>}
               {critico != null && <span className="flex items-center gap-1"><span className="inline-block w-3 h-0.5 bg-danger"></span>Critico {critico}{unidad}</span>}
               {rangoNormal && <span className="flex items-center gap-1"><span className="inline-block w-3 h-0.5 bg-slate-500"></span>Rango {rangoNormal.min}-{rangoNormal.max}{unidad}</span>}
-              {marcadoresConFecha.length > 0 && <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-content border border-brand-600"></span>Tarea</span>}
+              {marcadoresConFecha.length > 0 && <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-slate-900 border border-brand-600"></span>Tarea</span>}
             </div>
           </div>
 
@@ -149,7 +149,7 @@ export const PanelParametro: React.FC<PanelParametroProps> = ({
                     {onCrearTareaPredictiva && (
                       <button
                         onClick={() => onCrearTareaPredictiva(analisis.recomendacion!)}
-                        className="mt-2 inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider bg-content text-white px-2.5 py-1.5 border border-line shadow-soft active:shadow-none active:translate-x-[1px] active:translate-y-[1px]"
+                        className="mt-2 inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider bg-slate-900 text-white px-2.5 py-1.5 border border-line shadow-soft active:shadow-none active:translate-x-[1px] active:translate-y-[1px]"
                       >
                         <Plus size={12} /> Crear tarea predictiva
                       </button>

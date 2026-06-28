@@ -68,7 +68,7 @@ export const Configuracion: React.FC = () => {
             onClick={() => setTab(t.id)}
             className={`px-4 min-h-[44px] font-display text-lg font-bold uppercase border transition-all ${
               tab === t.id
-                ? 'bg-content text-white border-line shadow-soft'
+                ? 'bg-slate-900 text-white border-line shadow-soft'
                 : 'bg-surface text-muted border-line hover:border-content'
             }`}
           >
@@ -441,7 +441,7 @@ const CategoriasSection: React.FC = () => {
       )}
 
       {/* Cómo funciona */}
-      <div className="border border-line bg-content text-white p-4 shadow-soft">
+      <div className="border border-line bg-slate-900 text-white p-4 shadow-soft">
         <h3 className="font-display font-black text-lg uppercase tracking-tight mb-2 text-brand-400">Cómo funcionan las categorías</h3>
         <p className="text-sm text-slate-200 leading-relaxed mb-3">
           Una categoría define <strong>qué se mide</strong> en cada tipo de equipo. Por ejemplo "Motor Diesel" mide
@@ -637,7 +637,7 @@ const CategoriaCard: React.FC<CategoriaCardProps> = ({ cat, expandido, onToggle,
               {!agregando ? (
                 <button
                   onClick={() => setAgregando(true)}
-                  className="flex items-center gap-1.5 text-xs font-bold text-brand-600 border border-orange-300 px-2.5 py-1.5 hover:border-brand-600 transition-colors"
+                  className="flex items-center gap-1.5 text-xs font-bold text-brand-600 border border-brand-200 px-2.5 py-1.5 hover:border-brand-600 transition-colors"
                 >
                   <Plus size={13} /> Agregar parámetro
                 </button>
@@ -709,7 +709,7 @@ const CategoriaCard: React.FC<CategoriaCardProps> = ({ cat, expandido, onToggle,
                     <button type="button" onClick={() => { setAgregando(false); setParamForm(empty); setErrorParam(null); }}
                       className="px-3 h-9 border border-line text-xs font-bold text-muted">Cancelar</button>
                     <button type="submit" disabled={guardandoParam}
-                      className="px-3 h-9 bg-content text-white text-xs font-black uppercase border border-line disabled:opacity-50">
+                      className="px-3 h-9 bg-slate-900 text-white text-xs font-black uppercase border border-line disabled:opacity-50">
                       {guardandoParam ? 'Guardando...' : 'Agregar'}
                     </button>
                   </div>
@@ -924,7 +924,7 @@ const PersonalSection: React.FC = () => {
             <button
               type="submit"
               disabled={resetando}
-              className="px-4 min-h-[44px] bg-content text-white border border-line font-bold text-sm disabled:opacity-50"
+              className="px-4 min-h-[44px] bg-slate-900 text-white border border-line font-bold text-sm disabled:opacity-50"
             >
               {resetando ? 'Guardando...' : 'Guardar nueva contrasena'}
             </button>
@@ -1038,7 +1038,7 @@ const SeccionTelegram: React.FC = () => {
         <button
           type="submit"
           disabled={cargando}
-          className="bg-content text-white px-4 h-10 text-xs font-black uppercase border border-line shadow-soft disabled:opacity-50"
+          className="bg-slate-900 text-white px-4 h-10 text-xs font-black uppercase border border-line shadow-soft disabled:opacity-50"
         >
           {cargando ? 'Guardando...' : guardado ? 'Guardado' : 'Guardar'}
         </button>
@@ -1099,7 +1099,7 @@ const SeccionPlan: React.FC = () => {
       <div className="overflow-x-auto mb-5">
         <table className="w-full text-sm border border-line">
           <thead>
-            <tr className="bg-content text-white">
+            <tr className="bg-slate-900 text-white">
               {['Plan', 'Activos', 'Tecnicos', 'Ficha QR', 'Acceso remoto'].map((h) => (
                 <th key={h} className="text-left px-3 py-2 text-xs font-black uppercase tracking-wider whitespace-nowrap">{h}</th>
               ))}

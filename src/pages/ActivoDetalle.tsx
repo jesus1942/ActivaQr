@@ -309,7 +309,7 @@ export const ActivoDetalle: React.FC = () => {
             <div className="font-mono text-xs text-muted mb-4 break-all">{activo.codigo}</div>
             <button
               onClick={handlePrint}
-              className="w-full flex items-center justify-center gap-2 bg-content text-white px-4 py-2.5 font-bold border border-line shadow-soft hover:bg-content transition-colors mb-2"
+              className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white px-4 py-2.5 font-bold border border-line shadow-soft hover:bg-slate-800 transition-colors mb-2"
             >
               <Printer size={16} />
               Imprimir Etiqueta
@@ -331,7 +331,7 @@ export const ActivoDetalle: React.FC = () => {
             </button>
             <button
               onClick={() => navigate(`/medicion/${activo.id}`)}
-              className="w-full flex items-center justify-center gap-2 bg-brand-600 text-white px-4 py-2.5 font-bold border border-line shadow-soft hover:bg-orange-400 transition-colors"
+              className="w-full flex items-center justify-center gap-2 bg-brand-600 text-white px-4 py-2.5 font-bold border border-line shadow-soft hover:bg-warn transition-colors"
             >
               <ClipboardList size={16} />
               {esOperativo ? 'Tomar Medición' : 'Registrar Inspección'}
@@ -395,7 +395,7 @@ export const ActivoDetalle: React.FC = () => {
         <div className="bg-surface border border-line shadow-soft overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-content text-white">
+              <tr className="bg-slate-900 text-white">
                 {['Fecha', 'Temp.', 'Amperaje', 'Presión', 'Vibración', 'Estado', 'Técnico', 'Observaciones', ''].map((h, idx) => (
                   <th key={h || idx} className="text-left px-3 py-2.5 text-xs font-black uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}

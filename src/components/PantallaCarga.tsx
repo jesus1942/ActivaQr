@@ -18,7 +18,7 @@ export const PantallaCarga: React.FC = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[200] bg-content flex flex-col items-center justify-center gap-10">
+    <div className="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center gap-10">
       {/* Motor SVG */}
       <div className="relative flex items-center justify-center">
         {/* Engranaje exterior — gira lento */}
@@ -49,7 +49,7 @@ export const PantallaCarga: React.FC = () => {
           <GearPath r={30} teeth={8} color="#f97316" opacity={1} />
         </svg>
         {/* Logo en el centro */}
-        <div className="absolute flex items-center justify-center w-10 h-10 bg-content rounded-full">
+        <div className="absolute flex items-center justify-center w-10 h-10 bg-slate-900 rounded-full">
           <span className="text-white font-black text-xs tracking-tighter">AQ</span>
         </div>
       </div>

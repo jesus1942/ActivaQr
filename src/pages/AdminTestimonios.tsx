@@ -98,7 +98,7 @@ export const AdminTestimonios: React.FC = () => {
                     'bg-subtle text-muted border-line'
                   }`}>{t.estado}</span>
                   {t.destacado && (
-                    <span className="flex items-center gap-1 bg-orange-100 text-brand-700 border border-orange-300 px-2 py-0.5 font-black uppercase">
+                    <span className="flex items-center gap-1 bg-brand-50 text-brand-700 border border-brand-200 px-2 py-0.5 font-black uppercase">
                       <Star size={10} fill="currentColor" /> destacado
                     </span>
                   )}

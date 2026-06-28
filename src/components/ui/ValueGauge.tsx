@@ -59,12 +59,12 @@ export const ValueGauge: React.FC<ValueGaugeProps> = ({
         />
         {/* Yellow/orange segment */}
         <div
-          className="absolute top-0 h-full bg-orange-400"
+          className="absolute top-0 h-full bg-warn"
           style={{ left: `${alertPos}%`, width: `${critPos - alertPos}%` }}
         />
         {/* Value marker */}
         <div
-          className="absolute top-0 h-full w-1 bg-content z-10"
+          className="absolute top-0 h-full w-1 bg-slate-900 z-10"
           style={{ left: `${valuePos}%` }}
         />
       </div>

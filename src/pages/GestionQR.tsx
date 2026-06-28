@@ -28,7 +28,7 @@ export const GestionQR: React.FC = () => {
         </div>
         <button
           onClick={handlePrintAll}
-          className="flex items-center gap-2 bg-content text-white px-4 py-2 font-bold border border-line shadow-soft hover:bg-content transition-colors"
+          className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 font-bold border border-line shadow-soft hover:bg-slate-800 transition-colors"
         >
           <Printer size={16} />
           Imprimir Todas

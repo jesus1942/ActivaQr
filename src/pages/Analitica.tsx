@@ -102,7 +102,7 @@ function PanelFacturacion({ data }: { data: Facturacion }) {
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="bg-content text-white">
+                <tr className="bg-slate-900 text-white">
                   {['Fecha', 'Empresa', 'Concepto', 'Monto', 'Estado'].map(h => (
                     <th key={h} className="text-left px-3 py-2 font-black uppercase">{h}</th>
                   ))}

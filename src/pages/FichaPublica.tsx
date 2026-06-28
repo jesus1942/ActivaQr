@@ -158,7 +158,7 @@ export const FichaPublica: React.FC = () => {
           {usuarioLogueado && (
             <a
               href="#/activos"
-              className="flex items-center gap-1.5 bg-content text-white border border-line shadow-soft px-3 py-2 text-xs font-black uppercase tracking-wider hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-soft active:shadow-none transition-all"
+              className="flex items-center gap-1.5 bg-slate-900 text-white border border-line shadow-soft px-3 py-2 text-xs font-black uppercase tracking-wider hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-soft active:shadow-none transition-all"
             >
               <LayoutDashboard size={14} />
               Panel
@@ -167,7 +167,7 @@ export const FichaPublica: React.FC = () => {
         </div>
 
         {/* Header empresa */}
-        <div className="bg-content text-white px-5 py-4 border border-line shadow-soft flex items-center gap-3">
+        <div className="bg-slate-900 text-white px-5 py-4 border border-line shadow-soft flex items-center gap-3">
           {activo.empresa.logoUrl && (
             <img src={activo.empresa.logoUrl} alt="" className="w-10 h-10 object-contain" />
           )}

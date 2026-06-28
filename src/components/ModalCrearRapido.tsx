@@ -31,9 +31,9 @@ export const ModalCrearRapido: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-content/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
       <div className="bg-surface border border-line shadow-soft w-full max-w-sm">
-        <div className="flex items-center justify-between p-4 border border-line bg-content text-white">
+        <div className="flex items-center justify-between p-4 border border-line bg-slate-900 text-white">
           <h3 className="font-black uppercase tracking-wide text-sm">{titulo}</h3>
           <button type="button" onClick={cerrar} aria-label="Cerrar"><X size={18} /></button>
         </div>

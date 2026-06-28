@@ -134,7 +134,7 @@ function ParamDinamicoInput({
               onClick={() => onChange(b)}
               className={`flex-1 h-12 font-bold uppercase border transition-colors ${
                 boolVal === b
-                  ? 'bg-content text-white border-line'
+                  ? 'bg-slate-900 text-white border-line'
                   : 'border-line text-muted hover:border-content bg-surface'
               }`}
             >
@@ -432,7 +432,7 @@ export const Medicion: React.FC = () => {
             <button
               onClick={() => setEscaneando(true)}
               title="Escanear QR"
-              className="flex items-center justify-center gap-2 bg-content text-white px-4 h-14 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all"
+              className="flex items-center justify-center gap-2 bg-slate-900 text-white px-4 h-14 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all"
             >
               <Camera size={20} />
               <span className="hidden sm:inline">Escanear</span>
@@ -475,7 +475,7 @@ export const Medicion: React.FC = () => {
       {activo && (
         <>
           {/* Activo info */}
-          <div className="bg-content text-white border border-line shadow-soft p-4 mb-4">
+          <div className="bg-slate-900 text-white border border-line shadow-soft p-4 mb-4">
             <div className="flex justify-between items-start">
               <div>
                 <div className="font-display font-black text-3xl text-brand-400">{activo.codigo}</div>
@@ -487,7 +487,7 @@ export const Medicion: React.FC = () => {
             {lastMedicion && (
               <div className="mt-3 pt-3 border-t border-line text-xs text-faint">
                 Última medición: {format(parseISO(lastMedicion.fecha), 'dd/MM/yyyy', { locale: es })} —
-                {' '}<span className="text-orange-300 font-mono">{lastMedicion.temperatura}°C</span>
+                {' '}<span className="text-warn font-mono">{lastMedicion.temperatura}°C</span>
               </div>
             )}
           </div>
@@ -590,7 +590,7 @@ export const Medicion: React.FC = () => {
                     onClick={() => setForm((p) => ({ ...p, vibracion: v }))}
                     className={`h-12 font-display text-lg font-bold uppercase border transition-colors ${
                       form.vibracion === v
-                        ? 'bg-content text-white border-line'
+                        ? 'bg-slate-900 text-white border-line'
                         : 'border-line text-muted hover:border-content bg-surface'
                     }`}
                   >
@@ -724,8 +724,8 @@ export const Medicion: React.FC = () => {
                   onClick={() => setForm((p) => ({ ...p, estado: 'revision' }))}
                   className={`w-full h-16 font-display font-black uppercase text-2xl border transition-all ${
                     form.estado === 'revision'
-                      ? 'bg-brand-600 text-white border-orange-700 shadow-soft'
-                      : 'bg-brand-50 text-brand-700 border-orange-300'
+                      ? 'bg-brand-600 text-white border-brand-700 shadow-soft'
+                      : 'bg-brand-50 text-brand-700 border-brand-200'
                   }`}
                 >
                   Revisión
@@ -824,7 +824,7 @@ export const Medicion: React.FC = () => {
 
       {!activo && !activoId && (
         <div className="mt-6 space-y-4">
-          <div className="bg-content border border-line shadow-soft p-6 text-white">
+          <div className="bg-slate-900 border border-line shadow-soft p-6 text-white">
             <p className="text-xs font-black uppercase tracking-widest text-brand-400 mb-2">Como registrar</p>
             <div className="space-y-3">
               <div className="flex items-start gap-3">

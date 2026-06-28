@@ -44,7 +44,7 @@ export const DemoBanner: React.FC = () => {
   if (!usuario || usuario.email !== 'demo@activaqr.com') return null;
 
   return (
-    <div className="w-full border-b-2 border-black bg-gray-900 text-white flex items-center justify-between px-4 py-2 text-sm font-medium">
+    <div className="w-full border-b-2 border-black bg-slate-900 text-white flex items-center justify-between px-4 py-2 text-sm font-medium">
       <span style={{ color: '#f97316' }}>
         {expirado
           ? 'Sesion expirada'

@@ -91,7 +91,7 @@ export const MensajesAdmin: React.FC = () => {
                 {permiso.estado === 'activo' && (
                   <button
                     onClick={() => setPanel({ empresa: emp, permiso })}
-                    className="flex items-center gap-1.5 text-xs font-bold border border-line px-3 py-2 bg-content text-white hover:bg-content transition-colors"
+                    className="flex items-center gap-1.5 text-xs font-bold border border-line px-3 py-2 bg-slate-900 text-white hover:bg-slate-800 transition-colors"
                   >
                     <MonitorSmartphone size={14} /> Abrir chat
                   </button>

@@ -119,7 +119,7 @@ export const Mantenimiento: React.FC = () => {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               {tarea.numero != null && (
-                <span className="font-mono font-black text-xs bg-content text-white px-1.5 py-0.5">OT-{String(tarea.numero).padStart(5, '0')}</span>
+                <span className="font-mono font-black text-xs bg-slate-900 text-white px-1.5 py-0.5">OT-{String(tarea.numero).padStart(5, '0')}</span>
               )}
               <span className="font-mono font-black text-sm text-content">{activo?.codigo || 'N/A'}</span>
               <span className="text-muted text-xs">·</span>
@@ -329,9 +329,9 @@ export const Mantenimiento: React.FC = () => {
 
       {/* Modal nueva tarea */}
       {showModal && (
-        <div className="fixed inset-0 bg-content/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-surface border border-line shadow-soft w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border border-line bg-content text-white sticky top-0">
+            <div className="flex items-center justify-between p-4 border border-line bg-slate-900 text-white sticky top-0">
               <h2 className="font-black uppercase tracking-wide">{editId ? 'Editar Tarea' : 'Nueva Tarea de Mantenimiento'}</h2>
               <button onClick={() => { setShowModal(false); setEditId(null); }}><X size={20} /></button>
             </div>

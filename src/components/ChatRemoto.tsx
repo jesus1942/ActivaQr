@@ -173,7 +173,7 @@ export const ChatRemoto: React.FC<Props> = ({ mensajes, miRol, onEnviar, cargand
           return (
             <div key={m.id} className={`flex ${esMio ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[80%] ${esMio
-                ? 'bg-brand-600 text-white border border-orange-700'
+                ? 'bg-brand-600 text-white border border-brand-700'
                 : 'bg-surface text-content border border-line'
               } px-3 py-2 shadow-soft`}>
                 {!esMio && (
@@ -200,7 +200,7 @@ export const ChatRemoto: React.FC<Props> = ({ mensajes, miRol, onEnviar, cargand
                 ) : (
                   <p className="text-sm leading-relaxed">{m.contenido}</p>
                 )}
-                <p className={`text-xs mt-1 ${esMio ? 'text-orange-200' : 'text-faint'}`}>
+                <p className={`text-xs mt-1 ${esMio ? 'text-white/70' : 'text-faint'}`}>
                   {new Date(m.creadoEn).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
                   {esMio && !m.leido && ' · no leído'}
                 </p>

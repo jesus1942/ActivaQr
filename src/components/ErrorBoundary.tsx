@@ -73,7 +73,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
     if (variant === 'full') {
       return (
-        <div className="min-h-screen bg-content flex items-center justify-center p-4">
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
           <div className="bg-surface border border-line shadow-soft max-w-lg w-full">
             <div className="bg-danger px-6 py-4 border-b-4 border-line">
               <h1 className="font-black text-white text-2xl uppercase tracking-wide flex items-center gap-2">
@@ -99,7 +99,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
                   href="https://wa.me/5492804018359?text=Hola!%20La%20app%20de%20ActivaQR%20me%20esta%20dando%20un%20error."
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full text-center bg-content text-white font-bold uppercase tracking-wide text-sm border border-line py-3 hover:bg-content transition-colors"
+                  className="w-full text-center bg-slate-900 text-white font-bold uppercase tracking-wide text-sm border border-line py-3 hover:bg-slate-800 transition-colors"
                 >
                   Avisar por WhatsApp
                 </a>

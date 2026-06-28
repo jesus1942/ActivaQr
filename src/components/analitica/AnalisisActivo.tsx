@@ -171,7 +171,7 @@ export const AnalisisActivo: React.FC<AnalisisActivoProps> = ({
                 key={r.dias}
                 onClick={() => setRangoDias(r.dias)}
                 className={`px-2 py-1 text-[11px] font-black uppercase ${
-                  rangoDias === r.dias ? 'bg-content text-white' : 'bg-surface text-muted'
+                  rangoDias === r.dias ? 'bg-slate-900 text-white' : 'bg-surface text-muted'
                 }`}
               >
                 {r.label}

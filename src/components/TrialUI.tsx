@@ -36,7 +36,7 @@ export const TrialBanner: React.FC = () => {
           href={linkWhatsapp(emp.nombre)}
           target="_blank"
           rel="noopener"
-          className="text-xs font-black uppercase tracking-wide bg-content text-white px-3 py-1.5 border border-line hover:bg-brand-600 transition-colors"
+          className="text-xs font-black uppercase tracking-wide bg-slate-900 text-white px-3 py-1.5 border border-line hover:bg-brand-600 transition-colors"
         >
           Suscribirme
         </a>
@@ -47,7 +47,7 @@ export const TrialBanner: React.FC = () => {
   const dias = diasRestantes(emp.trialFin);
   return (
     <div className="bg-brand-50 border-b border-line px-4 py-2 flex items-center justify-between gap-3 flex-wrap">
-      <span className="text-sm font-bold text-orange-800 flex items-center gap-2">
+      <span className="text-sm font-bold text-brand-700 flex items-center gap-2">
         <Clock size={16} /> Prueba gratis — quedan {dias} {dias === 1 ? 'día' : 'días'} de acceso completo.
       </span>
       <a
@@ -67,7 +67,7 @@ export const PantallaTrialVencido: React.FC = () => {
   const { usuario, logout } = useAuth();
   const nombre = usuario?.empresa?.nombre ?? 'tu empresa';
   return (
-    <div className="min-h-screen bg-content flex items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
       <div className="bg-surface border border-line shadow-soft max-w-md w-full">
         <div className="bg-brand-600 px-6 py-4 border-b-4 border-line flex items-center gap-3">
           <Lock size={28} className="text-white" />

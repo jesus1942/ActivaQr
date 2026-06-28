@@ -59,7 +59,7 @@ function AppConSplash() {
 function PantallaBloqueo() {
   const { logout } = useAuth();
   return (
-    <div className="min-h-screen bg-content flex items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
       <div className="bg-surface border border-line shadow-soft max-w-md w-full">
         <div className="bg-danger px-6 py-4 border-b-4 border-line">
           <h1 className="font-black text-white text-2xl uppercase tracking-wide">

@@ -60,7 +60,7 @@ export const DocumentosActivo: React.FC<{ activoId: string }> = ({ activoId }) =
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={subiendo}
-          className="flex-1 flex items-center justify-center gap-2 bg-content text-white px-3 h-10 font-bold border border-line text-xs disabled:opacity-50"
+          className="flex-1 flex items-center justify-center gap-2 bg-slate-900 text-white px-3 h-10 font-bold border border-line text-xs disabled:opacity-50"
         >
           <Upload size={14} /> {subiendo ? 'Subiendo...' : 'Subir archivo'}
         </button>

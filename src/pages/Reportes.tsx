@@ -174,7 +174,7 @@ export const Reportes: React.FC = () => {
               </button>
               <button
                 onClick={generatePDF}
-                className="w-full flex items-center justify-center gap-2 bg-brand-600 text-white px-4 py-2.5 font-bold border border-line shadow-soft hover:bg-orange-400 transition-colors"
+                className="w-full flex items-center justify-center gap-2 bg-brand-600 text-white px-4 py-2.5 font-bold border border-line shadow-soft hover:bg-warn transition-colors"
               >
                 <Download size={16} />
                 Descargar PDF
@@ -236,7 +236,7 @@ export const Reportes: React.FC = () => {
                   const meds = filteredMediciones.filter((m) => m.activoId === activoId);
                   return (
                     <div key={activoId}>
-                      <div className="bg-content text-white px-3 py-2 flex justify-between items-center gap-2">
+                      <div className="bg-slate-900 text-white px-3 py-2 flex justify-between items-center gap-2">
                         <span className="font-mono font-bold flex-shrink-0">{activo.codigo}</span>
                         <span className="text-sm truncate min-w-0 flex-1 text-center">{activo.nombre}</span>
                         <span className="text-xs text-faint flex-shrink-0 whitespace-nowrap">{meds.length} mediciones</span>

@@ -63,12 +63,12 @@ const PLANES = ['inicial', 'empresa', 'industrial'] as const;
 const Modal: React.FC<{ titulo: string; icono?: React.ReactNode; onClose: () => void; children: React.ReactNode; maxW?: string }> = ({
   titulo, icono, onClose, children, maxW = 'max-w-md',
 }) => (
-  <div className="fixed inset-0 z-50 bg-content/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 pb-safe" onClick={onClose}>
+  <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 pb-safe" onClick={onClose}>
     <div
       className={`bg-surface border border-line shadow-soft w-full ${maxW} max-h-[92vh] overflow-y-auto`}
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="flex items-center justify-between bg-content text-white px-5 py-4 sticky top-0">
+      <div className="flex items-center justify-between bg-slate-900 text-white px-5 py-4 sticky top-0">
         <h2 className="font-display font-black text-base uppercase tracking-wide flex items-center gap-2">
           {icono}{titulo}
         </h2>
@@ -148,7 +148,7 @@ const ModalCobro: React.FC<{
             key={m}
             type="button"
             onClick={() => setMoneda(m)}
-            className={`flex-1 py-2 text-xs font-black uppercase tracking-wide transition-colors ${i > 0 ? 'border-l-2 border-line' : ''} ${moneda === m ? 'bg-content text-white' : 'bg-surface text-muted hover:bg-subtle'}`}
+            className={`flex-1 py-2 text-xs font-black uppercase tracking-wide transition-colors ${i > 0 ? 'border-l-2 border-line' : ''} ${moneda === m ? 'bg-slate-900 text-white' : 'bg-surface text-muted hover:bg-subtle'}`}
           >
             {m}
           </button>
@@ -306,9 +306,9 @@ const ModalWhatsapp: React.FC<{
   const completo = soloDigitos ? `${pais.codigo}${soloDigitos}` : '';
 
   return (
-    <div className="fixed inset-0 z-[60] bg-content/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 pb-safe">
+    <div className="fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 pb-safe">
       <div className="bg-surface border border-line shadow-soft w-full max-w-sm max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between border border-line px-5 py-3 bg-content text-white">
+        <div className="flex items-center justify-between border border-line px-5 py-3 bg-slate-900 text-white">
           <h2 className="font-display font-black text-base uppercase tracking-wide">{titulo}</h2>
           <button onClick={onOmitir}><X size={18} /></button>
         </div>
@@ -366,7 +366,7 @@ const ModalWhatsapp: React.FC<{
             <button
               onClick={() => completo && onConfirm(completo)}
               disabled={!soloDigitos}
-              className="flex-1 py-2.5 bg-content text-white border border-line text-sm font-black uppercase tracking-wide hover:bg-content transition-colors disabled:opacity-40"
+              className="flex-1 py-2.5 bg-slate-900 text-white border border-line text-sm font-black uppercase tracking-wide hover:bg-slate-800 transition-colors disabled:opacity-40"
             >
               Abrir WhatsApp
             </button>
@@ -879,7 +879,7 @@ export const Admin: React.FC = () => {
                         }}
                         className={`flex-1 py-1.5 text-xs font-black uppercase border transition-colors ${
                           emp.plan === p
-                            ? 'bg-content text-white border-line'
+                            ? 'bg-slate-900 text-white border-line'
                             : 'bg-surface border-line hover:border-brand-600 hover:text-brand-600'
                         }`}
                       >
@@ -1119,7 +1119,7 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-content/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-surface border border-line shadow-soft w-full max-w-md my-8">
         <div className="flex items-center justify-between border border-line px-5 py-3">
           <h2 className="font-display font-black text-xl uppercase">Nueva empresa</h2>

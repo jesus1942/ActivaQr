@@ -159,11 +159,11 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
   const labelCls = 'block text-xs font-black uppercase tracking-wider text-muted mb-1';
 
   return (
-    <div className="fixed inset-0 z-50 bg-content/40 backdrop-blur-sm flex items-start justify-center p-2 sm:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-start justify-center p-2 sm:p-6 overflow-y-auto">
       <div className="bg-surface border border-line shadow-soft w-full max-w-3xl my-4">
 
         {/* Header */}
-        <div className="bg-content text-white px-5 py-3 flex items-center justify-between sticky top-0 z-10">
+        <div className="bg-slate-900 text-white px-5 py-3 flex items-center justify-between sticky top-0 z-10">
           <div>
             <p className="text-xs font-black text-brand-400 uppercase tracking-wider">Acceso remoto</p>
             <h2 className="font-black text-lg uppercase leading-tight">{empresaNombre}</h2>
@@ -474,7 +474,7 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
                   crear: 'text-ok-strong dark:text-ok bg-ok/10 border-ok',
                   editar: 'text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-600/15 border-brand-600',
                   eliminar: 'text-danger-strong dark:text-danger bg-danger/10 border-danger',
-                  medicion: 'text-brand-700 bg-brand-50 border-orange-300',
+                  medicion: 'text-brand-700 bg-brand-50 border-brand-200',
                   cerrar: 'text-content bg-subtle border-line',
                   login: 'text-muted bg-subtle border-line',
                 };
@@ -510,9 +510,9 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
 
         {/* Modal crear tarea */}
         {activoTarea && (
-          <div className="fixed inset-0 z-60 bg-content/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-60 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-surface border border-line shadow-soft w-full max-w-sm">
-              <div className="flex items-center justify-between px-4 py-3 bg-content text-white">
+              <div className="flex items-center justify-between px-4 py-3 bg-slate-900 text-white">
                 <h3 className="font-black uppercase text-sm">Nueva tarea de mantenimiento</h3>
                 <button onClick={() => setActivoTarea(null)}><X size={18} /></button>
               </div>

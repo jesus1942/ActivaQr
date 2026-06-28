@@ -16,7 +16,7 @@ export const AprobarAccesoRemoto: React.FC = () => {
   }, [token]);
 
   return (
-    <div className="min-h-screen bg-content flex items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
       <div className="bg-surface border border-line shadow-soft max-w-md w-full">
         <div className="bg-brand-600 px-6 py-4 border-b-4 border-line">
           <p className="text-xs font-black text-white uppercase tracking-widest">ActivaQR</p>

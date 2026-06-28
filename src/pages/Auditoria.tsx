@@ -21,7 +21,7 @@ const ACCION_COLOR: Record<string, string> = {
   crear: 'bg-ok/10 text-ok-strong dark:text-ok border-ok',
   editar: 'bg-brand-50 dark:bg-brand-600/15 text-brand-700 dark:text-brand-300 border-brand-600',
   eliminar: 'bg-danger/10 text-danger-strong dark:text-danger border-danger',
-  cerrar: 'bg-orange-100 text-brand-700 border-orange-300',
+  cerrar: 'bg-brand-50 text-brand-700 border-brand-200',
   medicion: 'bg-violet-100 text-violet-700 border-violet-300',
   login: 'bg-subtle text-muted border-line',
 };
