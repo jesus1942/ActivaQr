@@ -8,13 +8,13 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'icons/*.png'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'og-image.png', 'icons/*.png'],
       manifest: {
         name: 'ActivaQR — Activos bajo control',
         short_name: 'ActivaQR',
         description: 'Gestión inteligente de activos industriales con QR, mediciones y mantenimiento predictivo',
-        theme_color: '#F97316',
-        background_color: '#1E293B',
+        theme_color: '#14B8A6',
+        background_color: '#0B1120',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/ActivaQr/',
