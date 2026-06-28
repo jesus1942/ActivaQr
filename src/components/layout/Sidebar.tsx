@@ -111,8 +111,8 @@ export const Sidebar: React.FC = () => {
   const desktopSidebar = (
     <aside className="hidden md:flex md:flex-col w-64 flex-shrink-0 h-screen sticky top-0 bg-canvas border-r border-line">
       <div className="px-5 py-6 flex items-center gap-3">
-        <img src={LOGO_LIGHT} alt="ActivaQR" className="h-10 w-auto object-contain drop-shadow-[0_0_12px_rgba(45,212,191,0.5)] dark:hidden" />
-        <img src={LOGO_DARK} alt="ActivaQR" className="h-10 w-auto object-contain drop-shadow-[0_0_12px_rgba(45,212,191,0.5)] hidden dark:block" />
+        <img src={LOGO_LIGHT} alt="ActivaQR" className="h-14 w-auto object-contain drop-shadow-[0_0_12px_rgba(45,212,191,0.5)] dark:hidden" />
+        <img src={LOGO_DARK} alt="ActivaQR" className="h-14 w-auto object-contain drop-shadow-[0_0_12px_rgba(45,212,191,0.5)] hidden dark:block" />
       </div>
 
       <nav className="flex-1 px-3 space-y-1 overflow-y-auto pb-4">
@@ -179,8 +179,8 @@ export const Sidebar: React.FC = () => {
   // ── Header de mobile ──────────────────────────────────────
   const mobileHeader = (
     <header className="md:hidden fixed top-0 left-0 right-0 z-40 glass border-b border-line flex items-center justify-between px-4 h-14 box-content safe-top">
-      <img src={LOGO_LIGHT} alt="ActivaQR" className="h-8 w-auto object-contain drop-shadow-[0_0_10px_rgba(45,212,191,0.55)] dark:hidden" />
-      <img src={LOGO_DARK} alt="ActivaQR" className="h-8 w-auto object-contain drop-shadow-[0_0_10px_rgba(45,212,191,0.55)] hidden dark:block" />
+      <img src={LOGO_LIGHT} alt="ActivaQR" className="h-10 w-auto object-contain drop-shadow-[0_0_10px_rgba(45,212,191,0.55)] dark:hidden" />
+      <img src={LOGO_DARK} alt="ActivaQR" className="h-10 w-auto object-contain drop-shadow-[0_0_10px_rgba(45,212,191,0.55)] hidden dark:block" />
       <div className="flex items-center gap-2">
         <ThemeToggle />
         <button
