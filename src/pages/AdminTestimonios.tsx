@@ -44,7 +44,7 @@ export const AdminTestimonios: React.FC = () => {
     <div>
       <div className="flex items-start justify-between gap-3 mb-6 flex-wrap">
         <div>
-          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-black text-content uppercase tracking-tight">Testimonios</h1>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight">Testimonios</h1>
           <p className="text-muted text-sm mt-1">Moderación de la landing pública</p>
         </div>
       </div>

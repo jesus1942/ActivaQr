@@ -153,7 +153,7 @@ export const Analitica: React.FC = () => {
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h1 className="font-display text-3xl sm:text-4xl font-black text-content uppercase tracking-tight flex items-center gap-2">
+        <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight flex items-center gap-2">
           <LineChart size={32} className="text-brand-600" /> Analítica
         </h1>
         <p className="text-muted text-sm mt-1">Facturación, visitas y comportamiento de usuarios</p>

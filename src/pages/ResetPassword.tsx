@@ -60,7 +60,7 @@ export const ResetPassword: React.FC = () => {
         <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-8">
           <div className="text-center mb-6">
             <img src={LOGO} alt="ActivaQR" className="h-14 mx-auto mb-3 object-contain" />
-            <h1 className="font-display text-3xl font-black text-content uppercase tracking-tight">
+            <h1 className="font-display text-3xl font-black text-content tracking-tight">
               ActivaQR
             </h1>
             <p className="text-muted text-sm mt-1 font-medium uppercase tracking-wider">

@@ -638,7 +638,7 @@ export const Admin: React.FC = () => {
       )}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="font-display text-3xl sm:text-4xl font-black text-content uppercase tracking-tight flex items-center gap-2">
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight flex items-center gap-2">
             <Building2 size={32} /> Administración
             {solicitudes.length > 0 && (
               <span className="inline-flex items-center justify-center w-6 h-6 bg-brand-600 text-white text-xs font-black border border-line">
@@ -731,7 +731,7 @@ export const Admin: React.FC = () => {
       {/* Solicitudes de upgrade */}
       {solicitudes.length > 0 && (
         <div className="border border-brand-600 bg-brand-50 shadow-soft p-4">
-          <h2 className="font-display font-black text-lg uppercase tracking-tight text-content flex items-center gap-2 mb-4">
+          <h2 className="font-display font-black text-lg tracking-tight text-content flex items-center gap-2 mb-4">
             <TrendingUp size={20} className="text-brand-600" /> Solicitudes de upgrade
             <span className="inline-flex items-center justify-center w-5 h-5 bg-brand-600 text-white text-xs font-black border border-line">
               {solicitudes.length}
@@ -1340,7 +1340,7 @@ export const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReinici
   return (
     <div className="border border-line bg-subtle shadow-soft p-4 space-y-4">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <h2 className="font-display font-black text-lg uppercase tracking-tight text-content flex items-center gap-2">
+        <h2 className="font-display font-black text-lg tracking-tight text-content flex items-center gap-2">
           <BarChart3 size={20} className="text-brand-600" /> Visitas
         </h2>
         <button

@@ -73,7 +73,7 @@ export const Indicadores: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-black text-content uppercase tracking-tight">Indicadores</h1>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight">Indicadores</h1>
           <p className="text-muted text-sm mt-1">Tablero ejecutivo de gestión de mantenimiento</p>
         </div>
         <button

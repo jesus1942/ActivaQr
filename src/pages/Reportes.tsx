@@ -110,7 +110,7 @@ export const Reportes: React.FC = () => {
 
   return (
     <div>
-      <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-content uppercase tracking-tight mb-2">Reportes</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-content tracking-tight mb-2">Reportes</h1>
       <p className="text-muted text-sm mb-6">Genera reportes de mediciones y estado de activos</p>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

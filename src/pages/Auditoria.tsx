@@ -57,7 +57,7 @@ export const Auditoria: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-black text-content uppercase tracking-tight">Auditoría</h1>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight">Auditoría</h1>
           <p className="text-muted text-sm mt-1">Trazabilidad de acciones — quién hizo qué y cuándo</p>
         </div>
         <div className="flex gap-2 items-center">

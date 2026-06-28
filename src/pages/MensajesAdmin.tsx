@@ -46,7 +46,7 @@ export const MensajesAdmin: React.FC = () => {
     <div>
       <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-display text-3xl sm:text-4xl font-black text-content uppercase tracking-tight flex items-center gap-3">
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight flex items-center gap-3">
             <MessageSquare size={32} /> Mensajes
           </h1>
           <p className="text-muted text-sm mt-1">Empresas con acceso remoto activo o pendiente</p>

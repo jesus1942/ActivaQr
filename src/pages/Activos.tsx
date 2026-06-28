@@ -206,7 +206,7 @@ export const Activos: React.FC = () => {
     <div>
       <div className="flex items-center justify-between mb-6 gap-3">
         <div>
-          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-black text-content uppercase tracking-tight">Activos</h1>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight">Activos</h1>
           <p className="text-muted text-sm mt-1">{filtered.length} activos encontrados</p>
         </div>
         <div className="flex gap-2">

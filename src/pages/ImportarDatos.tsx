@@ -154,7 +154,7 @@ COM-XXX-001,Compresor Ejemplo,compresor,Taller,Schulz,CSL 10,Pedro López,Taller
 
   return (
     <div>
-      <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-content uppercase tracking-tight mb-2">Importar Datos</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-content tracking-tight mb-2">Importar Datos</h1>
       <p className="text-muted text-sm mb-6">Importa activos desde un archivo CSV</p>
 
       {imported && (

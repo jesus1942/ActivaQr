@@ -411,7 +411,7 @@ export const Medicion: React.FC = () => {
         <button onClick={() => navigate(-1)} className="border border-line p-2 hover:border-content transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
           <ArrowLeft size={18} />
         </button>
-        <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-black text-content uppercase tracking-tight">Tomar Medición</h1>
+        <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-black text-content tracking-tight">Tomar Medición</h1>
       </div>
 
       {/* Search by código */}

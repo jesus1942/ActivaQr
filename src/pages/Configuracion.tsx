@@ -47,7 +47,7 @@ export const Configuracion: React.FC = () => {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-black text-content uppercase tracking-tight">
+        <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight">
           Configuración
         </h1>
         <p className="text-muted text-sm mt-1">Gestioná sectores, tipos de activo y personal</p>
@@ -442,7 +442,7 @@ const CategoriasSection: React.FC = () => {
 
       {/* Cómo funciona */}
       <div className="border border-line bg-slate-900 text-white p-4 shadow-soft">
-        <h3 className="font-display font-black text-lg uppercase tracking-tight mb-2 text-brand-400">Cómo funcionan las categorías</h3>
+        <h3 className="font-display font-black text-lg tracking-tight mb-2 text-brand-400">Cómo funcionan las categorías</h3>
         <p className="text-sm text-slate-200 leading-relaxed mb-3">
           Una categoría define <strong>qué se mide</strong> en cada tipo de equipo. Por ejemplo "Motor Diesel" mide
           temperatura de agua, presión de aceite y RPM; "Estética" mide potencia, disparos y temperatura del cabezal.
@@ -458,7 +458,7 @@ const CategoriasSection: React.FC = () => {
 
       {/* Categorías globales */}
       <div>
-        <h3 className="font-display font-black text-lg uppercase tracking-tight text-content mb-1">
+        <h3 className="font-display font-black text-lg tracking-tight text-content mb-1">
           Categorías globales
         </h3>
         <p className="text-xs text-muted mb-3">Listas para usar. Cubren rubros desde estética hasta aeroespacial. Tocá una para ver sus parámetros.</p>
@@ -478,7 +478,7 @@ const CategoriasSection: React.FC = () => {
       {/* Categorías propias */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-display font-black text-lg uppercase tracking-tight text-content">
+          <h3 className="font-display font-black text-lg tracking-tight text-content">
             Mis categorías
           </h3>
           {!adding && (
@@ -1088,7 +1088,7 @@ const SeccionPlan: React.FC = () => {
     <div className="mb-8 bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-5">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>
-          <h2 className="font-display font-black text-xl uppercase tracking-tight text-content">Plan actual</h2>
+          <h2 className="font-display font-black text-xl tracking-tight text-content">Plan actual</h2>
           <span className="inline-block mt-1 px-3 py-1 bg-brand-600 text-white text-xs font-black uppercase tracking-wider border border-line">
             {plan.toUpperCase()}
           </span>
@@ -1197,7 +1197,7 @@ const SeccionSuscripcion: React.FC = () => {
 
   return (
     <div className="mt-10 border border-line pt-8">
-      <h2 className="font-display font-black text-xl uppercase tracking-tight text-content mb-1">
+      <h2 className="font-display font-black text-xl tracking-tight text-content mb-1">
         Suscripción
       </h2>
       <p className="text-sm text-muted mb-4">
@@ -1294,7 +1294,7 @@ const SeccionAccesoRemoto: React.FC = () => {
 
   return (
     <div className="mt-10 border border-line pt-8">
-      <h2 className="font-display font-black text-xl uppercase tracking-tight text-content mb-1 flex items-center gap-2">
+      <h2 className="font-display font-black text-xl tracking-tight text-content mb-1 flex items-center gap-2">
         <ShieldCheck size={20} className="text-brand-600" /> Acceso remoto de soporte
       </h2>
 

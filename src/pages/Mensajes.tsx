@@ -60,7 +60,7 @@ export const Mensajes: React.FC = () => {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-display text-3xl sm:text-4xl font-black text-content uppercase tracking-tight flex items-center gap-3">
+        <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight flex items-center gap-3">
           <MessageSquare size={32} /> Mensajes
         </h1>
         <p className="text-muted text-sm mt-1">Comunicación con el equipo de soporte ActivaQR</p>
