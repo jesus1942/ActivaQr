@@ -84,16 +84,20 @@ export const Login: React.FC = () => {
     }
   };
 
+  const fieldCls = 'flex items-center gap-2 border border-line rounded-md bg-surface px-3 h-12 focus-within:border-brand-600 focus-within:shadow-ring transition-all';
+  const labelCls = 'block text-xs font-semibold uppercase tracking-wider text-muted mb-1';
+  const inputCls = 'flex-1 outline-none bg-transparent text-content placeholder:text-faint';
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FAFAF7] p-4">
+    <div className="min-h-screen flex items-center justify-center bg-canvas p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white border-2 border-slate-900 shadow-[6px_6px_0px_0px_#1e293b] p-8">
+        <div className="bg-surface border border-line rounded-xl shadow-soft p-8">
           <div className="text-center mb-6">
             <img src={LOGO} alt="ActivaQR" className="h-14 mx-auto mb-3 object-contain" />
-            <h1 className="font-sketch text-3xl font-black text-slate-900 uppercase tracking-tight">
+            <h1 className="font-display text-3xl font-bold text-content tracking-tight">
               ActivaQR
             </h1>
-            <p className="text-slate-500 text-sm mt-1 font-medium uppercase tracking-wider">
+            <p className="text-muted text-sm mt-1 font-medium uppercase tracking-wider">
               {vistaRegistro ? 'Probá gratis 30 días' : 'Activos bajo control'}
             </p>
           </div>
@@ -101,71 +105,71 @@ export const Login: React.FC = () => {
           {vistaRegistro ? (
             <form onSubmit={handleRegistro} className="space-y-3">
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Empresa</label>
-                <div className="flex items-center gap-2 border-2 border-slate-300 px-3 h-12 focus-within:border-orange-500">
-                  <Building2 size={18} className="text-slate-400" />
-                  <input value={regEmpresa} onChange={(e) => setRegEmpresa(e.target.value)} placeholder="Nombre de tu empresa" className="flex-1 outline-none bg-transparent" required />
+                <label className={labelCls}>Empresa</label>
+                <div className={fieldCls}>
+                  <Building2 size={18} className="text-faint" />
+                  <input value={regEmpresa} onChange={(e) => setRegEmpresa(e.target.value)} placeholder="Nombre de tu empresa" className={inputCls} required />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Tu nombre</label>
-                <div className="flex items-center gap-2 border-2 border-slate-300 px-3 h-12 focus-within:border-orange-500">
-                  <User size={18} className="text-slate-400" />
-                  <input value={regNombre} onChange={(e) => setRegNombre(e.target.value)} placeholder="Nombre y apellido" className="flex-1 outline-none bg-transparent" required />
+                <label className={labelCls}>Tu nombre</label>
+                <div className={fieldCls}>
+                  <User size={18} className="text-faint" />
+                  <input value={regNombre} onChange={(e) => setRegNombre(e.target.value)} placeholder="Nombre y apellido" className={inputCls} required />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Email</label>
-                <div className="flex items-center gap-2 border-2 border-slate-300 px-3 h-12 focus-within:border-orange-500">
-                  <Mail size={18} className="text-slate-400" />
-                  <input type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} placeholder="tu@empresa.com" className="flex-1 outline-none bg-transparent font-mono" autoComplete="username" required />
+                <label className={labelCls}>Email</label>
+                <div className={fieldCls}>
+                  <Mail size={18} className="text-faint" />
+                  <input type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} placeholder="tu@empresa.com" className={`${inputCls} font-mono`} autoComplete="username" required />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Teléfono <span className="text-slate-400 font-normal lowercase">(opcional)</span></label>
-                <div className="flex items-center gap-2 border-2 border-slate-300 px-3 h-12 focus-within:border-orange-500">
-                  <Phone size={18} className="text-slate-400" />
-                  <input value={regTelefono} onChange={(e) => setRegTelefono(e.target.value)} placeholder="+54 9 ..." className="flex-1 outline-none bg-transparent font-mono" />
+                <label className={labelCls}>Teléfono <span className="text-faint font-normal lowercase">(opcional)</span></label>
+                <div className={fieldCls}>
+                  <Phone size={18} className="text-faint" />
+                  <input value={regTelefono} onChange={(e) => setRegTelefono(e.target.value)} placeholder="+54 9 ..." className={`${inputCls} font-mono`} />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Contraseña</label>
-                <div className="flex items-center gap-2 border-2 border-slate-300 px-3 h-12 focus-within:border-orange-500">
-                  <Lock size={18} className="text-slate-400" />
-                  <input type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} placeholder="Mínimo 8 caracteres" className="flex-1 outline-none bg-transparent font-mono" autoComplete="new-password" minLength={8} required />
+                <label className={labelCls}>Contraseña</label>
+                <div className={fieldCls}>
+                  <Lock size={18} className="text-faint" />
+                  <input type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} placeholder="Mínimo 8 caracteres" className={`${inputCls} font-mono`} autoComplete="new-password" minLength={8} required />
                 </div>
               </div>
 
-              <label className="flex items-start gap-2 text-xs text-slate-600 leading-snug cursor-pointer pt-1">
+              <label className="flex items-start gap-2 text-xs text-muted leading-snug cursor-pointer pt-1">
                 <input
                   type="checkbox"
                   checked={regAcepta}
                   onChange={(e) => setRegAcepta(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 accent-orange-500 flex-shrink-0"
+                  className="mt-0.5 w-4 h-4 accent-brand-600 flex-shrink-0"
                   required
                 />
                 <span>
                   Lei y acepto la{' '}
-                  <a href={`${apiBase}/politica-uso`} target="_blank" rel="noopener noreferrer" className="text-orange-600 font-bold underline">Politica de Uso</a>
+                  <a href={`${apiBase}/politica-uso`} target="_blank" rel="noopener noreferrer" className="text-brand-600 font-semibold underline">Politica de Uso</a>
                   {' '}y la{' '}
-                  <a href={`${apiBase}/politica-privacidad`} target="_blank" rel="noopener noreferrer" className="text-orange-600 font-bold underline">Politica de Privacidad</a>
+                  <a href={`${apiBase}/politica-privacidad`} target="_blank" rel="noopener noreferrer" className="text-brand-600 font-semibold underline">Politica de Privacidad</a>
                   {' '}de ActivaQR.
                 </span>
               </label>
 
               {regError && (
-                <div className="bg-red-50 border-2 border-red-300 text-red-700 text-sm px-3 py-2 font-semibold">{regError}</div>
+                <div className="bg-danger/10 text-danger-strong dark:text-danger text-sm px-3.5 py-2.5 rounded-md font-medium">{regError}</div>
               )}
 
-              <button type="submit" disabled={regCargando || !regAcepta} className="w-full flex items-center justify-center gap-2 bg-orange-500 text-white h-12 font-sketch font-black text-xl uppercase border-2 border-slate-900 shadow-[4px_4px_0px_0px_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#1e293b] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0px_0px_#1e293b]">
+              <button type="submit" disabled={regCargando || !regAcepta} className="press w-full flex items-center justify-center gap-2 bg-brand-600 text-white h-12 font-display font-bold text-lg rounded-md shadow-soft hover:bg-brand-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                 <UserPlus size={20} />
                 {regCargando ? 'Creando…' : 'Crear cuenta y probar'}
               </button>
 
-              <p className="text-[11px] text-slate-400 text-center leading-snug">30 días de acceso completo, hasta 10 activos. Sin tarjeta de crédito.</p>
+              <p className="text-[11px] text-faint text-center leading-snug">30 días de acceso completo, hasta 10 activos. Sin tarjeta de crédito.</p>
 
               <div className="text-center mt-2">
-                <button type="button" onClick={() => { setVistaRegistro(false); setRegError(null); }} className="text-xs text-slate-500 hover:text-orange-500 underline transition-colors">
+                <button type="button" onClick={() => { setVistaRegistro(false); setRegError(null); }} className="text-xs text-muted hover:text-brand-600 underline transition-colors">
                   Ya tengo cuenta — Ingresar
                 </button>
               </div>
@@ -173,17 +177,17 @@ export const Login: React.FC = () => {
           ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
+              <label className={labelCls}>
                 Email
               </label>
-              <div className="flex items-center gap-2 border-2 border-slate-300 px-3 h-12 focus-within:border-orange-500">
-                <Mail size={18} className="text-slate-400" />
+              <div className={fieldCls}>
+                <Mail size={18} className="text-faint" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@empresa.com"
-                  className="flex-1 outline-none bg-transparent font-mono"
+                  className={`${inputCls} font-mono`}
                   autoComplete="username"
                   required
                 />
@@ -191,17 +195,17 @@ export const Login: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
+              <label className={labelCls}>
                 Contraseña
               </label>
-              <div className="flex items-center gap-2 border-2 border-slate-300 px-3 h-12 focus-within:border-orange-500">
-                <Lock size={18} className="text-slate-400" />
+              <div className={fieldCls}>
+                <Lock size={18} className="text-faint" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="flex-1 outline-none bg-transparent font-mono"
+                  className={`${inputCls} font-mono`}
                   autoComplete="current-password"
                   required
                 />
@@ -209,7 +213,7 @@ export const Login: React.FC = () => {
             </div>
 
             {error && (
-              <div className="bg-red-50 border-2 border-red-300 text-red-700 text-sm px-3 py-2 font-semibold">
+              <div className="bg-danger/10 text-danger-strong dark:text-danger text-sm px-3.5 py-2.5 rounded-md font-medium">
                 {error}
               </div>
             )}
@@ -217,7 +221,7 @@ export const Login: React.FC = () => {
             <button
               type="submit"
               disabled={cargando}
-              className="w-full flex items-center justify-center gap-2 bg-orange-500 text-white h-12 font-sketch font-black text-xl uppercase border-2 border-slate-900 shadow-[4px_4px_0px_0px_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#1e293b] transition-all disabled:opacity-50"
+              className="press w-full flex items-center justify-center gap-2 bg-brand-600 text-white h-12 font-display font-bold text-lg rounded-md shadow-soft hover:bg-brand-700 transition-all disabled:opacity-50"
             >
               <LogIn size={20} />
               {cargando ? 'Ingresando…' : 'Ingresar'}
@@ -227,7 +231,7 @@ export const Login: React.FC = () => {
               <button
                 type="button"
                 onClick={() => { setVistaForgot(true); setError(null); }}
-                className="text-xs text-slate-500 hover:text-orange-500 underline transition-colors"
+                className="text-xs text-muted hover:text-brand-600 underline transition-colors"
               >
                 Olvidaste tu contraseña?
               </button>
@@ -236,13 +240,13 @@ export const Login: React.FC = () => {
           )}
 
           {!vistaRegistro && !vistaForgot && (
-            <div className="mt-4 border-t-2 border-slate-200 pt-4 text-center">
-              <p className="text-xs text-slate-400 mb-3">Técnicos y operadores de campo ingresan con el mismo formulario usando las credenciales que les asignó el administrador.</p>
-              <p className="text-xs text-slate-500 mb-2">¿No tenés cuenta todavía?</p>
+            <div className="mt-4 border-t border-line pt-4 text-center">
+              <p className="text-xs text-faint mb-3">Técnicos y operadores de campo ingresan con el mismo formulario usando las credenciales que les asignó el administrador.</p>
+              <p className="text-xs text-muted mb-2">¿No tenés cuenta todavía?</p>
               <button
                 type="button"
                 onClick={() => { setVistaRegistro(true); setError(null); }}
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white h-11 font-black text-sm uppercase tracking-wide border-2 border-slate-900 hover:bg-orange-500 transition-colors"
+                className="press w-full flex items-center justify-center gap-2 bg-surface text-content border border-line-strong h-11 font-semibold text-sm rounded-md hover:border-brand-600 hover:text-brand-600 transition-colors"
               >
                 <UserPlus size={18} />
                 Probar gratis 30 días
@@ -251,14 +255,14 @@ export const Login: React.FC = () => {
           )}
 
           {vistaForgot && (
-            <div className="mt-4 border-t-2 border-slate-200 pt-4">
+            <div className="mt-4 border-t border-line pt-4">
               {forgotExito ? (
                 <div className="space-y-2">
-                  <div className="bg-green-50 border-2 border-green-300 text-green-700 text-sm px-3 py-3 font-semibold space-y-1">
+                  <div className="bg-ok/10 text-ok-strong dark:text-ok text-sm px-3.5 py-3 rounded-md font-medium space-y-1">
                     <p>Solicitud recibida.</p>
                     <p className="font-normal text-xs">Si tenés Telegram configurado, te llega el link ahí en segundos. Si no, te avisamos por otro medio.</p>
                   </div>
-                  <button onClick={() => { setVistaForgot(false); setForgotExito(false); }} className="text-xs text-slate-500 underline hover:text-orange-500">
+                  <button onClick={() => { setVistaForgot(false); setForgotExito(false); }} className="text-xs text-muted underline hover:text-brand-600">
                     Volver al login
                   </button>
                 </div>
@@ -276,17 +280,17 @@ export const Login: React.FC = () => {
                     setForgotCargando(false);
                   }
                 }} className="space-y-2">
-                  <p className="text-xs font-black uppercase tracking-wider text-slate-600">Recuperar contraseña</p>
-                  <div className="flex items-center gap-2 border-2 border-slate-300 px-3 h-10 focus-within:border-orange-500">
-                    <Mail size={16} className="text-slate-400" />
-                    <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} placeholder="tu@email.com" className="flex-1 outline-none bg-transparent text-sm" required />
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted">Recuperar contraseña</p>
+                  <div className="flex items-center gap-2 border border-line rounded-md bg-surface px-3 h-10 focus-within:border-brand-600 focus-within:shadow-ring transition-all">
+                    <Mail size={16} className="text-faint" />
+                    <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} placeholder="tu@email.com" className="flex-1 outline-none bg-transparent text-sm text-content placeholder:text-faint" required />
                   </div>
-                  {forgotError && <p className="text-red-600 text-xs">{forgotError}</p>}
+                  {forgotError && <p className="text-danger text-xs">{forgotError}</p>}
                   <div className="flex gap-2">
-                    <button type="submit" disabled={forgotCargando} className="flex-1 bg-slate-900 text-white text-xs font-black uppercase py-2 border-2 border-slate-900 disabled:opacity-50">
+                    <button type="submit" disabled={forgotCargando} className="press flex-1 bg-brand-600 text-white text-xs font-semibold uppercase py-2 rounded-md hover:bg-brand-700 transition-colors disabled:opacity-50">
                       {forgotCargando ? 'Enviando...' : 'Enviar instrucciones'}
                     </button>
-                    <button type="button" onClick={() => setVistaForgot(false)} className="text-xs text-slate-500 underline px-2">
+                    <button type="button" onClick={() => setVistaForgot(false)} className="text-xs text-muted underline px-2">
                       Volver
                     </button>
                   </div>
@@ -296,13 +300,13 @@ export const Login: React.FC = () => {
           )}
         </div>
 
-        <p className="text-center text-slate-400 text-xs mt-4 font-mono">
+        <p className="text-center text-faint text-xs mt-4 font-mono">
           ActivaQR · Gestión de activos industriales
         </p>
-        <p className="text-center text-slate-400 text-[11px] mt-1 font-mono">
-          <a href={`${apiBase}/politica-uso`} target="_blank" rel="noopener noreferrer" className="hover:text-orange-500 underline">Política de Uso</a>
+        <p className="text-center text-faint text-[11px] mt-1 font-mono">
+          <a href={`${apiBase}/politica-uso`} target="_blank" rel="noopener noreferrer" className="hover:text-brand-600 underline">Política de Uso</a>
           <span className="mx-2">·</span>
-          <a href={`${apiBase}/politica-privacidad`} target="_blank" rel="noopener noreferrer" className="hover:text-orange-500 underline">Política de Privacidad</a>
+          <a href={`${apiBase}/politica-privacidad`} target="_blank" rel="noopener noreferrer" className="hover:text-brand-600 underline">Política de Privacidad</a>
         </p>
       </div>
     </div>
