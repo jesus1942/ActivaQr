@@ -35,7 +35,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({ activo, lastMedicion, sect
 
   return (
     <div
-      className="bg-surface border border-line shadow-soft cursor-pointer hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-soft transition-all duration-150 p-4 relative"
+      className="group bg-surface border border-line rounded-lg shadow-soft cursor-pointer hover:-translate-y-0.5 hover:shadow-glow hover:border-brand-500/40 transition-all duration-200 ease-premium p-4 relative"
       onClick={() => navigate(`/activos/${activo.id}`)}
     >
       {/* Edit button */}
@@ -43,34 +43,32 @@ export const AssetCard: React.FC<AssetCardProps> = ({ activo, lastMedicion, sect
         <button
           onClick={(e) => { e.stopPropagation(); onEdit(); }}
           title="Editar activo"
-          className="absolute top-2 right-2 border border-line p-1 hover:border-brand-600 hover:text-brand-600 transition-colors bg-surface z-10"
+          className="press absolute top-2.5 right-2.5 grid place-items-center w-8 h-8 rounded-full text-faint hover:text-brand-400 hover:bg-subtle transition-colors z-10"
         >
           <Pencil size={14} />
         </button>
       )}
 
-      {/* Header */}
-      <div className="flex justify-between items-start mb-2">
+      {/* Header: estado + sector (texto discreto) */}
+      <div className="flex justify-between items-center gap-2 mb-2 pr-8">
         <StatusBadge estado={activo.estado} size="sm" />
-        <span className="font-display text-base font-bold uppercase bg-subtle border border-line px-2 py-0.5 text-muted rotate-[1deg] mr-6">
+        <span className="text-xs font-medium text-faint truncate max-w-[45%]" title={sectorNombre}>
           {sectorNombre}
         </span>
       </div>
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+      <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
         <EstadoOperativoBadge estado={activo.estadoOperativo ?? 'operativo'} size="sm" />
         {activo.esItinerante && (
-          <div className="flex items-center gap-1.5">
-            <span className="border border-brand-600 text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-600/15 text-xs font-black uppercase px-1.5 py-0.5">ITINERANTE</span>
-            {activo.locacionActual && (
-              <span className="text-xs text-brand-700 dark:text-brand-300">En: {activo.locacionActual}</span>
-            )}
-          </div>
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-brand-600 dark:text-brand-300">
+            <span className="w-1 h-3 rounded-sm bg-brand-500" />
+            Itinerante{activo.locacionActual ? ` · ${activo.locacionActual}` : ''}
+          </span>
         )}
       </div>
 
-      {/* Foto del activo, como pegada en el legajo */}
+      {/* Foto del activo */}
       {activo.fotoUrl && (
-        <div className="mb-3 border border-line bg-surface p-1 shadow-soft rotate-[-0.5deg]">
+        <div className="mb-3 rounded-md overflow-hidden border border-line">
           <img
             src={activo.fotoUrl}
             alt={activo.nombre}
@@ -82,19 +80,19 @@ export const AssetCard: React.FC<AssetCardProps> = ({ activo, lastMedicion, sect
 
       {/* Code & Name */}
       <div className="flex gap-3 items-start">
-        <div className="flex-1">
-          <div className="font-display font-black text-2xl text-content leading-tight">{activo.codigo}</div>
+        <div className="flex-1 min-w-0">
+          <div className="font-display font-bold text-xl text-content leading-tight">{activo.codigo}</div>
           <div className="font-semibold text-content text-sm mt-0.5 leading-snug">{activo.nombre}</div>
           <div className="text-xs text-muted mt-1">{activo.marca} {activo.modelo}</div>
         </div>
-        {/* QR como pegado con cinta */}
-        <div className="border border-line p-1 bg-surface shadow-soft rotate-[1deg]">
-          <QRCodeSVG value={qrValue} size={56} />
+        {/* QR (fondo blanco para escaneo en cualquier tema) */}
+        <div className="rounded-md p-1.5 bg-white shadow-soft shrink-0">
+          <QRCodeSVG value={qrValue} size={52} />
         </div>
       </div>
 
-      {/* Divider estilo a mano */}
-      <div className="border-b border-dashed border-line my-3" />
+      {/* Divider */}
+      <div className="border-b border-line my-3" />
 
       {/* Footer */}
       <div className="space-y-1">

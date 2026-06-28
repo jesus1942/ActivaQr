@@ -22,11 +22,12 @@ const ThemeContext = createContext<ThemeContextValue>({
 });
 
 function readInitialTheme(): Theme {
-  if (typeof window === 'undefined') return 'light';
+  if (typeof window === 'undefined') return 'dark';
   try {
-    return localStorage.getItem(STORAGE_KEY) === 'dark' ? 'dark' : 'light';
+    // Oscuro por defecto (estilo del mockup). Solo es claro si el usuario lo eligió explícitamente.
+    return localStorage.getItem(STORAGE_KEY) === 'light' ? 'light' : 'dark';
   } catch {
-    return 'light';
+    return 'dark';
   }
 }
 

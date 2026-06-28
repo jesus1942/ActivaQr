@@ -8,6 +8,7 @@ import { useCargaRemota, useErrorSync } from '../../hooks/useStorage';
 import { DemoBanner } from '../ui/DemoBanner';
 import { SyncBadge } from '../ui/SyncBadge';
 import { TrialBanner } from '../TrialUI';
+import { AuroraBg } from '../ui/AuroraBg';
 
 export const Layout: React.FC = () => {
   const cargando = useCargaRemota();
@@ -15,11 +16,12 @@ export const Layout: React.FC = () => {
   const location = useLocation();
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-canvas overflow-hidden">
+    <div className="flex flex-col md:flex-row h-screen bg-transparent overflow-hidden">
+      <AuroraBg />
       <DemoBanner />
       {cargando && <PantallaCarga />}
       <Sidebar />
-      <main className="flex-1 overflow-y-auto">
+      <main id="app-scroll" className="flex-1 overflow-y-auto">
         <div className="md:hidden h-safe-header" />
         <TrialBanner />
         <SyncBadge />
@@ -42,7 +44,7 @@ export const Layout: React.FC = () => {
             </button>
           </div>
         )}
-        <div key={location.pathname} className="p-4 md:p-8 pb-28 md:pb-8 min-h-full animate-fade-up">
+        <div key={location.pathname} className="p-4 md:p-8 pb-28 md:pb-8 min-h-full animate-page-in">
           <Outlet />
         </div>
       </main>

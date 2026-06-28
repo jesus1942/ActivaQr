@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { LogIn, Lock, Mail, UserPlus, Building2, User, Phone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { apiFetch, logout as clearSession } from '../data/auth';
+import { AuroraBg } from '../components/ui/AuroraBg';
 
 const LOGO = '/ActivaQr/company-logo-hd.png';
 
@@ -84,14 +85,15 @@ export const Login: React.FC = () => {
     }
   };
 
-  const fieldCls = 'flex items-center gap-2 border border-line rounded-md bg-surface px-3 h-12 focus-within:border-brand-600 focus-within:shadow-ring transition-all';
+  const fieldCls = 'flex items-center gap-2 border border-line rounded-md bg-surface px-3 h-12 focus-within:border-brand-400 focus-within:shadow-ring transition-all';
   const labelCls = 'block text-xs font-semibold uppercase tracking-wider text-muted mb-1';
   const inputCls = 'flex-1 outline-none bg-transparent text-content placeholder:text-faint';
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-canvas p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-surface border border-line rounded-xl shadow-soft p-8">
+    <div className="relative min-h-screen flex items-center justify-center bg-transparent p-4 overflow-hidden">
+      <AuroraBg scrollSelector="#none" />
+      <div className="w-full max-w-md animate-page-in">
+        <div className="bg-surface/90 backdrop-blur-xl border border-line rounded-xl shadow-lift p-8">
           <div className="text-center mb-6">
             <img src={LOGO} alt="ActivaQR" className="h-14 mx-auto mb-3 object-contain" />
             <h1 className="font-display text-3xl font-bold text-content tracking-tight">

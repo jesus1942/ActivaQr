@@ -22,12 +22,12 @@ const base =
   'disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap';
 
 const variantMap: Record<Variant, string> = {
-  primary: 'bg-brand-600 text-white hover:bg-brand-700 shadow-soft',
+  primary: 'bg-brand-400 text-slate-900 hover:bg-brand-300 shadow-glow hover:shadow-glow-lg',
   secondary:
-    'bg-surface text-content border border-line-strong hover:border-content hover:bg-subtle',
+    'bg-surface text-content border border-line-strong hover:border-brand-400 hover:text-brand-300 hover:bg-subtle',
   ghost: 'bg-transparent text-muted hover:text-content hover:bg-subtle',
-  danger: 'bg-danger text-white hover:brightness-95 shadow-soft',
-  subtle: 'bg-brand-50 text-brand-700 hover:bg-brand-100 dark:bg-brand-600/15 dark:text-brand-300',
+  danger: 'bg-danger text-white hover:brightness-110 shadow-soft',
+  subtle: 'bg-brand-500/15 text-brand-300 hover:bg-brand-500/25',
 };
 
 const sizeMap: Record<Size, string> = {

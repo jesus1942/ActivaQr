@@ -53,8 +53,14 @@ code, .font-mono {
   font-family: var(--font-mono);
 }
 
-html, body {
+html {
+  /* El color base va en <html> para que el fondo decorativo (AuroraBg,
+     fixed en z-index negativo) sea visible: el background del <body> es
+     un descendiente en-flujo y se pinta POR ENCIMA de los z negativos. */
   background-color: rgb(var(--c-canvas));
+}
+
+html, body {
   color: rgb(var(--c-content));
   overflow-x: hidden;
   overscroll-behavior: none;
@@ -64,7 +70,8 @@ html, body {
 }
 
 body {
-  transition: background-color 200ms ease, color 200ms ease;
+  background-color: transparent;
+  transition: color 200ms ease;
 }
 
 #root {
