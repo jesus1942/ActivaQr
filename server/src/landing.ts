@@ -387,7 +387,6 @@ export function renderLanding(appUrl: string, whatsapp?: string, apoyo?: { cafec
 
 <header class="hero">
   <div class="wrap">
-    <span class="tag">Pensado para el campo.</span>
     <h1>El mantenimiento se hace<br>donde <span class="o">está el equipo</span>.</h1>
     <p class="sub">Tu técnico escanea el QR del equipo, carga la medición y la foto desde el celular. <strong>Si no hay señal — y en el pad, en el socavón o en la cámara muchas veces no hay — la medición queda en el celular.</strong> Apenas vuelve la conexión, sube sola: con la hora real y la ubicación del momento que se midió.</p>
     <div class="acciones">
