@@ -730,7 +730,7 @@ export const Admin: React.FC = () => {
 
       {/* Solicitudes de upgrade */}
       {solicitudes.length > 0 && (
-        <div className="border border-brand-600 bg-brand-50 shadow-soft p-4">
+        <div className="border border-brand-600 bg-brand-50 dark:bg-brand-600/15 shadow-soft p-4">
           <h2 className="font-display font-black text-lg tracking-tight text-content flex items-center gap-2 mb-4">
             <TrendingUp size={20} className="text-brand-600" /> Solicitudes de upgrade
             <span className="inline-flex items-center justify-center w-5 h-5 bg-brand-600 text-white text-xs font-black border border-line">
@@ -819,7 +819,7 @@ export const Admin: React.FC = () => {
                   const diasLectura = fase === 'lectura' ? Math.ceil((lecturaFin - ahora) / 86400000) : 0;
                   return (
                     <div className={`mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 border text-xs font-black uppercase ${
-                      fase === 'activo' ? 'border-brand-600 bg-brand-50 text-brand-700'
+                      fase === 'activo' ? 'border-brand-600 bg-brand-50 dark:bg-brand-600/15 text-brand-700 dark:text-brand-300'
                       : fase === 'lectura' ? 'border-warn bg-warn/10 text-warn-strong dark:text-warn'
                       : 'border-danger bg-danger/10 text-danger-strong dark:text-danger'
                     }`}>
@@ -1302,7 +1302,7 @@ const SolicitudUpgradeRow: React.FC<{
             {PLAN_LABEL[solicitud.plan] ?? solicitud.plan}
           </span>
           <ArrowRight size={14} className="text-brand-600 flex-shrink-0" />
-          <span className="text-xs font-black uppercase px-2 py-0.5 border border-brand-600 bg-brand-50 text-brand-700">
+          <span className="text-xs font-black uppercase px-2 py-0.5 border border-brand-600 bg-brand-50 dark:bg-brand-600/15 text-brand-700 dark:text-brand-300">
             {PLAN_LABEL[solicitud.planSolicitado] ?? solicitud.planSolicitado}
           </span>
         </div>
