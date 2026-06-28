@@ -42,12 +42,12 @@ export const Card: React.FC<CardProps> = ({
   return (
     <Tag
       className={[
-        'bg-surface border border-line transition-all duration-200 ease-premium',
+        'bg-surface/70 backdrop-blur-xl border border-line transition-all duration-200 ease-premium',
         radiusMap[radius],
         padMap[padding],
         flat ? '' : 'shadow-soft',
         interactive
-          ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-lift hover:border-line-strong'
+          ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-glow hover:border-brand-500/40'
           : '',
         className,
       ].join(' ')}
