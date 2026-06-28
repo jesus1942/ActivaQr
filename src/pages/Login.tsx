@@ -92,7 +92,7 @@ export const Login: React.FC = () => {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-transparent p-4 overflow-hidden">
-      <AuroraBg scrollSelector="#none" />
+      <AuroraBg scrollSelector="#none" single />
       <div className="w-full max-w-md animate-page-in">
         <div className="bg-surface/85 backdrop-blur-xl border border-line rounded-xl shadow-lift p-8">
           <div className="text-center mb-6">

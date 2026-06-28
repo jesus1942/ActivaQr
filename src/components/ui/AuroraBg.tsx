@@ -8,9 +8,11 @@ import React, { useEffect, useRef } from 'react';
 interface Props {
   scrollSelector?: string;
   factor?: number;
+  /** Variante minimalista: una sola cinta ondulada con relieve neumórfico. */
+  single?: boolean;
 }
 
-export const AuroraBg: React.FC<Props> = ({ scrollSelector = '#app-scroll', factor = 0.14 }) => {
+export const AuroraBg: React.FC<Props> = ({ scrollSelector = '#app-scroll', factor = 0.14, single = false }) => {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,6 +35,48 @@ export const AuroraBg: React.FC<Props> = ({ scrollSelector = '#app-scroll', fact
       if (raf) cancelAnimationFrame(raf);
     };
   }, [scrollSelector, factor]);
+
+  if (single) {
+    return (
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-canvas" aria-hidden="true">
+        <div ref={ref} className="absolute inset-[-20%] will-change-transform">
+          {/* Un único halo vertical suave para dar profundidad */}
+          <div className="absolute -top-[20%] left-[46%] w-[26vw] h-[140vh] rounded-full bg-brand-500/15 blur-[130px] animate-aurora-1" />
+
+          {/* Una sola cinta ondulada con relieve neumórfico (doble sombra:
+              luz arriba-izquierda + sombra abajo-derecha) */}
+          <svg
+            className="absolute inset-0 w-full h-full"
+            viewBox="0 0 1440 1000"
+            preserveAspectRatio="xMidYMid slice"
+            fill="none"
+          >
+            <defs>
+              <linearGradient id="aq-vstream1" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#2DD4BF" stopOpacity="0" />
+                <stop offset="35%" stopColor="#5EEAD4" stopOpacity="0.85" />
+                <stop offset="70%" stopColor="#22D3EE" stopOpacity="0.7" />
+                <stop offset="100%" stopColor="#0FB5A6" stopOpacity="0" />
+              </linearGradient>
+              <filter id="aq-neu" x="-60%" y="-60%" width="220%" height="220%">
+                <feDropShadow dx="-2.5" dy="-2.5" stdDeviation="3" floodColor="#CFFAF2" floodOpacity="0.45" />
+                <feDropShadow dx="3" dy="3" stdDeviation="5" floodColor="#021713" floodOpacity="0.6" />
+              </filter>
+            </defs>
+            <path
+              filter="url(#aq-neu)"
+              stroke="url(#aq-vstream1)"
+              strokeWidth="3"
+              fill="none"
+              strokeLinecap="round"
+              d="M 720 -60 C 560 240, 880 540, 700 800 C 560 1010, 840 1150, 700 1320"
+              className="animate-aurora-2"
+            />
+          </svg>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-canvas" aria-hidden="true">
