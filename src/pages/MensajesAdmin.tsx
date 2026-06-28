@@ -4,6 +4,7 @@ import { MessageSquare, MonitorSmartphone, RefreshCw } from 'lucide-react';
 import { EmpresaAdmin, listarEmpresas } from '../data/adminApi';
 import { PermisoAcceso, getPermisoAdmin } from '../data/accesoRemotoApi';
 import { PanelAccesoRemoto } from '../components/PanelAccesoRemoto';
+import { Button, Card } from '../components/ui';
 
 export const MensajesAdmin: React.FC = () => {
   const [empresas, setEmpresas] = useState<EmpresaAdmin[]>([]);
@@ -46,27 +47,22 @@ export const MensajesAdmin: React.FC = () => {
     <div>
       <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-display text-3xl sm:text-4xl font-bold text-slate-900 uppercase tracking-tight flex items-center gap-3">
-            <MessageSquare size={32} /> Mensajes
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight flex items-center gap-3">
+            <MessageSquare size={28} /> Mensajes
           </h1>
-          <p className="text-slate-500 text-sm mt-1">Empresas con acceso remoto activo o pendiente</p>
+          <p className="text-muted text-sm mt-1">Empresas con acceso remoto activo o pendiente</p>
         </div>
-        <button
-          onClick={cargar}
-          disabled={cargando}
-          className="flex items-center gap-2 border border-slate-300 px-3 py-2 text-sm font-bold hover:border-slate-800 transition-colors disabled:opacity-40"
-        >
-          <RefreshCw size={14} className={cargando ? 'animate-spin' : ''} />
+        <Button variant="secondary" size="sm" onClick={cargar} disabled={cargando} iconLeft={<RefreshCw size={14} className={cargando ? 'animate-spin' : ''} />}>
           Actualizar
-        </button>
+        </Button>
       </div>
 
-      {cargando && <p className="text-slate-400 animate-pulse">Cargando...</p>}
+      {cargando && <p className="text-faint animate-pulse">Cargando...</p>}
 
       {!cargando && conPermiso.length === 0 && (
-        <div className="border border-slate-200 bg-slate-50 p-6 max-w-md">
-          <p className="font-bold text-slate-600 uppercase text-sm mb-2">Sin accesos remotos</p>
-          <p className="text-sm text-slate-500">
+        <div className="border border-line bg-subtle rounded-lg p-6 max-w-md">
+          <p className="font-semibold text-content text-sm mb-2">Sin accesos remotos</p>
+          <p className="text-sm text-muted">
             Cuando solicites acceso remoto a una empresa desde el panel de Empresas, aparecerá acá.
           </p>
         </div>
@@ -76,31 +72,29 @@ export const MensajesAdmin: React.FC = () => {
         {conPermiso.map((emp) => {
           const permiso = permisos[emp.id]!;
           return (
-            <div
+            <Card
               key={emp.id}
-              className="bg-white border border-slate-200 p-4 flex items-center justify-between gap-3 hover:border-slate-400 transition-colors"
+              padding="sm"
+              className="flex items-center justify-between gap-3 hover:border-line-strong"
             >
               <div>
-                <p className="font-bold text-slate-900">{emp.nombre}</p>
-                <p className="text-xs text-slate-500 font-mono mt-0.5">{emp.plan}</p>
+                <p className="font-semibold text-content">{emp.nombre}</p>
+                <p className="text-xs text-muted font-mono mt-0.5">{emp.plan}</p>
               </div>
               <div className="flex items-center gap-3">
                 <span className={`text-xs font-semibold ${ESTADO_STYLE[permiso.estado] ?? ''}`}>
                   {permiso.estado}
                 </span>
                 {permiso.estado === 'activo' && (
-                  <button
-                    onClick={() => setPanel({ empresa: emp, permiso })}
-                    className="flex items-center gap-1.5 text-xs font-bold border border-slate-900 px-3 py-2 bg-slate-900 text-white hover:bg-slate-700 transition-colors"
-                  >
-                    <MonitorSmartphone size={14} /> Abrir chat
-                  </button>
+                  <Button size="sm" onClick={() => setPanel({ empresa: emp, permiso })} iconLeft={<MonitorSmartphone size={14} />}>
+                    Abrir chat
+                  </Button>
                 )}
                 {permiso.estado === 'pendiente' && (
-                  <span className="text-xs text-amber-600 font-semibold">Esperando aprobación del cliente</span>
+                  <span className="text-xs text-warn-strong dark:text-warn font-semibold">Esperando aprobación del cliente</span>
                 )}
               </div>
-            </div>
+            </Card>
           );
         })}
       </div>

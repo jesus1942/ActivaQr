@@ -40,16 +40,16 @@ interface FichaActivo {
 const ESTADO_COLORS: Record<string, string> = {
   normal:        'text-ok-strong dark:text-ok',
   alerta:        'text-warn-strong dark:text-warn',
-  critico:       'bg-red-50 border-red-500 text-red-700',
-  mantenimiento: 'bg-blue-50 border-blue-400 text-blue-700',
+  critico:       'text-danger-strong dark:text-danger',
+  mantenimiento: 'text-brand-700 dark:text-brand-300',
 };
 
 function Fila({ label, value }: { label: string; value?: string | number | null }) {
   if (value === undefined || value === null || value === '') return null;
   return (
-    <div className="flex justify-between gap-4 py-2 border-b border-slate-100 last:border-none">
-      <span className="text-xs font-bold uppercase tracking-wider text-slate-500 shrink-0">{label}</span>
-      <span className="text-sm font-semibold text-slate-800 text-right">{value}</span>
+    <div className="flex justify-between gap-4 py-2 border-b border-line last:border-none">
+      <span className="text-xs font-semibold uppercase tracking-wider text-muted shrink-0">{label}</span>
+      <span className="text-sm font-semibold text-content text-right">{value}</span>
     </div>
   );
 }
@@ -95,18 +95,18 @@ export const FichaPublica: React.FC = () => {
 
   if (cargando) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <p className="font-bold uppercase tracking-widest text-slate-500 animate-pulse">Cargando ficha...</p>
+      <div className="min-h-screen bg-canvas flex items-center justify-center">
+        <p className="font-semibold uppercase tracking-widest text-muted animate-pulse">Cargando ficha...</p>
       </div>
     );
   }
 
   if (error || !activo) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
-        <div className="bg-white border border-slate-900 shadow-soft max-w-sm w-full p-6 text-center">
-          <p className="font-bold text-lg text-slate-800 mb-2">ERROR</p>
-          <p className="font-semibold text-slate-700">{error || 'Activo no encontrado.'}</p>
+      <div className="min-h-screen bg-canvas flex items-center justify-center p-4">
+        <div className="bg-surface border border-line rounded-lg shadow-soft max-w-sm w-full p-6 text-center">
+          <p className="font-display font-bold text-lg text-content mb-2">Error</p>
+          <p className="font-semibold text-muted">{error || 'Activo no encontrado.'}</p>
         </div>
       </div>
     );
@@ -116,14 +116,14 @@ export const FichaPublica: React.FC = () => {
   const estadoColor = ESTADO_COLORS[activo.estado] ?? 'text-muted';
 
   return (
-    <div className="min-h-screen bg-slate-100 py-6 px-4">
+    <div className="min-h-screen bg-canvas py-6 px-4">
       <div className="max-w-md mx-auto space-y-4">
 
         {/* Nav bar */}
         <div className="flex items-center justify-between gap-2">
           <button
             onClick={() => window.history.length > 1 ? window.history.back() : undefined}
-            className="flex items-center gap-1.5 bg-white border border-slate-900 shadow-soft px-3 py-2 text-xs font-bold uppercase tracking-wider hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-soft active:shadow-none transition-all"
+            className="press flex items-center gap-1.5 bg-surface border border-line-strong rounded-md shadow-soft px-3 py-2 text-xs font-semibold text-content hover:border-content transition-all"
           >
             <ArrowLeft size={14} />
             Volver
@@ -131,7 +131,7 @@ export const FichaPublica: React.FC = () => {
           {usuarioLogueado && (
             <a
               href="#/activos"
-              className="flex items-center gap-1.5 bg-slate-900 text-white border border-slate-900 shadow-soft px-3 py-2 text-xs font-bold uppercase tracking-wider hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-soft active:shadow-none transition-all"
+              className="press flex items-center gap-1.5 bg-brand-600 text-white rounded-md shadow-soft px-3 py-2 text-xs font-semibold hover:bg-brand-700 transition-all"
             >
               <LayoutDashboard size={14} />
               Panel
@@ -140,26 +140,26 @@ export const FichaPublica: React.FC = () => {
         </div>
 
         {/* Header empresa */}
-        <div className="bg-slate-900 text-white px-5 py-4 border border-slate-900 shadow-soft flex items-center gap-3">
+        <div className="bg-surface border-l-4 border-l-brand-600 border-y border-r border-line rounded-lg shadow-soft px-5 py-4 flex items-center gap-3">
           {activo.empresa.logoUrl && (
             <img src={activo.empresa.logoUrl} alt="" className="w-10 h-10 object-contain" />
           )}
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-orange-400">ActivaQR</p>
-            <p className="font-bold text-lg leading-tight">{activo.empresa.nombre}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-brand-600">ActivaQR</p>
+            <p className="font-display font-bold text-lg leading-tight text-content">{activo.empresa.nombre}</p>
           </div>
         </div>
 
         {/* Identidad del activo */}
-        <div className="bg-white border border-slate-900 shadow-soft p-5">
+        <div className="bg-surface border border-line rounded-lg shadow-soft p-5">
           <div className="flex items-start justify-between gap-2 mb-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-brand-600 mb-1">
+              <p className="text-xs font-semibold uppercase tracking-wider text-brand-600 mb-1">
                 {activo.codigo}
               </p>
-              <h1 className="font-bold text-2xl text-slate-900 leading-tight">{activo.nombre}</h1>
+              <h1 className="font-display font-bold text-2xl text-content leading-tight">{activo.nombre}</h1>
               {activo.tipo && (
-                <p className="text-sm text-slate-500 mt-1">{activo.tipo.nombre}</p>
+                <p className="text-sm text-muted mt-1">{activo.tipo.nombre}</p>
               )}
             </div>
             <span className={`text-xs font-semibold whitespace-nowrap ${estadoColor}`}>
@@ -169,7 +169,7 @@ export const FichaPublica: React.FC = () => {
 
           {/* Estado operativo — visible para el visitante que escanea el QR */}
           <div className="mb-4 -mt-1">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Estado operativo</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted mb-1.5">Estado operativo</p>
             <EstadoOperativoBadge estado={activo.estadoOperativo ?? 'operativo'} size="lg" />
           </div>
 
@@ -195,8 +195,8 @@ export const FichaPublica: React.FC = () => {
 
         {/* Parámetros operativos */}
         {(activo.temperaturaMin || activo.temperaturaMax || activo.amperajeNormal || activo.presionNormal) ? (
-          <div className="bg-white border border-slate-900 shadow-soft p-5">
-            <p className="text-xs font-bold uppercase tracking-wider text-brand-600 mb-3">Parámetros operativos</p>
+          <div className="bg-surface border border-line rounded-lg shadow-soft p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-brand-600 mb-3">Parámetros operativos</p>
             <Fila label="Temperatura normal" value={`${activo.temperaturaMin}°C – ${activo.temperaturaMax}°C`} />
             <Fila label="Alerta temperatura" value={activo.temperaturaAlerta ? `${activo.temperaturaAlerta}°C` : undefined} />
             <Fila label="Crítica temperatura" value={activo.temperaturaCritica ? `${activo.temperaturaCritica}°C` : undefined} />
@@ -207,8 +207,8 @@ export const FichaPublica: React.FC = () => {
 
         {/* Última medición */}
         {ultimaMedicion && (
-          <div className="bg-white border border-slate-900 shadow-soft p-5">
-            <p className="text-xs font-bold uppercase tracking-wider text-brand-600 mb-3">
+          <div className="bg-surface border border-line rounded-lg shadow-soft p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-brand-600 mb-3">
               Última medición — {ultimaMedicion.fecha.slice(0, 10)}
             </p>
             <Fila label="Temperatura" value={ultimaMedicion.temperatura ? `${ultimaMedicion.temperatura}°C` : undefined} />
@@ -221,22 +221,22 @@ export const FichaPublica: React.FC = () => {
 
         {/* Notas */}
         {activo.notas && (
-          <div className="bg-white border border-slate-900 shadow-soft p-5">
-            <p className="text-xs font-bold uppercase tracking-wider text-brand-600 mb-2">Notas</p>
-            <p className="text-sm text-slate-700 leading-relaxed">{activo.notas}</p>
+          <div className="bg-surface border border-line rounded-lg shadow-soft p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-brand-600 mb-2">Notas</p>
+            <p className="text-sm text-muted leading-relaxed">{activo.notas}</p>
           </div>
         )}
 
         {puedeRegistrar && (
           <a
             href={`#/medicion/${activo.id}`}
-            className="block w-full min-h-[56px] bg-brand-600 text-white font-bold text-center border border-slate-900 shadow-soft text-base uppercase tracking-wide flex items-center justify-center hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
+            className="press block w-full min-h-[56px] bg-brand-600 text-white font-semibold text-center rounded-md shadow-soft text-base uppercase tracking-wide flex items-center justify-center hover:bg-brand-700 transition-all"
           >
             Registrar medicion
           </a>
         )}
 
-        <p className="text-center text-xs text-slate-400 pb-4">
+        <p className="text-center text-xs text-faint pb-4">
           Ficha generada por ActivaQR · Solo lectura
         </p>
       </div>

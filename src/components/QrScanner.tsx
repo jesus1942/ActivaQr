@@ -85,7 +85,7 @@ export const QrScanner: React.FC<{
     <div className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4">
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 bg-white text-slate-900 p-2 border border-slate-900"
+        className="press absolute top-4 right-4 grid place-items-center w-10 h-10 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
       >
         <X size={22} />
       </button>
@@ -95,11 +95,11 @@ export const QrScanner: React.FC<{
       </div>
 
       {error ? (
-        <div className="bg-white border border-slate-900 p-6 max-w-sm text-center shadow-soft">
-          <p className="text-slate-800 font-body">{error}</p>
+        <div className="bg-surface border border-line rounded-lg p-6 max-w-sm text-center shadow-soft">
+          <p className="text-content font-body">{error}</p>
           <button
             onClick={onClose}
-            className="mt-4 bg-brand-600 text-white px-4 py-2 font-display font-semibold border border-slate-900"
+            className="press mt-4 bg-brand-600 text-white px-4 py-2 rounded-md font-display font-semibold hover:bg-brand-700 transition-colors"
           >
             Entendido
           </button>
@@ -108,11 +108,11 @@ export const QrScanner: React.FC<{
         <>
           <video
             ref={videoRef}
-            className="w-full max-w-sm aspect-square object-cover border border-brand-600"
+            className="w-full max-w-sm aspect-square object-cover rounded-lg border border-brand-600"
             playsInline
             muted
           />
-          <p className="text-slate-300 text-sm mt-3 font-body">
+          <p className="text-white/70 text-sm mt-3 font-body">
             Apuntá la cámara al código QR del equipo
           </p>
         </>

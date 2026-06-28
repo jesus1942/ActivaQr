@@ -8,6 +8,7 @@ import {
   getMensajesCliente, enviarMensajeCliente,
 } from '../data/accesoRemotoApi';
 import { ChatRemoto } from '../components/ChatRemoto';
+import { Button } from '../components/ui';
 
 export const Mensajes: React.FC = () => {
   const { usuario } = useAuth();
@@ -43,71 +44,68 @@ export const Mensajes: React.FC = () => {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-display text-3xl sm:text-4xl font-bold text-slate-900 uppercase tracking-tight flex items-center gap-3">
-          <MessageSquare size={32} /> Mensajes
+        <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight flex items-center gap-3">
+          <MessageSquare size={28} /> Mensajes
         </h1>
-        <p className="text-slate-500 text-sm mt-1">Comunicación con el equipo de soporte ActivaQR</p>
+        <p className="text-muted text-sm mt-1">Comunicación con el equipo de soporte ActivaQR</p>
       </div>
 
       {cargando && (
-        <p className="text-slate-400 animate-pulse">Cargando...</p>
+        <p className="text-faint animate-pulse">Cargando...</p>
       )}
 
       {!cargando && !planesConAcceso.includes(plan) && (
-        <div className="border border-slate-200 bg-slate-50 p-6 max-w-md">
-          <p className="font-bold text-slate-600 uppercase text-sm mb-2">Función no disponible</p>
-          <p className="text-sm text-slate-500">El chat de soporte remoto está disponible para los planes <strong>Empresa</strong> e <strong>Industrial</strong>.</p>
+        <div className="border border-line bg-subtle rounded-lg p-6 max-w-md">
+          <p className="font-semibold text-content text-sm mb-2">Función no disponible</p>
+          <p className="text-sm text-muted">El chat de soporte remoto está disponible para los planes <strong>Empresa</strong> e <strong>Industrial</strong>.</p>
         </div>
       )}
 
       {!cargando && planesConAcceso.includes(plan) && !permiso && (
-        <div className="border border-slate-200 bg-slate-50 p-6 max-w-md">
-          <p className="font-bold text-slate-600 uppercase text-sm mb-2">Sin solicitudes activas</p>
-          <p className="text-sm text-slate-500">Cuando el equipo de ActivaQR solicite acceso remoto, vas a poder comunicarte desde acá.</p>
+        <div className="border border-line bg-subtle rounded-lg p-6 max-w-md">
+          <p className="font-semibold text-content text-sm mb-2">Sin solicitudes activas</p>
+          <p className="text-sm text-muted">Cuando el equipo de ActivaQR solicite acceso remoto, vas a poder comunicarte desde acá.</p>
         </div>
       )}
 
       {!cargando && permiso?.estado === 'revocado' && (
-        <div className="border border-slate-200 bg-slate-50 p-6 max-w-md">
-          <p className="font-bold text-slate-600 uppercase text-sm mb-2">Acceso revocado</p>
-          <p className="text-sm text-slate-500">El acceso remoto fue revocado. Contactá al soporte si necesitás reactivarlo.</p>
+        <div className="border border-line bg-subtle rounded-lg p-6 max-w-md">
+          <p className="font-semibold text-content text-sm mb-2">Acceso revocado</p>
+          <p className="text-sm text-muted">El acceso remoto fue revocado. Contactá al soporte si necesitás reactivarlo.</p>
         </div>
       )}
 
       {!cargando && permiso?.estado === 'pendiente' && (
-        <div className="border border-amber-400 bg-amber-50 p-5 max-w-lg space-y-3">
-          <p className="text-sm font-bold text-amber-700 uppercase tracking-wide">Solicitud de acceso pendiente</p>
-          <p className="text-sm text-amber-700 leading-relaxed">
+        <div className="border-l-2 border-warn bg-warn/10 rounded-md p-5 max-w-lg space-y-3">
+          <p className="text-sm font-semibold text-warn-strong dark:text-warn uppercase tracking-wide">Solicitud de acceso pendiente</p>
+          <p className="text-sm text-warn-strong dark:text-warn leading-relaxed">
             El equipo de ActivaQR solicitó acceso remoto para brindarte soporte.
             {permiso.costoMensual ? ` Costo adicional: $${permiso.costoMensual.toLocaleString('es-AR')}/mes.` : ''}
           </p>
-          <p className="text-xs text-amber-600">Revisá tu email para encontrar el link de aprobación.</p>
+          <p className="text-xs text-warn-strong/80 dark:text-warn/80">Revisá tu email para encontrar el link de aprobación.</p>
         </div>
       )}
 
       {!cargando && permiso?.estado === 'activo' && (
         <div className="space-y-4 max-w-lg">
-          <div className="border border-emerald-400 bg-emerald-50 px-4 py-3 flex items-center justify-between gap-3">
+          <div className="border-l-2 border-ok bg-ok/10 rounded-md px-4 py-3 flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-bold text-emerald-700 uppercase tracking-wide flex items-center gap-1">
+              <p className="text-sm font-semibold text-ok-strong dark:text-ok uppercase tracking-wide flex items-center gap-1">
                 <ShieldCheck size={14} /> Acceso de soporte activo
               </p>
-              <p className="text-xs text-emerald-600 mt-0.5">
+              <p className="text-xs text-ok-strong/80 dark:text-ok/80 mt-0.5">
                 El soporte de ActivaQR puede ver tus activos y mediciones.
                 {permiso.costoMensual ? ` $${permiso.costoMensual.toLocaleString('es-AR')}/mes.` : ''}
               </p>
             </div>
             {!revocar ? (
-              <button
-                onClick={() => setRevocar(true)}
-                className="flex items-center gap-1 text-xs font-bold text-red-600 border border-red-300 px-3 py-2 hover:border-red-600 transition-colors whitespace-nowrap"
-              >
-                <ShieldOff size={13} /> Revocar
-              </button>
+              <Button variant="ghost" size="sm" iconLeft={<ShieldOff size={13} />} className="text-danger hover:text-danger whitespace-nowrap" onClick={() => setRevocar(true)}>
+                Revocar
+              </Button>
             ) : (
               <div className="flex gap-2">
-                <button onClick={handleRevocar} className="text-xs font-bold bg-red-600 text-white border border-red-800 px-3 py-2">Confirmar</button>
-                <button onClick={() => setRevocar(false)} className="text-xs font-bold border border-slate-300 px-3 py-2">No</button>
+                <Button variant="danger" size="sm" onClick={handleRevocar}>Confirmar</Button>
+                <Button variant="secondary" size="sm" onClick={() => setRevocar(false)}>No</Button>
               </div>
             )}
           </div>

@@ -25,7 +25,7 @@ export const ActivoDetalle: React.FC = () => {
   } = useActivos();
 
   const activo = activos.find((a) => a.id === id);
-  if (!activo) return <div className="p-8 text-red-600 font-bold">Activo no encontrado</div>;
+  if (!activo) return <div className="p-8 text-danger font-bold">Activo no encontrado</div>;
 
   const activoMediciones = mediciones
     .filter((m) => m.activoId === id)

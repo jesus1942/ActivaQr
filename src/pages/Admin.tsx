@@ -77,11 +77,11 @@ const ModalWhatsapp: React.FC<{
   const completo = soloDigitos ? `${pais.codigo}${soloDigitos}` : '';
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black/60 flex items-end sm:items-center justify-center p-4 pb-safe">
-      <div className="bg-surface border border-line rounded-lg shadow-lift w-full max-w-sm max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between border-b border-line px-5 py-3 bg-content text-white">
-          <h2 className="font-display font-bold text-base uppercase tracking-wide">{titulo}</h2>
-          <button onClick={onOmitir}><X size={18} /></button>
+    <div className="fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 pb-safe animate-fade-in">
+      <div className="bg-surface border border-line rounded-lg shadow-lift w-full max-w-sm max-h-[90vh] overflow-y-auto animate-scale-in">
+        <div className="flex items-center justify-between border-b border-line px-5 py-3">
+          <h2 className="font-display font-bold text-base text-content">{titulo}</h2>
+          <button onClick={onOmitir} className="press grid place-items-center w-8 h-8 rounded-full text-faint hover:text-content hover:bg-subtle transition-colors"><X size={18} /></button>
         </div>
         <div className="p-5 space-y-4">
           <p className="text-sm text-muted">
@@ -89,11 +89,11 @@ const ModalWhatsapp: React.FC<{
           </p>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Pais</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1">Pais</label>
             <select
               value={pais.codigo}
               onChange={(e) => setPais(CODIGOS_PAIS.find((c) => c.codigo === e.target.value) ?? CODIGOS_PAIS[0])}
-              className="w-full border border-line px-3 h-11 text-sm font-semibold outline-none focus:border-brand-600 bg-white"
+              className="w-full border border-line rounded-md px-3 h-11 text-sm font-semibold outline-none focus:border-brand-600 bg-surface text-content"
             >
               {CODIGOS_PAIS.map((c) => (
                 <option key={c.codigo} value={c.codigo}>
@@ -104,11 +104,11 @@ const ModalWhatsapp: React.FC<{
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-1">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1">
               Numero (sin 0, sin codigo de pais)
             </label>
             <div className="flex gap-2 items-center">
-              <span className="border border-line px-3 h-11 flex items-center font-mono font-bold text-muted text-sm bg-subtle whitespace-nowrap">
+              <span className="border border-line rounded-md px-3 h-11 flex items-center font-mono font-bold text-muted text-sm bg-subtle whitespace-nowrap">
                 +{pais.codigo}
               </span>
               <input
@@ -117,7 +117,7 @@ const ModalWhatsapp: React.FC<{
                 value={numero}
                 onChange={(e) => setNumero(e.target.value)}
                 placeholder="1112345678"
-                className="flex-1 border border-line px-3 h-11 text-base font-mono outline-none focus:border-brand-600 text-center min-w-0"
+                className="flex-1 border border-line rounded-md bg-surface text-content px-3 h-11 text-base font-mono outline-none focus:border-brand-600 text-center min-w-0"
               />
             </div>
             {preview && (
@@ -130,14 +130,14 @@ const ModalWhatsapp: React.FC<{
           <div className="flex gap-2 pt-1">
             <button
               onClick={onOmitir}
-              className="flex-1 py-2.5 border border-line text-sm font-bold text-muted hover:border-slate-500 transition-colors"
+              className="press flex-1 py-2.5 border border-line-strong rounded-md text-sm font-semibold text-muted hover:border-content hover:text-content transition-colors"
             >
               Omitir
             </button>
             <button
               onClick={() => completo && onConfirm(completo)}
               disabled={!soloDigitos}
-              className="flex-1 py-2.5 bg-content text-white border border-line text-sm font-bold uppercase tracking-wide hover:bg-slate-700 transition-colors disabled:opacity-40"
+              className="press flex-1 py-2.5 bg-brand-600 text-white rounded-md text-sm font-semibold hover:bg-brand-700 transition-colors disabled:opacity-40"
             >
               Abrir WhatsApp
             </button>
@@ -324,12 +324,10 @@ export const Admin: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="font-display text-3xl sm:text-4xl font-bold text-content uppercase tracking-tight flex items-center gap-2">
-            <Building2 size={32} /> Administración
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight flex items-center gap-2">
+            <Building2 size={28} /> Administración
             {solicitudes.length > 0 && (
-              <span className="inline-flex items-center justify-center w-6 h-6 bg-brand-600 text-white text-xs font-bold border border-line">
-                {solicitudes.length}
-              </span>
+              <span className="text-base font-semibold text-brand-600">· {solicitudes.length}</span>
             )}
           </h1>
           <p className="text-muted text-sm mt-1">{empresas.length} empresas registradas</p>
@@ -342,7 +340,7 @@ export const Admin: React.FC = () => {
                 if (res.ok) { cargar(); } else { alert('Error al recrear demo'); }
               } catch { alert('Error al recrear demo'); }
             }}
-            className="flex items-center gap-2 bg-white text-muted px-4 py-2 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-sm"
+            className="press flex items-center gap-2 bg-surface text-muted px-4 py-2 font-display font-bold rounded-md border border-line-strong shadow-soft hover:border-content hover:text-content transition-all text-sm"
             title="Recrear empresa y usuario demo si fueron eliminados"
           >
             Recrear demo
@@ -361,14 +359,14 @@ export const Admin: React.FC = () => {
               'Ultimo Pago': e.mpUltimoPago ?? '',
               'Creada': e.creadaEn,
             })))}
-            className="flex items-center gap-2 bg-white text-muted px-4 py-2 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-sm"
+            className="press flex items-center gap-2 bg-surface text-muted px-4 py-2 font-display font-bold rounded-md border border-line-strong shadow-soft hover:border-content hover:text-content transition-all text-sm"
             title="Exportar lista de empresas a CSV"
           >
             <Download size={16} /> CSV
           </button>
           <button
             onClick={() => setModalAbierto(true)}
-            className="flex items-center gap-2 bg-brand-600 text-white px-4 py-2 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all"
+            className="press flex items-center gap-2 bg-brand-600 text-white px-4 py-2 font-display font-bold rounded-md shadow-soft hover:bg-brand-700 transition-all"
           >
             <Plus size={18} /> Nueva empresa
           </button>
@@ -389,19 +387,17 @@ export const Admin: React.FC = () => {
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 font-semibold">
+        <div className="bg-danger/10 border-l-2 border-danger rounded-md text-danger-strong dark:text-danger px-4 py-3 font-semibold">
           {error}
         </div>
       )}
 
       {/* Solicitudes de upgrade */}
       {solicitudes.length > 0 && (
-        <div className="border border-brand-400 bg-orange-50 shadow-soft p-4">
-          <h2 className="font-display font-bold text-lg uppercase tracking-tight text-content flex items-center gap-2 mb-4">
+        <div className="border border-brand-200 dark:border-brand-600/40 bg-brand-50 dark:bg-brand-600/10 rounded-lg shadow-soft p-4">
+          <h2 className="font-display font-bold text-lg tracking-tight text-content flex items-center gap-2 mb-4">
             <TrendingUp size={20} className="text-brand-600" /> Solicitudes de upgrade
-            <span className="inline-flex items-center justify-center w-5 h-5 bg-brand-600 text-white text-xs font-bold border border-line">
-              {solicitudes.length}
-            </span>
+            <span className="text-sm font-semibold text-brand-600">· {solicitudes.length}</span>
           </h2>
           <div className="space-y-3">
             {solicitudes.map((sol) => (
@@ -440,7 +436,7 @@ export const Admin: React.FC = () => {
             return (
             <div
               key={emp.id}
-              className="bg-white border border-line shadow-soft"
+              className="bg-surface border border-line rounded-lg shadow-soft overflow-hidden"
             >
               {/* Cabecera clicable */}
               <button
@@ -487,7 +483,7 @@ export const Admin: React.FC = () => {
                 {emp.mpEstadoSub && (
                   <p className="text-xs mt-1 font-mono text-muted">
                     <span className="uppercase font-bold text-faint">Sub:</span>{' '}
-                    <span className={emp.mpEstadoSub === 'authorized' ? 'text-emerald-600' : 'text-amber-600'}>
+                    <span className={emp.mpEstadoSub === 'authorized' ? 'text-ok-strong dark:text-ok' : 'text-warn-strong dark:text-warn'}>
                       {emp.mpEstadoSub}
                     </span>
                     {emp.mpMonto ? ` · $${emp.mpMonto}/mes` : ''}
@@ -497,7 +493,7 @@ export const Admin: React.FC = () => {
 
               {/* Panel de operaciones desplegable */}
               {abierta && (
-                <div className="border-t-2 border-slate-900 p-3 bg-subtle space-y-2">
+                <div className="border-t border-line p-3 bg-subtle space-y-2">
                   {/* Cambio de plan manual */}
                   <div className="flex gap-2">
                     {(['inicial', 'empresa', 'industrial'] as const).map((p) => (
@@ -508,10 +504,10 @@ export const Admin: React.FC = () => {
                           await actualizarEmpresa(emp.id, { plan: p });
                           cargar();
                         }}
-                        className={`flex-1 py-1.5 text-xs font-bold uppercase border transition-colors ${
+                        className={`press flex-1 py-1.5 text-xs font-semibold uppercase border rounded-md transition-colors ${
                           emp.plan === p
-                            ? 'bg-content text-white border-slate-900'
-                            : 'bg-white border-line hover:border-brand-600 hover:text-brand-600'
+                            ? 'bg-brand-600 text-white border-brand-600'
+                            : 'bg-surface border-line text-muted hover:border-brand-600 hover:text-brand-600'
                         }`}
                       >
                         {p}
@@ -522,7 +518,7 @@ export const Admin: React.FC = () => {
                   <button
                     onClick={() => toggleEstado(emp)}
                     disabled={toggling.has(emp.id)}
-                    className="w-full flex items-center gap-2 border border-line bg-white px-3 py-2 text-sm font-bold hover:border-slate-900 transition-colors disabled:opacity-50"
+                    className="press w-full flex items-center gap-2 border border-line rounded-md bg-surface text-content px-3 py-2 text-sm font-semibold hover:border-content transition-colors disabled:opacity-50"
                   >
                     <Power size={15} className={toggling.has(emp.id) ? 'animate-spin' : ''} />
                     {toggling.has(emp.id) ? 'Procesando...' : emp.estado === 'activa' ? 'Suspender empresa' : 'Activar empresa'}
@@ -530,7 +526,7 @@ export const Admin: React.FC = () => {
 
                   <button
                     onClick={() => suscribir(emp)}
-                    className="w-full flex items-center gap-2 border border-line bg-white px-3 py-2 text-sm font-bold hover:border-emerald-600 hover:text-emerald-700 transition-colors"
+                    className="press w-full flex items-center gap-2 border border-line rounded-md bg-surface text-content px-3 py-2 text-sm font-semibold hover:border-ok hover:text-ok-strong dark:hover:text-ok transition-colors"
                   >
                     <CreditCard size={15} /> Generar suscripcion MP
                   </button>
@@ -538,7 +534,7 @@ export const Admin: React.FC = () => {
                   {emp.mpPreapprovalId && emp.mpEstadoSub !== 'cancelled' && (
                     <button
                       onClick={() => cancelar(emp)}
-                      className="w-full flex items-center gap-2 border border-red-200 bg-white px-3 py-2 text-sm font-bold text-red-600 hover:border-red-600 transition-colors"
+                      className="press w-full flex items-center gap-2 border border-danger/40 rounded-md bg-surface px-3 py-2 text-sm font-semibold text-danger hover:border-danger transition-colors"
                     >
                       <XCircle size={15} /> Cancelar suscripcion
                     </button>
@@ -546,7 +542,7 @@ export const Admin: React.FC = () => {
 
                   <button
                     onClick={() => resetear(emp)}
-                    className="w-full flex items-center gap-2 border border-line bg-white px-3 py-2 text-sm font-bold hover:border-slate-900 transition-colors"
+                    className="press w-full flex items-center gap-2 border border-line rounded-md bg-surface text-content px-3 py-2 text-sm font-semibold hover:border-content transition-colors"
                   >
                     <KeyRound size={15} /> Resetear contrasena
                   </button>
@@ -554,12 +550,12 @@ export const Admin: React.FC = () => {
                   {(['empresa', 'industrial'].includes(emp.plan) || permisos[emp.id] != null) && (
                     <button
                       onClick={() => abrirAccesoRemoto(emp)}
-                      className={`w-full flex items-center gap-2 border bg-white px-3 py-2 text-sm font-bold transition-colors ${
+                      className={`press w-full flex items-center gap-2 border rounded-md bg-surface px-3 py-2 text-sm font-semibold transition-colors ${
                         permisos[emp.id]?.estado === 'activo'
-                          ? 'border-emerald-400 text-emerald-700 hover:border-emerald-600'
+                          ? 'border-ok text-ok-strong dark:text-ok hover:brightness-95'
                           : permisos[emp.id]?.estado === 'pendiente'
-                            ? 'border-amber-400 text-amber-700 hover:border-amber-600'
-                            : 'border-line hover:border-brand-600 hover:text-brand-600'
+                            ? 'border-warn text-warn-strong dark:text-warn hover:brightness-95'
+                            : 'border-line text-content hover:border-brand-600 hover:text-brand-600'
                       }`}
                     >
                       <MonitorSmartphone size={15} />
@@ -569,7 +565,7 @@ export const Admin: React.FC = () => {
 
                   <button
                     onClick={() => borrar(emp)}
-                    className="w-full flex items-center gap-2 border border-red-300 bg-white px-3 py-2 text-sm font-bold text-red-600 hover:border-red-600 transition-colors"
+                    className="press w-full flex items-center gap-2 border border-danger/40 rounded-md bg-surface px-3 py-2 text-sm font-semibold text-danger hover:border-danger transition-colors"
                   >
                     <Trash2 size={15} /> Eliminar empresa
                   </button>
@@ -670,12 +666,12 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-surface border border-line rounded-lg shadow-lift w-full max-w-md my-8">
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+      <div className="bg-surface border border-line rounded-lg shadow-lift w-full max-w-md my-8 animate-scale-in">
         <div className="flex items-center justify-between border-b border-line px-5 py-3">
-          <h2 className="font-display font-bold text-xl uppercase">Nueva empresa</h2>
-          <button onClick={onClose}>
-            <X size={22} />
+          <h2 className="font-display font-bold text-xl text-content">Nueva empresa</h2>
+          <button onClick={onClose} className="press grid place-items-center w-9 h-9 rounded-full text-faint hover:text-content hover:bg-subtle transition-colors">
+            <X size={20} />
           </button>
         </div>
 
@@ -701,8 +697,8 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
             </select>
           </Campo>
 
-          <div className="pt-2 border-t-2 border-line">
-            <p className="text-xs font-bold uppercase tracking-wider text-brand-600 mb-2">
+          <div className="pt-2 border-t border-line">
+            <p className="text-xs font-semibold uppercase tracking-wider text-brand-600 mb-2">
               Usuario administrador de la empresa
             </p>
             <Campo label="Nombre">
@@ -732,7 +728,7 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-300 text-red-700 text-sm px-3 py-2 font-semibold">
+            <div className="bg-danger/10 border-l-2 border-danger rounded-md text-danger-strong dark:text-danger text-sm px-3 py-2 font-semibold">
               {error}
             </div>
           )}
@@ -740,7 +736,7 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
           <button
             type="submit"
             disabled={guardando}
-            className="w-full bg-brand-600 text-white h-11 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all disabled:opacity-50"
+            className="press w-full bg-brand-600 text-white h-11 font-display font-bold rounded-md shadow-soft hover:bg-brand-700 transition-all disabled:opacity-50"
           >
             {guardando ? 'Creando…' : 'Crear empresa'}
           </button>
@@ -750,11 +746,14 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
       <style>{`
         .campo {
           width: 100%;
-          border: 2px solid #cbd5e1;
+          border: 1px solid rgb(var(--c-line));
+          border-radius: 0.5rem;
+          background-color: rgb(var(--c-surface));
+          color: rgb(var(--c-content));
           padding: 0.5rem 0.75rem;
           outline: none;
         }
-        .campo:focus { border-color: #f97316; }
+        .campo:focus { border-color: #2563EB; }
       `}</style>
     </div>
   );
@@ -767,13 +766,13 @@ const ModalResultadoSuscripcion: React.FC<{
   waEnviado: boolean;
   onClose: () => void;
 }> = ({ empresaNombre, link, emailEnviado, waEnviado, onClose }) => (
-  <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-    <div className="bg-surface border border-line rounded-lg shadow-lift w-full max-w-md">
-      <div className="flex items-center justify-between border-b border-line px-5 py-3 bg-content text-white">
-        <h2 className="font-display font-bold text-lg uppercase tracking-wide flex items-center gap-2">
-          <CreditCard size={18} /> Link generado
+  <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+    <div className="bg-surface border border-line rounded-lg shadow-lift w-full max-w-md animate-scale-in">
+      <div className="flex items-center justify-between border-b border-line px-5 py-3">
+        <h2 className="font-display font-bold text-lg text-content flex items-center gap-2">
+          <CreditCard size={18} className="text-brand-600" /> Link generado
         </h2>
-        <button onClick={onClose}><X size={20} /></button>
+        <button onClick={onClose} className="press grid place-items-center w-9 h-9 rounded-full text-faint hover:text-content hover:bg-subtle transition-colors"><X size={20} /></button>
       </div>
 
       <div className="p-5 space-y-4">
@@ -782,9 +781,9 @@ const ModalResultadoSuscripcion: React.FC<{
         </p>
 
         {/* Estado de envíos */}
-        <div className="border border-line divide-y-2 divide-slate-200">
+        <div className="border border-line rounded-md divide-y divide-line">
           <div className="flex items-center gap-3 px-4 py-3">
-            <span className={`w-5 h-5 flex items-center justify-center text-xs font-bold border ${waEnviado ? 'text-ok-strong dark:text-ok' : 'bg-subtle border-line text-faint'}`}>
+            <span className={`w-5 h-5 flex items-center justify-center text-xs font-bold ${waEnviado ? 'text-ok-strong dark:text-ok' : 'text-faint'}`}>
               {waEnviado ? '✓' : '–'}
             </span>
             <span className="text-sm font-semibold text-muted">
@@ -792,7 +791,7 @@ const ModalResultadoSuscripcion: React.FC<{
             </span>
           </div>
           <div className="flex items-center gap-3 px-4 py-3">
-            <span className={`w-5 h-5 flex items-center justify-center text-xs font-bold border ${emailEnviado ? 'text-ok-strong dark:text-ok' : 'text-warn-strong dark:text-warn'}`}>
+            <span className={`w-5 h-5 flex items-center justify-center text-xs font-bold ${emailEnviado ? 'text-ok-strong dark:text-ok' : 'text-warn-strong dark:text-warn'}`}>
               {emailEnviado ? '✓' : '!'}
             </span>
             <span className="text-sm font-semibold text-muted">
@@ -805,17 +804,17 @@ const ModalResultadoSuscripcion: React.FC<{
 
         {/* Link copiable */}
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-muted mb-1">Link de pago</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted mb-1">Link de pago</p>
           <div className="flex gap-2">
             <input
               readOnly
               value={link}
-              className="flex-1 border border-line px-3 py-2 text-xs font-mono truncate outline-none"
+              className="flex-1 border border-line rounded-md bg-surface text-content px-3 py-2 text-xs font-mono truncate outline-none"
               onFocus={(e) => e.target.select()}
             />
             <button
               onClick={() => navigator.clipboard?.writeText(link)}
-              className="border border-line px-3 py-2 text-xs font-bold bg-subtle hover:bg-slate-200 transition-colors whitespace-nowrap"
+              className="press border border-line rounded-md px-3 py-2 text-xs font-semibold text-content bg-subtle hover:bg-line transition-colors whitespace-nowrap"
             >
               Copiar
             </button>
@@ -825,7 +824,7 @@ const ModalResultadoSuscripcion: React.FC<{
         <div className="flex justify-end pt-2">
           <button
             onClick={onClose}
-            className="px-5 py-2 bg-brand-600 text-white border border-line font-bold uppercase tracking-wide shadow-soft hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
+            className="press px-5 py-2 bg-brand-600 text-white rounded-md font-semibold shadow-soft hover:bg-brand-700 transition-all"
           >
             Listo
           </button>
@@ -842,13 +841,13 @@ const ModalResultadoRemoto: React.FC<{
   waAbierto: boolean;
   onClose: () => void;
 }> = ({ empresaNombre, link, emailEnviado, waAbierto, onClose }) => (
-  <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-    <div className="bg-surface border border-line rounded-lg shadow-lift w-full max-w-md">
-      <div className="flex items-center justify-between border-b border-line px-5 py-3 bg-content text-white">
-        <h2 className="font-display font-bold text-lg uppercase tracking-wide flex items-center gap-2">
-          <MonitorSmartphone size={18} /> Solicitud enviada
+  <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+    <div className="bg-surface border border-line rounded-lg shadow-lift w-full max-w-md animate-scale-in">
+      <div className="flex items-center justify-between border-b border-line px-5 py-3">
+        <h2 className="font-display font-bold text-lg text-content flex items-center gap-2">
+          <MonitorSmartphone size={18} className="text-brand-600" /> Solicitud enviada
         </h2>
-        <button onClick={onClose}><X size={20} /></button>
+        <button onClick={onClose} className="press grid place-items-center w-9 h-9 rounded-full text-faint hover:text-content hover:bg-subtle transition-colors"><X size={20} /></button>
       </div>
 
       <div className="p-5 space-y-4">
@@ -857,9 +856,9 @@ const ModalResultadoRemoto: React.FC<{
           El cliente debe aprobar el acceso desde el link que le enviaste.
         </p>
 
-        <div className="border border-line divide-y-2 divide-slate-200">
+        <div className="border border-line rounded-md divide-y divide-line">
           <div className="flex items-center gap-3 px-4 py-3">
-            <span className={`w-5 h-5 flex items-center justify-center text-xs font-bold border ${waAbierto ? 'text-ok-strong dark:text-ok' : 'text-warn-strong dark:text-warn'}`}>
+            <span className={`w-5 h-5 flex items-center justify-center text-xs font-bold ${waAbierto ? 'text-ok-strong dark:text-ok' : 'text-warn-strong dark:text-warn'}`}>
               {waAbierto ? '✓' : '!'}
             </span>
             <span className="text-sm font-semibold text-muted">
@@ -869,7 +868,7 @@ const ModalResultadoRemoto: React.FC<{
             </span>
           </div>
           <div className="flex items-center gap-3 px-4 py-3">
-            <span className={`w-5 h-5 flex items-center justify-center text-xs font-bold border ${emailEnviado ? 'text-ok-strong dark:text-ok' : 'text-warn-strong dark:text-warn'}`}>
+            <span className={`w-5 h-5 flex items-center justify-center text-xs font-bold ${emailEnviado ? 'text-ok-strong dark:text-ok' : 'text-warn-strong dark:text-warn'}`}>
               {emailEnviado ? '✓' : '!'}
             </span>
             <span className="text-sm font-semibold text-muted">
@@ -881,17 +880,17 @@ const ModalResultadoRemoto: React.FC<{
         </div>
 
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-muted mb-1">Link de aprobación para el cliente</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted mb-1">Link de aprobación para el cliente</p>
           <div className="flex gap-2">
             <input
               readOnly
               value={link}
-              className="flex-1 border border-line px-3 py-2 text-xs font-mono truncate outline-none"
+              className="flex-1 border border-line rounded-md bg-surface text-content px-3 py-2 text-xs font-mono truncate outline-none"
               onFocus={(e) => e.target.select()}
             />
             <button
               onClick={() => navigator.clipboard?.writeText(link)}
-              className="border border-line px-3 py-2 text-xs font-bold bg-subtle hover:bg-slate-200 transition-colors whitespace-nowrap"
+              className="press border border-line rounded-md px-3 py-2 text-xs font-semibold text-content bg-subtle hover:bg-line transition-colors whitespace-nowrap"
             >
               Copiar
             </button>
@@ -899,7 +898,7 @@ const ModalResultadoRemoto: React.FC<{
         </div>
 
         {!waAbierto && (
-          <div className="bg-amber-50 border border-amber-300 px-3 py-2 text-xs text-amber-800 font-semibold">
+          <div className="bg-warn/10 border-l-2 border-warn rounded-md px-3 py-2 text-xs text-warn-strong dark:text-warn font-semibold">
             El navegador bloqueó la ventana de WhatsApp. Copiá el link de arriba y envialo manualmente.
           </div>
         )}
@@ -907,7 +906,7 @@ const ModalResultadoRemoto: React.FC<{
         <div className="flex justify-end pt-2">
           <button
             onClick={onClose}
-            className="px-5 py-2 bg-brand-600 text-white border border-line font-bold uppercase tracking-wide shadow-soft hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
+            className="press px-5 py-2 bg-brand-600 text-white rounded-md font-semibold shadow-soft hover:bg-brand-700 transition-all"
           >
             Listo
           </button>
@@ -936,11 +935,11 @@ const SolicitudUpgradeRow: React.FC<{
           <p className="text-xs font-mono text-muted mt-0.5">{solicitud.adminEmail}</p>
         )}
         <div className="flex items-center gap-2 mt-1">
-          <span className="text-xs font-semibold border-line text-muted">
+          <span className="text-xs font-semibold text-muted">
             {PLAN_LABEL[solicitud.plan] ?? solicitud.plan}
           </span>
           <ArrowRight size={14} className="text-brand-600 flex-shrink-0" />
-          <span className="text-xs font-semibold border-brand-400 bg-orange-50 text-brand-700">
+          <span className="text-xs font-semibold text-brand-700 dark:text-brand-300">
             {PLAN_LABEL[solicitud.planSolicitado] ?? solicitud.planSolicitado}
           </span>
         </div>
@@ -949,14 +948,14 @@ const SolicitudUpgradeRow: React.FC<{
         <button
           onClick={async () => { setProcesando(true); try { await onProcesar(); } finally { setProcesando(false); } }}
           disabled={procesando || descartando}
-          className="px-4 py-2 bg-brand-600 text-white border border-line font-bold uppercase text-xs shadow-soft hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all disabled:opacity-50"
+          className="press px-4 py-2 bg-brand-600 text-white rounded-md font-semibold uppercase text-xs shadow-soft hover:bg-brand-700 transition-all disabled:opacity-50"
         >
           {procesando ? '...' : 'Procesar'}
         </button>
         <button
           onClick={async () => { setDescartando(true); try { await onDescartar(); } finally { setDescartando(false); } }}
           disabled={procesando || descartando}
-          className="px-4 py-2 border border-red-300 text-red-600 font-bold text-xs hover:border-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+          className="press px-4 py-2 border border-danger/40 rounded-md text-danger font-semibold text-xs hover:border-danger hover:bg-danger/10 transition-colors disabled:opacity-50"
         >
           {descartando ? '...' : 'Descartar'}
         </button>
@@ -982,7 +981,7 @@ const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReiniciar: () 
         </h2>
         <button
           onClick={onReiniciar}
-          className="text-xs font-bold uppercase tracking-wide text-muted border border-line px-3 py-1.5 hover:border-red-400 hover:text-red-500 transition-colors"
+          className="press text-xs font-semibold uppercase tracking-wide text-muted border border-line rounded-md px-3 py-1.5 hover:border-danger hover:text-danger transition-colors"
         >
           Reiniciar contador
         </button>
@@ -1019,7 +1018,7 @@ const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReiniciar: () 
             {estadisticas.topFichas.map((f) => (
               <div
                 key={f.activoId}
-                className="bg-white border border-line shadow-soft p-2.5"
+                className="bg-surface border border-line rounded-md shadow-soft p-2.5"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">

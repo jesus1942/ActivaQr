@@ -1,7 +1,10 @@
-// v1.0.0
+// v1.1.0
 import React, { useEffect, useState } from 'react';
+import { LogOut } from 'lucide-react';
 import { apiFetch } from '../data/auth';
 import { useAuth } from '../context/AuthContext';
+import { Button, Card, Input, Textarea, StatusBadge } from '../components/ui';
+import { EstadoActivo } from '../data/types';
 
 interface ActivoResumen {
   id: string;
@@ -19,17 +22,9 @@ interface FormMedicion {
   observaciones: string;
 }
 
-const ESTADO_BADGE: Record<string, string> = {
-  normal:        'bg-emerald-100 border-emerald-400 text-emerald-700',
-  alerta:        'bg-amber-100 border-amber-400 text-amber-700',
-  critico:       'bg-red-100 border-red-500 text-red-700',
-  mantenimiento: 'bg-blue-100 border-blue-400 text-blue-700',
-};
-
 const VIBRACION_OPTS: FormMedicion['vibracion'][] = ['ninguna', 'leve', 'moderada', 'alta'];
 
-const inputCls = 'w-full border border-slate-300 px-3 h-12 text-base outline-none focus:border-brand-600 bg-white';
-const labelCls = 'block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1';
+const labelCls = 'block text-xs font-semibold uppercase tracking-wider text-muted mb-1.5';
 
 export const DashboardOperador: React.FC = () => {
   const { usuario, logout } = useAuth();
@@ -114,115 +109,101 @@ export const DashboardOperador: React.FC = () => {
   // ── Vista: formulario de medicion ────────────────────────────
   if (activoSeleccionado) {
     return (
-      <div className="min-h-screen bg-slate-100 px-4 py-6">
+      <div className="min-h-screen bg-canvas px-4 py-6">
         <div className="max-w-lg mx-auto space-y-4">
-          <div className="bg-slate-900 text-white px-5 py-4 border border-slate-900 shadow-soft">
-            <p className="text-xs font-bold uppercase tracking-wider text-orange-400 mb-0.5">Registrar medicion</p>
-            <h1 className="font-bold text-xl leading-tight">{activoSeleccionado.nombre}</h1>
-            <p className="text-sm text-slate-300">{activoSeleccionado.codigo}</p>
-          </div>
+          <Card padding="md" className="border-l-4 border-l-brand-600">
+            <p className="text-xs font-semibold uppercase tracking-wider text-brand-600 mb-0.5">Registrar medición</p>
+            <h1 className="font-display font-bold text-xl leading-tight text-content">{activoSeleccionado.nombre}</h1>
+            <p className="text-sm text-muted">{activoSeleccionado.codigo}</p>
+          </Card>
 
           {exito ? (
-            <div className="bg-white border border-emerald-400 shadow-soft p-6 text-center space-y-4">
-              <p className="font-bold text-2xl text-emerald-700 uppercase">Registrada</p>
-              <p className="text-slate-600 text-sm">La medicion fue guardada correctamente.</p>
-              <button
-                onClick={cerrarMedicion}
-                className="w-full min-h-[52px] bg-slate-900 text-white font-bold border border-slate-900 shadow-soft text-base uppercase tracking-wide"
-              >
+            <Card padding="lg" className="text-center space-y-4 border-l-4 border-l-ok">
+              <p className="font-display font-bold text-2xl text-ok-strong dark:text-ok uppercase">Registrada</p>
+              <p className="text-muted text-sm">La medición fue guardada correctamente.</p>
+              <Button block size="lg" onClick={cerrarMedicion}>
                 Volver a la lista
-              </button>
-            </div>
+              </Button>
+            </Card>
           ) : (
-            <form onSubmit={handleEnviar} className="bg-white border border-slate-800 shadow-soft p-5 space-y-4">
-              {errorMedicion && (
-                <div className="border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-                  {errorMedicion}
-                </div>
-              )}
+            <Card as="section" padding="md">
+              <form onSubmit={handleEnviar} className="space-y-4">
+                {errorMedicion && (
+                  <div className="border border-danger/40 bg-danger/10 px-4 py-3 text-sm font-semibold text-danger-strong dark:text-danger rounded-md">
+                    {errorMedicion}
+                  </div>
+                )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className={labelCls}>Temperatura (C)</label>
-                  <input
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <Input
+                    label="Temperatura (C)"
                     type="number"
                     step="0.1"
                     value={form.temperatura}
                     onChange={(e) => setForm((p) => ({ ...p, temperatura: e.target.value }))}
-                    className={inputCls}
                     placeholder="25.0"
                   />
-                </div>
-                <div>
-                  <label className={labelCls}>Amperaje (A)</label>
-                  <input
+                  <Input
+                    label="Amperaje (A)"
                     type="number"
                     step="0.1"
                     value={form.amperaje}
                     onChange={(e) => setForm((p) => ({ ...p, amperaje: e.target.value }))}
-                    className={inputCls}
                     placeholder="10.0"
                   />
-                </div>
-                <div>
-                  <label className={labelCls}>Presion (bar)</label>
-                  <input
+                  <Input
+                    label="Presión (bar)"
                     type="number"
                     step="0.1"
                     value={form.presion}
                     onChange={(e) => setForm((p) => ({ ...p, presion: e.target.value }))}
-                    className={inputCls}
                     placeholder="1.5"
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className={labelCls}>Vibracion</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {VIBRACION_OPTS.map((v) => (
-                    <label key={v} className={`flex items-center gap-3 border px-3 min-h-[52px] cursor-pointer font-bold text-base capitalize transition-colors ${form.vibracion === v ? 'border-brand-600 bg-orange-50 text-brand-700' : 'border-slate-300 text-slate-700'}`}>
-                      <input
-                        type="radio"
-                        name="vibracion"
-                        value={v}
-                        checked={form.vibracion === v}
-                        onChange={() => setForm((p) => ({ ...p, vibracion: v }))}
-                        className="w-4 h-4"
-                      />
-                      {v}
-                    </label>
-                  ))}
+                <div>
+                  <label className={labelCls}>Vibración</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {VIBRACION_OPTS.map((v) => (
+                      <label
+                        key={v}
+                        className={`flex items-center gap-3 border rounded-md px-3 min-h-[52px] cursor-pointer font-semibold text-base capitalize transition-colors ${
+                          form.vibracion === v
+                            ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-600/15 dark:text-brand-300'
+                            : 'border-line text-muted hover:border-line-strong'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="vibracion"
+                          value={v}
+                          checked={form.vibracion === v}
+                          onChange={() => setForm((p) => ({ ...p, vibracion: v }))}
+                          className="w-4 h-4 accent-brand-600"
+                        />
+                        {v}
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label className={labelCls}>Observaciones</label>
-                <textarea
+                <Textarea
+                  label="Observaciones"
                   value={form.observaciones}
                   onChange={(e) => setForm((p) => ({ ...p, observaciones: e.target.value }))}
-                  className="w-full border border-slate-300 px-3 py-2 text-base outline-none focus:border-brand-600 bg-white min-h-[80px] resize-none"
                   placeholder="Novedades, ruidos, olores, etc."
                 />
-              </div>
 
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={cerrarMedicion}
-                  className="flex-1 min-h-[52px] border border-slate-400 font-bold text-slate-600 text-base"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={enviando}
-                  className="flex-[2] min-h-[52px] bg-brand-600 text-white font-bold border border-slate-800 shadow-soft text-base uppercase tracking-wide disabled:opacity-50"
-                >
-                  {enviando ? 'Guardando...' : 'Registrar medicion'}
-                </button>
-              </div>
-            </form>
+                <div className="flex gap-3 pt-2">
+                  <Button type="button" variant="secondary" size="lg" className="flex-1" onClick={cerrarMedicion}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" size="lg" className="flex-[2]" loading={enviando} disabled={enviando}>
+                    {enviando ? 'Guardando...' : 'Registrar medición'}
+                  </Button>
+                </div>
+              </form>
+            </Card>
           )}
         </div>
       </div>
@@ -231,66 +212,56 @@ export const DashboardOperador: React.FC = () => {
 
   // ── Vista: lista de activos ───────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-100 px-4 py-6">
+    <div className="min-h-screen bg-canvas px-4 py-6">
       <div className="max-w-lg mx-auto space-y-4">
         {/* Header */}
-        <div className="bg-slate-900 text-white px-5 py-4 border border-slate-900 shadow-soft flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-orange-400">ActivaQR</p>
-            <p className="font-bold text-lg leading-tight">{usuario?.nombre}</p>
-            <p className="text-xs text-slate-400">{usuario?.empresa?.nombre}</p>
+        <Card padding="md" className="flex items-center justify-between">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wider text-brand-600">ActivaQR</p>
+            <p className="font-display font-bold text-lg leading-tight text-content truncate">{usuario?.nombre}</p>
+            <p className="text-xs text-muted truncate">{usuario?.empresa?.nombre}</p>
           </div>
-          <button
-            onClick={logout}
-            className="border border-slate-600 text-slate-300 px-3 py-2 text-xs font-bold uppercase hover:border-slate-300 transition-colors"
-          >
+          <Button variant="ghost" size="sm" iconLeft={<LogOut size={16} />} onClick={logout}>
             Salir
-          </button>
-        </div>
+          </Button>
+        </Card>
 
-        <h2 className="font-bold text-xl uppercase tracking-tight text-slate-800 px-1">
+        <h2 className="font-display font-bold text-xl tracking-tight text-content px-1">
           Activos a controlar
         </h2>
 
         {error && (
-          <div className="border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>
+          <div className="border border-danger/40 bg-danger/10 px-4 py-3 text-sm font-semibold text-danger-strong dark:text-danger rounded-md">{error}</div>
         )}
 
         {cargando ? (
-          <p className="text-slate-400 font-semibold px-1">Cargando activos...</p>
+          <p className="text-muted font-semibold px-1">Cargando activos...</p>
         ) : activos.length === 0 ? (
-          <p className="text-slate-400 text-sm italic px-1">No hay activos registrados en la empresa.</p>
+          <p className="text-muted text-sm italic px-1">No hay activos registrados en la empresa.</p>
         ) : (
           <div className="space-y-3">
             {activos.map((activo) => {
               const ultimaMedicion = activo.mediciones?.[0];
-              const estadoCls = ESTADO_BADGE[activo.estado] ?? 'text-muted';
               return (
-                <div
-                  key={activo.id}
-                  className="bg-white border border-slate-800 shadow-soft p-4"
-                >
+                <Card key={activo.id} padding="md">
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="min-w-0">
-                      <p className="text-xs font-bold uppercase tracking-wider text-brand-600">{activo.codigo}</p>
-                      <h3 className="font-bold text-lg text-slate-900 leading-tight truncate">{activo.nombre}</h3>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-brand-600">{activo.codigo}</p>
+                      <h3 className="font-display font-bold text-lg text-content leading-tight truncate">{activo.nombre}</h3>
                       {ultimaMedicion && (
-                        <p className="text-xs text-slate-400 mt-0.5">
-                          Ultima medicion: {ultimaMedicion.fecha.slice(0, 10)}
+                        <p className="text-xs text-faint mt-0.5">
+                          Última medición: {ultimaMedicion.fecha.slice(0, 10)}
                         </p>
                       )}
                     </div>
-                    <span className={`text-xs font-semibold whitespace-nowrap flex-shrink-0 ${estadoCls}`}>
-                      {activo.estado}
-                    </span>
+                    <div className="flex-shrink-0">
+                      <StatusBadge estado={activo.estado as EstadoActivo} size="sm" />
+                    </div>
                   </div>
-                  <button
-                    onClick={() => abrirMedicion(activo)}
-                    className="w-full min-h-[52px] bg-brand-600 text-white font-bold border border-slate-800 shadow-soft text-base uppercase tracking-wide hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
-                  >
-                    Registrar medicion
-                  </button>
-                </div>
+                  <Button block size="lg" onClick={() => abrirMedicion(activo)}>
+                    Registrar medición
+                  </Button>
+                </Card>
               );
             })}
           </div>

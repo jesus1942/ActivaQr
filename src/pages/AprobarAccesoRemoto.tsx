@@ -16,20 +16,20 @@ export const AprobarAccesoRemoto: React.FC = () => {
   }, [token]);
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-900 shadow-soft max-w-md w-full">
-        <div className="bg-brand-600 px-6 py-4 border-b border-slate-900">
-          <p className="text-xs font-bold text-white uppercase tracking-widest">ActivaQR</p>
-          <h1 className="font-bold text-white text-xl uppercase tracking-wide mt-1">Acceso remoto</h1>
+    <div className="min-h-screen bg-canvas flex items-center justify-center p-4">
+      <div className="bg-surface border border-line rounded-lg shadow-soft max-w-md w-full overflow-hidden">
+        <div className="bg-brand-600 px-6 py-4">
+          <p className="text-xs font-semibold text-white/80 uppercase tracking-widest">ActivaQR</p>
+          <h1 className="font-display font-bold text-white text-xl tracking-wide mt-1">Acceso remoto</h1>
         </div>
         <div className="p-6">
           {estado === 'cargando' && (
-            <p className="text-slate-500 font-semibold animate-pulse">Procesando...</p>
+            <p className="text-muted font-semibold animate-pulse">Procesando...</p>
           )}
           {estado === 'ok' && (
             <div className="space-y-3">
-              <p className="font-bold text-slate-900 text-lg">¡Acceso aprobado!</p>
-              <p className="text-slate-600 text-sm leading-relaxed">
+              <p className="font-display font-bold text-content text-lg">¡Acceso aprobado!</p>
+              <p className="text-muted text-sm leading-relaxed">
                 El equipo de soporte de ActivaQR ahora puede ver tus activos y comunicarse con vos.
                 Podés revocar este acceso en cualquier momento desde <strong>Configuración → Acceso remoto</strong>.
               </p>
@@ -37,8 +37,8 @@ export const AprobarAccesoRemoto: React.FC = () => {
           )}
           {estado === 'error' && (
             <div className="space-y-3">
-              <p className="font-bold text-slate-900 text-lg">Link inválido o expirado</p>
-              <p className="text-slate-600 text-sm">{msg || 'Este link ya no es válido. Contactá al soporte.'}</p>
+              <p className="font-display font-bold text-content text-lg">Link inválido o expirado</p>
+              <p className="text-muted text-sm">{msg || 'Este link ya no es válido. Contactá al soporte.'}</p>
             </div>
           )}
         </div>

@@ -44,7 +44,7 @@ export const DemoBanner: React.FC = () => {
   if (!usuario || usuario.email !== 'demo@activaqr.com') return null;
 
   return (
-    <div className="w-full bg-amber-500 text-slate-900 flex items-center justify-center gap-3 px-4 py-1.5 text-sm font-semibold fixed top-0 left-0 right-0 z-[70] safe-top">
+    <div className="w-full bg-warn text-[#1a1408] flex items-center justify-center gap-3 px-4 py-1.5 text-sm font-semibold fixed top-0 left-0 right-0 z-[70] safe-top">
       <span>
         {expirado
           ? 'Sesión expirada'
@@ -55,7 +55,7 @@ export const DemoBanner: React.FC = () => {
       {expirado && (
         <button
           onClick={logout}
-          className="press border border-slate-900/30 bg-white/30 text-slate-900 px-3 py-0.5 rounded-md text-xs font-bold hover:bg-white/60 transition-colors"
+          className="press border border-black/20 bg-white/30 text-[#1a1408] px-3 py-0.5 rounded-md text-xs font-bold hover:bg-white/60 transition-colors"
         >
           Cerrar sesión
         </button>

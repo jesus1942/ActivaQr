@@ -74,10 +74,10 @@ function BarraUmbral({ valor, min, alerta, critico, max, invertido = false }: {
     ? evalMin(v, alerta, critico)
     : evalMax(v, alerta, critico, max);
 
-  const color = nivel === 'urgente' ? 'bg-red-600'
-    : nivel === 'critico' ? 'bg-red-400'
-    : nivel === 'alerta' ? 'bg-amber-400'
-    : 'bg-emerald-400';
+  const color = nivel === 'urgente' ? 'bg-danger'
+    : nivel === 'critico' ? 'bg-danger/70'
+    : nivel === 'alerta' ? 'bg-warn'
+    : 'bg-ok';
 
   const label = nivel === 'urgente' ? 'INTERVENCIÓN URGENTE'
     : nivel === 'critico' ? 'CRÍTICO'
@@ -327,7 +327,7 @@ export const Medicion: React.FC = () => {
     return (
       <div className="max-w-lg mx-auto">
         <Card padding="md" className="text-center">
-          <CheckCircle size={48} className="text-emerald-500 mx-auto mb-3" />
+          <CheckCircle size={48} className="text-ok mx-auto mb-3" />
           <h2 className="font-display text-2xl font-bold text-content mb-1">Medición registrada</h2>
           <div className="font-mono font-bold text-brand-600 text-xl mb-4">{activo.codigo}</div>
           <div className="text-left bg-subtle border border-line rounded-md p-4 space-y-2 mb-4">
@@ -668,7 +668,7 @@ export const Medicion: React.FC = () => {
               <label className="block text-xs font-semibold text-muted tracking-wide mb-1">Estado visual</label>
               {tieneUmbrales && estadoAuto !== 'normal' && (
                 <p className="text-xs text-muted mb-2">
-                  El sistema calculó <strong className={estadoAuto === 'urgente' ? 'text-red-600' : estadoAuto === 'critico' ? 'text-red-500' : 'text-amber-600'}>
+                  El sistema calculó <strong className={estadoAuto === 'urgente' ? 'text-danger-strong dark:text-danger' : estadoAuto === 'critico' ? 'text-danger' : 'text-warn-strong dark:text-warn'}>
                     {estadoAuto.toUpperCase()}
                   </strong> automáticamente. Podés confirmarlo o escalarlo manualmente.
                 </p>
