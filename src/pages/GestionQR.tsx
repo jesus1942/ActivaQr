@@ -41,7 +41,7 @@ export const GestionQR: React.FC = () => {
           return (
             <div
               key={activo.id}
-              className="bg-surface border border-line shadow-soft p-3 text-center print:shadow-none print:border print:break-inside-avoid"
+              className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-3 text-center print:shadow-none print:border print:break-inside-avoid"
             >
               {/* QR Code */}
               <div className="inline-block border border-line p-2 mb-2">

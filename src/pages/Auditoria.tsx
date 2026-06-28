@@ -84,7 +84,7 @@ export const Auditoria: React.FC = () => {
 
       {error && <p className="text-danger font-bold">{error}</p>}
 
-      <div className="bg-surface border border-line shadow-soft">
+      <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft">
         {registros.length === 0 ? (
           <div className="p-8 text-center text-muted">
             <ScrollText size={32} className="mx-auto mb-2 text-slate-300" />

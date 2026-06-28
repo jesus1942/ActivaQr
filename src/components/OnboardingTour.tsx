@@ -62,7 +62,7 @@ export const OnboardingTour: React.FC = () => {
   };
 
   const burbuja = (
-    <div className="bg-surface border border-line shadow-soft p-5 w-full max-w-xs sm:max-w-sm">
+    <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-5 w-full max-w-xs sm:max-w-sm">
       <p className="font-display font-black uppercase text-content text-lg mb-2">{pasoActual.titulo}</p>
       <p className="text-sm text-muted mb-4">{pasoActual.texto}</p>
 

@@ -160,7 +160,7 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-start justify-center p-2 sm:p-6 overflow-y-auto">
-      <div className="bg-surface border border-line shadow-soft w-full max-w-3xl my-4">
+      <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft w-full max-w-3xl my-4">
 
         {/* Header */}
         <div className="bg-slate-900 text-white px-5 py-3 flex items-center justify-between sticky top-0 z-10">
@@ -511,7 +511,7 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
         {/* Modal crear tarea */}
         {activoTarea && (
           <div className="fixed inset-0 z-60 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-surface border border-line shadow-soft w-full max-w-sm">
+            <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft w-full max-w-sm">
               <div className="flex items-center justify-between px-4 py-3 bg-slate-900 text-white">
                 <h3 className="font-black uppercase text-sm">Nueva tarea de mantenimiento</h3>
                 <button onClick={() => setActivoTarea(null)}><X size={18} /></button>

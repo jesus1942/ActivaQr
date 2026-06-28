@@ -273,7 +273,7 @@ export const DashboardOperador: React.FC = () => {
 
           {exito ? (
             guardadoOffline ? (
-              <div className="bg-surface border border-line shadow-soft p-6 text-center space-y-4">
+              <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-6 text-center space-y-4">
                 <CloudOff size={40} className="mx-auto text-muted" />
                 <p className="font-black text-2xl text-content uppercase">Guardada offline</p>
                 <p className="text-muted text-sm">
@@ -294,7 +294,7 @@ export const DashboardOperador: React.FC = () => {
               </div>
             )
           ) : (
-            <form onSubmit={handleEnviarMedicion} className="bg-surface border border-line shadow-soft p-5 space-y-4">
+            <form onSubmit={handleEnviarMedicion} className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-5 space-y-4">
               {errorForm && <div className="border border-danger bg-danger/10 px-4 py-3 text-sm font-semibold text-danger-strong dark:text-danger">{errorForm}</div>}
               <div className="grid grid-cols-3 gap-3">
                 {[
@@ -401,7 +401,7 @@ export const DashboardOperador: React.FC = () => {
 
           {exito ? (
             guardadoOffline ? (
-              <div className="bg-surface border border-line shadow-soft p-6 text-center space-y-4">
+              <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-6 text-center space-y-4">
                 <CloudOff size={40} className="mx-auto text-muted" />
                 <p className="font-black text-2xl text-content uppercase">Cierre offline</p>
                 <p className="text-muted text-sm">No habia conexion. El cierre quedó en tu celular y se va a confirmar al servidor cuando agarres senal.</p>
@@ -420,7 +420,7 @@ export const DashboardOperador: React.FC = () => {
               </div>
             )
           ) : (
-            <form onSubmit={handleCerrarOT} className="bg-surface border border-line shadow-soft p-5 space-y-4">
+            <form onSubmit={handleCerrarOT} className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-5 space-y-4">
               <div className="text-sm text-content space-y-1">
                 <p><span className="font-bold">Descripción:</span> {tareaSeleccionada.descripcion}</p>
                 <p><span className="font-bold">Programada:</span> {tareaSeleccionada.fechaProgramada.slice(0, 10)}</p>
@@ -511,7 +511,7 @@ export const DashboardOperador: React.FC = () => {
               {activos.map(activo => {
                 const ultima = activo.mediciones?.[0];
                 return (
-                  <div key={activo.id} className="bg-surface border border-line shadow-soft p-4">
+                  <div key={activo.id} className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4">
                     <div className="flex items-start justify-between gap-3 mb-1">
                       <div className="min-w-0">
                         <p className="text-xs font-black uppercase tracking-wider text-brand-600">{activo.codigo}</p>
@@ -551,7 +551,7 @@ export const DashboardOperador: React.FC = () => {
           ) : (
             <div className="space-y-3">
               {tareas.map(tarea => (
-                <div key={tarea.id} className="bg-surface border border-line shadow-soft p-4">
+                <div key={tarea.id} className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="min-w-0">
                       <p className="text-xs font-black text-faint uppercase">OT-{String(tarea.numero).padStart(5, '0')} · {tarea.tipo}</p>

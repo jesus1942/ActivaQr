@@ -50,7 +50,7 @@ export const UbicacionesActivo: React.FC<{ activoId: string }> = ({ activoId }) 
 
   if (cargando) {
     return (
-      <div className="bg-surface border border-line shadow-soft p-4">
+      <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4">
         <p className="text-sm text-faint animate-pulse text-center">Cargando ubicaciones...</p>
       </div>
     );
@@ -66,7 +66,7 @@ export const UbicacionesActivo: React.FC<{ activoId: string }> = ({ activoId }) 
   const linkGoogleMaps = `https://www.google.com/maps?q=${ultima.lat},${ultima.lng}`;
 
   return (
-    <div className="bg-surface border border-line shadow-soft">
+    <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft">
       <div className="border border-line px-4 py-3 flex items-start justify-between gap-2">
         <div>
           <h2 className="text-sm font-black uppercase tracking-wider text-content flex items-center gap-2">

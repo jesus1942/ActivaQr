@@ -146,7 +146,7 @@ export const AnalisisActivo: React.FC<AnalisisActivoProps> = ({
 
   if (params.length === 0) {
     return (
-      <div className="bg-surface border border-line shadow-soft p-4 mb-6">
+      <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4 mb-6">
         <h2 className="text-sm font-black uppercase tracking-wider text-content mb-2 flex items-center gap-2">
           <LineChartIcon size={16} /> Analisis predictivo
         </h2>
@@ -158,7 +158,7 @@ export const AnalisisActivo: React.FC<AnalisisActivoProps> = ({
   }
 
   return (
-    <div className="bg-surface border border-line shadow-soft mb-6">
+    <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft mb-6">
       {/* Header de la seccion */}
       <div className="p-3 sm:p-4 border border-line">
         <div className="flex items-center justify-between gap-2 flex-wrap">

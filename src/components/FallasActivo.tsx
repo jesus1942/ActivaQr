@@ -58,7 +58,7 @@ export const FallasActivo: React.FC<Props> = ({ activoId, publico = false }) => 
   if (fallas.length === 0) return null;
 
   return (
-    <div className="bg-surface border border-line shadow-soft p-5">
+    <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-5">
       <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-1 flex items-center gap-1.5">
         <Wrench size={13} /> Codigos de error y soluciones
       </p>

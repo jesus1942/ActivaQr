@@ -100,7 +100,7 @@ export const Configuracion: React.FC = () => {
 // ─── Reusable card wrapper ─────────────────────────────────────
 const Card: React.FC<{ inactivo?: boolean; children: React.ReactNode }> = ({ inactivo, children }) => (
   <div
-    className={`bg-surface border border-line shadow-soft p-4 ${
+    className={`bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4 ${
       inactivo ? 'opacity-50' : ''
     }`}
   >
@@ -171,7 +171,7 @@ const SectoresSection: React.FC<SectoresProps> = ({ sectores, addSector, updateS
       {!adding && !editing && <AddButton onClick={startAdd} label="Agregar Sector" />}
 
       {(adding || editing) && (
-        <form onSubmit={submit} className="bg-surface border border-line shadow-soft p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <form onSubmit={submit} className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Nombre</label>
             <input required value={form.nombre} onChange={(e) => setForm((p) => ({ ...p, nombre: e.target.value }))} className={inputCls} />
@@ -271,7 +271,7 @@ const TiposSection: React.FC<TiposProps> = ({ tipos, addTipo, updateTipo, delete
       {!adding && !editing && <AddButton onClick={startAdd} label="Agregar Tipo" />}
 
       {(adding || editing) && (
-        <form onSubmit={submit} className="bg-surface border border-line shadow-soft p-4 space-y-4">
+        <form onSubmit={submit} className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4 space-y-4">
           <div>
             <label className={labelCls}>Nombre</label>
             <input required value={form.nombre} onChange={(e) => setForm((p) => ({ ...p, nombre: e.target.value }))} className={inputCls} />
@@ -487,7 +487,7 @@ const CategoriasSection: React.FC = () => {
         </div>
 
         {adding && (
-          <form onSubmit={handleCrear} className="bg-surface border border-line shadow-soft p-4 space-y-3 mb-4">
+          <form onSubmit={handleCrear} className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4 space-y-3 mb-4">
             <div>
               <label className={labelCls}>Nombre *</label>
               <input required value={formNueva.nombre} onChange={(e) => setFormNueva((p) => ({ ...p, nombre: e.target.value }))} className={inputCls} placeholder="Ej: Turbina de vapor" />
@@ -585,7 +585,7 @@ const CategoriaCard: React.FC<CategoriaCardProps> = ({ cat, expandido, onToggle,
   };
 
   return (
-    <div className="bg-surface border border-line shadow-soft">
+    <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft">
       <div
         className="flex items-center justify-between gap-2 p-3 cursor-pointer hover:bg-subtle transition-colors"
         onClick={onToggle}
@@ -820,7 +820,7 @@ const PersonalSection: React.FC = () => {
       )}
 
       {adding && (
-        <form onSubmit={handleCrear} className="bg-surface border border-line shadow-soft p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <form onSubmit={handleCrear} className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Nombre</label>
             <input
@@ -882,7 +882,7 @@ const PersonalSection: React.FC = () => {
       )}
 
       {editId && (
-        <form onSubmit={handleEditar} className="bg-surface border border-line shadow-soft p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <form onSubmit={handleEditar} className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Nombre</label>
             <input required value={editForm.nombre} onChange={(e) => setEditForm((p) => ({ ...p, nombre: e.target.value }))} className={inputCls} />
@@ -1013,7 +1013,7 @@ const SeccionTelegram: React.FC = () => {
   const BOT_NAME = import.meta.env.VITE_TELEGRAM_BOT_NAME || 'activaqr_bot';
 
   return (
-    <div className="bg-surface border border-line shadow-soft p-5 mb-6">
+    <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-5 mb-6">
       <h2 className="text-sm font-black uppercase tracking-wider text-content mb-1">Telegram para recuperar contraseña</h2>
       <p className="text-xs text-muted mb-3">
         Si vinculás tu Telegram, el link de recuperación te llega directo al chat en segundos — sin depender del email.
@@ -1085,7 +1085,7 @@ const SeccionPlan: React.FC = () => {
   };
 
   return (
-    <div className="mb-8 bg-surface border border-line shadow-soft p-5">
+    <div className="mb-8 bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-5">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>
           <h2 className="font-display font-black text-xl uppercase tracking-tight text-content">Plan actual</h2>
@@ -1357,7 +1357,7 @@ const SeccionAccesoRemoto: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-surface border border-line shadow-soft p-5">
+      <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-5">
         <h2 className="font-display text-xl font-black uppercase tracking-wide text-content mb-3">Guia de inicio</h2>
         <p className="text-sm text-muted mb-4">Revive el tour de bienvenida que aparece al usar la app por primera vez.</p>
         <button

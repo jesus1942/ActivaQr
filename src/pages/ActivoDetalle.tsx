@@ -213,7 +213,7 @@ export const ActivoDetalle: React.FC = () => {
               onChange={(fotoUrl) => updateActivo(activo.id, { fotoUrl })}
             />
           )}
-          <div className="bg-surface border border-line shadow-soft p-4">
+          <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4">
             <h2 className="text-sm font-black uppercase tracking-wider text-content mb-3 border border-line pb-2">Ficha Técnica</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
               {ficha.map(({ label, value }) => (
@@ -236,7 +236,7 @@ export const ActivoDetalle: React.FC = () => {
               no tienen "parametros de operacion" — su valor esta en el legajo
               documental, no en gauges. */}
           {esOperativo ? (
-            <div className="bg-surface border border-line shadow-soft p-4">
+            <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4">
               <h2 className="text-sm font-black uppercase tracking-wider text-content mb-3 border border-line pb-2">Parámetros de Operación</h2>
               {activoMediciones.length > 0 ? (
                 <>
@@ -279,7 +279,7 @@ export const ActivoDetalle: React.FC = () => {
               )}
             </div>
           ) : (
-            <div className="bg-surface border border-line shadow-soft p-4">
+            <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4">
               <h2 className="text-sm font-black uppercase tracking-wider text-content mb-3 border border-line pb-2 flex items-center gap-2">
                 <FileText size={14} /> Legajo del activo
               </h2>
@@ -301,7 +301,7 @@ export const ActivoDetalle: React.FC = () => {
 
         {/* Right: QR + Actions */}
         <div className="space-y-4">
-          <div className="bg-surface border border-line shadow-soft p-4 text-center">
+          <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4 text-center">
             <h2 className="text-sm font-black uppercase tracking-wider text-content mb-3">Código QR</h2>
             <div className="inline-block border border-line p-3 bg-surface mb-3">
               <QRCodeSVG ref={qrRef} value={qrValue} size={140} className="w-full max-w-[160px] h-auto" />
@@ -348,7 +348,7 @@ export const ActivoDetalle: React.FC = () => {
           {API_URL && <UbicacionesActivo activoId={activo.id} />}
 
           {/* Maintenance history */}
-          <div className="bg-surface border border-line shadow-soft p-4">
+          <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4">
             <h2 className="text-sm font-black uppercase tracking-wider text-content mb-3">Historial de Mantenimiento</h2>
             {activoTareas.length === 0 ? (
               <p className="text-sm text-faint">Sin tareas registradas</p>
@@ -392,7 +392,7 @@ export const ActivoDetalle: React.FC = () => {
           Mantenimiento, mas arriba en la columna derecha), no mediciones
           de motor. */}
       {esOperativo && last10.length > 0 && (
-        <div className="bg-surface border border-line shadow-soft overflow-x-auto">
+        <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-900 text-white">
@@ -433,7 +433,7 @@ export const ActivoDetalle: React.FC = () => {
       {/* Para patrimoniales: una lista simple de inspecciones (observaciones
           de cada visita), sin columnas de motor que no aplican. */}
       {!esOperativo && activoMediciones.length > 0 && (
-        <div className="bg-surface border border-line shadow-soft p-4">
+        <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4">
           <h2 className="text-sm font-black uppercase tracking-wider text-content mb-3 border border-line pb-2">
             Inspecciones registradas
           </h2>

@@ -49,7 +49,7 @@ export const AdminTestimonios: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-surface border border-line shadow-soft p-3 mb-4 flex gap-2 flex-wrap">
+      <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-3 mb-4 flex gap-2 flex-wrap">
         {(['pendiente', 'aprobado', 'rechazado', 'todos'] as Filtro[]).map((f) => (
           <button
             key={f}
@@ -73,7 +73,7 @@ export const AdminTestimonios: React.FC = () => {
       ) : error ? (
         <p className="text-danger font-bold text-sm">{error}</p>
       ) : lista.length === 0 ? (
-        <div className="bg-surface border border-line border-dashed p-8 text-center text-muted text-sm">
+        <div className="bg-surface/85 backdrop-blur-xl border border-line border-dashed p-8 text-center text-muted text-sm">
           Sin testimonios en esta categoría.
         </div>
       ) : (

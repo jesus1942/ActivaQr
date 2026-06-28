@@ -245,7 +245,7 @@ export const Activos: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-surface border border-line shadow-soft p-4 mb-6 flex flex-wrap gap-3 items-center">
+      <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4 mb-6 flex flex-wrap gap-3 items-center">
         <div className="flex items-center gap-2 border border-line px-3 h-11 flex-1 min-w-0 w-full sm:w-auto sm:min-w-48">
           <Search size={15} className="text-faint flex-shrink-0" />
           <input
@@ -315,7 +315,7 @@ export const Activos: React.FC = () => {
           })}
         </div>
       ) : (
-        <div className="bg-surface border border-line shadow-soft overflow-x-auto">
+        <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-900 text-white">
@@ -348,7 +348,7 @@ export const Activos: React.FC = () => {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
-          <div className="bg-surface border border-line shadow-soft w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border border-line bg-slate-900 text-white sticky top-0 z-10">
               <h2 className="font-black uppercase tracking-wide">{editId ? 'Editar Activo' : 'Nuevo Activo'}</h2>
               <button onClick={() => setShowModal(false)}><X size={20} /></button>

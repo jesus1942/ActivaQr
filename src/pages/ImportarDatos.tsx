@@ -199,7 +199,7 @@ COM-XXX-001,Compresor Ejemplo,compresor,Taller,Schulz,CSL 10,Pedro López,Taller
       )}
 
       {/* CSV Format instructions */}
-      <div className="bg-surface border border-line shadow-soft p-4 mb-6">
+      <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4 mb-6">
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
             <FileText size={16} className="text-muted" />
@@ -238,7 +238,7 @@ COM-XXX-001,Compresor Ejemplo,compresor,Taller,Schulz,CSL 10,Pedro López,Taller
 
       {/* Preview table */}
       {preview.length > 0 && (
-        <div className="bg-surface border border-line shadow-soft p-4">
+        <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-black uppercase tracking-wider text-content">
               Vista Previa ({preview.length} registros)

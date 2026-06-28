@@ -350,7 +350,7 @@ export const Medicion: React.FC = () => {
   if (submitted && savedMedicion && activo) {
     return (
       <div className="max-w-lg mx-auto">
-        <div className="bg-surface border border-line shadow-soft p-6 text-center">
+        <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-6 text-center">
           <CheckCircle size={48} className="text-emerald-500 mx-auto mb-3" />
           <h2 className="font-display text-4xl font-black text-content uppercase mb-1">Medición Registrada</h2>
           <div className="font-display font-bold text-brand-600 text-2xl mb-4">{activo.codigo}</div>
@@ -416,7 +416,7 @@ export const Medicion: React.FC = () => {
 
       {/* Search by código */}
       {!activoId && (
-        <div className="bg-surface border border-line shadow-soft p-4 mb-4">
+        <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4 mb-4">
           <label className="block text-xs font-black uppercase tracking-wider text-muted mb-2">Buscar por Código de Activo</label>
           <div className="flex gap-2">
             <div className="flex items-center gap-2 border border-line px-3 h-14 flex-1">
@@ -460,7 +460,7 @@ export const Medicion: React.FC = () => {
       )}
 
       {activoId && !activo && (
-        <div className="bg-surface border border-line shadow-soft p-6 text-center">
+        <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-6 text-center">
           <p className="font-black text-lg text-content mb-1 uppercase">Activo no encontrado</p>
           <p className="text-muted text-sm mb-4">Este equipo no pertenece a tu cuenta o todavia se esta cargando.</p>
           <a
@@ -516,7 +516,7 @@ export const Medicion: React.FC = () => {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="bg-surface border border-line shadow-soft p-4 space-y-5">
+          <form onSubmit={handleSubmit} className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4 space-y-5">
             {/* Temperature */}
             {mideTemperatura && (
             <div>

@@ -17,7 +17,7 @@ export const ResetPassword: React.FC = () => {
   if (!token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-canvas p-4">
-        <div className="w-full max-w-md bg-surface border border-line shadow-soft p-8 text-center">
+        <div className="w-full max-w-md bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-8 text-center">
           <p className="font-black text-lg uppercase text-content">Link invalido</p>
           <p className="text-muted text-sm mt-2">El link de recuperacion no es valido. Solicita uno nuevo.</p>
         </div>
@@ -57,7 +57,7 @@ export const ResetPassword: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-canvas p-4">
       <div className="w-full max-w-md">
-        <div className="bg-surface border border-line shadow-soft p-8">
+        <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-8">
           <div className="text-center mb-6">
             <img src={LOGO} alt="ActivaQR" className="h-14 mx-auto mb-3 object-contain" />
             <h1 className="font-display text-3xl font-black text-content uppercase tracking-tight">

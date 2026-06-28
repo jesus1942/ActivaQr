@@ -18,7 +18,7 @@ export const FeatureLock: React.FC<Props> = ({ feature, titulo, descripcion }) =
 
   return (
     <div className="max-w-xl mx-auto mt-8">
-      <div className="bg-surface border border-line shadow-soft p-6">
+      <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 bg-brand-600 text-white border border-line flex items-center justify-center flex-shrink-0">
             <Lock size={22} />

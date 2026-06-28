@@ -93,7 +93,7 @@ export const Login: React.FC = () => {
     <div className="relative min-h-screen flex items-center justify-center bg-transparent p-4 overflow-hidden">
       <AuroraBg scrollSelector="#none" />
       <div className="w-full max-w-md animate-page-in">
-        <div className="bg-surface/90 backdrop-blur-xl border border-line rounded-xl shadow-lift p-8">
+        <div className="bg-surface/85 backdrop-blur-xl border border-line rounded-xl shadow-lift p-8">
           <div className="text-center mb-6">
             <img src={LOGO} alt="ActivaQR" className="h-14 mx-auto mb-3 object-contain" />
             <h1 className="font-display text-3xl font-bold text-content tracking-tight">

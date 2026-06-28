@@ -114,7 +114,7 @@ export const QrScanner: React.FC<{
       </div>
 
       {error ? (
-        <div className="bg-surface border border-line p-6 max-w-sm text-center shadow-soft">
+        <div className="bg-surface/85 backdrop-blur-xl border border-line p-6 max-w-sm text-center shadow-soft">
           <p className="text-content font-body">{error}</p>
           <button
             onClick={onClose}

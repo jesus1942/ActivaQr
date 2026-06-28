@@ -44,7 +44,7 @@ export const ModalPlantillaMantenimiento: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] flex items-center justify-center p-2 sm:p-4">
-      <div className="bg-surface border border-line shadow-soft w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border border-line bg-slate-900 text-white sticky top-0 z-10">
           <div className="flex items-center gap-2 min-w-0">
             <Sparkles size={18} className="text-brand-400 flex-shrink-0" />

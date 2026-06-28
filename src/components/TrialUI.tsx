@@ -68,7 +68,7 @@ export const PantallaTrialVencido: React.FC = () => {
   const nombre = usuario?.empresa?.nombre ?? 'tu empresa';
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div className="bg-surface border border-line shadow-soft max-w-md w-full">
+      <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft max-w-md w-full">
         <div className="bg-brand-600 px-6 py-4 border-b-4 border-line flex items-center gap-3">
           <Lock size={28} className="text-white" />
           <h1 className="font-black text-white text-2xl uppercase tracking-wide">Prueba finalizada</h1>

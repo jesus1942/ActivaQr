@@ -24,7 +24,7 @@ export const NotificacionesPush: React.FC = () => {
   else if (estado === 'denied') mensaje = 'Notificaciones bloqueadas. Habilitalas desde los ajustes del navegador.';
 
   return (
-    <div className="bg-surface border border-line shadow-soft p-4 mb-6">
+    <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4 mb-6">
       <div className="flex items-center gap-2 mb-2">
         <Bell className="w-5 h-5 text-brand-600" />
         <h2 className="font-display text-xl font-black text-content uppercase">Notificaciones push</h2>

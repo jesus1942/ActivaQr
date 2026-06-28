@@ -18,7 +18,7 @@ import { FeatureLock } from '../components/FeatureLock';
 import { exportarInformeMensualPdf } from '../utils/exportPdf';
 import { useAuth } from '../context/AuthContext';
 
-const card = 'bg-surface border border-line shadow-soft p-5';
+const card = 'bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-5';
 
 const Metric: React.FC<{ icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string }> = ({
   icon, label, value, sub, accent = 'text-content',

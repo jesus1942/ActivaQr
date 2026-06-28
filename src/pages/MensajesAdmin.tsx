@@ -78,7 +78,7 @@ export const MensajesAdmin: React.FC = () => {
           return (
             <div
               key={emp.id}
-              className="bg-surface border border-line p-4 flex items-center justify-between gap-3 hover:border-content transition-colors"
+              className="bg-surface/85 backdrop-blur-xl border border-line p-4 flex items-center justify-between gap-3 hover:border-content transition-colors"
             >
               <div>
                 <p className="font-black text-content">{emp.nombre}</p>

@@ -37,7 +37,7 @@ function PanelFacturacion({ data }: { data: Facturacion }) {
           { label: 'Pagos este mes', valor: String(data.pagosEsteMes), sub: 'Transacciones aprobadas', icon: CreditCard, color: 'text-content', alerta: false },
           { label: 'Clientes activos', valor: String(data.porEmpresa.length), sub: 'Con al menos 1 pago', icon: Building2, color: 'text-content', alerta: false },
         ].map(({ label, valor, sub, icon: Icon, color }) => (
-          <div key={label} className="bg-surface border border-line shadow-soft p-4">
+          <div key={label} className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4">
             <div className="flex items-center gap-2 mb-1">
               <Icon size={16} className={color} />
               <p className="text-xs font-black uppercase tracking-wider text-muted">{label}</p>
@@ -57,7 +57,7 @@ function PanelFacturacion({ data }: { data: Facturacion }) {
       )}
 
       {/* Barras por mes */}
-      <div className="bg-surface border border-line shadow-soft p-5">
+      <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-5">
         <h2 className="text-xs font-black uppercase tracking-wider text-muted mb-4">Ingresos por mes</h2>
         <div className="flex items-end gap-2 h-32">
           {data.porMes.map(m => {
@@ -79,7 +79,7 @@ function PanelFacturacion({ data }: { data: Facturacion }) {
 
       {/* Por empresa */}
       {data.porEmpresa.length > 0 && (
-        <div className="bg-surface border border-line shadow-soft p-5">
+        <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-5">
           <h2 className="text-xs font-black uppercase tracking-wider text-muted mb-3">Por empresa</h2>
           <div className="space-y-2">
             {data.porEmpresa.map(({ empresa, total, cantidad }) => (
@@ -97,7 +97,7 @@ function PanelFacturacion({ data }: { data: Facturacion }) {
 
       {/* Últimos pagos */}
       {data.ultimos.length > 0 && (
-        <div className="bg-surface border border-line shadow-soft p-5">
+        <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-5">
           <h2 className="text-xs font-black uppercase tracking-wider text-muted mb-3">Últimos movimientos</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">

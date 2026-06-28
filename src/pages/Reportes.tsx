@@ -116,7 +116,7 @@ export const Reportes: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Filters */}
         <div className="lg:col-span-1">
-          <div className="bg-surface border border-line shadow-soft p-4 space-y-4">
+          <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4 space-y-4">
             <h2 className="text-sm font-black uppercase tracking-wider text-content">Parámetros</h2>
 
             <div>
@@ -208,7 +208,7 @@ export const Reportes: React.FC = () => {
         {/* Preview */}
         <div className="lg:col-span-2">
           {preview ? (
-            <div className="bg-surface border border-line shadow-soft p-6">
+            <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-6">
               {/* Document-style preview */}
               <div className="border-b-4 border-line pb-4 mb-6">
                 <h2 className="text-2xl font-black text-content text-center uppercase">ActivaQR</h2>

@@ -65,7 +65,7 @@ const Modal: React.FC<{ titulo: string; icono?: React.ReactNode; onClose: () => 
 }) => (
   <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 pb-safe" onClick={onClose}>
     <div
-      className={`bg-surface border border-line shadow-soft w-full ${maxW} max-h-[92vh] overflow-y-auto`}
+      className={`bg-surface/85 backdrop-blur-xl border border-line shadow-soft w-full ${maxW} max-h-[92vh] overflow-y-auto`}
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between bg-slate-900 text-white px-5 py-4 sticky top-0">
@@ -307,7 +307,7 @@ const ModalWhatsapp: React.FC<{
 
   return (
     <div className="fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 pb-safe">
-      <div className="bg-surface border border-line shadow-soft w-full max-w-sm max-h-[90vh] overflow-y-auto">
+      <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft w-full max-w-sm max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between border border-line px-5 py-3 bg-slate-900 text-white">
           <h2 className="font-display font-black text-base uppercase tracking-wide">{titulo}</h2>
           <button onClick={onOmitir}><X size={18} /></button>
@@ -782,7 +782,7 @@ export const Admin: React.FC = () => {
             return (
             <div
               key={emp.id}
-              className="bg-surface border border-line shadow-soft"
+              className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft"
             >
               {/* Cabecera clicable */}
               <button
@@ -1120,7 +1120,7 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-surface border border-line shadow-soft w-full max-w-md my-8">
+      <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft w-full max-w-md my-8">
         <div className="flex items-center justify-between border border-line px-5 py-3">
           <h2 className="font-display font-black text-xl uppercase">Nueva empresa</h2>
           <button onClick={onClose}>
@@ -1291,7 +1291,7 @@ const SolicitudUpgradeRow: React.FC<{
   const [descartando, setDescartando] = useState(false);
 
   return (
-    <div className="bg-surface border border-line shadow-soft p-4 flex items-center justify-between flex-wrap gap-3">
+    <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4 flex items-center justify-between flex-wrap gap-3">
       <div className="min-w-0">
         <p className="font-display font-black text-content text-base leading-tight">{solicitud.nombre}</p>
         {solicitud.adminEmail && (
@@ -1328,7 +1328,7 @@ const SolicitudUpgradeRow: React.FC<{
 };
 
 const StatCard: React.FC<{ label: string; valor: number }> = ({ label, valor }) => (
-  <div className="bg-surface border border-line shadow-soft p-3 text-center">
+  <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-3 text-center">
     <p className="font-display font-black text-3xl sm:text-4xl text-brand-600 leading-none">{valor}</p>
     <p className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-muted mt-1">{label}</p>
   </div>
@@ -1382,7 +1382,7 @@ export const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReinici
             {estadisticas.topFichas.map((f) => (
               <div
                 key={f.activoId}
-                className="bg-surface border border-line shadow-soft p-2.5"
+                className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-2.5"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
@@ -1411,7 +1411,7 @@ export const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReinici
           </p>
           <div className="space-y-1.5">
             {estadisticas.topCiudades.map((c) => (
-              <div key={c.ciudad} className="flex items-center justify-between gap-2 bg-surface border border-line px-3 py-1.5">
+              <div key={c.ciudad} className="flex items-center justify-between gap-2 bg-surface/85 backdrop-blur-xl border border-line px-3 py-1.5">
                 <span className="text-sm font-semibold text-content">{c.ciudad} <span className="text-faint font-normal text-xs">{c.pais}</span></span>
                 <span className="font-black text-content text-sm">{c.visitas}</span>
               </div>
@@ -1424,17 +1424,17 @@ export const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReinici
         <div>
           <p className="text-xs font-black uppercase tracking-wider text-muted mb-2">Dispositivos</p>
           <div className="grid grid-cols-3 gap-2">
-            <div className="bg-surface border border-line shadow-soft p-2.5 flex flex-col items-center gap-1">
+            <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-2.5 flex flex-col items-center gap-1">
               <Smartphone size={16} className="text-brand-600" />
               <span className="font-black text-xl text-content">{estadisticas.dispositivos.mobile}</span>
               <span className="text-[10px] font-black uppercase text-muted">Celular</span>
             </div>
-            <div className="bg-surface border border-line shadow-soft p-2.5 flex flex-col items-center gap-1">
+            <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-2.5 flex flex-col items-center gap-1">
               <Monitor size={16} className="text-brand-600" />
               <span className="font-black text-xl text-content">{estadisticas.dispositivos.desktop}</span>
               <span className="text-[10px] font-black uppercase text-muted">Desktop</span>
             </div>
-            <div className="bg-surface border border-line shadow-soft p-2.5 flex flex-col items-center gap-1">
+            <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-2.5 flex flex-col items-center gap-1">
               <Tablet size={16} className="text-brand-600" />
               <span className="font-black text-xl text-content">{estadisticas.dispositivos.tablet}</span>
               <span className="text-[10px] font-black uppercase text-muted">Tablet</span>
@@ -1447,7 +1447,7 @@ export const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReinici
         <div>
           <p className="text-xs font-black uppercase tracking-wider text-muted mb-2">Cuentas de prueba</p>
           <div className="grid grid-cols-4 gap-2">
-            <div className="bg-surface border border-line shadow-soft p-2.5 flex flex-col items-center gap-0.5">
+            <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-2.5 flex flex-col items-center gap-0.5">
               <span className="font-black text-xl text-content">{estadisticas.trials.total}</span>
               <span className="text-[10px] font-black uppercase text-muted">Total</span>
             </div>
@@ -1472,7 +1472,7 @@ export const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReinici
           <p className="text-xs font-black uppercase tracking-wider text-muted mb-2">Secciones más usadas</p>
           <div className="space-y-1.5">
             {estadisticas.topSecciones.map((s) => (
-              <div key={s.seccion} className="bg-surface border border-line px-3 py-1.5">
+              <div key={s.seccion} className="bg-surface/85 backdrop-blur-xl border border-line px-3 py-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-semibold text-content">{s.seccion}</span>
                   <span className="font-black text-content text-sm">{s.visitas}</span>

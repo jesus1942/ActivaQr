@@ -111,7 +111,7 @@ export const FichaPublica: React.FC = () => {
   if (error || !activo) {
     return (
       <div className="min-h-screen bg-subtle flex items-center justify-center p-4">
-        <div className="bg-surface border border-line shadow-soft max-w-sm w-full p-6 text-center">
+        <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft max-w-sm w-full p-6 text-center">
           <p className="font-black text-lg text-content mb-2">ERROR</p>
           <p className="font-semibold text-content">{error || 'Activo no encontrado.'}</p>
         </div>
@@ -150,7 +150,7 @@ export const FichaPublica: React.FC = () => {
         <div className="flex items-center justify-between gap-2">
           <button
             onClick={() => window.history.length > 1 ? window.history.back() : undefined}
-            className="flex items-center gap-1.5 bg-surface border border-line shadow-soft px-3 py-2 text-xs font-black uppercase tracking-wider hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-soft active:shadow-none transition-all"
+            className="flex items-center gap-1.5 bg-surface/85 backdrop-blur-xl border border-line shadow-soft px-3 py-2 text-xs font-black uppercase tracking-wider hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-soft active:shadow-none transition-all"
           >
             <ArrowLeft size={14} />
             Volver
@@ -178,7 +178,7 @@ export const FichaPublica: React.FC = () => {
         </div>
 
         {/* Identidad del activo */}
-        <div className="bg-surface border border-line shadow-soft p-5">
+        <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-5">
           <div className="flex items-start justify-between gap-2 mb-4">
             <div>
               <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-1">
@@ -226,7 +226,7 @@ export const FichaPublica: React.FC = () => {
 
         {/* Parámetros operativos — solo si el tipo los mide */}
         {tieneParametros && (
-          <div className="bg-surface border border-line shadow-soft p-5">
+          <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-5">
             <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-3">Parámetros operativos</p>
             {mide.temp && (
               <>
@@ -242,7 +242,7 @@ export const FichaPublica: React.FC = () => {
 
         {/* Última medición — solo si tiene mediciones que mostrar segun el tipo */}
         {ultimaMedicion && (mide.temp || mide.amp || mide.presion || mide.vibracion) && (
-          <div className="bg-surface border border-line shadow-soft p-5">
+          <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-5">
             <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-3">
               Última medición — {ultimaMedicion.fecha.slice(0, 10)}
             </p>
@@ -259,7 +259,7 @@ export const FichaPublica: React.FC = () => {
 
         {/* Notas */}
         {activo.notas && (
-          <div className="bg-surface border border-line shadow-soft p-5">
+          <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-5">
             <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-2">Notas</p>
             <p className="text-sm text-content leading-relaxed">{activo.notas}</p>
           </div>

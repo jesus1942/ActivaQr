@@ -35,7 +35,7 @@ export const PantallaAceptarPoliticas: React.FC<Props> = ({ onAceptada }) => {
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div className="bg-surface border border-line shadow-soft max-w-2xl w-full max-h-[92vh] overflow-y-auto">
+      <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft max-w-2xl w-full max-h-[92vh] overflow-y-auto">
         <div className="bg-brand-600 px-6 py-4 border-b-4 border-line">
           <h1 className="font-display font-black text-white text-2xl uppercase tracking-tight flex items-center gap-2">
             <ShieldCheck size={26} /> Aceptacion de politicas

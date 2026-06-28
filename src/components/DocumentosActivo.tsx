@@ -45,7 +45,7 @@ export const DocumentosActivo: React.FC<{ activoId: string }> = ({ activoId }) =
   };
 
   return (
-    <div className="bg-surface border border-line shadow-soft p-4">
+    <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4">
       <h2 className="text-sm font-black uppercase tracking-wider text-content mb-3">Documentación</h2>
 
       <div className="flex gap-2 mb-3">

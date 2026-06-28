@@ -74,7 +74,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
     if (variant === 'full') {
       return (
         <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-          <div className="bg-surface border border-line shadow-soft max-w-lg w-full">
+          <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft max-w-lg w-full">
             <div className="bg-danger px-6 py-4 border-b-4 border-line">
               <h1 className="font-black text-white text-2xl uppercase tracking-wide flex items-center gap-2">
                 <AlertTriangle size={26} /> Algo se rompio

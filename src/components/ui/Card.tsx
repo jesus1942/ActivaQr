@@ -42,7 +42,7 @@ export const Card: React.FC<CardProps> = ({
   return (
     <Tag
       className={[
-        'bg-surface/70 backdrop-blur-xl border border-line transition-all duration-200 ease-premium',
+        'bg-surface/85 backdrop-blur-xl border border-line transition-all duration-200 ease-premium',
         radiusMap[radius],
         padMap[padding],
         flat ? '' : 'shadow-soft',

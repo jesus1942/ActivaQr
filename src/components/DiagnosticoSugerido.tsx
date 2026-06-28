@@ -119,7 +119,7 @@ export const DiagnosticoSugerido: React.FC<Props> = ({ activoId, sintomas }) => 
         {sugeridas.map((f) => {
           const open = abierta === f.id;
           return (
-            <div key={f.id} className="bg-surface border border-line">
+            <div key={f.id} className="bg-surface/85 backdrop-blur-xl border border-line">
               <button
                 type="button"
                 onClick={() => setAbierta(open ? null : f.id)}

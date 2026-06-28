@@ -35,7 +35,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({ activo, lastMedicion, sect
 
   return (
     <div
-      className="group bg-surface/70 backdrop-blur-xl border border-line rounded-lg shadow-soft cursor-pointer hover:-translate-y-0.5 hover:shadow-glow hover:border-brand-500/40 transition-all duration-200 ease-premium p-4 relative"
+      className="group bg-surface/85 backdrop-blur-xl border border-line rounded-lg shadow-soft cursor-pointer hover:-translate-y-0.5 hover:shadow-glow hover:border-brand-500/40 transition-all duration-200 ease-premium p-4 relative"
       onClick={() => navigate(`/activos/${activo.id}`)}
     >
       {/* Edit button */}

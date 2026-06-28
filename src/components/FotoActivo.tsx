@@ -55,7 +55,7 @@ export const FotoActivo: React.FC<FotoActivoProps> = ({ activoId, fotoUrl, nombr
   };
 
   return (
-    <div className="bg-surface border border-line shadow-soft overflow-hidden">
+    <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft overflow-hidden">
       {fotoUrl ? (
         <div className="relative">
           <img
