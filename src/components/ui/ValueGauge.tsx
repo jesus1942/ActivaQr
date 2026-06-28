@@ -35,10 +35,10 @@ export const ValueGauge: React.FC<ValueGaugeProps> = ({
 
   let statusColor = 'text-emerald-600';
   if (isColdAsset) {
-    if (value >= alertThreshold) statusColor = 'text-orange-500';
+    if (value >= alertThreshold) statusColor = 'text-brand-600';
     if (value >= criticalThreshold) statusColor = 'text-red-600';
   } else {
-    if (isAlert) statusColor = 'text-orange-500';
+    if (isAlert) statusColor = 'text-brand-600';
     if (isCritical) statusColor = 'text-red-600';
   }
 
@@ -46,12 +46,12 @@ export const ValueGauge: React.FC<ValueGaugeProps> = ({
     <div className="mb-4">
       <div className="flex justify-between items-baseline mb-1">
         <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</span>
-        <span className={`text-2xl font-black font-mono ${statusColor}`}>
+        <span className={`text-2xl font-bold font-mono ${statusColor}`}>
           {value}
           <span className="text-sm ml-1">{unit}</span>
         </span>
       </div>
-      <div className="relative h-4 border-2 border-slate-800 bg-slate-100 overflow-hidden">
+      <div className="relative h-4 border border-slate-800 bg-slate-100 overflow-hidden">
         {/* Green segment */}
         <div
           className="absolute left-0 top-0 h-full bg-emerald-400"
@@ -70,7 +70,7 @@ export const ValueGauge: React.FC<ValueGaugeProps> = ({
       </div>
       <div className="flex justify-between mt-0.5">
         <span className="text-xs font-mono text-slate-400">{min}{unit}</span>
-        <span className="text-xs font-mono text-orange-500">{alertThreshold}{unit}</span>
+        <span className="text-xs font-mono text-brand-600">{alertThreshold}{unit}</span>
         <span className="text-xs font-mono text-red-600">{criticalThreshold}{unit}</span>
       </div>
     </div>

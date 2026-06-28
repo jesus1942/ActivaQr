@@ -18,28 +18,30 @@ import { FichaPublica } from './pages/FichaPublica';
 import { AprobarAccesoRemoto } from './pages/AprobarAccesoRemoto';
 import { ResetPassword } from './pages/ResetPassword';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { ToastProvider } from './components/ui/Toast';
 import { DashboardOperador } from './pages/DashboardOperador';
 
 function PantallaBloqueo() {
   const { logout } = useAuth();
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div className="bg-white border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.8)] max-w-md w-full">
-        <div className="bg-red-600 px-6 py-4 border-b-4 border-slate-900">
-          <h1 className="font-black text-white text-2xl uppercase tracking-wide">
+    <div className="min-h-screen bg-canvas flex items-center justify-center p-4">
+      <div className="bg-surface border border-line rounded-xl shadow-soft max-w-md w-full overflow-hidden animate-scale-in">
+        <div className="bg-danger px-6 py-5">
+          <h1 className="font-display text-white text-xl font-bold">
             Cuenta suspendida
           </h1>
         </div>
         <div className="p-6 space-y-4">
-          <p className="text-slate-700 font-semibold text-base leading-relaxed">
+          <p className="text-content font-medium text-base leading-relaxed">
             Tu suscripción ha sido suspendida. No podés acceder a la aplicación hasta que el administrador reactive la cuenta.
           </p>
-          <p className="text-slate-500 text-sm">
+          <p className="text-muted text-sm">
             Si creés que es un error, contactá al soporte de ActivaQR.
           </p>
           <button
             onClick={logout}
-            className="w-full mt-2 px-4 py-3 border-2 border-slate-400 font-bold text-slate-600 hover:border-slate-700 transition-colors text-sm uppercase tracking-wide"
+            className="press w-full mt-2 px-4 py-3 rounded-md border border-line-strong font-semibold text-muted hover:text-content hover:border-content transition-colors text-sm"
           >
             Cerrar sesión
           </button>
@@ -91,16 +93,20 @@ function AuthedApp() {
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/ficha/:id" element={<FichaPublica />} />
-          <Route path="/acceso-remoto/aprobar/:token" element={<AprobarAccesoRemoto />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/*" element={<AuthedApp />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <ThemeProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/ficha/:id" element={<FichaPublica />} />
+              <Route path="/acceso-remoto/aprobar/:token" element={<AprobarAccesoRemoto />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/*" element={<AuthedApp />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </ToastProvider>
+    </ThemeProvider>
   );
 }
 

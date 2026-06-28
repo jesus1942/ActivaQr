@@ -44,20 +44,20 @@ export const DemoBanner: React.FC = () => {
   if (!usuario || usuario.email !== 'demo@activaqr.com') return null;
 
   return (
-    <div className="w-full border-b-2 border-black bg-gray-900 text-white flex items-center justify-between px-4 py-2 text-sm font-medium">
-      <span style={{ color: '#f97316' }}>
+    <div className="w-full bg-amber-500 text-slate-900 flex items-center justify-center gap-3 px-4 py-1.5 text-sm font-semibold fixed top-0 left-0 right-0 z-[70] safe-top">
+      <span>
         {expirado
-          ? 'Sesion expirada'
+          ? 'Sesión expirada'
           : minutosRestantes !== null
-          ? `Sesion demo — quedan ${minutosRestantes} min`
-          : 'Sesion demo'}
+          ? `Sesión demo — quedan ${minutosRestantes} min`
+          : 'Sesión demo'}
       </span>
       {expirado && (
         <button
           onClick={logout}
-          className="ml-4 border-2 border-orange-500 text-orange-400 px-3 py-0.5 text-xs font-bold hover:bg-orange-500 hover:text-white transition-colors"
+          className="press border border-slate-900/30 bg-white/30 text-slate-900 px-3 py-0.5 rounded-md text-xs font-bold hover:bg-white/60 transition-colors"
         >
-          Cerrar sesion
+          Cerrar sesión
         </button>
       )}
     </div>

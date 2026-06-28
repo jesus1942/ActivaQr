@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 import { Upload, FileText, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useActivos } from '../hooks/useActivos';
 import { format } from 'date-fns';
+import { Button, Card } from '../components/ui';
 
 interface PreviewRow {
   codigo: string;
@@ -137,21 +138,25 @@ MOT-XXX-001,Motor de Ejemplo,motor,Planta,WEG,W22 5CV,Juan García,Sector B
 COM-XXX-001,Compresor Ejemplo,compresor,Taller,Schulz,CSL 10,Pedro López,Taller Norte`;
 
   return (
-    <div>
-      <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 uppercase tracking-tight mb-2">Importar Datos</h1>
-      <p className="text-slate-500 text-sm mb-6">Importa activos desde un archivo CSV</p>
+    <div className="space-y-6 animate-fade-up">
+      <div>
+        <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight">Importar datos</h1>
+        <p className="text-muted text-sm mt-1">Importá activos desde un archivo CSV</p>
+      </div>
 
       {imported && (
-        <div className="bg-emerald-50 border-2 border-emerald-500 p-4 mb-6 flex items-center gap-3">
-          <CheckCircle size={20} className="text-emerald-600" />
-          <span className="font-bold text-emerald-800">Importación completada exitosamente</span>
+        <div className="bg-ok/10 border border-ok/40 rounded-md p-4 flex items-center gap-3">
+          <CheckCircle size={20} className="text-ok-strong dark:text-ok" />
+          <span className="font-semibold text-ok-strong dark:text-ok">Importación completada exitosamente</span>
         </div>
       )}
 
       {/* Drop Zone */}
-      <div
-        className={`border-4 border-dashed p-6 sm:p-8 md:p-12 text-center mb-6 transition-colors cursor-pointer ${
-          dragging ? 'border-orange-500 bg-orange-50' : 'border-slate-300 bg-white hover:border-orange-400'
+      <Card
+        as="button"
+        padding="lg"
+        className={`w-full text-center border-dashed transition-colors cursor-pointer ${
+          dragging ? 'border-brand-600 bg-brand-50 dark:bg-brand-600/10' : 'hover:border-brand-400'
         }`}
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
@@ -163,9 +168,9 @@ COM-XXX-001,Compresor Ejemplo,compresor,Taller,Schulz,CSL 10,Pedro López,Taller
         }}
         onClick={() => fileRef.current?.click()}
       >
-        <Upload size={40} className="mx-auto mb-3 text-slate-400" />
-        <p className="text-lg font-bold text-slate-700">Arrastra tu archivo CSV aquí</p>
-        <p className="text-sm text-slate-400 mt-1">o haz clic para seleccionar</p>
+        <Upload size={40} className="mx-auto mb-3 text-faint" />
+        <p className="text-lg font-bold text-content">Arrastrá tu archivo CSV acá</p>
+        <p className="text-sm text-muted mt-1">o hacé clic para seleccionar</p>
         <input
           ref={fileRef}
           type="file"
@@ -173,22 +178,22 @@ COM-XXX-001,Compresor Ejemplo,compresor,Taller,Schulz,CSL 10,Pedro López,Taller
           className="hidden"
           onChange={(e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }}
         />
-      </div>
+      </Card>
 
       {error && (
-        <div className="bg-red-50 border-2 border-red-500 p-4 mb-6 flex items-center gap-3">
-          <AlertTriangle size={20} className="text-red-600" />
-          <span className="font-semibold text-red-700">{error}</span>
+        <div className="bg-danger/10 border border-danger/40 rounded-md p-4 flex items-center gap-3">
+          <AlertTriangle size={20} className="text-danger" />
+          <span className="font-semibold text-danger-strong dark:text-danger">{error}</span>
         </div>
       )}
 
       {/* CSV Format instructions */}
-      <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4 mb-6">
+      <Card padding="md">
         <div className="flex items-center gap-2 mb-3">
-          <FileText size={16} className="text-slate-600" />
-          <h2 className="text-sm font-black uppercase tracking-wider text-slate-700">Formato del Archivo CSV</h2>
+          <FileText size={16} className="text-muted" />
+          <h2 className="font-display text-base font-bold text-content">Formato del archivo CSV</h2>
         </div>
-        <p className="text-sm text-slate-600 mb-3">El archivo debe tener las siguientes columnas (separadas por comas):</p>
+        <p className="text-sm text-muted mb-3">El archivo debe tener estas columnas separadas por comas:</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
           {[
             { col: 'codigo', req: true },
@@ -200,56 +205,56 @@ COM-XXX-001,Compresor Ejemplo,compresor,Taller,Schulz,CSL 10,Pedro López,Taller
             { col: 'responsable', req: false },
             { col: 'ubicacion', req: false },
           ].map(({ col, req }) => (
-            <div key={col} className={`text-xs font-mono px-2 py-1 border-2 ${req ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-slate-200 bg-slate-50 text-slate-600'}`}>
-              {col} {req && <span className="text-red-500">*</span>}
+            <div key={col} className={`text-xs font-mono px-2 py-1 border-l-2 ${req ? 'border-brand-600 text-brand-700 dark:text-brand-300' : 'border-line-strong text-muted'}`}>
+              {col} {req && <span className="text-danger">*</span>}
             </div>
           ))}
         </div>
-        <div className="bg-slate-900 text-emerald-400 font-mono text-xs p-3 overflow-x-auto">
+        <div className="bg-content text-ok font-mono text-xs p-3 rounded-md overflow-x-auto">
           <pre>{csvExample}</pre>
         </div>
-        <p className="text-xs text-slate-500 mt-2">Los valores de <span className="font-mono">tipo</span>, <span className="font-mono">sector</span> y <span className="font-mono">responsable</span> se asocian por nombre a las entidades existentes; si no existen, se crean automáticamente.</p>
-      </div>
+        <p className="text-xs text-muted mt-2">Los valores de <span className="font-mono">tipo</span>, <span className="font-mono">sector</span> y <span className="font-mono">responsable</span> se asocian por nombre; si no existen, se crean automáticamente.</p>
+      </Card>
 
       {/* Preview table */}
       {preview.length > 0 && (
-        <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
+        <Card padding="none" className="overflow-hidden">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-black uppercase tracking-wider text-slate-700">
-              Vista Previa ({preview.length} registros)
+            <h2 className="font-display text-base font-bold text-content px-5 pt-5">
+              Vista previa ({preview.length} registros)
             </h2>
-            <button
+            <Button
               onClick={handleImport}
-              className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)]"
+              iconLeft={<Upload size={15} />}
+              className="mr-5 mt-5"
             >
-              <Upload size={15} />
               Importar {preview.length} Activos
-            </button>
+            </Button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="bg-slate-900 text-white">
+                <tr className="border-y border-line text-faint">
                   {['Código', 'Nombre', 'Tipo', 'Sector', 'Marca', 'Responsable'].map((h) => (
-                    <th key={h} className="text-left px-3 py-2 font-black uppercase">{h}</th>
+                    <th key={h} className="text-left px-4 py-2.5 font-semibold">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-line">
                 {preview.map((row, i) => (
-                  <tr key={i} className={`border-b border-slate-100 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
-                    <td className="px-3 py-1.5 font-mono font-bold">{row.codigo}</td>
-                    <td className="px-3 py-1.5">{row.nombre}</td>
-                    <td className="px-3 py-1.5 capitalize">{row.tipo}</td>
-                    <td className="px-3 py-1.5">{row.sector}</td>
-                    <td className="px-3 py-1.5">{row.marca}</td>
-                    <td className="px-3 py-1.5">{row.responsable}</td>
+                  <tr key={i} className="hover:bg-subtle transition-colors">
+                    <td className="px-4 py-2 font-mono font-bold text-content">{row.codigo}</td>
+                    <td className="px-4 py-2 text-muted">{row.nombre}</td>
+                    <td className="px-4 py-2 text-muted capitalize">{row.tipo}</td>
+                    <td className="px-4 py-2 text-muted">{row.sector}</td>
+                    <td className="px-4 py-2 text-muted">{row.marca}</td>
+                    <td className="px-4 py-2 text-muted">{row.responsable}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );

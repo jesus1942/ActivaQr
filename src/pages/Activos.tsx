@@ -9,6 +9,9 @@ import { useAuth } from '../context/AuthContext';
 import { AssetCard } from '../components/ui/AssetCard';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { ESTADOS_OPERATIVOS } from '../components/ui/EstadoOperativoBadge';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Input, Select, Textarea } from '../components/ui/Input';
 import { Activo, EstadoActivo, EstadoOperativo } from '../data/types';
 
 const LIMITES_ACTIVOS: Record<string, number | null> = {
@@ -150,14 +153,14 @@ export const Activos: React.FC = () => {
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6 gap-3">
+    <div className="space-y-5 animate-fade-up">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="font-sketch text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 uppercase tracking-tight">Activos</h1>
-          <p className="text-slate-500 text-sm mt-1">{filtered.length} activos encontrados</p>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight">Activos</h1>
+          <p className="text-muted text-sm mt-1">{filtered.length} activos encontrados</p>
         </div>
-        <div className="flex gap-2">
-          <button
+        <div className="grid grid-cols-[auto_1fr] sm:flex gap-2">
+          <Button
             onClick={() => exportarCsv('activos', filtered.map((a) => ({
               Codigo: a.codigo, Nombre: a.nombre, Sector: getSectorNombre(a.sectorId),
               Tipo: getTipoNombre(a.tipoId), Marca: a.marca ?? '', Modelo: a.modelo ?? '',
@@ -166,74 +169,71 @@ export const Activos: React.FC = () => {
               Responsable: getTecnicoNombre(a.responsableId ?? null),
               Ubicacion: a.ubicacion ?? '', Notas: a.notas ?? '',
             })))}
-            className="flex items-center gap-2 bg-white text-slate-700 px-3 min-h-[44px] font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] transition-all text-sm"
+            variant="secondary"
+            iconLeft={<Download size={15} />}
             title="Exportar lista a CSV"
           >
-            <Download size={15} />
             <span className="hidden sm:inline">CSV</span>
-          </button>
-          <button
+            <span className="sm:hidden">CSV</span>
+          </Button>
+          <Button
             onClick={openNew}
-            className="flex items-center gap-2 bg-orange-500 text-white px-4 min-h-[44px] font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] transition-all"
+            iconLeft={<Plus size={16} />}
+            block
           >
-            <Plus size={16} />
             <span className="hidden sm:inline">Nuevo Activo</span>
             <span className="sm:hidden">Nuevo</span>
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4 mb-6 flex flex-wrap gap-3 items-center">
-        <div className="flex items-center gap-2 border-2 border-slate-300 px-3 h-11 flex-1 min-w-0 w-full sm:w-auto sm:min-w-48">
-          <Search size={15} className="text-slate-400 flex-shrink-0" />
-          <input
-            type="text"
-            placeholder="Buscar por nombre o código..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 min-w-0 outline-none text-sm"
-          />
-        </div>
-        <select
+      <Card padding="sm" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(220px,1fr)_180px_170px_170px_auto] gap-3 items-end">
+        <Input
+          type="text"
+          placeholder="Buscar por nombre o código..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          icon={<Search size={15} />}
+        />
+        <Select
           value={sectorFiltro}
           onChange={(e) => setSectorFiltro(e.target.value)}
-          className="border-2 border-slate-300 px-3 h-11 text-sm font-semibold outline-none flex-1 sm:flex-none min-w-0"
         >
           <option value="Todos">Todos los sectores</option>
           {sectoresActivos.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
-        </select>
-        <select
+        </Select>
+        <Select
           value={estado}
           onChange={(e) => setEstado(e.target.value)}
-          className="border-2 border-slate-300 px-3 h-11 text-sm font-semibold outline-none flex-1 sm:flex-none min-w-0"
         >
           {ESTADOS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-        </select>
-        <select
+        </Select>
+        <Select
           value={sort}
           onChange={(e) => setSort(e.target.value)}
-          className="border-2 border-slate-300 px-3 h-11 text-sm font-semibold outline-none flex-1 sm:flex-none min-w-0"
         >
           <option value="estado">Ordenar: Estado</option>
           <option value="nombre">Ordenar: Nombre</option>
           <option value="sector">Ordenar: Sector</option>
-        </select>
-        <div className="flex border-2 border-slate-300 h-11">
+        </Select>
+        <div className="flex h-11 rounded-md border border-line bg-surface overflow-hidden">
           <button
             onClick={() => setView('grid')}
-            className={`px-3 ${view === 'grid' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}
+            className={`press px-3 flex-1 sm:flex-none ${view === 'grid' ? 'bg-brand-600 text-white' : 'text-faint hover:text-content hover:bg-subtle'}`}
+            aria-label="Vista de tarjetas"
           >
             <LayoutGrid size={16} />
           </button>
           <button
             onClick={() => setView('table')}
-            className={`px-3 ${view === 'table' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}
+            className={`press px-3 flex-1 sm:flex-none ${view === 'table' ? 'bg-brand-600 text-white' : 'text-faint hover:text-content hover:bg-subtle'}`}
+            aria-label="Vista de tabla"
           >
             <List size={16} />
           </button>
         </div>
-      </div>
+      </Card>
 
       {view === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -254,43 +254,49 @@ export const Activos: React.FC = () => {
           })}
         </div>
       ) : (
-        <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] overflow-x-auto">
+        <Card padding="none" className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-slate-900 text-white">
+              <tr className="border-b border-line text-faint">
                 {['Código', 'Nombre', 'Tipo', 'Sector', 'Responsable', 'Estado', 'Próx. Mant.'].map((h) => (
-                  <th key={h} className="text-left px-3 py-2.5 text-xs font-black uppercase tracking-wider whitespace-nowrap">{h}</th>
+                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody>
-              {filtered.map((a, i) => (
+            <tbody className="divide-y divide-line">
+              {filtered.map((a) => (
                 <tr
                   key={a.id}
                   onClick={() => navigate(`/activos/${a.id}`)}
-                  className={`border-b border-slate-100 hover:bg-orange-50 cursor-pointer ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}
+                  className="hover:bg-subtle cursor-pointer transition-colors"
                 >
-                  <td className="px-3 py-2 font-mono font-bold text-slate-800 whitespace-nowrap">{a.codigo}</td>
-                  <td className="px-3 py-2 font-semibold text-slate-700">{a.nombre}</td>
-                  <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{getTipoNombre(a.tipoId)}</td>
-                  <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{getSectorNombre(a.sectorId)}</td>
-                  <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{getTecnicoNombre(a.responsableId)}</td>
-                  <td className="px-3 py-2"><StatusBadge estado={a.estado} size="sm" /></td>
-                  <td className="px-3 py-2 text-slate-600 font-mono text-xs whitespace-nowrap">{a.proximoMantenimiento}</td>
+                  <td className="px-4 py-3 font-mono font-semibold text-content whitespace-nowrap">{a.codigo}</td>
+                  <td className="px-4 py-3 font-semibold text-content">{a.nombre}</td>
+                  <td className="px-4 py-3 text-muted whitespace-nowrap">{getTipoNombre(a.tipoId)}</td>
+                  <td className="px-4 py-3 text-muted whitespace-nowrap">{getSectorNombre(a.sectorId)}</td>
+                  <td className="px-4 py-3 text-muted whitespace-nowrap">{getTecnicoNombre(a.responsableId)}</td>
+                  <td className="px-4 py-3"><StatusBadge estado={a.estado} size="sm" /></td>
+                  <td className="px-4 py-3 text-muted font-mono text-xs whitespace-nowrap">{a.proximoMantenimiento}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </Card>
       )}
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-2 sm:p-4">
-          <div className="bg-white border-2 border-slate-800 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.8)] w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b-2 border-slate-800 bg-slate-900 text-white sticky top-0 z-10">
-              <h2 className="font-black uppercase tracking-wide">{editId ? 'Editar Activo' : 'Nuevo Activo'}</h2>
-              <button onClick={() => setShowModal(false)}><X size={20} /></button>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-surface border border-line shadow-lift w-full sm:max-w-2xl max-h-[92vh] sm:max-h-[90vh] overflow-y-auto rounded-t-xl sm:rounded-xl">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-line sticky top-0 z-10 bg-surface">
+              <h2 className="font-display text-lg font-bold text-content">{editId ? 'Editar activo' : 'Nuevo activo'}</h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="press grid place-items-center w-9 h-9 rounded-full text-faint hover:text-content hover:bg-subtle transition-colors"
+                aria-label="Cerrar"
+              >
+                <X size={18} />
+              </button>
             </div>
             <form onSubmit={handleSubmit} className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
@@ -300,161 +306,115 @@ export const Activos: React.FC = () => {
                 { label: 'Modelo', key: 'modelo' },
                 { label: 'Ubicación', key: 'ubicacion' },
               ].map(({ label, key, required }) => (
-                <div key={key}>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">{label}</label>
-                  <input
-                    type="text"
-                    required={required}
-                    value={(form as Record<string, unknown>)[key] as string}
-                    onChange={(e) => setForm((prev) => ({ ...prev, [key]: e.target.value }))}
-                    className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
-                  />
-                </div>
+                <Input
+                  key={key}
+                  label={label}
+                  type="text"
+                  required={required}
+                  value={(form as Record<string, unknown>)[key] as string}
+                  onChange={(e) => setForm((prev) => ({ ...prev, [key]: e.target.value }))}
+                />
               ))}
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Responsable</label>
-                <select
+                <Select
+                  label="Responsable"
                   value={form.responsableId}
                   onChange={(e) => setForm((prev) => ({ ...prev, responsableId: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
                 >
                   <option value="">Sin asignar</option>
                   {tecnicosActivos.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
-                </select>
+                </Select>
               </div>
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Tipo</label>
-                <select
+                <Select
+                  label="Tipo"
                   value={form.tipoId}
                   onChange={(e) => setForm((prev) => ({ ...prev, tipoId: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
                 >
                   {tiposActivos.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
-                </select>
+                </Select>
               </div>
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Sector</label>
-                <select
+                <Select
+                  label="Sector"
                   value={form.sectorId}
                   onChange={(e) => setForm((prev) => ({ ...prev, sectorId: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
                 >
                   {sectoresActivos.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
-                </select>
+                </Select>
               </div>
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Estado Inicial</label>
-                <select
+                <Select
+                  label="Estado inicial"
                   value={form.estado}
                   onChange={(e) => setForm((prev) => ({ ...prev, estado: e.target.value as EstadoActivo }))}
-                  className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
                 >
                   {['normal', 'alerta', 'critico', 'mantenimiento'].map((s) => <option key={s}>{s}</option>)}
-                </select>
+                </Select>
               </div>
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Estado Operativo</label>
-                <select
+                <Select
+                  label="Estado operativo"
                   value={form.estadoOperativo ?? 'operativo'}
                   onChange={(e) => setForm((prev) => ({ ...prev, estadoOperativo: e.target.value as EstadoOperativo }))}
-                  className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
                 >
                   {ESTADOS_OPERATIVOS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                </select>
+                </Select>
               </div>
-              <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Fecha Ingreso</label>
-                <input
-                  type="date"
-                  value={form.fechaIngreso}
-                  onChange={(e) => setForm((prev) => ({ ...prev, fechaIngreso: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Próximo Mantenimiento</label>
-                <input
-                  type="date"
-                  value={form.proximoMantenimiento}
-                  onChange={(e) => setForm((prev) => ({ ...prev, proximoMantenimiento: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
-                />
-              </div>
+              <Input
+                label="Fecha ingreso"
+                type="date"
+                value={form.fechaIngreso}
+                onChange={(e) => setForm((prev) => ({ ...prev, fechaIngreso: e.target.value }))}
+              />
+              <Input
+                label="Próximo mantenimiento"
+                type="date"
+                value={form.proximoMantenimiento}
+                onChange={(e) => setForm((prev) => ({ ...prev, proximoMantenimiento: e.target.value }))}
+              />
               <div className="sm:col-span-2">
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Notas</label>
-                <textarea
+                <Textarea
+                  label="Notas"
                   value={form.notas}
                   onChange={(e) => setForm((prev) => ({ ...prev, notas: e.target.value }))}
                   rows={2}
-                  className="w-full border-2 border-slate-300 px-3 py-2 text-sm outline-none focus:border-orange-500"
                 />
               </div>
 
               {/* Activo itinerante */}
               <div className="sm:col-span-2">
-                <label className="flex items-center gap-3 cursor-pointer border-2 border-slate-200 px-4 py-3 hover:border-slate-400 transition-colors">
+                <label className="flex items-center gap-3 cursor-pointer border border-line rounded-md px-4 py-3 hover:border-line-strong transition-colors bg-subtle">
                   <input
                     type="checkbox"
                     checked={!!form.esItinerante}
                     onChange={(e) => setForm((prev) => ({ ...prev, esItinerante: e.target.checked }))}
-                    className="w-4 h-4 accent-orange-500 border-2 border-slate-800"
+                    className="w-4 h-4 accent-brand-600"
                   />
-                  <span className="text-sm font-black uppercase tracking-wider text-slate-700">
+                  <span className="text-sm font-semibold text-content">
                     Activo itinerante (se traslada entre ubicaciones)
                   </span>
                 </label>
               </div>
               {form.esItinerante && (
                 <>
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Locacion base (donde se guarda normalmente)</label>
-                    <input
-                      type="text"
-                      value={form.locacionBase ?? ''}
-                      onChange={(e) => setForm((prev) => ({ ...prev, locacionBase: e.target.value }))}
-                      className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Locacion actual</label>
-                    <input
-                      type="text"
-                      value={form.locacionActual ?? ''}
-                      onChange={(e) => setForm((prev) => ({ ...prev, locacionActual: e.target.value }))}
-                      className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Fecha de salida</label>
-                    <input
-                      type="date"
-                      value={form.fechaSalida ?? ''}
-                      onChange={(e) => setForm((prev) => ({ ...prev, fechaSalida: e.target.value }))}
-                      className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Fecha de retorno estimada</label>
-                    <input
-                      type="date"
-                      value={form.fechaRetorno ?? ''}
-                      onChange={(e) => setForm((prev) => ({ ...prev, fechaRetorno: e.target.value }))}
-                      className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500"
-                    />
-                  </div>
+                  <Input label="Locación base" type="text" value={form.locacionBase ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, locacionBase: e.target.value }))} />
+                  <Input label="Locación actual" type="text" value={form.locacionActual ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, locacionActual: e.target.value }))} />
+                  <Input label="Fecha de salida" type="date" value={form.fechaSalida ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, fechaSalida: e.target.value }))} />
+                  <Input label="Fecha de retorno estimada" type="date" value={form.fechaRetorno ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, fechaRetorno: e.target.value }))} />
                 </>
               )}
 
               {/* Parámetros de medición */}
               <ParametrosMedicion form={form} setForm={setForm} />
 
-              <div className="sm:col-span-2 flex justify-end gap-3 mt-2">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 min-h-[44px] border-2 border-slate-400 font-bold text-slate-600">
+              <div className="sm:col-span-2 grid grid-cols-2 sm:flex sm:justify-end gap-3 mt-2">
+                <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>
                   Cancelar
-                </button>
-                <button type="submit" className="px-4 min-h-[44px] bg-orange-500 text-white border-2 border-slate-800 font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)]">
+                </Button>
+                <Button type="submit">
                   {editId ? 'Guardar Cambios' : 'Crear Activo'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -475,14 +435,14 @@ const CampoNum: React.FC<{
   unidad?: string;
 }> = ({ label, campo, form, setForm, unidad }) => (
   <div>
-    <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-1">
-      {label}{unidad && <span className="text-slate-400 font-normal normal-case"> ({unidad})</span>}
+    <label className="block text-xs font-semibold text-muted tracking-wide mb-1">
+      {label}{unidad && <span className="text-faint font-normal"> ({unidad})</span>}
     </label>
     <input
       type="number"
       value={(form[campo] as number) ?? ''}
       onChange={(e) => setForm((prev) => ({ ...prev, [campo]: e.target.value === '' ? null : Number(e.target.value) }))}
-      className="w-full border-2 border-slate-300 px-3 h-10 text-sm outline-none focus:border-orange-500"
+      className="w-full border border-line rounded-md bg-surface px-3 h-10 text-sm text-content outline-none focus:border-brand-600 focus:shadow-ring"
     />
   </div>
 );
@@ -494,13 +454,13 @@ const ParametrosMedicion: React.FC<{
   const [abierto, setAbierto] = useState(false);
 
   return (
-    <div className="sm:col-span-2 border-2 border-slate-200">
+    <div className="sm:col-span-2 border border-line rounded-md overflow-hidden">
       <button
         type="button"
         onClick={() => setAbierto((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 bg-subtle hover:bg-surface-2 transition-colors"
       >
-        <span className="text-xs font-black uppercase tracking-wider text-slate-600">
+        <span className="text-sm font-semibold text-content">
           Parámetros de medición y alertas
         </span>
         {abierto ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -509,7 +469,7 @@ const ParametrosMedicion: React.FC<{
       {abierto && (
         <div className="p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="col-span-2 sm:col-span-4">
-            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2">Temperatura</p>
+            <p className="text-xs font-semibold text-brand-600 mb-2">Temperatura</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <CampoNum label="Mín normal" campo="temperaturaMin" form={form} setForm={setForm} unidad="°C" />
               <CampoNum label="Máx normal" campo="temperaturaMax" form={form} setForm={setForm} unidad="°C" />
@@ -519,7 +479,7 @@ const ParametrosMedicion: React.FC<{
           </div>
 
           <div className="col-span-2 sm:col-span-4">
-            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Amperaje</p>
+            <p className="text-xs font-semibold text-brand-600 mb-2 mt-2">Amperaje</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <CampoNum label="Normal"  campo="amperajeNormal"  form={form} setForm={setForm} unidad="A" />
               <CampoNum label="Alerta"  campo="amperajeAlerta"  form={form} setForm={setForm} unidad="A" />
@@ -528,7 +488,7 @@ const ParametrosMedicion: React.FC<{
           </div>
 
           <div className="col-span-2 sm:col-span-4">
-            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Presión</p>
+            <p className="text-xs font-semibold text-brand-600 mb-2 mt-2">Presión</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <CampoNum label="Normal"  campo="presionNormal"  form={form} setForm={setForm} unidad="bar" />
               <CampoNum label="Alerta"  campo="presionAlerta"  form={form} setForm={setForm} unidad="bar" />
@@ -537,7 +497,7 @@ const ParametrosMedicion: React.FC<{
           </div>
 
           <div className="col-span-2 sm:col-span-4">
-            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Voltaje</p>
+            <p className="text-xs font-semibold text-brand-600 mb-2 mt-2">Voltaje</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <CampoNum label="Mín"    campo="voltajeMin"   form={form} setForm={setForm} unidad="V" />
               <CampoNum label="Máx"    campo="voltajeMax"   form={form} setForm={setForm} unidad="V" />
@@ -546,7 +506,7 @@ const ParametrosMedicion: React.FC<{
           </div>
 
           <div className="col-span-2 sm:col-span-4">
-            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Batería / Tóner (valores bajos = peor)</p>
+            <p className="text-xs font-semibold text-brand-600 mb-2 mt-2">Batería / Tóner (valores bajos = peor)</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <CampoNum label="Batería alerta"   campo="bateriaAlerta"  form={form} setForm={setForm} unidad="%" />
               <CampoNum label="Batería crítica"  campo="bateriaCritica" form={form} setForm={setForm} unidad="%" />
@@ -556,7 +516,7 @@ const ParametrosMedicion: React.FC<{
           </div>
 
           <div className="col-span-2 sm:col-span-4">
-            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2 mt-2">Intervalos de mantenimiento</p>
+            <p className="text-xs font-semibold text-brand-600 mb-2 mt-2">Intervalos de mantenimiento</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <CampoNum label="Medición c/"     campo="intervaloMedicionHoras"     form={form} setForm={setForm} unidad="hs" />
               <CampoNum label="Lubricación c/"  campo="intervaloLubricacionHoras"  form={form} setForm={setForm} unidad="hs" />

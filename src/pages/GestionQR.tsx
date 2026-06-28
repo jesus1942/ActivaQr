@@ -4,6 +4,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Printer, Download } from 'lucide-react';
 import { useActivos } from '../hooks/useActivos';
 import { StatusBadge } from '../components/ui/StatusBadge';
+import { Button, Card } from '../components/ui';
 
 export const GestionQR: React.FC = () => {
   const { activos, getSectorNombre } = useActivos();
@@ -20,38 +21,39 @@ export const GestionQR: React.FC = () => {
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
+    <div className="space-y-6 animate-fade-up">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 uppercase tracking-tight">QR / Etiquetas</h1>
-          <p className="text-slate-500 text-sm mt-1">{activos.length} activos</p>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight">QR / Etiquetas</h1>
+          <p className="text-muted text-sm mt-1">{activos.length} activos</p>
         </div>
-        <button
+        <Button
+          type="button"
           onClick={handlePrintAll}
-          className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:bg-slate-700 transition-colors"
+          iconLeft={<Printer size={16} />}
         >
-          <Printer size={16} />
           Imprimir Todas
-        </button>
+        </Button>
       </div>
 
       <div ref={printRef} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 print:grid-cols-4">
         {activos.map((activo) => {
           const qrValue = `${window.location.origin}${import.meta.env.BASE_URL}#/ficha/${activo.id}`;
           return (
-            <div
+            <Card
               key={activo.id}
-              className="bg-white border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] p-3 text-center print:shadow-none print:border print:break-inside-avoid"
+              padding="sm"
+              className="text-center print:shadow-none print:border print:break-inside-avoid"
             >
               {/* QR Code */}
-              <div className="inline-block border-2 border-slate-200 p-2 mb-2">
+              <div className="inline-block border border-line rounded-md p-2 mb-2 bg-white">
                 <QRCodeSVG value={qrValue} size={100} />
               </div>
 
               {/* Info */}
-              <div className="font-mono font-black text-xs text-slate-900 leading-tight">{activo.codigo}</div>
-              <div className="text-xs text-slate-600 mt-0.5 leading-snug truncate">{activo.nombre}</div>
-              <div className="text-xs text-slate-400 mt-0.5">{getSectorNombre(activo.sectorId)}</div>
+              <div className="font-mono font-bold text-xs text-content leading-tight">{activo.codigo}</div>
+              <div className="text-xs text-muted mt-0.5 leading-snug truncate">{activo.nombre}</div>
+              <div className="text-xs text-faint mt-0.5">{getSectorNombre(activo.sectorId)}</div>
 
               <div className="mt-2">
                 <StatusBadge estado={activo.estado} size="sm" />
@@ -86,12 +88,12 @@ export const GestionQR: React.FC = () => {
                     printWindow.document.close();
                   }
                 }}
-                className="mt-2 w-full flex items-center justify-center gap-1 text-xs font-bold border-2 border-slate-300 py-1 hover:border-orange-500 hover:text-orange-600 transition-colors print:hidden"
+                className="press mt-3 w-full flex items-center justify-center gap-1 text-xs font-semibold border border-line rounded-md py-1.5 text-muted hover:border-line-strong hover:text-content transition-colors print:hidden"
               >
                 <Download size={11} />
                 Imprimir
               </button>
-            </div>
+            </Card>
           );
         })}
       </div>

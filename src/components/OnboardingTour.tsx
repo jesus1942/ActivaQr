@@ -62,8 +62,8 @@ export const OnboardingTour: React.FC = () => {
   };
 
   const burbuja = (
-    <div className="bg-white border-2 border-slate-900 shadow-[4px_4px_0px_0px_#1e293b] p-5 w-full max-w-xs sm:max-w-sm">
-      <p className="font-sketch font-black uppercase text-slate-900 text-lg mb-2">{pasoActual.titulo}</p>
+    <div className="bg-white border border-slate-900 shadow-soft p-5 w-full max-w-xs sm:max-w-sm">
+      <p className="font-display font-bold uppercase text-slate-900 text-lg mb-2">{pasoActual.titulo}</p>
       <p className="text-sm text-slate-600 mb-4">{pasoActual.texto}</p>
 
       <div className="flex items-center gap-1.5 mb-4">
@@ -71,7 +71,7 @@ export const OnboardingTour: React.FC = () => {
           <span
             key={i}
             className={`inline-block rounded-full transition-all ${
-              i === paso ? 'w-3 h-3 bg-orange-500' : 'w-2 h-2 bg-slate-300'
+              i === paso ? 'w-3 h-3 bg-brand-600' : 'w-2 h-2 bg-slate-300'
             }`}
           />
         ))}
@@ -80,13 +80,13 @@ export const OnboardingTour: React.FC = () => {
       <div className="flex items-center justify-between gap-3">
         <button
           onClick={omitir}
-          className="text-xs font-bold text-slate-500 border-2 border-slate-300 px-3 py-1.5 hover:border-slate-500 transition-colors"
+          className="text-xs font-bold text-slate-500 border border-slate-300 px-3 py-1.5 hover:border-slate-500 transition-colors"
         >
           Omitir todo
         </button>
         <button
           onClick={avanzar}
-          className="bg-orange-500 text-white text-sm font-black px-4 py-2 border-2 border-slate-900 shadow-[2px_2px_0px_0px_#1e293b] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_#1e293b] transition-all"
+          className="bg-brand-600 text-white text-sm font-bold px-4 py-2 border border-slate-900 shadow-soft hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-soft transition-all"
         >
           {pasoActual.esUltimo ? 'Empezar' : 'Siguiente'}
         </button>

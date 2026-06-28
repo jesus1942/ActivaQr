@@ -78,22 +78,22 @@ const ModalWhatsapp: React.FC<{
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/60 flex items-end sm:items-center justify-center p-4 pb-safe">
-      <div className="bg-white border-2 border-slate-900 shadow-[6px_6px_0px_0px_#1e293b] w-full max-w-sm max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between border-b-2 border-slate-900 px-5 py-3 bg-slate-900 text-white">
-          <h2 className="font-sketch font-black text-base uppercase tracking-wide">{titulo}</h2>
+      <div className="bg-surface border border-line rounded-lg shadow-lift w-full max-w-sm max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-line px-5 py-3 bg-content text-white">
+          <h2 className="font-display font-bold text-base uppercase tracking-wide">{titulo}</h2>
           <button onClick={onOmitir}><X size={18} /></button>
         </div>
         <div className="p-5 space-y-4">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted">
             WhatsApp de <strong>{nombreEmpresa}</strong> para enviar el link directamente.
           </p>
 
           <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-1">Pais</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Pais</label>
             <select
               value={pais.codigo}
               onChange={(e) => setPais(CODIGOS_PAIS.find((c) => c.codigo === e.target.value) ?? CODIGOS_PAIS[0])}
-              className="w-full border-2 border-slate-300 px-3 h-11 text-sm font-semibold outline-none focus:border-orange-500 bg-white"
+              className="w-full border border-line px-3 h-11 text-sm font-semibold outline-none focus:border-brand-600 bg-white"
             >
               {CODIGOS_PAIS.map((c) => (
                 <option key={c.codigo} value={c.codigo}>
@@ -104,11 +104,11 @@ const ModalWhatsapp: React.FC<{
           </div>
 
           <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-1">
               Numero (sin 0, sin codigo de pais)
             </label>
             <div className="flex gap-2 items-center">
-              <span className="border-2 border-slate-300 px-3 h-11 flex items-center font-mono font-black text-slate-700 text-sm bg-slate-50 whitespace-nowrap">
+              <span className="border border-line px-3 h-11 flex items-center font-mono font-bold text-muted text-sm bg-subtle whitespace-nowrap">
                 +{pais.codigo}
               </span>
               <input
@@ -117,12 +117,12 @@ const ModalWhatsapp: React.FC<{
                 value={numero}
                 onChange={(e) => setNumero(e.target.value)}
                 placeholder="1112345678"
-                className="flex-1 border-2 border-slate-300 px-3 h-11 text-base font-mono outline-none focus:border-orange-500 text-center min-w-0"
+                className="flex-1 border border-line px-3 h-11 text-base font-mono outline-none focus:border-brand-600 text-center min-w-0"
               />
             </div>
             {preview && (
-              <p className="text-xs text-slate-500 mt-1.5 font-mono">
-                Numero completo: <span className="font-black text-slate-800">{preview}</span>
+              <p className="text-xs text-muted mt-1.5 font-mono">
+                Numero completo: <span className="font-bold text-content">{preview}</span>
               </p>
             )}
           </div>
@@ -130,14 +130,14 @@ const ModalWhatsapp: React.FC<{
           <div className="flex gap-2 pt-1">
             <button
               onClick={onOmitir}
-              className="flex-1 py-2.5 border-2 border-slate-300 text-sm font-bold text-slate-600 hover:border-slate-500 transition-colors"
+              className="flex-1 py-2.5 border border-line text-sm font-bold text-muted hover:border-slate-500 transition-colors"
             >
               Omitir
             </button>
             <button
               onClick={() => completo && onConfirm(completo)}
               disabled={!soloDigitos}
-              className="flex-1 py-2.5 bg-slate-900 text-white border-2 border-slate-900 text-sm font-black uppercase tracking-wide hover:bg-slate-700 transition-colors disabled:opacity-40"
+              className="flex-1 py-2.5 bg-content text-white border border-line text-sm font-bold uppercase tracking-wide hover:bg-slate-700 transition-colors disabled:opacity-40"
             >
               Abrir WhatsApp
             </button>
@@ -324,15 +324,15 @@ export const Admin: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="font-sketch text-3xl sm:text-4xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+          <h1 className="font-display text-3xl sm:text-4xl font-bold text-content uppercase tracking-tight flex items-center gap-2">
             <Building2 size={32} /> Administración
             {solicitudes.length > 0 && (
-              <span className="inline-flex items-center justify-center w-6 h-6 bg-orange-500 text-white text-xs font-black border-2 border-slate-900">
+              <span className="inline-flex items-center justify-center w-6 h-6 bg-brand-600 text-white text-xs font-bold border border-line">
                 {solicitudes.length}
               </span>
             )}
           </h1>
-          <p className="text-slate-500 text-sm mt-1">{empresas.length} empresas registradas</p>
+          <p className="text-muted text-sm mt-1">{empresas.length} empresas registradas</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -342,7 +342,7 @@ export const Admin: React.FC = () => {
                 if (res.ok) { cargar(); } else { alert('Error al recrear demo'); }
               } catch { alert('Error al recrear demo'); }
             }}
-            className="flex items-center gap-2 bg-white text-slate-700 px-4 py-2 font-sketch font-bold uppercase border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-sm"
+            className="flex items-center gap-2 bg-white text-muted px-4 py-2 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-sm"
             title="Recrear empresa y usuario demo si fueron eliminados"
           >
             Recrear demo
@@ -361,14 +361,14 @@ export const Admin: React.FC = () => {
               'Ultimo Pago': e.mpUltimoPago ?? '',
               'Creada': e.creadaEn,
             })))}
-            className="flex items-center gap-2 bg-white text-slate-700 px-4 py-2 font-sketch font-bold uppercase border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-sm"
+            className="flex items-center gap-2 bg-white text-muted px-4 py-2 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-sm"
             title="Exportar lista de empresas a CSV"
           >
             <Download size={16} /> CSV
           </button>
           <button
             onClick={() => setModalAbierto(true)}
-            className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 font-sketch font-bold uppercase border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all"
+            className="flex items-center gap-2 bg-brand-600 text-white px-4 py-2 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all"
           >
             <Plus size={18} /> Nueva empresa
           </button>
@@ -389,17 +389,17 @@ export const Admin: React.FC = () => {
       )}
 
       {error && (
-        <div className="bg-red-50 border-2 border-red-300 text-red-700 px-4 py-3 font-semibold">
+        <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 font-semibold">
           {error}
         </div>
       )}
 
       {/* Solicitudes de upgrade */}
       {solicitudes.length > 0 && (
-        <div className="border-2 border-orange-400 bg-orange-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
-          <h2 className="font-sketch font-black text-lg uppercase tracking-tight text-slate-900 flex items-center gap-2 mb-4">
-            <TrendingUp size={20} className="text-orange-500" /> Solicitudes de upgrade
-            <span className="inline-flex items-center justify-center w-5 h-5 bg-orange-500 text-white text-xs font-black border-2 border-slate-900">
+        <div className="border border-brand-400 bg-orange-50 shadow-soft p-4">
+          <h2 className="font-display font-bold text-lg uppercase tracking-tight text-content flex items-center gap-2 mb-4">
+            <TrendingUp size={20} className="text-brand-600" /> Solicitudes de upgrade
+            <span className="inline-flex items-center justify-center w-5 h-5 bg-brand-600 text-white text-xs font-bold border border-line">
               {solicitudes.length}
             </span>
           </h2>
@@ -432,7 +432,7 @@ export const Admin: React.FC = () => {
       )}
 
       {cargando ? (
-        <p className="text-slate-400 py-8 text-center font-sketch text-xl">Cargando…</p>
+        <p className="text-faint py-8 text-center font-display text-xl">Cargando…</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {empresas.map((emp) => {
@@ -440,53 +440,53 @@ export const Admin: React.FC = () => {
             return (
             <div
               key={emp.id}
-              className="bg-white border-2 border-slate-900 shadow-[4px_4px_0px_0px_#1e293b]"
+              className="bg-white border border-line shadow-soft"
             >
               {/* Cabecera clicable */}
               <button
                 onClick={() => toggleExpand(emp.id)}
-                className="w-full text-left p-4 hover:bg-slate-50 transition-colors"
+                className="w-full text-left p-4 hover:bg-subtle transition-colors"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <h3 className="font-sketch font-black text-lg text-slate-900 leading-tight truncate">
+                    <h3 className="font-display font-bold text-lg text-content leading-tight truncate">
                       {emp.nombre}
                     </h3>
-                    {emp.cuit && <p className="text-xs font-mono text-slate-500">{emp.cuit}</p>}
+                    {emp.cuit && <p className="text-xs font-mono text-muted">{emp.cuit}</p>}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <span
-                      className={`text-xs font-black uppercase px-2 py-1 border-2 ${
+                      className={`text-xs font-semibold ${
                         emp.estado === 'activa'
-                          ? 'bg-emerald-50 border-emerald-400 text-emerald-700'
-                          : 'bg-red-50 border-red-400 text-red-700'
+                          ? 'text-ok-strong dark:text-ok'
+                          : 'text-danger-strong dark:text-danger'
                       }`}
                     >
                       {emp.estado}
                     </span>
-                    <ChevronDown size={16} className={`text-slate-400 transition-transform ${abierta ? 'rotate-180' : ''}`} />
+                    <ChevronDown size={16} className={`text-faint transition-transform ${abierta ? 'rotate-180' : ''}`} />
                   </div>
                 </div>
 
-                <div className="flex gap-3 mt-2 text-xs font-mono text-slate-600 flex-wrap">
+                <div className="flex gap-3 mt-2 text-xs font-mono text-muted flex-wrap">
                   <span className="flex items-center gap-1">
                     <Package size={13} /> {emp._count.activos} activos
                   </span>
                   <span className="flex items-center gap-1">
                     <Users size={13} /> {emp._count.usuarios}
                   </span>
-                  <span className="ml-auto uppercase font-black text-orange-600">{emp.plan}</span>
+                  <span className="ml-auto uppercase font-bold text-brand-600">{emp.plan}</span>
                 </div>
 
                 {emp.usuarios[0] && (
-                  <p className="text-xs text-slate-500 mt-1 font-mono truncate">
+                  <p className="text-xs text-muted mt-1 font-mono truncate">
                     {emp.usuarios[0].email}
                   </p>
                 )}
 
                 {emp.mpEstadoSub && (
-                  <p className="text-xs mt-1 font-mono text-slate-600">
-                    <span className="uppercase font-black text-slate-400">Sub:</span>{' '}
+                  <p className="text-xs mt-1 font-mono text-muted">
+                    <span className="uppercase font-bold text-faint">Sub:</span>{' '}
                     <span className={emp.mpEstadoSub === 'authorized' ? 'text-emerald-600' : 'text-amber-600'}>
                       {emp.mpEstadoSub}
                     </span>
@@ -497,7 +497,7 @@ export const Admin: React.FC = () => {
 
               {/* Panel de operaciones desplegable */}
               {abierta && (
-                <div className="border-t-2 border-slate-900 p-3 bg-slate-50 space-y-2">
+                <div className="border-t-2 border-slate-900 p-3 bg-subtle space-y-2">
                   {/* Cambio de plan manual */}
                   <div className="flex gap-2">
                     {(['inicial', 'empresa', 'industrial'] as const).map((p) => (
@@ -508,10 +508,10 @@ export const Admin: React.FC = () => {
                           await actualizarEmpresa(emp.id, { plan: p });
                           cargar();
                         }}
-                        className={`flex-1 py-1.5 text-xs font-black uppercase border-2 transition-colors ${
+                        className={`flex-1 py-1.5 text-xs font-bold uppercase border transition-colors ${
                           emp.plan === p
-                            ? 'bg-slate-900 text-white border-slate-900'
-                            : 'bg-white border-slate-300 hover:border-orange-500 hover:text-orange-600'
+                            ? 'bg-content text-white border-slate-900'
+                            : 'bg-white border-line hover:border-brand-600 hover:text-brand-600'
                         }`}
                       >
                         {p}
@@ -522,7 +522,7 @@ export const Admin: React.FC = () => {
                   <button
                     onClick={() => toggleEstado(emp)}
                     disabled={toggling.has(emp.id)}
-                    className="w-full flex items-center gap-2 border-2 border-slate-300 bg-white px-3 py-2 text-sm font-bold hover:border-slate-900 transition-colors disabled:opacity-50"
+                    className="w-full flex items-center gap-2 border border-line bg-white px-3 py-2 text-sm font-bold hover:border-slate-900 transition-colors disabled:opacity-50"
                   >
                     <Power size={15} className={toggling.has(emp.id) ? 'animate-spin' : ''} />
                     {toggling.has(emp.id) ? 'Procesando...' : emp.estado === 'activa' ? 'Suspender empresa' : 'Activar empresa'}
@@ -530,7 +530,7 @@ export const Admin: React.FC = () => {
 
                   <button
                     onClick={() => suscribir(emp)}
-                    className="w-full flex items-center gap-2 border-2 border-slate-300 bg-white px-3 py-2 text-sm font-bold hover:border-emerald-600 hover:text-emerald-700 transition-colors"
+                    className="w-full flex items-center gap-2 border border-line bg-white px-3 py-2 text-sm font-bold hover:border-emerald-600 hover:text-emerald-700 transition-colors"
                   >
                     <CreditCard size={15} /> Generar suscripcion MP
                   </button>
@@ -538,7 +538,7 @@ export const Admin: React.FC = () => {
                   {emp.mpPreapprovalId && emp.mpEstadoSub !== 'cancelled' && (
                     <button
                       onClick={() => cancelar(emp)}
-                      className="w-full flex items-center gap-2 border-2 border-red-200 bg-white px-3 py-2 text-sm font-bold text-red-600 hover:border-red-600 transition-colors"
+                      className="w-full flex items-center gap-2 border border-red-200 bg-white px-3 py-2 text-sm font-bold text-red-600 hover:border-red-600 transition-colors"
                     >
                       <XCircle size={15} /> Cancelar suscripcion
                     </button>
@@ -546,7 +546,7 @@ export const Admin: React.FC = () => {
 
                   <button
                     onClick={() => resetear(emp)}
-                    className="w-full flex items-center gap-2 border-2 border-slate-300 bg-white px-3 py-2 text-sm font-bold hover:border-slate-900 transition-colors"
+                    className="w-full flex items-center gap-2 border border-line bg-white px-3 py-2 text-sm font-bold hover:border-slate-900 transition-colors"
                   >
                     <KeyRound size={15} /> Resetear contrasena
                   </button>
@@ -554,12 +554,12 @@ export const Admin: React.FC = () => {
                   {(['empresa', 'industrial'].includes(emp.plan) || permisos[emp.id] != null) && (
                     <button
                       onClick={() => abrirAccesoRemoto(emp)}
-                      className={`w-full flex items-center gap-2 border-2 bg-white px-3 py-2 text-sm font-bold transition-colors ${
+                      className={`w-full flex items-center gap-2 border bg-white px-3 py-2 text-sm font-bold transition-colors ${
                         permisos[emp.id]?.estado === 'activo'
                           ? 'border-emerald-400 text-emerald-700 hover:border-emerald-600'
                           : permisos[emp.id]?.estado === 'pendiente'
                             ? 'border-amber-400 text-amber-700 hover:border-amber-600'
-                            : 'border-slate-300 hover:border-orange-500 hover:text-orange-600'
+                            : 'border-line hover:border-brand-600 hover:text-brand-600'
                       }`}
                     >
                       <MonitorSmartphone size={15} />
@@ -569,7 +569,7 @@ export const Admin: React.FC = () => {
 
                   <button
                     onClick={() => borrar(emp)}
-                    className="w-full flex items-center gap-2 border-2 border-red-300 bg-white px-3 py-2 text-sm font-bold text-red-600 hover:border-red-600 transition-colors"
+                    className="w-full flex items-center gap-2 border border-red-300 bg-white px-3 py-2 text-sm font-bold text-red-600 hover:border-red-600 transition-colors"
                   >
                     <Trash2 size={15} /> Eliminar empresa
                   </button>
@@ -671,9 +671,9 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white border-2 border-slate-900 shadow-[6px_6px_0px_0px_#1e293b] w-full max-w-md my-8">
-        <div className="flex items-center justify-between border-b-2 border-slate-900 px-5 py-3">
-          <h2 className="font-sketch font-black text-xl uppercase">Nueva empresa</h2>
+      <div className="bg-surface border border-line rounded-lg shadow-lift w-full max-w-md my-8">
+        <div className="flex items-center justify-between border-b border-line px-5 py-3">
+          <h2 className="font-display font-bold text-xl uppercase">Nueva empresa</h2>
           <button onClick={onClose}>
             <X size={22} />
           </button>
@@ -701,8 +701,8 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
             </select>
           </Campo>
 
-          <div className="pt-2 border-t-2 border-slate-100">
-            <p className="text-xs font-black uppercase tracking-wider text-orange-600 mb-2">
+          <div className="pt-2 border-t-2 border-line">
+            <p className="text-xs font-bold uppercase tracking-wider text-brand-600 mb-2">
               Usuario administrador de la empresa
             </p>
             <Campo label="Nombre">
@@ -732,7 +732,7 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
           </div>
 
           {error && (
-            <div className="bg-red-50 border-2 border-red-300 text-red-700 text-sm px-3 py-2 font-semibold">
+            <div className="bg-red-50 border border-red-300 text-red-700 text-sm px-3 py-2 font-semibold">
               {error}
             </div>
           )}
@@ -740,7 +740,7 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
           <button
             type="submit"
             disabled={guardando}
-            className="w-full bg-orange-500 text-white h-11 font-sketch font-black uppercase border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all disabled:opacity-50"
+            className="w-full bg-brand-600 text-white h-11 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all disabled:opacity-50"
           >
             {guardando ? 'Creando…' : 'Crear empresa'}
           </button>
@@ -768,34 +768,34 @@ const ModalResultadoSuscripcion: React.FC<{
   onClose: () => void;
 }> = ({ empresaNombre, link, emailEnviado, waEnviado, onClose }) => (
   <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-    <div className="bg-white border-2 border-slate-900 shadow-[6px_6px_0px_0px_#1e293b] w-full max-w-md">
-      <div className="flex items-center justify-between border-b-2 border-slate-900 px-5 py-3 bg-slate-900 text-white">
-        <h2 className="font-sketch font-black text-lg uppercase tracking-wide flex items-center gap-2">
+    <div className="bg-surface border border-line rounded-lg shadow-lift w-full max-w-md">
+      <div className="flex items-center justify-between border-b border-line px-5 py-3 bg-content text-white">
+        <h2 className="font-display font-bold text-lg uppercase tracking-wide flex items-center gap-2">
           <CreditCard size={18} /> Link generado
         </h2>
         <button onClick={onClose}><X size={20} /></button>
       </div>
 
       <div className="p-5 space-y-4">
-        <p className="text-sm text-slate-700">
+        <p className="text-sm text-muted">
           El link de suscripción para <strong>{empresaNombre}</strong> fue generado y copiado al portapapeles.
         </p>
 
         {/* Estado de envíos */}
-        <div className="border-2 border-slate-200 divide-y-2 divide-slate-200">
+        <div className="border border-line divide-y-2 divide-slate-200">
           <div className="flex items-center gap-3 px-4 py-3">
-            <span className={`w-5 h-5 flex items-center justify-center text-xs font-black border-2 ${waEnviado ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-slate-100 border-slate-300 text-slate-400'}`}>
+            <span className={`w-5 h-5 flex items-center justify-center text-xs font-bold border ${waEnviado ? 'text-ok-strong dark:text-ok' : 'bg-subtle border-line text-faint'}`}>
               {waEnviado ? '✓' : '–'}
             </span>
-            <span className="text-sm font-semibold text-slate-700">
+            <span className="text-sm font-semibold text-muted">
               WhatsApp Web {waEnviado ? 'abierto con mensaje listo' : 'no enviado'}
             </span>
           </div>
           <div className="flex items-center gap-3 px-4 py-3">
-            <span className={`w-5 h-5 flex items-center justify-center text-xs font-black border-2 ${emailEnviado ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-amber-50 border-amber-300 text-amber-600'}`}>
+            <span className={`w-5 h-5 flex items-center justify-center text-xs font-bold border ${emailEnviado ? 'text-ok-strong dark:text-ok' : 'text-warn-strong dark:text-warn'}`}>
               {emailEnviado ? '✓' : '!'}
             </span>
-            <span className="text-sm font-semibold text-slate-700">
+            <span className="text-sm font-semibold text-muted">
               {emailEnviado
                 ? 'Email enviado automáticamente'
                 : 'Email no enviado (RESEND_API_KEY no configurada)'}
@@ -805,17 +805,17 @@ const ModalResultadoSuscripcion: React.FC<{
 
         {/* Link copiable */}
         <div>
-          <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-1">Link de pago</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-muted mb-1">Link de pago</p>
           <div className="flex gap-2">
             <input
               readOnly
               value={link}
-              className="flex-1 border-2 border-slate-300 px-3 py-2 text-xs font-mono truncate outline-none"
+              className="flex-1 border border-line px-3 py-2 text-xs font-mono truncate outline-none"
               onFocus={(e) => e.target.select()}
             />
             <button
               onClick={() => navigator.clipboard?.writeText(link)}
-              className="border-2 border-slate-900 px-3 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 transition-colors whitespace-nowrap"
+              className="border border-line px-3 py-2 text-xs font-bold bg-subtle hover:bg-slate-200 transition-colors whitespace-nowrap"
             >
               Copiar
             </button>
@@ -825,7 +825,7 @@ const ModalResultadoSuscripcion: React.FC<{
         <div className="flex justify-end pt-2">
           <button
             onClick={onClose}
-            className="px-5 py-2 bg-orange-500 text-white border-2 border-slate-900 font-black uppercase tracking-wide shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
+            className="px-5 py-2 bg-brand-600 text-white border border-line font-bold uppercase tracking-wide shadow-soft hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
           >
             Listo
           </button>
@@ -843,36 +843,36 @@ const ModalResultadoRemoto: React.FC<{
   onClose: () => void;
 }> = ({ empresaNombre, link, emailEnviado, waAbierto, onClose }) => (
   <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-    <div className="bg-white border-2 border-slate-900 shadow-[6px_6px_0px_0px_#1e293b] w-full max-w-md">
-      <div className="flex items-center justify-between border-b-2 border-slate-900 px-5 py-3 bg-slate-900 text-white">
-        <h2 className="font-sketch font-black text-lg uppercase tracking-wide flex items-center gap-2">
+    <div className="bg-surface border border-line rounded-lg shadow-lift w-full max-w-md">
+      <div className="flex items-center justify-between border-b border-line px-5 py-3 bg-content text-white">
+        <h2 className="font-display font-bold text-lg uppercase tracking-wide flex items-center gap-2">
           <MonitorSmartphone size={18} /> Solicitud enviada
         </h2>
         <button onClick={onClose}><X size={20} /></button>
       </div>
 
       <div className="p-5 space-y-4">
-        <p className="text-sm text-slate-700">
+        <p className="text-sm text-muted">
           Se generó la solicitud de acceso remoto para <strong>{empresaNombre}</strong>.
           El cliente debe aprobar el acceso desde el link que le enviaste.
         </p>
 
-        <div className="border-2 border-slate-200 divide-y-2 divide-slate-200">
+        <div className="border border-line divide-y-2 divide-slate-200">
           <div className="flex items-center gap-3 px-4 py-3">
-            <span className={`w-5 h-5 flex items-center justify-center text-xs font-black border-2 ${waAbierto ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-amber-50 border-amber-300 text-amber-600'}`}>
+            <span className={`w-5 h-5 flex items-center justify-center text-xs font-bold border ${waAbierto ? 'text-ok-strong dark:text-ok' : 'text-warn-strong dark:text-warn'}`}>
               {waAbierto ? '✓' : '!'}
             </span>
-            <span className="text-sm font-semibold text-slate-700">
+            <span className="text-sm font-semibold text-muted">
               {waAbierto
                 ? 'WhatsApp Web abierto con mensaje listo'
                 : 'WhatsApp bloqueado por el navegador — copiá el link manualmente'}
             </span>
           </div>
           <div className="flex items-center gap-3 px-4 py-3">
-            <span className={`w-5 h-5 flex items-center justify-center text-xs font-black border-2 ${emailEnviado ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-amber-50 border-amber-300 text-amber-600'}`}>
+            <span className={`w-5 h-5 flex items-center justify-center text-xs font-bold border ${emailEnviado ? 'text-ok-strong dark:text-ok' : 'text-warn-strong dark:text-warn'}`}>
               {emailEnviado ? '✓' : '!'}
             </span>
-            <span className="text-sm font-semibold text-slate-700">
+            <span className="text-sm font-semibold text-muted">
               {emailEnviado
                 ? 'Email de aprobación enviado automáticamente'
                 : 'Email no enviado (RESEND_API_KEY no configurada)'}
@@ -881,17 +881,17 @@ const ModalResultadoRemoto: React.FC<{
         </div>
 
         <div>
-          <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-1">Link de aprobación para el cliente</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-muted mb-1">Link de aprobación para el cliente</p>
           <div className="flex gap-2">
             <input
               readOnly
               value={link}
-              className="flex-1 border-2 border-slate-300 px-3 py-2 text-xs font-mono truncate outline-none"
+              className="flex-1 border border-line px-3 py-2 text-xs font-mono truncate outline-none"
               onFocus={(e) => e.target.select()}
             />
             <button
               onClick={() => navigator.clipboard?.writeText(link)}
-              className="border-2 border-slate-900 px-3 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 transition-colors whitespace-nowrap"
+              className="border border-line px-3 py-2 text-xs font-bold bg-subtle hover:bg-slate-200 transition-colors whitespace-nowrap"
             >
               Copiar
             </button>
@@ -899,7 +899,7 @@ const ModalResultadoRemoto: React.FC<{
         </div>
 
         {!waAbierto && (
-          <div className="bg-amber-50 border-2 border-amber-300 px-3 py-2 text-xs text-amber-800 font-semibold">
+          <div className="bg-amber-50 border border-amber-300 px-3 py-2 text-xs text-amber-800 font-semibold">
             El navegador bloqueó la ventana de WhatsApp. Copiá el link de arriba y envialo manualmente.
           </div>
         )}
@@ -907,7 +907,7 @@ const ModalResultadoRemoto: React.FC<{
         <div className="flex justify-end pt-2">
           <button
             onClick={onClose}
-            className="px-5 py-2 bg-orange-500 text-white border-2 border-slate-900 font-black uppercase tracking-wide shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
+            className="px-5 py-2 bg-brand-600 text-white border border-line font-bold uppercase tracking-wide shadow-soft hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
           >
             Listo
           </button>
@@ -929,18 +929,18 @@ const SolicitudUpgradeRow: React.FC<{
   const [descartando, setDescartando] = useState(false);
 
   return (
-    <div className="bg-white border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)] p-4 flex items-center justify-between flex-wrap gap-3">
+    <div className="bg-surface border border-line rounded-lg shadow-soft p-4 flex items-center justify-between flex-wrap gap-3">
       <div className="min-w-0">
-        <p className="font-sketch font-black text-slate-900 text-base leading-tight">{solicitud.nombre}</p>
+        <p className="font-display font-bold text-content text-base leading-tight">{solicitud.nombre}</p>
         {solicitud.adminEmail && (
-          <p className="text-xs font-mono text-slate-500 mt-0.5">{solicitud.adminEmail}</p>
+          <p className="text-xs font-mono text-muted mt-0.5">{solicitud.adminEmail}</p>
         )}
         <div className="flex items-center gap-2 mt-1">
-          <span className="text-xs font-black uppercase px-2 py-0.5 border-2 border-slate-300 text-slate-600">
+          <span className="text-xs font-semibold border-line text-muted">
             {PLAN_LABEL[solicitud.plan] ?? solicitud.plan}
           </span>
-          <ArrowRight size={14} className="text-orange-500 flex-shrink-0" />
-          <span className="text-xs font-black uppercase px-2 py-0.5 border-2 border-orange-400 bg-orange-50 text-orange-700">
+          <ArrowRight size={14} className="text-brand-600 flex-shrink-0" />
+          <span className="text-xs font-semibold border-brand-400 bg-orange-50 text-brand-700">
             {PLAN_LABEL[solicitud.planSolicitado] ?? solicitud.planSolicitado}
           </span>
         </div>
@@ -949,14 +949,14 @@ const SolicitudUpgradeRow: React.FC<{
         <button
           onClick={async () => { setProcesando(true); try { await onProcesar(); } finally { setProcesando(false); } }}
           disabled={procesando || descartando}
-          className="px-4 py-2 bg-orange-500 text-white border-2 border-slate-900 font-black uppercase text-xs shadow-[2px_2px_0px_0px_#1e293b] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all disabled:opacity-50"
+          className="px-4 py-2 bg-brand-600 text-white border border-line font-bold uppercase text-xs shadow-soft hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all disabled:opacity-50"
         >
           {procesando ? '...' : 'Procesar'}
         </button>
         <button
           onClick={async () => { setDescartando(true); try { await onDescartar(); } finally { setDescartando(false); } }}
           disabled={procesando || descartando}
-          className="px-4 py-2 border-2 border-red-300 text-red-600 font-bold text-xs hover:border-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+          className="px-4 py-2 border border-red-300 text-red-600 font-bold text-xs hover:border-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
         >
           {descartando ? '...' : 'Descartar'}
         </button>
@@ -966,30 +966,30 @@ const SolicitudUpgradeRow: React.FC<{
 };
 
 const StatCard: React.FC<{ label: string; valor: number }> = ({ label, valor }) => (
-  <div className="bg-white border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b] p-3 text-center">
-    <p className="font-sketch font-black text-3xl sm:text-4xl text-orange-500 leading-none">{valor}</p>
-    <p className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-slate-500 mt-1">{label}</p>
+  <div className="bg-surface border border-line rounded-lg shadow-soft p-3 text-center">
+    <p className="font-display font-bold text-3xl sm:text-4xl text-brand-600 leading-none">{valor}</p>
+    <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted mt-1">{label}</p>
   </div>
 );
 
 const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReiniciar: () => void }> = ({ estadisticas, onReiniciar }) => {
   const maxVisitas = estadisticas.topFichas.reduce((m, f) => Math.max(m, f.visitas), 0) || 1;
   return (
-    <div className="border-2 border-slate-900 bg-slate-50 shadow-[4px_4px_0px_0px_#1e293b] p-4 space-y-4">
+    <div className="border border-line bg-subtle shadow-soft p-4 space-y-4">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <h2 className="font-sketch font-black text-lg uppercase tracking-tight text-slate-900 flex items-center gap-2">
-          <BarChart3 size={20} className="text-orange-500" /> Visitas
+        <h2 className="font-display font-bold text-lg uppercase tracking-tight text-content flex items-center gap-2">
+          <BarChart3 size={20} className="text-brand-600" /> Visitas
         </h2>
         <button
           onClick={onReiniciar}
-          className="text-xs font-bold uppercase tracking-wide text-slate-500 border-2 border-slate-300 px-3 py-1.5 hover:border-red-400 hover:text-red-500 transition-colors"
+          className="text-xs font-bold uppercase tracking-wide text-muted border border-line px-3 py-1.5 hover:border-red-400 hover:text-red-500 transition-colors"
         >
           Reiniciar contador
         </button>
       </div>
 
       <div>
-        <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+        <p className="text-xs font-bold uppercase tracking-wider text-muted mb-2 flex items-center gap-1.5">
           <Globe size={14} /> Landing
         </p>
         <div className="grid grid-cols-3 gap-2">
@@ -1000,7 +1000,7 @@ const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReiniciar: () 
       </div>
 
       <div>
-        <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+        <p className="text-xs font-bold uppercase tracking-wider text-muted mb-2 flex items-center gap-1.5">
           <QrCode size={14} /> Fichas QR
         </p>
         <div className="grid grid-cols-3 gap-2">
@@ -1011,27 +1011,27 @@ const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReiniciar: () 
       </div>
 
       <div>
-        <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Equipos mas escaneados</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-muted mb-2">Equipos mas escaneados</p>
         {estadisticas.topFichas.length === 0 ? (
-          <p className="text-sm text-slate-400 font-semibold py-2">Aun no hay escaneos registrados.</p>
+          <p className="text-sm text-faint font-semibold py-2">Aun no hay escaneos registrados.</p>
         ) : (
           <div className="space-y-2">
             {estadisticas.topFichas.map((f) => (
               <div
                 key={f.activoId}
-                className="bg-white border-2 border-slate-900 shadow-[2px_2px_0px_0px_#1e293b] p-2.5"
+                className="bg-white border border-line shadow-soft p-2.5"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-orange-500">{f.codigo}</p>
-                    <p className="font-sketch font-black text-sm text-slate-900 leading-tight truncate">{f.nombre}</p>
-                    <p className="text-xs text-slate-500 truncate">{f.empresa}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-brand-600">{f.codigo}</p>
+                    <p className="font-display font-bold text-sm text-content leading-tight truncate">{f.nombre}</p>
+                    <p className="text-xs text-muted truncate">{f.empresa}</p>
                   </div>
-                  <span className="font-sketch font-black text-2xl text-slate-900 shrink-0">{f.visitas}</span>
+                  <span className="font-display font-bold text-2xl text-content shrink-0">{f.visitas}</span>
                 </div>
-                <div className="mt-2 h-2 bg-slate-100 border border-slate-300">
+                <div className="mt-2 h-2 bg-subtle border border-line">
                   <div
-                    className="h-full bg-orange-500"
+                    className="h-full bg-brand-600"
                     style={{ width: `${Math.round((f.visitas / maxVisitas) * 100)}%` }}
                   />
                 </div>
@@ -1046,7 +1046,7 @@ const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReiniciar: () 
 
 const Campo: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <div className="mb-2">
-    <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
+    <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-1">
       {label}
     </label>
     {children}

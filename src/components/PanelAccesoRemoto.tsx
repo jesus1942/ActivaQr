@@ -16,15 +16,15 @@ import { ChatRemoto } from './ChatRemoto';
 import { exportarCsv } from '../utils/exportCsv';
 
 const ESTADO_COLOR: Record<string, string> = {
-  normal:        'bg-emerald-50 border-emerald-400 text-emerald-700',
-  alerta:        'bg-amber-50 border-amber-400 text-amber-700',
+  normal:        'text-ok-strong dark:text-ok',
+  alerta:        'text-warn-strong dark:text-warn',
   critico:       'bg-red-50 border-red-500 text-red-700',
   mantenimiento: 'bg-blue-50 border-blue-400 text-blue-700',
 };
 
 const MEDICION_COLOR: Record<string, string> = {
-  normal:   'bg-emerald-50 border-emerald-400 text-emerald-700',
-  revision: 'bg-amber-50 border-amber-400 text-amber-700',
+  normal:   'text-ok-strong dark:text-ok',
+  revision: 'text-warn-strong dark:text-warn',
   urgente:  'bg-red-50 border-red-500 text-red-700',
 };
 
@@ -142,18 +142,18 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
   const criticos = activos.filter((a) => a.estado === 'critico').length;
   const alertas  = activos.filter((a) => a.estado === 'alerta').length;
 
-  const inputCls = 'w-full border-2 border-slate-300 px-3 h-10 text-sm outline-none focus:border-orange-500';
-  const labelCls = 'block text-xs font-black uppercase tracking-wider text-slate-600 mb-1';
+  const inputCls = 'w-full border border-slate-300 px-3 h-10 text-sm outline-none focus:border-brand-600';
+  const labelCls = 'block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1';
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center p-2 sm:p-6 overflow-y-auto">
-      <div className="bg-white border-2 border-slate-900 shadow-[6px_6px_0px_0px_#1e293b] w-full max-w-3xl my-4">
+      <div className="bg-white border border-slate-900 shadow-soft w-full max-w-3xl my-4">
 
         {/* Header */}
         <div className="bg-slate-900 text-white px-5 py-3 flex items-center justify-between sticky top-0 z-10">
           <div>
-            <p className="text-xs font-black text-orange-400 uppercase tracking-wider">Acceso remoto</p>
-            <h2 className="font-black text-lg uppercase leading-tight">{empresaNombre}</h2>
+            <p className="text-xs font-bold text-orange-400 uppercase tracking-wider">Acceso remoto</p>
+            <h2 className="font-bold text-lg uppercase leading-tight">{empresaNombre}</h2>
           </div>
           <button onClick={onClose}><X size={22} /></button>
         </div>
@@ -161,8 +161,8 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
         {/* Resumen */}
         <div className="px-5 py-3 border-b-2 border-slate-100 flex gap-4 flex-wrap text-sm items-center">
           <span className="font-semibold text-slate-600">{activos.length} activos</span>
-          {criticos > 0 && <span className="font-black text-red-600">{criticos} críticos</span>}
-          {alertas > 0  && <span className="font-black text-amber-600">! {alertas} en alerta</span>}
+          {criticos > 0 && <span className="font-bold text-red-600">{criticos} críticos</span>}
+          {alertas > 0  && <span className="font-bold text-amber-600">! {alertas} en alerta</span>}
           <div className="ml-auto flex items-center gap-2">
             {activos.length > 0 && (
               <button
@@ -197,13 +197,13 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
                   'Ultima Temp': a.mediciones?.[0]?.temperatura ?? '',
                   'Ultima Medicion': a.mediciones?.[0] ? format(new Date(a.mediciones[0].fecha), 'dd/MM/yyyy HH:mm') : '',
                 })))}
-                className="flex items-center gap-1.5 border-2 border-slate-300 px-3 py-1.5 text-xs font-bold hover:border-slate-900 transition-colors"
+                className="flex items-center gap-1.5 border border-slate-300 px-3 py-1.5 text-xs font-bold hover:border-slate-900 transition-colors"
                 title="Exportar fichas tecnicas a CSV"
               >
                 <Download size={13} /> Exportar fichas
               </button>
             )}
-            <span className={`text-xs font-black uppercase px-2 py-1 border-2 ${
+            <span className={`text-xs font-semibold ${
               permiso.estado === 'activo' ? 'border-emerald-400 text-emerald-700 bg-emerald-50' : 'border-slate-300 text-slate-500'
             }`}>
               {permiso.estado}
@@ -217,8 +217,8 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
             <button
               key={t}
               onClick={() => { setTab(t); }}
-              className={`px-5 py-3 text-sm font-black uppercase tracking-wide transition-colors ${
-                tab === t ? 'border-b-2 border-orange-500 text-orange-600' : 'text-slate-500 hover:text-slate-800'
+              className={`px-5 py-3 text-sm font-bold uppercase tracking-wide transition-colors ${
+                tab === t ? 'border-b-2 border-brand-600 text-brand-600' : 'text-slate-500 hover:text-slate-800'
               }`}
             >
               {t === 'activos' ? 'Activos' : 'Chat'}
@@ -235,12 +235,12 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
                 <div
                   key={a.id}
                   onClick={() => abrirActivo(a)}
-                  className="border-2 border-slate-200 p-3 flex items-start justify-between gap-3 hover:border-orange-500 transition-colors cursor-pointer"
+                  className="border border-slate-200 p-3 flex items-start justify-between gap-3 hover:border-brand-600 transition-colors cursor-pointer"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs font-mono font-bold text-slate-500">{a.codigo}</span>
-                      <span className={`text-xs font-black uppercase px-1.5 py-0.5 border ${ESTADO_COLOR[a.estado] ?? ''}`}>
+                      <span className={`text-xs font-bold uppercase px-1.5 py-0.5 border ${ESTADO_COLOR[a.estado] ?? ''}`}>
                         {a.estado}
                       </span>
                     </div>
@@ -256,7 +256,7 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
                   <button
                     onClick={(e) => { e.stopPropagation(); setActivoTarea(a.id); }}
                     title="Crear tarea de mantenimiento"
-                    className="flex items-center gap-1 text-xs font-bold border-2 border-slate-300 px-2 py-1.5 hover:border-orange-500 hover:text-orange-600 transition-colors whitespace-nowrap flex-shrink-0"
+                    className="flex items-center gap-1 text-xs font-bold border border-slate-300 px-2 py-1.5 hover:border-brand-600 hover:text-brand-600 transition-colors whitespace-nowrap flex-shrink-0"
                   >
                     <Plus size={12} /> Tarea
                   </button>
@@ -271,27 +271,27 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
               <div className="flex items-center justify-between gap-2">
                 <button
                   onClick={volver}
-                  className="flex items-center gap-1 text-sm font-bold border-2 border-slate-300 px-3 py-1.5 hover:border-orange-500 hover:text-orange-600 transition-colors"
+                  className="flex items-center gap-1 text-sm font-bold border border-slate-300 px-3 py-1.5 hover:border-brand-600 hover:text-brand-600 transition-colors"
                 >
                   <ArrowLeft size={14} /> Volver
                 </button>
                 <button
                   onClick={() => setActivoTarea(activoSel.id)}
-                  className="flex items-center gap-1 text-sm font-bold border-2 border-slate-300 px-3 py-1.5 hover:border-orange-500 hover:text-orange-600 transition-colors"
+                  className="flex items-center gap-1 text-sm font-bold border border-slate-300 px-3 py-1.5 hover:border-brand-600 hover:text-brand-600 transition-colors"
                 >
                   <Plus size={14} /> Crear tarea
                 </button>
               </div>
 
               {/* Info del activo */}
-              <div className="border-2 border-slate-900 p-3">
+              <div className="border border-slate-900 p-3">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   <span className="text-xs font-mono font-bold text-slate-500">{activoSel.codigo}</span>
-                  <span className={`text-xs font-black uppercase px-1.5 py-0.5 border ${ESTADO_COLOR[activoSel.estado] ?? ''}`}>
+                  <span className={`text-xs font-bold uppercase px-1.5 py-0.5 border ${ESTADO_COLOR[activoSel.estado] ?? ''}`}>
                     {activoSel.estado}
                   </span>
                 </div>
-                <p className="font-black text-slate-900 text-base">{activoSel.nombre}</p>
+                <p className="font-bold text-slate-900 text-base">{activoSel.nombre}</p>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-600 mt-2">
                   <p><span className="font-bold">Sector:</span> {activoSel.sector?.nombre ?? '—'}</p>
                   <p><span className="font-bold">Tipo:</span> {activoSel.tipo?.nombre ?? '—'}</p>
@@ -306,8 +306,8 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
               {(activoSel.temperaturaMin != null || activoSel.temperaturaMax != null ||
                 activoSel.amperajeNormal != null || activoSel.presionNormal != null ||
                 activoSel.temperaturaAlerta != null || activoSel.temperaturaCritica != null) && (
-                <div className="border-2 border-slate-200 p-3">
-                  <p className="text-xs font-black uppercase tracking-wider text-slate-600 mb-2">Parámetros operativos</p>
+                <div className="border border-slate-200 p-3">
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Parámetros operativos</p>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-600">
                     {activoSel.temperaturaMin != null && <p><span className="font-bold">Temp. mín:</span> {activoSel.temperaturaMin}°C</p>}
                     {activoSel.temperaturaMax != null && <p><span className="font-bold">Temp. máx:</span> {activoSel.temperaturaMax}°C</p>}
@@ -323,28 +323,28 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
 
               {/* Mediciones recientes */}
               <div>
-                <p className="text-xs font-black uppercase tracking-wider text-slate-600 mb-2">Mediciones recientes</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Mediciones recientes</p>
                 {cargandoMed && <p className="text-sm text-slate-400 animate-pulse">Cargando mediciones...</p>}
                 {!cargandoMed && mediciones.length === 0 && <p className="text-sm text-slate-400">Sin mediciones registradas.</p>}
                 <div className="space-y-1.5">
                   {mediciones.slice(0, 10).map((m) => (
-                    <div key={m.id} className="border-2 border-slate-200 px-3 py-2 flex items-center justify-between gap-2 text-xs">
+                    <div key={m.id} className="border border-slate-200 px-3 py-2 flex items-center justify-between gap-2 text-xs">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-mono text-slate-500">{format(new Date(m.fecha), 'dd/MM/yy HH:mm')}</span>
                         {m.temperatura != null && <span>{m.temperatura}°C</span>}
                         {m.amperaje != null && <span>{m.amperaje}A</span>}
                         {m.presion != null && <span>{m.presion}p</span>}
                       </div>
-                      <span className={`font-black uppercase px-1.5 py-0.5 border ${MEDICION_COLOR[m.estado] ?? ''}`}>{m.estado}</span>
+                      <span className={`font-bold uppercase px-1.5 py-0.5 border ${MEDICION_COLOR[m.estado] ?? ''}`}>{m.estado}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Form de intervención */}
-              <form onSubmit={handleIntervenir} className="border-2 border-slate-900 p-3 space-y-3 bg-orange-50/40">
-                <p className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-slate-900">
-                  <Activity size={16} className="text-orange-600" /> Intervenir / Registrar medición
+              <form onSubmit={handleIntervenir} className="border border-slate-900 p-3 space-y-3 bg-orange-50/40">
+                <p className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-900">
+                  <Activity size={16} className="text-brand-600" /> Intervenir / Registrar medición
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div><label className={labelCls}>Temperatura °C</label><input type="number" step="any" value={form.temperatura} onChange={(e) => setForm((p) => ({ ...p, temperatura: e.target.value }))} className={inputCls} /></div>
@@ -365,12 +365,12 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
                 </div>
                 <div>
                   <label className={labelCls}>Observaciones</label>
-                  <textarea value={form.observaciones} onChange={(e) => setForm((p) => ({ ...p, observaciones: e.target.value }))} rows={2} className="w-full border-2 border-slate-300 px-3 py-2 text-sm outline-none focus:border-orange-500" />
+                  <textarea value={form.observaciones} onChange={(e) => setForm((p) => ({ ...p, observaciones: e.target.value }))} rows={2} className="w-full border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-600" />
                 </div>
                 {errorMed && <p className="text-xs font-bold text-red-700">{errorMed}</p>}
                 {exito && <p className="flex items-center gap-1 text-xs font-bold text-emerald-700"><CheckCircle size={14} /> {exito}</p>}
                 <div className="flex justify-end">
-                  <button type="submit" disabled={guardandoMed} className="px-4 py-2 bg-orange-500 text-white border-2 border-slate-900 font-bold text-sm disabled:opacity-50 shadow-[3px_3px_0px_0px_#1e293b]">
+                  <button type="submit" disabled={guardandoMed} className="px-4 py-2 bg-brand-600 text-white border border-slate-900 font-bold text-sm disabled:opacity-50 shadow-soft">
                     {guardandoMed ? 'Registrando...' : 'Registrar medición'}
                   </button>
                 </div>
@@ -393,9 +393,9 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
         {/* Modal crear tarea */}
         {activoTarea && (
           <div className="fixed inset-0 z-60 bg-black/50 flex items-center justify-center p-4">
-            <div className="bg-white border-2 border-slate-900 shadow-[4px_4px_0px_0px_#1e293b] w-full max-w-sm">
+            <div className="bg-white border border-slate-900 shadow-soft w-full max-w-sm">
               <div className="flex items-center justify-between px-4 py-3 bg-slate-900 text-white">
-                <h3 className="font-black uppercase text-sm">Nueva tarea de mantenimiento</h3>
+                <h3 className="font-bold uppercase text-sm">Nueva tarea de mantenimiento</h3>
                 <button onClick={() => setActivoTarea(null)}><X size={18} /></button>
               </div>
               <form onSubmit={handleCrearTarea} className="p-4 space-y-3">
@@ -425,12 +425,12 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
                     value={formTarea.observaciones}
                     onChange={(e) => setFormTarea((p) => ({ ...p, observaciones: e.target.value }))}
                     rows={2}
-                    className="w-full border-2 border-slate-300 px-3 py-2 text-sm outline-none focus:border-orange-500"
+                    className="w-full border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-600"
                   />
                 </div>
                 <div className="flex justify-end gap-2 pt-1">
-                  <button type="button" onClick={() => setActivoTarea(null)} className="px-4 py-2 border-2 border-slate-400 font-bold text-sm text-slate-600">Cancelar</button>
-                  <button type="submit" disabled={guardandoTarea} className="px-4 py-2 bg-orange-500 text-white border-2 border-slate-900 font-bold text-sm disabled:opacity-50">
+                  <button type="button" onClick={() => setActivoTarea(null)} className="px-4 py-2 border border-slate-400 font-bold text-sm text-slate-600">Cancelar</button>
+                  <button type="submit" disabled={guardandoTarea} className="px-4 py-2 bg-brand-600 text-white border border-slate-900 font-bold text-sm disabled:opacity-50">
                     {guardandoTarea ? 'Guardando...' : 'Crear tarea'}
                   </button>
                 </div>

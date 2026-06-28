@@ -10,23 +10,23 @@ export const AlertBanner: React.FC<AlertBannerProps> = ({ messages }) => {
   if (messages.length === 0) return null;
 
   return (
-    <div className="border-2 border-slate-900 mb-6 overflow-hidden">
-      {/* Warning tape header */}
-      <div
-        className="px-4 py-2 flex items-center gap-2"
-        style={{
-          background: 'repeating-linear-gradient(45deg, #F97316, #F97316 15px, #1E293B 15px, #1E293B 30px)',
-        }}
-      >
-        <AlertTriangle size={18} className="text-white flex-shrink-0" />
-        <span className="text-white font-black uppercase tracking-widest text-sm">Alertas Activas</span>
+    <div className="bg-surface border border-line rounded-lg shadow-soft overflow-hidden animate-fade-up">
+      <div className="px-5 py-3.5 flex items-center gap-2.5 border-b border-line">
+        <span className="grid place-items-center w-7 h-7 text-danger shrink-0">
+          <AlertTriangle size={15} />
+        </span>
+        <span className="font-display font-bold text-content text-sm">
+          Alertas activas
+        </span>
+        <span className="ml-auto text-xs font-semibold text-danger">
+          {messages.length} activas
+        </span>
       </div>
-      {/* Messages */}
-      <div className="bg-amber-50 divide-y divide-slate-200">
+      <div className="divide-y divide-line">
         {messages.map((msg, i) => (
-          <div key={i} className="px-4 py-2 flex items-center gap-2">
-            <AlertTriangle size={14} className="text-orange-500 flex-shrink-0" />
-            <span className="text-sm font-semibold text-slate-800">{msg}</span>
+          <div key={i} className="px-5 py-3 flex items-center gap-2.5">
+            <span className="w-1 h-4 rounded-sm bg-danger shrink-0" />
+            <span className="text-sm font-medium text-muted">{msg}</span>
           </div>
         ))}
       </div>

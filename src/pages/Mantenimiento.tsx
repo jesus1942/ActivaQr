@@ -6,6 +6,7 @@ import { Plus, CheckCircle, X, AlertTriangle, Clock, Pencil, Trash2, Download } 
 import { exportarCsv } from '../utils/exportCsv';
 import { useActivos } from '../hooks/useActivos';
 import { StatusBadge } from '../components/ui/StatusBadge';
+import { Button, Card, EmptyState, Input, Select, Textarea } from '../components/ui';
 import { TareaMantenimiento } from '../data/types';
 
 const emptyTarea = {
@@ -98,16 +99,16 @@ export const Mantenimiento: React.FC = () => {
   const TaskCard = ({ tarea, highlight }: { tarea: TareaMantenimiento; highlight?: boolean }) => {
     const activo = activos.find((a) => a.id === tarea.activoId);
     return (
-      <div className={`bg-white border-2 ${highlight ? 'border-red-500' : 'border-slate-800'} shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)] p-4 mb-3`}>
+      <Card padding="sm" className={`${highlight ? 'border-danger' : ''} mb-3`}>
         <div className="flex justify-between items-start gap-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span className="font-mono font-black text-sm text-slate-800">{activo?.codigo || 'N/A'}</span>
-              <span className="text-slate-500 text-xs">·</span>
-              <span className="text-sm font-semibold text-slate-700 break-words">{activo?.nombre}</span>
+              <span className="font-mono font-semibold text-sm text-content">{activo?.codigo || 'N/A'}</span>
+              <span className="text-faint text-xs">/</span>
+              <span className="text-sm font-semibold text-muted break-words">{activo?.nombre}</span>
             </div>
-            <div className="font-bold text-slate-900">{tarea.tipo}</div>
-            <div className="text-xs text-slate-500 mt-1">{activo ? getSectorNombre(activo.sectorId) : ''}</div>
+            <div className="font-bold text-content">{tarea.tipo}</div>
+            <div className="text-xs text-faint mt-1">{activo ? getSectorNombre(activo.sectorId) : ''}</div>
           </div>
           <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
             <StatusBadge
@@ -115,16 +116,16 @@ export const Mantenimiento: React.FC = () => {
               size="sm"
             />
             <div className="flex gap-1">
-              <button onClick={() => openEdit(tarea)} title="Editar" className="p-1.5 border-2 border-slate-300 text-slate-600 hover:border-slate-800">
+              <button onClick={() => openEdit(tarea)} title="Editar" className="press grid place-items-center w-8 h-8 rounded-md border border-line text-muted hover:text-content hover:border-line-strong transition-colors">
                 <Pencil size={13} />
               </button>
-              <button onClick={() => handleDeleteTarea(tarea)} title="Eliminar" className="p-1.5 border-2 border-slate-300 text-red-600 hover:border-red-600 hover:bg-red-50">
+              <button onClick={() => handleDeleteTarea(tarea)} title="Eliminar" className="press grid place-items-center w-8 h-8 rounded-md border border-line text-danger hover:border-danger hover:bg-danger/10 transition-colors">
                 <Trash2 size={13} />
               </button>
             </div>
           </div>
         </div>
-        <div className="mt-2 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 text-xs text-slate-500">
+        <div className="mt-2 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 text-xs text-muted">
           <div className="flex items-center gap-1">
             <Clock size={12} />
             <span>Programado: {format(parseISO(tarea.fechaProgramada), 'dd/MM/yyyy', { locale: es })}</span>
@@ -132,10 +133,10 @@ export const Mantenimiento: React.FC = () => {
           <span>{getTecnicoNombre(tarea.responsableId)}</span>
         </div>
         {tarea.observaciones && (
-          <div className="mt-2 text-xs text-slate-500 bg-slate-50 p-2 border border-slate-200">{tarea.observaciones}</div>
+          <div className="mt-2 text-xs text-muted bg-subtle p-2 border border-line rounded-md">{tarea.observaciones}</div>
         )}
         {tarea.fechaRealizada && (
-          <div className="mt-1 text-xs text-emerald-600 font-semibold">
+          <div className="mt-1 text-xs text-ok-strong dark:text-ok font-semibold">
             Realizado: {format(parseISO(tarea.fechaRealizada), 'dd/MM/yyyy', { locale: es })}
           </div>
         )}
@@ -143,52 +144,58 @@ export const Mantenimiento: React.FC = () => {
           <div className="mt-3">
             {completingId === tarea.id ? (
               <div className="space-y-2">
-                <textarea
+                <Textarea
                   value={obsInput}
                   onChange={(e) => setObsInput(e.target.value)}
                   placeholder="Observaciones de cierre..."
                   rows={2}
-                  className="w-full border-2 border-slate-300 px-2 py-1 text-xs outline-none"
                 />
                 <div className="flex gap-2">
-                  <button
+                  <Button
+                    type="button"
                     onClick={() => handleCompletar(tarea.id)}
-                    className="flex-1 bg-emerald-500 text-white py-1.5 text-xs font-bold border-2 border-emerald-700"
+                    variant="primary"
+                    size="sm"
+                    className="flex-1 bg-ok hover:brightness-95"
                   >
                     Confirmar
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    type="button"
                     onClick={() => setCompletingId(null)}
-                    className="px-3 py-1.5 border-2 border-slate-300 text-xs font-bold"
+                    variant="secondary"
+                    size="sm"
                   >
                     Cancelar
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : (
-              <button
+              <Button
+                type="button"
                 onClick={() => setCompletingId(tarea.id)}
-                className="flex items-center gap-1.5 bg-emerald-500 text-white px-3 py-1.5 text-xs font-bold border-2 border-emerald-700 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)]"
+                size="sm"
+                className="bg-ok hover:brightness-95"
+                iconLeft={<CheckCircle size={13} />}
               >
-                <CheckCircle size={13} />
                 Marcar Completada
-              </button>
+              </Button>
             )}
           </div>
         )}
-      </div>
+      </Card>
     );
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
+    <div className="space-y-6 animate-fade-up">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 uppercase tracking-tight">Mantenimiento</h1>
-          <p className="text-slate-500 text-sm mt-1">{vencidas.length} vencidas · {pendientes.length} pendientes</p>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight">Mantenimiento</h1>
+          <p className="text-muted text-sm mt-1">{vencidas.length} vencidas / {pendientes.length} pendientes</p>
         </div>
         <div className="flex gap-2">
-          <button
+          <Button
             onClick={() => exportarCsv('tareas', tareas.map((t) => {
               const activo = activos.find((a) => a.id === t.activoId);
               return {
@@ -200,72 +207,70 @@ export const Mantenimiento: React.FC = () => {
                 Observaciones: t.observaciones,
               };
             }))}
-            className="flex items-center gap-2 bg-white text-slate-700 px-3 min-h-[44px] font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] transition-all text-sm"
+            variant="secondary"
+            iconLeft={<Download size={15} />}
             title="Exportar lista a CSV"
           >
-            <Download size={15} />
             <span className="hidden sm:inline">CSV</span>
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => openNew()}
-            className="flex items-center gap-2 bg-orange-500 text-white px-4 min-h-[44px] font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] transition-all"
+            iconLeft={<Plus size={16} />}
           >
-            <Plus size={16} />
             <span className="hidden sm:inline">Nueva Tarea</span>
             <span className="sm:hidden">Nueva</span>
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Recomendados — activos críticos/alerta sin tarea pendiente */}
       {activosSinTarea.length > 0 && (
-        <div className="mb-8 bg-amber-50 border-2 border-amber-500 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)] p-4">
+        <Card padding="md" className="border-warn/60">
           <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle size={18} className="text-amber-600" />
-            <h2 className="font-black text-amber-700 uppercase tracking-wide">
-              RECOMENDADOS ({activosSinTarea.length})
+            <AlertTriangle size={18} className="text-warn-strong dark:text-warn" />
+            <h2 className="font-display font-bold text-content">
+              Recomendados ({activosSinTarea.length})
             </h2>
-            <span className="text-xs text-amber-600 font-semibold">— activos con alerta sin tarea asignada</span>
+            <span className="text-xs text-muted font-semibold">activos con alerta sin tarea asignada</span>
           </div>
           <div className="space-y-2">
             {activosSinTarea.map((a) => (
               <div
                 key={a.id}
-                className={`flex items-center justify-between gap-3 p-3 border-2 bg-white ${a.estado === 'critico' ? 'border-red-400' : 'border-amber-300'}`}
+                className={`flex items-center justify-between gap-3 p-3 border rounded-md bg-surface ${a.estado === 'critico' ? 'border-danger/50' : 'border-warn/50'}`}
               >
                 <div className="flex-1 min-w-0">
-                  <span className="font-mono font-black text-sm text-slate-800">{a.codigo}</span>
-                  <span className="text-slate-500 text-xs mx-2">·</span>
-                  <span className="text-sm font-semibold text-slate-700">{a.nombre}</span>
-                  <div className="text-xs text-slate-500 mt-0.5">{getSectorNombre(a.sectorId)}</div>
+                  <span className="font-mono font-semibold text-sm text-content">{a.codigo}</span>
+                  <span className="text-faint text-xs mx-2">/</span>
+                  <span className="text-sm font-semibold text-muted">{a.nombre}</span>
+                  <div className="text-xs text-faint mt-0.5">{getSectorNombre(a.sectorId)}</div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <StatusBadge estado={a.estado as any} size="sm" />
-                  <button
+                  <Button
+                    type="button"
                     onClick={() => crearTareaRecomendada(a.id, a.estado)}
-                    className="flex items-center gap-1.5 bg-orange-500 text-white px-3 py-1.5 text-xs font-black border-2 border-slate-800 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.6)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,0.6)] transition-all whitespace-nowrap"
+                    size="sm"
+                    iconLeft={<Plus size={13} />}
                   >
-                    <Plus size={13} />
                     Crear tarea
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Vencidas */}
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle size={18} className="text-red-600" />
-            <h2 className="font-black text-red-600 uppercase tracking-wide">VENCIDAS ({vencidas.length})</h2>
+            <AlertTriangle size={18} className="text-danger" />
+            <h2 className="font-display font-bold text-danger">Vencidas ({vencidas.length})</h2>
           </div>
           {vencidas.length === 0 ? (
-            <div className="text-center py-8 text-slate-400 border-2 border-dashed border-slate-200">
-              <p className="font-semibold">Sin tareas vencidas</p>
-            </div>
+            <EmptyState title="Sin tareas vencidas" />
           ) : (
             vencidas.map((t) => <TaskCard key={t.id} tarea={t} highlight />)
           )}
@@ -274,13 +279,11 @@ export const Mantenimiento: React.FC = () => {
         {/* Pendientes */}
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <Clock size={18} className="text-orange-500" />
-            <h2 className="font-black text-orange-500 uppercase tracking-wide">PRÓXIMAS ({pendientes.length})</h2>
+            <Clock size={18} className="text-warn" />
+            <h2 className="font-display font-bold text-warn-strong dark:text-warn">Próximas ({pendientes.length})</h2>
           </div>
           {pendientes.length === 0 ? (
-            <div className="text-center py-8 text-slate-400 border-2 border-dashed border-slate-200">
-              <p className="font-semibold">Sin tareas pendientes</p>
-            </div>
+            <EmptyState title="Sin tareas pendientes" />
           ) : (
             pendientes.map((t) => <TaskCard key={t.id} tarea={t} />)
           )}
@@ -288,10 +291,10 @@ export const Mantenimiento: React.FC = () => {
       </div>
 
       {/* Completadas */}
-      <div className="mt-8">
-        <h2 className="font-black text-emerald-600 uppercase tracking-wide mb-4 flex items-center gap-2">
+      <div>
+        <h2 className="font-display font-bold text-ok-strong dark:text-ok mb-4 flex items-center gap-2">
           <CheckCircle size={18} />
-          COMPLETADAS ({completadas.length})
+          Completadas ({completadas.length})
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {completadas.map((t) => <TaskCard key={t.id} tarea={t} />)}
@@ -300,78 +303,68 @@ export const Mantenimiento: React.FC = () => {
 
       {/* Modal nueva tarea */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white border-2 border-slate-800 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.8)] w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b-2 border-slate-800 bg-slate-900 text-white sticky top-0">
-              <h2 className="font-black uppercase tracking-wide">{editId ? 'Editar Tarea' : 'Nueva Tarea de Mantenimiento'}</h2>
-              <button onClick={() => { setShowModal(false); setEditId(null); }}><X size={20} /></button>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-surface border border-line shadow-lift w-full sm:max-w-md max-h-[92vh] sm:max-h-[90vh] overflow-y-auto rounded-t-xl sm:rounded-xl">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-line sticky top-0 bg-surface">
+              <h2 className="font-display text-lg font-bold text-content">{editId ? 'Editar tarea' : 'Nueva tarea de mantenimiento'}</h2>
+              <button
+                onClick={() => { setShowModal(false); setEditId(null); }}
+                className="press grid place-items-center w-9 h-9 rounded-md text-faint hover:text-content hover:bg-subtle transition-colors"
+              >
+                <X size={18} />
+              </button>
             </div>
             <form onSubmit={handleAddTarea} className="p-4 space-y-3">
-              <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Activo</label>
-                <select
-                  required
-                  value={newTarea.activoId}
-                  onChange={(e) => setNewTarea((p) => ({ ...p, activoId: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none"
-                >
-                  <option value="">Seleccionar activo...</option>
-                  {activos.map((a) => (
-                    <option key={a.id} value={a.id}>{a.codigo} — {a.nombre}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Tipo de Tarea</label>
-                <input
-                  type="text"
-                  required
-                  value={newTarea.tipo}
-                  onChange={(e) => setNewTarea((p) => ({ ...p, tipo: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none"
-                  placeholder="Ej: Cambio de aceite, Revisión general..."
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Fecha Programada</label>
-                <input
-                  type="date"
-                  required
-                  value={newTarea.fechaProgramada}
-                  onChange={(e) => setNewTarea((p) => ({ ...p, fechaProgramada: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Responsable</label>
-                <select
-                  required
-                  value={newTarea.responsableId}
-                  onChange={(e) => setNewTarea((p) => ({ ...p, responsableId: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none"
-                >
-                  <option value="">Seleccionar técnico...</option>
-                  {tecnicosActivos.map((t) => (
-                    <option key={t.id} value={t.id}>{t.nombre}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Observaciones</label>
-                <textarea
-                  value={newTarea.observaciones}
-                  onChange={(e) => setNewTarea((p) => ({ ...p, observaciones: e.target.value }))}
-                  rows={2}
-                  className="w-full border-2 border-slate-300 px-3 py-1.5 text-sm outline-none"
-                />
-              </div>
+              <Select
+                required
+                label="Activo"
+                value={newTarea.activoId}
+                onChange={(e) => setNewTarea((p) => ({ ...p, activoId: e.target.value }))}
+              >
+                <option value="">Seleccionar activo...</option>
+                {activos.map((a) => (
+                  <option key={a.id} value={a.id}>{a.codigo} — {a.nombre}</option>
+                ))}
+              </Select>
+              <Input
+                label="Tipo de tarea"
+                type="text"
+                required
+                value={newTarea.tipo}
+                onChange={(e) => setNewTarea((p) => ({ ...p, tipo: e.target.value }))}
+                placeholder="Ej: Cambio de aceite, revisión general..."
+              />
+              <Input
+                label="Fecha programada"
+                type="date"
+                required
+                value={newTarea.fechaProgramada}
+                onChange={(e) => setNewTarea((p) => ({ ...p, fechaProgramada: e.target.value }))}
+              />
+              <Select
+                required
+                label="Responsable"
+                value={newTarea.responsableId}
+                onChange={(e) => setNewTarea((p) => ({ ...p, responsableId: e.target.value }))}
+              >
+                <option value="">Seleccionar técnico...</option>
+                {tecnicosActivos.map((t) => (
+                  <option key={t.id} value={t.id}>{t.nombre}</option>
+                ))}
+              </Select>
+              <Textarea
+                label="Observaciones"
+                value={newTarea.observaciones}
+                onChange={(e) => setNewTarea((p) => ({ ...p, observaciones: e.target.value }))}
+                rows={2}
+              />
               <div className="flex justify-end gap-3 mt-4">
-                <button type="button" onClick={() => { setShowModal(false); setEditId(null); }} className="px-4 min-h-[44px] border-2 border-slate-400 font-bold text-slate-600">
+                <Button type="button" variant="secondary" onClick={() => { setShowModal(false); setEditId(null); }}>
                   Cancelar
-                </button>
-                <button type="submit" className="px-4 min-h-[44px] bg-orange-500 text-white border-2 border-slate-800 font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)]">
+                </Button>
+                <Button type="submit">
                   {editId ? 'Guardar Cambios' : 'Crear Tarea'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>

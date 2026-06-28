@@ -18,7 +18,7 @@ export const PantallaCarga: React.FC = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center gap-10">
+    <div className="fixed inset-0 z-[200] bg-canvas flex flex-col items-center justify-center gap-10">
       {/* Motor SVG */}
       <div className="relative flex items-center justify-center">
         {/* Engranaje exterior — gira lento */}
@@ -28,7 +28,7 @@ export const PantallaCarga: React.FC = () => {
           height="160"
           viewBox="0 0 100 100"
         >
-          <GearPath r={46} teeth={16} color="#f97316" opacity={0.25} />
+          <GearPath r={46} teeth={16} color="#2563EB" opacity={0.2} />
         </svg>
         {/* Engranaje medio — gira al revés más rápido */}
         <svg
@@ -37,7 +37,7 @@ export const PantallaCarga: React.FC = () => {
           height="120"
           viewBox="0 0 100 100"
         >
-          <GearPath r={38} teeth={12} color="#f97316" opacity={0.55} />
+          <GearPath r={38} teeth={12} color="#2563EB" opacity={0.45} />
         </svg>
         {/* Engranaje interior — gira */}
         <svg
@@ -46,30 +46,30 @@ export const PantallaCarga: React.FC = () => {
           height="80"
           viewBox="0 0 100 100"
         >
-          <GearPath r={30} teeth={8} color="#f97316" opacity={1} />
+          <GearPath r={30} teeth={8} color="#2563EB" opacity={1} />
         </svg>
         {/* Logo en el centro */}
-        <div className="absolute flex items-center justify-center w-10 h-10 bg-slate-900 rounded-full">
-          <span className="text-white font-black text-xs tracking-tighter">AQ</span>
+        <div className="absolute flex items-center justify-center w-10 h-10 bg-canvas rounded-full">
+          <span className="text-brand-600 font-bold text-xs tracking-tight">AQ</span>
         </div>
       </div>
 
       {/* Texto */}
       <div className="text-center space-y-2">
-        <p className="text-orange-400 font-black text-xl uppercase tracking-widest animate-pulse">
+        <p className="font-display text-content font-bold text-xl tracking-tight">
           ActivaQR
         </p>
         <p
           key={frase}
-          className="text-slate-400 text-sm font-mono tracking-wide transition-opacity duration-500"
+          className="text-muted text-sm font-mono tracking-wide transition-opacity duration-500"
         >
           {FRASES[frase]}
         </p>
       </div>
 
       {/* Barra de progreso pulsante */}
-      <div className="w-48 h-1 bg-slate-700 overflow-hidden">
-        <div className="h-full bg-orange-500 animate-[progress_1.5s_ease-in-out_infinite]" />
+      <div className="w-48 h-1 bg-line rounded-full overflow-hidden">
+        <div className="h-full bg-brand-600 animate-[progress_1.5s_ease-in-out_infinite]" />
       </div>
 
       <style>{`

@@ -10,16 +10,18 @@ export const Layout: React.FC = () => {
   const cargando = useCargaRemota();
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-[#FAFAF7] overflow-hidden">
+    <div className="app-shell flex flex-col md:flex-row bg-canvas">
       <DemoBanner />
       {cargando && <PantallaCarga />}
       <Sidebar />
-      <main className="flex-1 overflow-y-auto">
-        {/* Spacer for mobile fixed header (incluye safe-area de la barra de estado) */}
+      <main className="app-main">
+        {/* Spacer para el header fijo de mobile (incluye safe-area) */}
         <div className="md:hidden h-safe-header" />
-        <div className="p-4 md:p-8 min-h-full">
+        <div className="p-4 sm:p-6 md:p-8 min-h-full max-w-7xl mx-auto w-full">
           <Outlet />
         </div>
+        {/* Spacer para la bottom nav de mobile */}
+        <div className="md:hidden h-safe-bottomnav" />
       </main>
     </div>
   );

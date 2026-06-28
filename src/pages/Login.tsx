@@ -1,43 +1,55 @@
 // v1.1.0
 import React, { useState } from 'react';
-import { LogIn, Lock, Mail } from 'lucide-react';
+import { LogIn, Lock, Mail, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { apiFetch, logout as clearSession } from '../data/auth';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { ThemeToggle } from '../components/ui/ThemeToggle';
 
-const LOGO = '/ActivaQr/company-logo-hd.png';
+const LOGO_LIGHT = '/ActivaQr/company-logo-hd.png';
+const LOGO_DARK = '/ActivaQr/company-logo1.png';
 
 const DEMO_EMAIL = 'demo@activaqr.com';
 const DEMO_PASS = 'demo1234';
 
 function isDemoParam() {
-  const hash = window.location.hash; // e.g. #/login?demo=1
-  return hash.includes('demo=1');
+  return window.location.hash.includes('demo=1');
 }
+
+// Fondo con formas orgánicas / aura de marca.
+const OrganicBackdrop: React.FC = () => (
+  <div className="pointer-events-none absolute inset-0 overflow-hidden brand-aura">
+    <div className="absolute -top-24 -left-24 w-96 h-96 organic-blob bg-brand-100/60 dark:bg-brand-600/10 blur-2xl" />
+    <div className="absolute -bottom-32 -right-20 w-[28rem] h-[28rem] organic-blob-2 bg-brand-200/40 dark:bg-brand-500/10 blur-3xl" />
+  </div>
+);
 
 export const Login: React.FC = () => {
   const { login } = useAuth();
   const isDemo = isDemoParam();
+  // En demo saltamos directo al formulario con credenciales precargadas.
+  const [vista, setVista] = useState<'bienvenida' | 'login'>(isDemo ? 'login' : 'bienvenida');
   const [email, setEmail] = useState(isDemo ? DEMO_EMAIL : '');
   const [password, setPassword] = useState(isDemo ? DEMO_PASS : '');
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
   const [vistaForgot, setVistaForgot] = useState(false);
 
-  // Si llega con ?demo=1 limpiar sesión previa sin recargar la página
   React.useEffect(() => {
     if (isDemo) clearSession();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotExito, setForgotExito] = useState(false);
   const [forgotError, setForgotError] = useState<string | null>(null);
   const [forgotCargando, setForgotCargando] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const doLogin = async (mail: string, pass: string) => {
     setError(null);
     setCargando(true);
     try {
-      await login(email, password);
+      await login(mail, pass);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al iniciar sesión.');
     } finally {
@@ -45,132 +57,192 @@ export const Login: React.FC = () => {
     }
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    doLogin(email, password);
+  };
+
+  const handleDemo = () => {
+    setEmail(DEMO_EMAIL);
+    setPassword(DEMO_PASS);
+    doLogin(DEMO_EMAIL, DEMO_PASS);
+  };
+
+  const Logo = (
+    <>
+      <img src={LOGO_LIGHT} alt="ActivaQR" className="h-14 mx-auto object-contain dark:hidden" />
+      <img src={LOGO_DARK} alt="ActivaQR" className="h-14 mx-auto object-contain hidden dark:block" />
+    </>
+  );
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FAFAF7] p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white border-2 border-slate-900 shadow-[6px_6px_0px_0px_#1e293b] p-8">
-          <div className="text-center mb-6">
-            <img src={LOGO} alt="ActivaQR" className="h-14 mx-auto mb-3 object-contain" />
-            <h1 className="font-sketch text-3xl font-black text-slate-900 uppercase tracking-tight">
-              ActivaQR
-            </h1>
-            <p className="text-slate-500 text-sm mt-1 font-medium uppercase tracking-wider">
-              Activos bajo control
-            </p>
+    <div className="relative min-h-screen flex items-center justify-center bg-canvas p-5 overflow-hidden">
+      <OrganicBackdrop />
+      <div className="absolute top-5 right-5 z-10">
+        <ThemeToggle />
+      </div>
+
+      {/* ── Pantalla de bienvenida ── */}
+      {vista === 'bienvenida' && (
+        <div className="relative w-full max-w-md text-center animate-fade-up">
+          <div className="mb-8">{Logo}</div>
+          <h1 className="font-display text-3xl sm:text-4xl font-bold text-content tracking-tight">
+            ActivaQR
+          </h1>
+          <p className="mt-4 text-muted text-base leading-relaxed max-w-sm mx-auto">
+            Gestión inteligente de activos para mantenimiento industrial
+          </p>
+          <div className="mt-10 space-y-3">
+            <Button
+              size="lg"
+              block
+              onClick={() => setVista('login')}
+              iconRight={<ArrowRight size={20} />}
+            >
+              Ingresar
+            </Button>
+            <Button
+              size="lg"
+              block
+              variant="secondary"
+              onClick={handleDemo}
+              loading={cargando}
+            >
+              Probar demo
+            </Button>
           </div>
+          <p className="mt-10 text-faint text-xs font-mono">
+            ActivaQR · Gestión de activos industriales
+          </p>
+        </div>
+      )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
-                Email
-              </label>
-              <div className="flex items-center gap-2 border-2 border-slate-300 px-3 h-12 focus-within:border-orange-500">
-                <Mail size={18} className="text-slate-400" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="tu@empresa.com"
-                  className="flex-1 outline-none bg-transparent font-mono"
-                  autoComplete="username"
-                  required
-                />
-              </div>
+      {/* ── Formulario de acceso ── */}
+      {vista === 'login' && (
+        <div className="relative w-full max-w-md animate-scale-in">
+          <div className="bg-surface border border-line rounded-xl shadow-soft p-7 sm:p-8">
+            {!isDemo && (
+              <button
+                onClick={() => { setVista('bienvenida'); setError(null); }}
+                className="press flex items-center gap-1.5 text-sm text-muted hover:text-content mb-5 transition-colors"
+              >
+                <ArrowLeft size={16} /> Volver
+              </button>
+            )}
+            <div className="text-center mb-7">
+              {Logo}
+              <h1 className="font-display text-2xl font-bold text-content tracking-tight mt-3">
+                Iniciar sesión
+              </h1>
+              <p className="text-muted text-sm mt-1">Accedé a tu panel de control</p>
             </div>
 
-            <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
-                Contraseña
-              </label>
-              <div className="flex items-center gap-2 border-2 border-slate-300 px-3 h-12 focus-within:border-orange-500">
-                <Lock size={18} className="text-slate-400" />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="flex-1 outline-none bg-transparent font-mono"
-                  autoComplete="current-password"
-                  required
-                />
-              </div>
-            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Input
+                label="Email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="tu@empresa.com"
+                icon={<Mail size={18} />}
+                autoComplete="username"
+                required
+              />
+              <Input
+                label="Contraseña"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                icon={<Lock size={18} />}
+                autoComplete="current-password"
+                required
+              />
 
-            {error && (
-              <div className="bg-red-50 border-2 border-red-300 text-red-700 text-sm px-3 py-2 font-semibold">
-                {error}
+              {error && (
+                <div className="bg-danger/10 text-danger-strong dark:text-danger text-sm px-3.5 py-2.5 rounded-md font-medium">
+                  {error}
+                </div>
+              )}
+
+              <Button type="submit" size="lg" block loading={cargando} iconLeft={<LogIn size={20} />}>
+                {cargando ? 'Ingresando…' : 'Ingresar'}
+              </Button>
+
+              <div className="text-center pt-1">
+                <button
+                  type="button"
+                  onClick={() => { setVistaForgot(true); setError(null); }}
+                  className="text-sm text-muted hover:text-brand-600 transition-colors"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
+            </form>
+
+            {vistaForgot && (
+              <div className="mt-5 border-t border-line pt-5">
+                {forgotExito ? (
+                  <div className="space-y-3">
+                    <div className="bg-ok/10 text-ok-strong dark:text-ok text-sm px-3.5 py-2.5 rounded-md font-medium">
+                      Revisá tu email, te enviamos las instrucciones.
+                    </div>
+                    <button
+                      onClick={() => { setVistaForgot(false); setForgotExito(false); }}
+                      className="text-sm text-muted hover:text-brand-600"
+                    >
+                      Volver al login
+                    </button>
+                  </div>
+                ) : (
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      setForgotError(null);
+                      setForgotCargando(true);
+                      try {
+                        await apiFetch('auth/forgot-password', {
+                          method: 'POST',
+                          body: JSON.stringify({ email: forgotEmail }),
+                        });
+                        setForgotExito(true);
+                      } catch {
+                        setForgotError('Error al enviar. Intentá de nuevo.');
+                      } finally {
+                        setForgotCargando(false);
+                      }
+                    }}
+                    className="space-y-3"
+                  >
+                    <p className="text-sm font-semibold text-content">Recuperar contraseña</p>
+                    <Input
+                      type="email"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      placeholder="tu@email.com"
+                      icon={<Mail size={16} />}
+                      error={forgotError ?? undefined}
+                      required
+                    />
+                    <div className="flex gap-2">
+                      <Button type="submit" variant="secondary" block loading={forgotCargando}>
+                        {forgotCargando ? 'Enviando…' : 'Enviar instrucciones'}
+                      </Button>
+                      <Button type="button" variant="ghost" onClick={() => setVistaForgot(false)}>
+                        Cancelar
+                      </Button>
+                    </div>
+                  </form>
+                )}
               </div>
             )}
+          </div>
 
-            <button
-              type="submit"
-              disabled={cargando}
-              className="w-full flex items-center justify-center gap-2 bg-orange-500 text-white h-12 font-sketch font-black text-xl uppercase border-2 border-slate-900 shadow-[4px_4px_0px_0px_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#1e293b] transition-all disabled:opacity-50"
-            >
-              <LogIn size={20} />
-              {cargando ? 'Ingresando…' : 'Ingresar'}
-            </button>
-
-            <div className="text-center mt-2">
-              <button
-                type="button"
-                onClick={() => { setVistaForgot(true); setError(null); }}
-                className="text-xs text-slate-500 hover:text-orange-500 underline transition-colors"
-              >
-                Olvidaste tu contraseña?
-              </button>
-            </div>
-          </form>
-
-          {vistaForgot && (
-            <div className="mt-4 border-t-2 border-slate-200 pt-4">
-              {forgotExito ? (
-                <div className="space-y-2">
-                  <div className="bg-green-50 border-2 border-green-300 text-green-700 text-sm px-3 py-2 font-semibold">
-                    Revisa tu email, te enviamos las instrucciones.
-                  </div>
-                  <button onClick={() => { setVistaForgot(false); setForgotExito(false); }} className="text-xs text-slate-500 underline hover:text-orange-500">
-                    Volver al login
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={async (e) => {
-                  e.preventDefault();
-                  setForgotError(null);
-                  setForgotCargando(true);
-                  try {
-                    await apiFetch('auth/forgot-password', { method: 'POST', body: JSON.stringify({ email: forgotEmail }) });
-                    setForgotExito(true);
-                  } catch {
-                    setForgotError('Error al enviar. Intentá de nuevo.');
-                  } finally {
-                    setForgotCargando(false);
-                  }
-                }} className="space-y-2">
-                  <p className="text-xs font-black uppercase tracking-wider text-slate-600">Recuperar contraseña</p>
-                  <div className="flex items-center gap-2 border-2 border-slate-300 px-3 h-10 focus-within:border-orange-500">
-                    <Mail size={16} className="text-slate-400" />
-                    <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} placeholder="tu@email.com" className="flex-1 outline-none bg-transparent text-sm" required />
-                  </div>
-                  {forgotError && <p className="text-red-600 text-xs">{forgotError}</p>}
-                  <div className="flex gap-2">
-                    <button type="submit" disabled={forgotCargando} className="flex-1 bg-slate-900 text-white text-xs font-black uppercase py-2 border-2 border-slate-900 disabled:opacity-50">
-                      {forgotCargando ? 'Enviando...' : 'Enviar instrucciones'}
-                    </button>
-                    <button type="button" onClick={() => setVistaForgot(false)} className="text-xs text-slate-500 underline px-2">
-                      Volver
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-          )}
+          <p className="text-center text-faint text-xs mt-5 font-mono">
+            ActivaQR · Gestión de activos industriales
+          </p>
         </div>
-
-        <p className="text-center text-slate-400 text-xs mt-4 font-mono">
-          ActivaQR · Gestión de activos industriales
-        </p>
-      </div>
+      )}
     </div>
   );
 };

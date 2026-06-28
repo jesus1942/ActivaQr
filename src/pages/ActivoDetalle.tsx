@@ -12,6 +12,7 @@ import { useActivos } from '../hooks/useActivos';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { EstadoOperativoBadge, ESTADOS_OPERATIVOS } from '../components/ui/EstadoOperativoBadge';
 import { ValueGauge } from '../components/ui/ValueGauge';
+import { Button, Card, Select } from '../components/ui';
 import { EstadoOperativo } from '../data/types';
 
 export const ActivoDetalle: React.FC = () => {
@@ -74,76 +75,80 @@ export const ActivoDetalle: React.FC = () => {
   ];
 
   return (
-    <div>
+    <div className="space-y-6 animate-fade-up">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start gap-4 mb-6">
-        <button
+      <div className="flex flex-col sm:flex-row items-start gap-4">
+        <Button
+          type="button"
           onClick={() => navigate('/activos')}
-          className="flex items-center gap-1 text-slate-600 hover:text-slate-900 font-semibold border-2 border-slate-300 px-3 min-h-[44px] hover:border-slate-800 transition-colors"
+          variant="secondary"
+          iconLeft={<ArrowLeft size={16} />}
         >
-          <ArrowLeft size={16} />
           Volver
-        </button>
+        </Button>
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="font-mono font-black text-2xl sm:text-3xl text-slate-900">{activo.codigo}</span>
+            <span className="font-mono font-bold text-2xl sm:text-3xl text-content">{activo.codigo}</span>
             <StatusBadge estado={activo.estado} size="lg" />
             <EstadoOperativoBadge estado={activo.estadoOperativo ?? 'operativo'} size="lg" />
           </div>
-          <h1 className="text-lg font-bold text-slate-700 mt-0.5">{activo.nombre}</h1>
-          <div className="flex items-center gap-2 mt-2">
-            <label className="text-xs font-black uppercase tracking-wider text-slate-500">Estado operativo:</label>
-            <select
+          <h1 className="font-display text-lg font-bold text-muted mt-0.5">{activo.nombre}</h1>
+          <div className="max-w-xs mt-3">
+            <Select
+              label="Estado operativo"
               value={activo.estadoOperativo ?? 'operativo'}
               onChange={(e) => updateActivo(activo.id, { estadoOperativo: e.target.value as EstadoOperativo })}
-              className="border-2 border-slate-800 px-2 h-9 text-sm font-semibold outline-none focus:border-orange-500 bg-white"
             >
               {ESTADOS_OPERATIVOS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-            </select>
+            </Select>
           </div>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          <button
+          <Button
+            type="button"
             onClick={() => navigate('/activos', { state: { editId: activo.id } })}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border-2 border-slate-800 px-3 min-h-[44px] font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+            variant="secondary"
+            iconLeft={<Pencil size={15} />}
+            className="flex-1 sm:flex-none"
           >
-            <Pencil size={15} />
             Editar
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
             onClick={handleDelete}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border-2 border-red-600 text-red-600 px-3 min-h-[44px] font-bold hover:bg-red-50 transition-colors"
+            variant="danger"
+            iconLeft={<Trash2 size={15} />}
+            className="flex-1 sm:flex-none"
           >
-            <Trash2 size={15} />
             Eliminar
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Ficha técnica */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
-            <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-3 border-b-2 border-slate-200 pb-2">Ficha Técnica</h2>
+          <Card padding="md">
+            <h2 className="font-display text-base font-bold text-content mb-4">Ficha técnica</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
               {ficha.map(({ label, value }) => (
                 <div key={label} className="flex gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 min-w-28">{label}:</span>
-                  <span className="text-sm font-semibold text-slate-800 capitalize">{value}</span>
+                  <span className="text-xs font-semibold text-faint min-w-28">{label}</span>
+                  <span className="text-sm font-semibold text-content capitalize">{value}</span>
                 </div>
               ))}
             </div>
             {activo.notas && (
-              <div className="mt-3 p-2 bg-amber-50 border-2 border-amber-200">
-                <span className="text-xs font-black uppercase text-amber-700">Notas: </span>
-                <span className="text-sm text-amber-800">{activo.notas}</span>
+              <div className="mt-4 p-3 bg-subtle border border-line rounded-md">
+                <span className="text-xs font-semibold text-warn-strong dark:text-warn">Notas: </span>
+                <span className="text-sm text-muted">{activo.notas}</span>
               </div>
             )}
-          </div>
+          </Card>
 
           {/* Value Gauges */}
-          <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
-            <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-3 border-b-2 border-slate-200 pb-2">Parámetros de Operación</h2>
+          <Card padding="md">
+            <h2 className="font-display text-base font-bold text-content mb-4">Parámetros de operación</h2>
             {activoMediciones.length > 0 && (
               <>
                 <ValueGauge
@@ -179,64 +184,68 @@ export const ActivoDetalle: React.FC = () => {
                 )}
               </>
             )}
-          </div>
+          </Card>
         </div>
 
         {/* Right: QR + Actions */}
         <div className="space-y-4">
-          <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4 text-center">
-            <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-3">Código QR</h2>
-            <div className="inline-block border-4 border-slate-800 p-3 bg-white mb-3">
+          <Card padding="md" className="text-center">
+            <h2 className="font-display text-base font-bold text-content mb-4">Código QR</h2>
+            <div className="inline-block border border-line p-3 bg-white rounded-md mb-3">
               <QRCodeSVG value={qrValue} size={140} className="w-full max-w-[160px] h-auto" />
             </div>
-            <div className="font-mono text-xs text-slate-500 mb-4 break-all">{activo.codigo}</div>
-            <button
+            <div className="font-mono text-xs text-muted mb-4 break-all">{activo.codigo}</div>
+            <Button
+              type="button"
               onClick={handlePrint}
-              className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white px-4 py-2.5 font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:bg-slate-700 transition-colors mb-2"
+              variant="secondary"
+              block
+              iconLeft={<Printer size={16} />}
+              className="mb-2"
             >
-              <Printer size={16} />
               Imprimir Etiqueta
-            </button>
-            <button
+            </Button>
+            <Button
+              type="button"
               onClick={() => navigate(`/medicion/${activo.id}`)}
-              className="w-full flex items-center justify-center gap-2 bg-orange-500 text-white px-4 py-2.5 font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:bg-orange-400 transition-colors"
+              block
+              iconLeft={<ClipboardList size={16} />}
             >
-              <ClipboardList size={16} />
               Tomar Medición
-            </button>
-          </div>
+            </Button>
+          </Card>
 
           {/* Maintenance history */}
-          <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4">
-            <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-3">Historial de Mantenimiento</h2>
+          <Card padding="md">
+            <h2 className="font-display text-base font-bold text-content mb-4">Historial de mantenimiento</h2>
             {activoTareas.length === 0 ? (
-              <p className="text-sm text-slate-400">Sin tareas registradas</p>
+              <p className="text-sm text-faint">Sin tareas registradas</p>
             ) : (
               <div className="space-y-2">
                 {activoTareas.map((tarea) => (
-                  <div key={tarea.id} className="border-2 border-slate-200 p-2">
-                    <div className="text-xs font-bold text-slate-700">{tarea.tipo}</div>
+                  <div key={tarea.id} className="border border-line rounded-md p-3">
+                    <div className="text-xs font-bold text-content">{tarea.tipo}</div>
                     <div className="flex justify-between mt-1">
-                      <span className="text-xs text-slate-500">{format(parseISO(tarea.fechaProgramada), 'dd/MM/yyyy', { locale: es })}</span>
+                      <span className="text-xs text-muted">{format(parseISO(tarea.fechaProgramada), 'dd/MM/yyyy', { locale: es })}</span>
                       <StatusBadge
                         estado={tarea.estado === 'completado' ? 'normal' : tarea.estado === 'vencido' ? 'critico' : 'alerta'}
                         size="sm"
                       />
                     </div>
                     {tarea.observaciones && (
-                      <div className="text-xs text-slate-500 mt-1">{tarea.observaciones}</div>
+                      <div className="text-xs text-muted mt-1">{tarea.observaciones}</div>
                     )}
                   </div>
                 ))}
               </div>
             )}
-          </div>
+          </Card>
         </div>
       </div>
 
       {/* Measurement history */}
-      <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-4 mb-6">
-        <h2 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-4">Historial de Mediciones (últimas 10)</h2>
+      <Card padding="md">
+        <h2 className="font-display text-base font-bold text-content mb-4">Historial de mediciones (últimas 10)</h2>
         {chartData.length > 0 && (
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={chartData} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
@@ -248,35 +257,35 @@ export const ActivoDetalle: React.FC = () => {
             </LineChart>
           </ResponsiveContainer>
         )}
-      </div>
+      </Card>
 
-      <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] overflow-x-auto">
+      <Card padding="none" className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-slate-900 text-white">
+            <tr className="border-b border-line text-faint">
               {['Fecha', 'Temp.', 'Amperaje', 'Presión', 'Vibración', 'Estado', 'Técnico', 'Observaciones', ''].map((h, idx) => (
-                <th key={h || idx} className="text-left px-3 py-2.5 text-xs font-black uppercase tracking-wider whitespace-nowrap">{h}</th>
+                <th key={h || idx} className="text-left px-3 py-2.5 text-xs font-semibold whitespace-nowrap">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-line">
             {[...last10].reverse().map((m, i) => (
-              <tr key={m.id} className={`border-b border-slate-100 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
-                <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">{format(parseISO(m.fecha), 'dd/MM/yyyy', { locale: es })}</td>
-                <td className="px-3 py-2 font-mono font-bold whitespace-nowrap">{m.temperatura}°C</td>
-                <td className="px-3 py-2 font-mono whitespace-nowrap">{m.amperaje > 0 ? `${m.amperaje}A` : '-'}</td>
-                <td className="px-3 py-2 font-mono whitespace-nowrap">{m.presion > 0 ? `${m.presion} bar` : '-'}</td>
-                <td className="px-3 py-2 capitalize text-xs">{m.vibracion}</td>
+              <tr key={m.id} className="hover:bg-subtle transition-colors">
+                <td className="px-3 py-2 font-mono text-xs text-muted whitespace-nowrap">{format(parseISO(m.fecha), 'dd/MM/yyyy', { locale: es })}</td>
+                <td className="px-3 py-2 font-mono font-bold text-content whitespace-nowrap">{m.temperatura}°C</td>
+                <td className="px-3 py-2 font-mono text-muted whitespace-nowrap">{m.amperaje > 0 ? `${m.amperaje}A` : '-'}</td>
+                <td className="px-3 py-2 font-mono text-muted whitespace-nowrap">{m.presion > 0 ? `${m.presion} bar` : '-'}</td>
+                <td className="px-3 py-2 capitalize text-xs text-muted">{m.vibracion}</td>
                 <td className="px-3 py-2"><StatusBadge estado={m.estado} size="sm" /></td>
-                <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap">{getTecnicoNombre(m.tecnicoId)}</td>
-                <td className="px-3 py-2 text-xs text-slate-500 max-w-48 truncate">{m.observaciones || '-'}</td>
+                <td className="px-3 py-2 text-xs text-muted whitespace-nowrap">{getTecnicoNombre(m.tecnicoId)}</td>
+                <td className="px-3 py-2 text-xs text-muted max-w-48 truncate">{m.observaciones || '-'}</td>
                 <td className="px-3 py-2">
                   <button
                     onClick={() => {
                       if (window.confirm('¿Eliminar esta medición?')) deleteMedicion(m.id);
                     }}
                     title="Eliminar medición"
-                    className="text-red-600 hover:bg-red-50 p-1.5 border-2 border-transparent hover:border-red-200"
+                    className="press grid place-items-center w-8 h-8 rounded-md text-danger hover:bg-danger/10 transition-colors"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -285,7 +294,7 @@ export const ActivoDetalle: React.FC = () => {
             ))}
           </tbody>
         </table>
-      </div>
+      </Card>
     </div>
   );
 };

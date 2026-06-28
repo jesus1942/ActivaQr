@@ -13,6 +13,7 @@ import {
 } from '../data/accesoRemotoApi';
 import { ChatRemoto } from '../components/ChatRemoto';
 import { NotificacionesPush } from '../components/NotificacionesPush';
+import { Button, Modal } from '../components/ui';
 import {
   CategoriaEquipo, ParametroCategoria,
   getCategorias, crearCategoria, eliminarCategoria, agregarParametro,
@@ -29,8 +30,8 @@ const TABS: { id: Tab; label: string }[] = [
 ];
 
 const inputCls =
-  'w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500 bg-white';
-const labelCls = 'block text-xs font-black uppercase tracking-wider text-slate-600 mb-1';
+  'w-full border border-line rounded-md bg-surface px-3 h-11 text-sm text-content outline-none focus:border-brand-600 focus:shadow-ring';
+const labelCls = 'block text-xs font-semibold text-muted tracking-wide mb-1';
 
 export const Configuracion: React.FC = () => {
   const {
@@ -46,12 +47,12 @@ export const Configuracion: React.FC = () => {
   const tieneSubActiva = mpEstadoSub === 'authorized' || mpEstadoSub === 'pending';
 
   return (
-    <div>
+    <div className="space-y-6 animate-fade-up">
       <div className="mb-6">
-        <h1 className="font-sketch text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 uppercase tracking-tight">
+        <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight">
           Configuración
         </h1>
-        <p className="text-slate-500 text-sm mt-1">Gestioná sectores, tipos de activo y técnicos</p>
+        <p className="text-muted text-sm mt-1">Gestioná sectores, tipos de activo y técnicos</p>
       </div>
 
       <NotificacionesPush />
@@ -65,10 +66,10 @@ export const Configuracion: React.FC = () => {
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`px-4 min-h-[44px] font-sketch text-lg font-bold uppercase border-2 transition-all ${
+            className={`press px-4 min-h-[44px] rounded-md text-sm font-semibold border transition-all ${
               tab === t.id
-                ? 'bg-slate-900 text-white border-slate-900 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.5)]'
-                : 'bg-white text-slate-600 border-slate-300 hover:border-slate-800'
+                ? 'bg-brand-600 text-white border-brand-600 shadow-soft'
+                : 'bg-surface text-muted border-line hover:border-line-strong hover:text-content'
             }`}
           >
             {t.label}
@@ -108,7 +109,7 @@ export const Configuracion: React.FC = () => {
 // ─── Reusable card wrapper ─────────────────────────────────────
 const Card: React.FC<{ inactivo?: boolean; children: React.ReactNode }> = ({ inactivo, children }) => (
   <div
-    className={`bg-white border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)] p-4 ${
+    className={`bg-surface border border-line rounded-lg shadow-soft p-4 transition-all ${
       inactivo ? 'opacity-50' : ''
     }`}
   >
@@ -119,7 +120,7 @@ const Card: React.FC<{ inactivo?: boolean; children: React.ReactNode }> = ({ ina
 const AddButton: React.FC<{ onClick: () => void; label: string }> = ({ onClick, label }) => (
   <button
     onClick={onClick}
-    className="flex items-center gap-2 bg-orange-500 text-white px-4 min-h-[44px] font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
+    className="press inline-flex items-center justify-center gap-2 bg-brand-600 text-white px-5 min-h-[44px] rounded-md font-semibold shadow-soft hover:bg-brand-700 transition-all"
   >
     <Plus size={16} />
     {label}
@@ -132,14 +133,39 @@ const IconBtn: React.FC<{ onClick: () => void; title: string; children: React.Re
   <button
     onClick={onClick}
     title={title}
-    className={`p-2 min-h-[40px] min-w-[40px] flex items-center justify-center border-2 transition-colors ${
+    className={`press p-2 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-md border transition-colors ${
       danger
-        ? 'border-slate-300 text-red-600 hover:border-red-600 hover:bg-red-50'
-        : 'border-slate-300 text-slate-600 hover:border-slate-800'
+        ? 'border-line text-danger hover:border-danger hover:bg-danger/10'
+        : 'border-line text-muted hover:border-line-strong hover:text-content'
     }`}
   >
     {children}
   </button>
+);
+
+const ConfirmModal: React.FC<{
+  open: boolean;
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  loading?: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+}> = ({ open, title, message, confirmLabel = 'Confirmar', loading, onConfirm, onClose }) => (
+  <Modal
+    open={open}
+    onClose={onClose}
+    title={title}
+    size="sm"
+    footer={(
+      <>
+        <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
+        <Button type="button" variant="danger" loading={loading} onClick={onConfirm}>{confirmLabel}</Button>
+      </>
+    )}
+  >
+    <p className="text-sm text-muted leading-relaxed">{message}</p>
+  </Modal>
 );
 
 // ─── SECTORES ──────────────────────────────────────────────────
@@ -153,6 +179,7 @@ interface SectoresProps {
 const SectoresSection: React.FC<SectoresProps> = ({ sectores, addSector, updateSector, deleteSector }) => {
   const [editing, setEditing] = useState<Sector | null>(null);
   const [adding, setAdding] = useState(false);
+  const [deleting, setDeleting] = useState<Sector | null>(null);
 
   const empty: Omit<Sector, 'id'> = { nombre: '', color: '#F97316', activo: true };
   const [form, setForm] = useState<Omit<Sector, 'id'>>(empty);
@@ -168,29 +195,23 @@ const SectoresSection: React.FC<SectoresProps> = ({ sectores, addSector, updateS
     cancel();
   };
 
-  const confirmDelete = (s: Sector) => {
-    if (window.confirm(`¿Eliminar el sector "${s.nombre}"? Si tiene activos asociados se marcará como inactivo.`)) {
-      deleteSector(s.id);
-    }
-  };
-
   return (
     <div className="space-y-4">
       {!adding && !editing && <AddButton onClick={startAdd} label="Agregar Sector" />}
 
       {(adding || editing) && (
-        <form onSubmit={submit} className="bg-white border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)] p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <form onSubmit={submit} className="bg-surface border border-line rounded-lg shadow-soft p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Nombre</label>
             <input required value={form.nombre} onChange={(e) => setForm((p) => ({ ...p, nombre: e.target.value }))} className={inputCls} />
           </div>
           <div>
             <label className={labelCls}>Color</label>
-            <input type="color" value={form.color ?? '#F97316'} onChange={(e) => setForm((p) => ({ ...p, color: e.target.value }))} className="w-full h-11 border-2 border-slate-300 bg-white" />
+            <input type="color" value={form.color ?? '#F97316'} onChange={(e) => setForm((p) => ({ ...p, color: e.target.value }))} className="w-full h-11 rounded-md border border-line bg-surface" />
           </div>
           <div className="sm:col-span-2 flex justify-end gap-3">
-            <button type="button" onClick={cancel} className="px-4 min-h-[44px] border-2 border-slate-400 font-bold text-slate-600">Cancelar</button>
-            <button type="submit" className="px-4 min-h-[44px] bg-orange-500 text-white border-2 border-slate-800 font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)]">{editing ? 'Guardar' : 'Crear'}</button>
+            <button type="button" onClick={cancel} className="press inline-flex items-center justify-center min-h-[44px] px-4 rounded-md border border-line-strong text-sm font-semibold text-muted hover:text-content hover:border-content transition-colors">Cancelar</button>
+            <button type="submit" className="press inline-flex items-center justify-center min-h-[44px] px-4 rounded-md bg-brand-600 text-white text-sm font-semibold shadow-soft hover:bg-brand-700 transition-colors">{editing ? 'Guardar' : 'Crear'}</button>
           </div>
         </form>
       )}
@@ -200,14 +221,14 @@ const SectoresSection: React.FC<SectoresProps> = ({ sectores, addSector, updateS
           <Card key={s.id} inactivo={!s.activo}>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="w-5 h-5 border-2 border-slate-300 flex-shrink-0" style={{ backgroundColor: s.color }} />
-                <span className="font-bold text-slate-800 truncate">{s.nombre}</span>
+                <span className="w-5 h-5 border border-line flex-shrink-0" style={{ backgroundColor: s.color }} />
+                <span className="font-bold text-content truncate">{s.nombre}</span>
               </div>
               <div className="flex gap-1.5 flex-shrink-0">
                 {s.activo ? (
                   <>
                     <IconBtn onClick={() => startEdit(s)} title="Editar"><Pencil size={15} /></IconBtn>
-                    <IconBtn onClick={() => confirmDelete(s)} title="Eliminar" danger><Trash2 size={15} /></IconBtn>
+                    <IconBtn onClick={() => setDeleting(s)} title="Eliminar" danger><Trash2 size={15} /></IconBtn>
                   </>
                 ) : (
                   <IconBtn onClick={() => updateSector(s.id, { activo: true })} title="Reactivar"><RotateCcw size={15} /></IconBtn>
@@ -217,6 +238,18 @@ const SectoresSection: React.FC<SectoresProps> = ({ sectores, addSector, updateS
           </Card>
         ))}
       </div>
+      <ConfirmModal
+        open={!!deleting}
+        title="Eliminar sector"
+        message={deleting ? `¿Eliminar el sector "${deleting.nombre}"? Si tiene activos asociados se marcará como inactivo.` : ''}
+        confirmLabel="Eliminar"
+        onClose={() => setDeleting(null)}
+        onConfirm={() => {
+          if (!deleting) return;
+          deleteSector(deleting.id);
+          setDeleting(null);
+        }}
+      />
     </div>
   );
 };
@@ -243,6 +276,7 @@ const MIDE_FIELDS: { key: keyof Pick<TipoActivo, 'mideTemperatura' | 'mideAmpera
 const TiposSection: React.FC<TiposProps> = ({ tipos, addTipo, updateTipo, deleteTipo }) => {
   const [editing, setEditing] = useState<TipoActivo | null>(null);
   const [adding, setAdding] = useState(false);
+  const [deleting, setDeleting] = useState<TipoActivo | null>(null);
   const [categorias, setCategorias] = useState<CategoriaEquipo[]>([]);
 
   useEffect(() => {
@@ -268,18 +302,12 @@ const TiposSection: React.FC<TiposProps> = ({ tipos, addTipo, updateTipo, delete
     cancel();
   };
 
-  const confirmDelete = (t: TipoActivo) => {
-    if (window.confirm(`¿Eliminar el tipo "${t.nombre}"? Si tiene activos asociados se marcará como inactivo.`)) {
-      deleteTipo(t.id);
-    }
-  };
-
   return (
     <div className="space-y-4">
       {!adding && !editing && <AddButton onClick={startAdd} label="Agregar Tipo" />}
 
       {(adding || editing) && (
-        <form onSubmit={submit} className="bg-white border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)] p-4 space-y-4">
+        <form onSubmit={submit} className="bg-surface border border-line rounded-lg shadow-soft p-4 space-y-4">
           <div>
             <label className={labelCls}>Nombre</label>
             <input required value={form.nombre} onChange={(e) => setForm((p) => ({ ...p, nombre: e.target.value }))} className={inputCls} />
@@ -302,7 +330,7 @@ const TiposSection: React.FC<TiposProps> = ({ tipos, addTipo, updateTipo, delete
               const cat = categorias.find((c) => c.id === form.categoriaId);
               if (!cat || cat.parametros.length === 0) return null;
               return (
-                <div className="mt-2 p-2 bg-slate-50 border border-slate-200 text-xs text-slate-600">
+                <div className="mt-2 p-2 bg-subtle border border-line text-xs text-muted">
                   <span className="font-bold">Parámetros dinámicos: </span>
                   {cat.parametros.map((p) => `${p.nombre}${p.unidad ? ` (${p.unidad})` : ''}`).join(', ')}
                 </div>
@@ -313,16 +341,16 @@ const TiposSection: React.FC<TiposProps> = ({ tipos, addTipo, updateTipo, delete
             <label className={labelCls}>¿Qué mide? (campos fijos heredados)</label>
             <div className="grid grid-cols-2 gap-2">
               {MIDE_FIELDS.map(({ key, label }) => (
-                <label key={key} className="flex items-center gap-2 border-2 border-slate-300 px-3 min-h-[44px] cursor-pointer">
+                <label key={key} className="flex items-center gap-2 border border-line px-3 min-h-[44px] cursor-pointer">
                   <input type="checkbox" checked={!!form[key]} onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.checked }))} className="w-4 h-4" />
-                  <span className="text-sm font-semibold text-slate-700">{label}</span>
+                  <span className="text-sm font-semibold text-muted">{label}</span>
                 </label>
               ))}
             </div>
           </div>
           <div className="flex justify-end gap-3">
-            <button type="button" onClick={cancel} className="px-4 min-h-[44px] border-2 border-slate-400 font-bold text-slate-600">Cancelar</button>
-            <button type="submit" className="px-4 min-h-[44px] bg-orange-500 text-white border-2 border-slate-800 font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)]">{editing ? 'Guardar' : 'Crear'}</button>
+            <button type="button" onClick={cancel} className="press inline-flex items-center justify-center min-h-[44px] px-4 rounded-md border border-line-strong text-sm font-semibold text-muted hover:text-content hover:border-content transition-colors">Cancelar</button>
+            <button type="submit" className="press inline-flex items-center justify-center min-h-[44px] px-4 rounded-md bg-brand-600 text-white text-sm font-semibold shadow-soft hover:bg-brand-700 transition-colors">{editing ? 'Guardar' : 'Crear'}</button>
           </div>
         </form>
       )}
@@ -331,12 +359,12 @@ const TiposSection: React.FC<TiposProps> = ({ tipos, addTipo, updateTipo, delete
         {tipos.map((t) => (
           <Card key={t.id} inactivo={!t.activo}>
             <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="font-bold text-slate-800 truncate">{t.nombre}</span>
+              <span className="font-bold text-content truncate">{t.nombre}</span>
               <div className="flex gap-1.5 flex-shrink-0">
                 {t.activo ? (
                   <>
                     <IconBtn onClick={() => startEdit(t)} title="Editar"><Pencil size={15} /></IconBtn>
-                    <IconBtn onClick={() => confirmDelete(t)} title="Eliminar" danger><Trash2 size={15} /></IconBtn>
+                    <IconBtn onClick={() => setDeleting(t)} title="Eliminar" danger><Trash2 size={15} /></IconBtn>
                   </>
                 ) : (
                   <IconBtn onClick={() => updateTipo(t.id, { activo: true })} title="Reactivar"><RotateCcw size={15} /></IconBtn>
@@ -345,7 +373,7 @@ const TiposSection: React.FC<TiposProps> = ({ tipos, addTipo, updateTipo, delete
             </div>
             <div className="flex flex-wrap gap-1">
               {MIDE_FIELDS.filter(({ key }) => !!t[key]).map(({ key, label }) => (
-                <span key={key} className="text-xs font-semibold bg-slate-100 border border-slate-300 px-2 py-0.5 text-slate-600 flex items-center gap-1">
+                <span key={key} className="text-xs font-semibold bg-subtle border border-line px-2 py-0.5 text-muted flex items-center gap-1">
                   <Check size={11} /> {label}
                 </span>
               ))}
@@ -353,6 +381,18 @@ const TiposSection: React.FC<TiposProps> = ({ tipos, addTipo, updateTipo, delete
           </Card>
         ))}
       </div>
+      <ConfirmModal
+        open={!!deleting}
+        title="Eliminar tipo"
+        message={deleting ? `¿Eliminar el tipo "${deleting.nombre}"? Si tiene activos asociados se marcará como inactivo.` : ''}
+        confirmLabel="Eliminar"
+        onClose={() => setDeleting(null)}
+        onConfirm={() => {
+          if (!deleting) return;
+          deleteTipo(deleting.id);
+          setDeleting(null);
+        }}
+      />
     </div>
   );
 };
@@ -368,6 +408,7 @@ interface TecnicosProps {
 const TecnicosSection: React.FC<TecnicosProps> = ({ tecnicos, addTecnico, updateTecnico, deleteTecnico }) => {
   const [editing, setEditing] = useState<Tecnico | null>(null);
   const [adding, setAdding] = useState(false);
+  const [deleting, setDeleting] = useState<Tecnico | null>(null);
 
   const empty: Omit<Tecnico, 'id'> = { nombre: '', rol: 'tecnico', email: '', telefono: '', activo: true };
   const [form, setForm] = useState<Omit<Tecnico, 'id'>>(empty);
@@ -386,18 +427,12 @@ const TecnicosSection: React.FC<TecnicosProps> = ({ tecnicos, addTecnico, update
     cancel();
   };
 
-  const confirmDelete = (t: Tecnico) => {
-    if (window.confirm(`¿Eliminar al técnico "${t.nombre}"? Si tiene registros asociados se marcará como inactivo.`)) {
-      deleteTecnico(t.id);
-    }
-  };
-
   return (
     <div className="space-y-4">
       {!adding && !editing && <AddButton onClick={startAdd} label="Agregar Técnico" />}
 
       {(adding || editing) && (
-        <form onSubmit={submit} className="bg-white border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)] p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <form onSubmit={submit} className="bg-surface border border-line rounded-lg shadow-soft p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Nombre</label>
             <input required value={form.nombre} onChange={(e) => setForm((p) => ({ ...p, nombre: e.target.value }))} className={inputCls} />
@@ -419,8 +454,8 @@ const TecnicosSection: React.FC<TecnicosProps> = ({ tecnicos, addTecnico, update
             <input value={form.telefono} onChange={(e) => setForm((p) => ({ ...p, telefono: e.target.value }))} className={inputCls} />
           </div>
           <div className="sm:col-span-2 flex justify-end gap-3">
-            <button type="button" onClick={cancel} className="px-4 min-h-[44px] border-2 border-slate-400 font-bold text-slate-600">Cancelar</button>
-            <button type="submit" className="px-4 min-h-[44px] bg-orange-500 text-white border-2 border-slate-800 font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)]">{editing ? 'Guardar' : 'Crear'}</button>
+            <button type="button" onClick={cancel} className="press inline-flex items-center justify-center min-h-[44px] px-4 rounded-md border border-line-strong text-sm font-semibold text-muted hover:text-content hover:border-content transition-colors">Cancelar</button>
+            <button type="submit" className="press inline-flex items-center justify-center min-h-[44px] px-4 rounded-md bg-brand-600 text-white text-sm font-semibold shadow-soft hover:bg-brand-700 transition-colors">{editing ? 'Guardar' : 'Crear'}</button>
           </div>
         </form>
       )}
@@ -430,16 +465,16 @@ const TecnicosSection: React.FC<TecnicosProps> = ({ tecnicos, addTecnico, update
           <Card key={t.id} inactivo={!t.activo}>
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <div className="font-bold text-slate-800 truncate">{t.nombre}</div>
-                <div className="text-xs font-semibold uppercase text-orange-500 tracking-wider">{t.rol}</div>
-                {t.email && <div className="text-xs text-slate-500 truncate mt-1">{t.email}</div>}
-                {t.telefono && <div className="text-xs text-slate-500 truncate">{t.telefono}</div>}
+                <div className="font-bold text-content truncate">{t.nombre}</div>
+                <div className="text-xs font-semibold uppercase text-brand-600 tracking-wider">{t.rol}</div>
+                {t.email && <div className="text-xs text-muted truncate mt-1">{t.email}</div>}
+                {t.telefono && <div className="text-xs text-muted truncate">{t.telefono}</div>}
               </div>
               <div className="flex gap-1.5 flex-shrink-0">
                 {t.activo ? (
                   <>
                     <IconBtn onClick={() => startEdit(t)} title="Editar"><Pencil size={15} /></IconBtn>
-                    <IconBtn onClick={() => confirmDelete(t)} title="Eliminar" danger><Trash2 size={15} /></IconBtn>
+                    <IconBtn onClick={() => setDeleting(t)} title="Eliminar" danger><Trash2 size={15} /></IconBtn>
                   </>
                 ) : (
                   <IconBtn onClick={() => updateTecnico(t.id, { activo: true })} title="Reactivar"><RotateCcw size={15} /></IconBtn>
@@ -449,6 +484,18 @@ const TecnicosSection: React.FC<TecnicosProps> = ({ tecnicos, addTecnico, update
           </Card>
         ))}
       </div>
+      <ConfirmModal
+        open={!!deleting}
+        title="Eliminar técnico"
+        message={deleting ? `¿Eliminar al técnico "${deleting.nombre}"? Si tiene registros asociados se marcará como inactivo.` : ''}
+        confirmLabel="Eliminar"
+        onClose={() => setDeleting(null)}
+        onConfirm={() => {
+          if (!deleting) return;
+          deleteTecnico(deleting.id);
+          setDeleting(null);
+        }}
+      />
     </div>
   );
 };
@@ -463,6 +510,8 @@ const CategoriasSection: React.FC = () => {
   const [adding, setAdding] = useState(false);
   const [formNueva, setFormNueva] = useState({ nombre: '', descripcion: '' });
   const [guardando, setGuardando] = useState(false);
+  const [categoriaAEliminar, setCategoriaAEliminar] = useState<CategoriaEquipo | null>(null);
+  const [eliminando, setEliminando] = useState(false);
 
   const cargar = () => {
     setCargando(true);
@@ -497,13 +546,17 @@ const CategoriasSection: React.FC = () => {
     }
   };
 
-  const handleEliminar = async (id: string, nombre: string) => {
-    if (!window.confirm(`¿Eliminar la categoría "${nombre}"?`)) return;
+  const handleEliminar = async () => {
+    if (!categoriaAEliminar) return;
+    setEliminando(true);
     try {
-      await eliminarCategoria(id);
-      setCategorias((p) => p.filter((c) => c.id !== id));
+      await eliminarCategoria(categoriaAEliminar.id);
+      setCategorias((p) => p.filter((c) => c.id !== categoriaAEliminar.id));
+      setCategoriaAEliminar(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al eliminar');
+    } finally {
+      setEliminando(false);
     }
   };
 
@@ -515,7 +568,7 @@ const CategoriasSection: React.FC = () => {
     );
   };
 
-  if (cargando) return <p className="text-slate-500 text-sm">Cargando categorías...</p>;
+  if (cargando) return <p className="text-muted text-sm">Cargando categorías...</p>;
 
   const globales = categorias.filter((c) => c.empresaId === null);
   const propias = categorias.filter((c) => c.empresaId !== null);
@@ -523,31 +576,31 @@ const CategoriasSection: React.FC = () => {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="border-2 border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>
+        <div className="border border-danger/40 bg-danger/10 px-4 py-3 text-sm font-semibold text-danger-strong dark:text-danger">{error}</div>
       )}
 
       {/* Cómo funciona */}
-      <div className="border-2 border-slate-800 bg-slate-900 text-white p-4 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)]">
-        <h3 className="font-sketch font-black text-lg uppercase tracking-tight mb-2 text-orange-400">Cómo funcionan las categorías</h3>
-        <p className="text-sm text-slate-200 leading-relaxed mb-3">
+      <div className="bg-surface border border-line rounded-lg shadow-soft p-5">
+        <h3 className="font-display font-bold text-base text-content mb-2">Cómo funcionan las categorías</h3>
+        <p className="text-sm text-muted leading-relaxed mb-4">
           Una categoría define <strong>qué se mide</strong> en cada tipo de equipo. Por ejemplo "Motor Diesel" mide
           temperatura de agua, presión de aceite y RPM; "Estética" mide potencia, disparos y temperatura del cabezal.
           Cada parámetro tiene sus umbrales — cuando una medición los supera, el sistema dispara la alerta automática.
         </p>
-        <ol className="text-sm text-slate-200 space-y-1.5 list-none">
-          <li className="flex gap-2"><span className="font-black text-orange-400 flex-shrink-0">1.</span> Elegí una categoría <strong>global</strong> lista para usar, o creá la tuya con "Nueva categoría".</li>
-          <li className="flex gap-2"><span className="font-black text-orange-400 flex-shrink-0">2.</span> Si es propia, agregale parámetros con sus unidades y umbrales (alerta / crítico / urgente).</li>
-          <li className="flex gap-2"><span className="font-black text-orange-400 flex-shrink-0">3.</span> En <strong>Tipos de Activo</strong> asignás la categoría al tipo de equipo.</li>
-          <li className="flex gap-2"><span className="font-black text-orange-400 flex-shrink-0">4.</span> Al medir ese activo, el formulario muestra esos parámetros y calcula el estado solo.</li>
+        <ol className="text-sm text-muted space-y-2 list-none">
+          <li className="flex gap-3"><span className="font-mono text-xs font-bold text-brand-600 pt-0.5">01</span><span>Elegí una categoría <strong className="text-content">global</strong> lista para usar, o creá la tuya con "Nueva categoría".</span></li>
+          <li className="flex gap-3"><span className="font-mono text-xs font-bold text-brand-600 pt-0.5">02</span><span>Si es propia, agregale parámetros con sus unidades y umbrales.</span></li>
+          <li className="flex gap-3"><span className="font-mono text-xs font-bold text-brand-600 pt-0.5">03</span><span>En <strong className="text-content">Tipos de Activo</strong> asignás la categoría al tipo de equipo.</span></li>
+          <li className="flex gap-3"><span className="font-mono text-xs font-bold text-brand-600 pt-0.5">04</span><span>Al medir ese activo, el formulario muestra esos parámetros y calcula el estado solo.</span></li>
         </ol>
       </div>
 
       {/* Categorías globales */}
       <div>
-        <h3 className="font-sketch font-black text-lg uppercase tracking-tight text-slate-700 mb-1">
+        <h3 className="font-display font-bold text-lg uppercase tracking-tight text-muted mb-1">
           Categorías globales
         </h3>
-        <p className="text-xs text-slate-500 mb-3">Listas para usar. Cubren rubros desde estética hasta aeroespacial. Tocá una para ver sus parámetros.</p>
+        <p className="text-xs text-muted mb-3">Listas para usar. Cubren rubros desde estética hasta aeroespacial. Tocá una para ver sus parámetros.</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {globales.map((cat) => (
             <CategoriaCard
@@ -564,7 +617,7 @@ const CategoriasSection: React.FC = () => {
       {/* Categorías propias */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-sketch font-black text-lg uppercase tracking-tight text-slate-700">
+          <h3 className="font-display font-bold text-lg uppercase tracking-tight text-muted">
             Mis categorías
           </h3>
           {!adding && (
@@ -573,7 +626,7 @@ const CategoriasSection: React.FC = () => {
         </div>
 
         {adding && (
-          <form onSubmit={handleCrear} className="bg-white border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)] p-4 space-y-3 mb-4">
+          <form onSubmit={handleCrear} className="bg-surface border border-line rounded-lg shadow-soft p-4 space-y-3 mb-4">
             <div>
               <label className={labelCls}>Nombre *</label>
               <input required value={formNueva.nombre} onChange={(e) => setFormNueva((p) => ({ ...p, nombre: e.target.value }))} className={inputCls} placeholder="Ej: Turbina de vapor" />
@@ -582,10 +635,10 @@ const CategoriasSection: React.FC = () => {
               <label className={labelCls}>Descripción</label>
               <input value={formNueva.descripcion} onChange={(e) => setFormNueva((p) => ({ ...p, descripcion: e.target.value }))} className={inputCls} placeholder="Para qué tipo de equipo es" />
             </div>
-            <p className="text-xs text-slate-500">Después de crearla, abrila para agregarle parámetros.</p>
+            <p className="text-xs text-muted">Después de crearla, abrila para agregarle parámetros.</p>
             <div className="flex justify-end gap-3">
-              <button type="button" onClick={() => setAdding(false)} className="px-4 min-h-[44px] border-2 border-slate-400 font-bold text-slate-600">Cancelar</button>
-              <button type="submit" disabled={guardando} className="px-4 min-h-[44px] bg-orange-500 text-white border-2 border-slate-800 font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] disabled:opacity-50">
+              <button type="button" onClick={() => setAdding(false)} className="press inline-flex items-center justify-center min-h-[44px] px-4 rounded-md border border-line-strong text-sm font-semibold text-muted hover:text-content hover:border-content transition-colors">Cancelar</button>
+              <button type="submit" disabled={guardando} className="press inline-flex items-center justify-center min-h-[44px] px-4 rounded-md bg-brand-600 text-white text-sm font-semibold shadow-soft hover:bg-brand-700 transition-colors disabled:opacity-50">
                 {guardando ? 'Guardando...' : 'Crear'}
               </button>
             </div>
@@ -593,7 +646,7 @@ const CategoriasSection: React.FC = () => {
         )}
 
         {propias.length === 0 && !adding && (
-          <p className="text-slate-400 text-sm italic">Aún no tenés categorías propias. Las globales están disponibles para todos.</p>
+          <p className="text-faint text-sm italic">Aún no tenés categorías propias. Las globales están disponibles para todos.</p>
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -603,12 +656,21 @@ const CategoriasSection: React.FC = () => {
               cat={cat}
               expandido={!!expandido[cat.id]}
               onToggle={() => toggleExpand(cat.id)}
-              onEliminar={() => handleEliminar(cat.id, cat.nombre)}
+              onEliminar={() => setCategoriaAEliminar(cat)}
               onParametroAgregado={(p) => handleParametroAgregado(cat.id, p)}
             />
           ))}
         </div>
       </div>
+      <ConfirmModal
+        open={!!categoriaAEliminar}
+        title="Eliminar categoría"
+        message={categoriaAEliminar ? `¿Eliminar la categoría "${categoriaAEliminar.nombre}"?` : ''}
+        confirmLabel="Eliminar"
+        loading={eliminando}
+        onClose={() => setCategoriaAEliminar(null)}
+        onConfirm={handleEliminar}
+      />
     </div>
   );
 };
@@ -671,45 +733,45 @@ const CategoriaCard: React.FC<CategoriaCardProps> = ({ cat, expandido, onToggle,
   };
 
   return (
-    <div className="bg-white border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)]">
+    <div className="bg-surface border border-line rounded-lg shadow-soft">
       <div
-        className="flex items-center justify-between gap-2 p-3 cursor-pointer hover:bg-slate-50 transition-colors"
+        className="flex items-center justify-between gap-2 p-3 cursor-pointer hover:bg-subtle transition-colors"
         onClick={onToggle}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <span className="font-bold text-slate-800 truncate">{cat.nombre}</span>
+          <span className="font-bold text-content truncate">{cat.nombre}</span>
           {isGlobal && (
-            <span className="ml-1 text-xs font-black uppercase tracking-wider bg-slate-100 border border-slate-300 px-1.5 py-0.5 text-slate-500 flex-shrink-0">
+            <span className="ml-1 text-xs font-bold uppercase tracking-wider bg-subtle border border-line px-1.5 py-0.5 text-muted flex-shrink-0">
               Global
             </span>
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-xs text-slate-400">{cat.parametros.length} params</span>
+          <span className="text-xs text-faint">{cat.parametros.length} params</span>
           {!isGlobal && onEliminar && (
             <button
               onClick={(e) => { e.stopPropagation(); onEliminar(); }}
-              className="p-1 border-2 border-slate-300 text-red-600 hover:border-red-600 hover:bg-red-50 transition-colors"
+              className="p-1 border border-line text-danger hover:border-danger hover:bg-danger/10 transition-colors"
               title="Eliminar"
             >
               <Trash2 size={13} />
             </button>
           )}
-          {expandido ? <ChevronDown size={16} className="text-slate-400" /> : <ChevronRight size={16} className="text-slate-400" />}
+          {expandido ? <ChevronDown size={16} className="text-faint" /> : <ChevronRight size={16} className="text-faint" />}
         </div>
       </div>
       {expandido && (
-        <div className="border-t-2 border-slate-200 p-3 space-y-1">
-          {cat.descripcion && <p className="text-xs text-slate-500 italic mb-2">{cat.descripcion}</p>}
+        <div className="border-t border-line p-3 space-y-1">
+          {cat.descripcion && <p className="text-xs text-muted italic mb-2">{cat.descripcion}</p>}
           {cat.parametros.length === 0 ? (
-            <p className="text-xs text-slate-400 italic">Sin parámetros definidos.</p>
+            <p className="text-xs text-faint italic">Sin parámetros definidos.</p>
           ) : (
             cat.parametros.map((p) => (
-              <div key={p.id} className="flex items-center justify-between gap-2 text-xs text-slate-600 py-0.5 border-b border-slate-100 last:border-0">
+              <div key={p.id} className="flex items-center justify-between gap-2 text-xs text-muted py-0.5 border-b border-line last:border-0">
                 <span className="font-semibold min-w-0 truncate">{p.nombre}</span>
-                <div className="flex items-center gap-2 text-slate-400 flex-shrink-0 flex-wrap justify-end">
+                <div className="flex items-center gap-2 text-faint flex-shrink-0 flex-wrap justify-end">
                   {p.unidad && <span className="font-mono">{p.unidad}</span>}
-                  {p.umbralAlerta != null && <span className="text-amber-600">alerta:{p.umbralAlerta}</span>}
+                  {p.umbralAlerta != null && <span className="text-warn-strong dark:text-warn">alerta:{p.umbralAlerta}</span>}
                   {p.umbralCritico != null && <span className="text-red-500">critico:{p.umbralCritico}</span>}
                   {p.invertido && <span title="Valor bajo es peor">baja</span>}
                 </div>
@@ -723,38 +785,38 @@ const CategoriaCard: React.FC<CategoriaCardProps> = ({ cat, expandido, onToggle,
               {!agregando ? (
                 <button
                   onClick={() => setAgregando(true)}
-                  className="flex items-center gap-1.5 text-xs font-bold text-orange-600 border-2 border-orange-300 px-2.5 py-1.5 hover:border-orange-500 transition-colors"
+                  className="flex items-center gap-1.5 text-xs font-bold text-brand-600 border border-brand-300 px-2.5 py-1.5 hover:border-brand-600 transition-colors"
                 >
                   <Plus size={13} /> Agregar parámetro
                 </button>
               ) : (
-                <form onSubmit={handleAgregarParam} className="border-2 border-slate-200 bg-slate-50 p-3 space-y-2 mt-1">
-                  {errorParam && <p className="text-xs text-red-600 font-semibold">{errorParam}</p>}
+                <form onSubmit={handleAgregarParam} className="border border-line bg-subtle p-3 space-y-2 mt-1">
+                  {errorParam && <p className="text-xs text-danger font-semibold">{errorParam}</p>}
                   <div className="grid grid-cols-2 gap-2">
                     <div className="col-span-2">
-                      <label className="text-xs font-black uppercase tracking-wider text-slate-500">Nombre del parámetro *</label>
+                      <label className="block text-xs font-semibold text-muted tracking-wide mb-1">Nombre del parámetro *</label>
                       <input
                         autoFocus required value={paramForm.nombre}
                         onChange={(e) => setParamForm((p) => ({ ...p, nombre: e.target.value }))}
-                        className="w-full border-2 border-slate-300 px-2 h-9 text-sm outline-none focus:border-orange-500 bg-white"
+                        className="w-full h-9 rounded-md border border-line bg-surface px-2 text-sm text-content outline-none focus:border-brand-600 focus:shadow-ring"
                         placeholder="Ej: Temperatura de cabezal"
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-black uppercase tracking-wider text-slate-500">Unidad</label>
+                      <label className="block text-xs font-semibold text-muted tracking-wide mb-1">Unidad</label>
                       <input
                         value={paramForm.unidad}
                         onChange={(e) => setParamForm((p) => ({ ...p, unidad: e.target.value }))}
-                        className="w-full border-2 border-slate-300 px-2 h-9 text-sm outline-none focus:border-orange-500 bg-white"
+                        className="w-full h-9 rounded-md border border-line bg-surface px-2 text-sm text-content outline-none focus:border-brand-600 focus:shadow-ring"
                         placeholder="°C, bar, %"
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-black uppercase tracking-wider text-slate-500">Tipo</label>
+                      <label className="block text-xs font-semibold text-muted tracking-wide mb-1">Tipo</label>
                       <select
                         value={paramForm.tipo}
                         onChange={(e) => setParamForm((p) => ({ ...p, tipo: e.target.value as ParametroCategoria['tipo'] }))}
-                        className="w-full border-2 border-slate-300 px-2 h-9 text-sm outline-none focus:border-orange-500 bg-white"
+                        className="w-full h-9 rounded-md border border-line bg-surface px-2 text-sm text-content outline-none focus:border-brand-600 focus:shadow-ring"
                       >
                         {TIPOS_PARAM.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                       </select>
@@ -765,25 +827,25 @@ const CategoriaCard: React.FC<CategoriaCardProps> = ({ cat, expandido, onToggle,
                     <>
                       <div className="grid grid-cols-3 gap-2">
                         <div>
-                          <label className="text-xs font-black uppercase tracking-wider text-amber-600">Alerta</label>
+                          <label className="block text-xs font-semibold text-warn-strong dark:text-warn tracking-wide mb-1">Alerta</label>
                           <input type="number" step="any" value={paramForm.umbralAlerta}
                             onChange={(e) => setParamForm((p) => ({ ...p, umbralAlerta: e.target.value }))}
-                            className="w-full border-2 border-slate-300 px-2 h-9 text-sm outline-none focus:border-amber-500 bg-white" />
+                            className="w-full h-9 rounded-md border border-line bg-surface px-2 text-sm text-content outline-none focus:border-warn focus:shadow-ring" />
                         </div>
                         <div>
-                          <label className="text-xs font-black uppercase tracking-wider text-red-500">Crítico</label>
+                          <label className="block text-xs font-semibold text-danger tracking-wide mb-1">Crítico</label>
                           <input type="number" step="any" value={paramForm.umbralCritico}
                             onChange={(e) => setParamForm((p) => ({ ...p, umbralCritico: e.target.value }))}
-                            className="w-full border-2 border-slate-300 px-2 h-9 text-sm outline-none focus:border-red-500 bg-white" />
+                            className="w-full h-9 rounded-md border border-line bg-surface px-2 text-sm text-content outline-none focus:border-danger focus:shadow-ring" />
                         </div>
                         <div>
-                          <label className="text-xs font-black uppercase tracking-wider text-red-700">Urgente</label>
+                          <label className="block text-xs font-semibold text-danger-strong dark:text-danger tracking-wide mb-1">Urgente</label>
                           <input type="number" step="any" value={paramForm.umbralUrgente}
                             onChange={(e) => setParamForm((p) => ({ ...p, umbralUrgente: e.target.value }))}
-                            className="w-full border-2 border-slate-300 px-2 h-9 text-sm outline-none focus:border-red-700 bg-white" />
+                            className="w-full h-9 rounded-md border border-line bg-surface px-2 text-sm text-content outline-none focus:border-danger focus:shadow-ring" />
                         </div>
                       </div>
-                      <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+                      <label className="flex items-center gap-2 text-xs text-muted cursor-pointer">
                         <input type="checkbox" checked={paramForm.invertido}
                           onChange={(e) => setParamForm((p) => ({ ...p, invertido: e.target.checked }))} />
                         El valor es peligroso cuando <strong>baja</strong> (ej: presión de aceite, batería, nivel)
@@ -793,9 +855,9 @@ const CategoriaCard: React.FC<CategoriaCardProps> = ({ cat, expandido, onToggle,
 
                   <div className="flex justify-end gap-2 pt-1">
                     <button type="button" onClick={() => { setAgregando(false); setParamForm(empty); setErrorParam(null); }}
-                      className="px-3 h-9 border-2 border-slate-300 text-xs font-bold text-slate-600">Cancelar</button>
+                      className="press inline-flex items-center justify-center h-9 px-3 rounded-md border border-line text-xs font-semibold text-muted hover:text-content hover:border-line-strong transition-colors">Cancelar</button>
                     <button type="submit" disabled={guardandoParam}
-                      className="px-3 h-9 bg-slate-900 text-white text-xs font-black uppercase border-2 border-slate-900 disabled:opacity-50">
+                      className="press inline-flex items-center justify-center h-9 px-3 rounded-md bg-brand-600 text-white text-xs font-semibold hover:bg-brand-700 transition-colors disabled:opacity-50">
                       {guardandoParam ? 'Guardando...' : 'Agregar'}
                     </button>
                   </div>
@@ -822,6 +884,8 @@ const OperadoresSection: React.FC = () => {
   const [resetId, setResetId] = useState<string | null>(null);
   const [resetPwd, setResetPwd] = useState('');
   const [resetando, setResetando] = useState(false);
+  const [operadorADesactivar, setOperadorADesactivar] = useState<Operador | null>(null);
+  const [desactivando, setDesactivando] = useState(false);
 
   const cargar = () => {
     setCargando(true);
@@ -849,14 +913,18 @@ const OperadoresSection: React.FC = () => {
     }
   };
 
-  const handleDesactivar = async (id: string, nombre: string) => {
-    if (!window.confirm(`¿Desactivar al operador "${nombre}"?`)) return;
+  const handleDesactivar = async () => {
+    if (!operadorADesactivar) return;
+    setDesactivando(true);
     setError(null);
     try {
-      await desactivarOperador(id);
-      setOperadores((p) => p.map((o) => o.id === id ? { ...o, activo: false } : o));
+      await desactivarOperador(operadorADesactivar.id);
+      setOperadores((p) => p.map((o) => o.id === operadorADesactivar.id ? { ...o, activo: false } : o));
+      setOperadorADesactivar(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al desactivar');
+    } finally {
+      setDesactivando(false);
     }
   };
 
@@ -879,10 +947,10 @@ const OperadoresSection: React.FC = () => {
   return (
     <div className="space-y-4">
       {error && (
-        <div className="border-2 border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>
+        <div className="border border-danger/40 bg-danger/10 px-4 py-3 text-sm font-semibold text-danger-strong dark:text-danger">{error}</div>
       )}
 
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         Los operadores de campo pueden iniciar sesión con su email y contraseña para registrar mediciones desde sus celulares.
       </p>
 
@@ -891,7 +959,7 @@ const OperadoresSection: React.FC = () => {
       )}
 
       {adding && (
-        <form onSubmit={handleCrear} className="bg-white border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)] p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <form onSubmit={handleCrear} className="bg-surface border border-line rounded-lg shadow-soft p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Nombre</label>
             <input
@@ -928,14 +996,14 @@ const OperadoresSection: React.FC = () => {
             <button
               type="button"
               onClick={() => { setAdding(false); setForm({ nombre: '', email: '', password: '' }); }}
-              className="px-4 min-h-[44px] border-2 border-slate-400 font-bold text-slate-600"
+              className="press inline-flex items-center justify-center min-h-[44px] px-4 rounded-md border border-line-strong text-sm font-semibold text-muted hover:text-content hover:border-content transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={guardando}
-              className="px-4 min-h-[44px] bg-orange-500 text-white border-2 border-slate-800 font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] disabled:opacity-50"
+              className="press inline-flex items-center justify-center min-h-[44px] px-4 rounded-md bg-brand-600 text-white text-sm font-semibold shadow-soft hover:bg-brand-700 transition-colors disabled:opacity-50"
             >
               {guardando ? 'Creando...' : 'Crear operador'}
             </button>
@@ -945,7 +1013,7 @@ const OperadoresSection: React.FC = () => {
 
       {/* Reset password inline form */}
       {resetId && (
-        <form onSubmit={handleReset} className="bg-amber-50 border-2 border-amber-400 p-4 flex flex-wrap items-end gap-3">
+        <form onSubmit={handleReset} className="rounded-lg bg-warn/10 border border-warn/40 p-4 flex flex-wrap items-end gap-3">
           <div className="flex-1 min-w-[200px]">
             <label className={labelCls}>Nueva contrasena para {operadores.find((o) => o.id === resetId)?.nombre}</label>
             <input
@@ -962,14 +1030,14 @@ const OperadoresSection: React.FC = () => {
             <button
               type="button"
               onClick={() => { setResetId(null); setResetPwd(''); }}
-              className="px-4 min-h-[44px] border-2 border-slate-400 font-bold text-slate-600 text-sm"
+              className="press inline-flex items-center justify-center min-h-[44px] px-4 rounded-md border border-line-strong text-sm font-semibold text-muted hover:text-content hover:border-content transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={resetando}
-              className="px-4 min-h-[44px] bg-slate-900 text-white border-2 border-slate-900 font-bold text-sm disabled:opacity-50"
+              className="px-4 min-h-[44px] bg-content text-white border border-line font-bold text-sm disabled:opacity-50"
             >
               {resetando ? 'Guardando...' : 'Guardar nueva contrasena'}
             </button>
@@ -978,20 +1046,20 @@ const OperadoresSection: React.FC = () => {
       )}
 
       {cargando ? (
-        <p className="text-sm text-slate-400">Cargando operadores...</p>
+        <p className="text-sm text-faint">Cargando operadores...</p>
       ) : operadores.length === 0 ? (
-        <p className="text-sm text-slate-400 italic">No hay operadores de campo registrados.</p>
+        <p className="text-sm text-faint italic">No hay operadores de campo registrados.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {operadores.map((o) => (
             <Card key={o.id} inactivo={!o.activo}>
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <div className="font-bold text-slate-800 truncate">{o.nombre}</div>
-                  <div className="text-xs font-semibold uppercase text-orange-500 tracking-wider">operador</div>
-                  <div className="text-xs text-slate-500 truncate mt-1">{o.email}</div>
+                  <div className="font-bold text-content truncate">{o.nombre}</div>
+                  <div className="text-xs font-semibold uppercase text-brand-600 tracking-wider">operador</div>
+                  <div className="text-xs text-muted truncate mt-1">{o.email}</div>
                   {!o.activo && (
-                    <span className="mt-1 inline-block text-xs font-black uppercase bg-red-100 border border-red-300 text-red-600 px-1.5 py-0.5">
+                    <span className="mt-1 inline-block text-xs font-semibold text-danger">
                       Inactivo
                     </span>
                   )}
@@ -1005,7 +1073,7 @@ const OperadoresSection: React.FC = () => {
                       <KeyRound size={15} />
                     </IconBtn>
                     <IconBtn
-                      onClick={() => handleDesactivar(o.id, o.nombre)}
+                      onClick={() => setOperadorADesactivar(o)}
                       title="Desactivar operador"
                       danger
                     >
@@ -1018,6 +1086,15 @@ const OperadoresSection: React.FC = () => {
           ))}
         </div>
       )}
+      <ConfirmModal
+        open={!!operadorADesactivar}
+        title="Desactivar operador"
+        message={operadorADesactivar ? `¿Desactivar al operador "${operadorADesactivar.nombre}"?` : ''}
+        confirmLabel="Desactivar"
+        loading={desactivando}
+        onClose={() => setOperadorADesactivar(null)}
+        onConfirm={handleDesactivar}
+      />
     </div>
   );
 };
@@ -1058,11 +1135,11 @@ const SeccionPlan: React.FC = () => {
   };
 
   return (
-    <div className="mb-8 bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-5">
+    <div className="mb-8 bg-surface border border-line rounded-lg shadow-soft p-5">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>
-          <h2 className="font-sketch font-black text-xl uppercase tracking-tight text-slate-800">Plan actual</h2>
-          <span className="inline-block mt-1 px-3 py-1 bg-orange-500 text-white text-xs font-black uppercase tracking-wider border-2 border-slate-800">
+          <h2 className="font-display font-bold text-xl uppercase tracking-tight text-content">Plan actual</h2>
+          <span className="inline-block mt-1 px-3 py-1 bg-brand-600 text-white text-xs font-bold uppercase tracking-wider border border-line">
             {plan.toUpperCase()}
           </span>
         </div>
@@ -1070,20 +1147,20 @@ const SeccionPlan: React.FC = () => {
 
       {/* Tabla comparativa */}
       <div className="overflow-x-auto mb-5">
-        <table className="w-full text-sm border-2 border-slate-200">
+        <table className="w-full text-sm border border-line">
           <thead>
-            <tr className="bg-slate-900 text-white">
+            <tr className="bg-content text-white">
               {['Plan', 'Activos', 'Tecnicos', 'Ficha QR', 'Acceso remoto'].map((h) => (
-                <th key={h} className="text-left px-3 py-2 text-xs font-black uppercase tracking-wider whitespace-nowrap">{h}</th>
+                <th key={h} className="text-left px-3 py-2 text-xs font-bold uppercase tracking-wider whitespace-nowrap">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {PLAN_INFO.map((p, i) => (
-              <tr key={p.plan} className={`border-b border-slate-100 ${p.plan === plan ? 'bg-orange-50' : i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
-                <td className="px-3 py-2 font-sketch font-bold">
+              <tr key={p.plan} className={`border-b border-line ${p.plan === plan ? 'bg-brand-50 dark:bg-brand-600/10' : i % 2 === 0 ? 'bg-surface' : 'bg-subtle'}`}>
+                <td className="px-3 py-2 font-display font-bold">
                   {p.label}
-                  {p.plan === plan && <span className="ml-2 text-orange-500 text-xs font-sans">actual</span>}
+                  {p.plan === plan && <span className="ml-2 text-brand-600 text-xs font-sans">actual</span>}
                 </td>
                 <td className="px-3 py-2">{p.activos}</td>
                 <td className="px-3 py-2">{p.tecnicos}</td>
@@ -1097,10 +1174,10 @@ const SeccionPlan: React.FC = () => {
 
       {/* Solicitud pendiente */}
       {planSolicitadoActual && !exito && (
-        <div className="border-t-2 border-slate-100 pt-4">
-          <div className="bg-amber-50 border-2 border-amber-400 px-4 py-3">
-            <p className="font-black text-amber-700 text-sm uppercase tracking-wide">Solicitud pendiente</p>
-            <p className="text-sm text-amber-700 mt-0.5">
+        <div className="border-t border-line pt-4">
+          <div className="bg-warn/10 border border-warn/40 px-4 py-3">
+            <p className="font-bold text-warn-strong dark:text-warn text-sm uppercase tracking-wide">Solicitud pendiente</p>
+            <p className="text-sm text-warn-strong dark:text-warn mt-0.5">
               Plan {PLAN_INFO.find((p) => p.plan === planSolicitadoActual)?.label ?? planSolicitadoActual.toUpperCase()} — en proceso. El equipo de ActivaQR la gestionara a la brevedad.
             </p>
           </div>
@@ -1109,15 +1186,15 @@ const SeccionPlan: React.FC = () => {
 
       {/* Botones de upgrade */}
       {planesUpgrade.length > 0 && !planSolicitadoActual && !exito && (
-        <div className="border-t-2 border-slate-100 pt-4">
-          <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-3">Mejorar plan a:</p>
+        <div className="border-t border-line pt-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-muted mb-3">Mejorar plan a:</p>
           <div className="flex flex-wrap gap-2">
             {planesUpgrade.map((p) => (
               <button
                 key={p.plan}
                 onClick={() => handleSolicitarUpgrade(p.plan)}
                 disabled={cargando}
-                className="px-5 py-2.5 bg-orange-500 text-white border-2 border-slate-900 font-black uppercase tracking-wide shadow-[3px_3px_0px_0px_#1e293b] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-5 py-2.5 bg-brand-600 text-white border border-line font-bold uppercase tracking-wide shadow-soft hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {cargando ? 'Enviando...' : `Mejorar plan a ${p.label}`}
               </button>
@@ -1128,19 +1205,19 @@ const SeccionPlan: React.FC = () => {
 
       {/* Confirmación */}
       {exito && (
-        <div className="border-t-2 border-slate-100 pt-4">
-          <div className="bg-emerald-50 border-2 border-emerald-400 px-4 py-3">
-            <p className="font-black text-emerald-700 text-sm uppercase tracking-wide">Solicitud enviada</p>
-            <p className="text-sm text-emerald-600 mt-0.5">El equipo de ActivaQR la procesara en breve.</p>
+        <div className="border-t border-line pt-4">
+          <div className="bg-ok/10 border border-ok/40 px-4 py-3">
+            <p className="font-bold text-ok-strong dark:text-ok text-sm uppercase tracking-wide">Solicitud enviada</p>
+            <p className="text-sm text-ok-strong dark:text-ok mt-0.5">El equipo de ActivaQR la procesara en breve.</p>
           </div>
         </div>
       )}
 
       {/* Error */}
       {error && (
-        <div className="border-t-2 border-slate-100 pt-4">
-          <div className="bg-red-50 border-2 border-red-400 px-4 py-3">
-            <p className="text-sm font-semibold text-red-700">{error}</p>
+        <div className="border-t border-line pt-4">
+          <div className="bg-danger/10 border border-danger/40 px-4 py-3">
+            <p className="text-sm font-semibold text-danger-strong dark:text-danger">{error}</p>
           </div>
         </div>
       )}
@@ -1169,22 +1246,22 @@ const SeccionSuscripcion: React.FC = () => {
   };
 
   return (
-    <div className="mt-10 border-t-2 border-slate-200 pt-8">
-      <h2 className="font-sketch font-black text-xl uppercase tracking-tight text-slate-800 mb-1">
+    <div className="mt-10 border-t border-line pt-8">
+      <h2 className="font-display font-bold text-xl uppercase tracking-tight text-content mb-1">
         Suscripción
       </h2>
-      <p className="text-sm text-slate-500 mb-4">
+      <p className="text-sm text-muted mb-4">
         Gestioná tu suscripción activa a ActivaQR.
       </p>
 
       {cancelada ? (
-        <div className="border-2 border-emerald-400 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+        <div className="border border-ok/40 bg-ok/10 px-4 py-3 text-sm font-semibold text-ok-strong dark:text-ok">
           Tu suscripción fue cancelada. Los débitos automáticos se detendrán en el próximo ciclo.
         </div>
       ) : (
         <>
           {error && (
-            <div className="border-2 border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 mb-3">
+            <div className="border border-danger/40 bg-danger/10 px-4 py-3 text-sm font-semibold text-danger-strong dark:text-danger mb-3">
               {error}
             </div>
           )}
@@ -1192,30 +1269,30 @@ const SeccionSuscripcion: React.FC = () => {
           {!confirmando ? (
             <button
               onClick={() => setConfirmando(true)}
-              className="flex items-center gap-2 border-2 border-red-300 text-red-600 px-4 py-2 text-sm font-bold hover:border-red-600 hover:bg-red-50 transition-colors"
+              className="flex items-center gap-2 border border-danger/40 text-danger px-4 py-2 text-sm font-bold hover:border-danger hover:bg-danger/10 transition-colors"
             >
               <AlertTriangle size={16} />
               Cancelar mi suscripción
             </button>
           ) : (
-            <div className="border-2 border-red-400 bg-red-50 p-4 space-y-3 max-w-md">
-              <p className="text-sm font-black text-red-700 uppercase tracking-wide flex items-center gap-2">
+            <div className="border border-danger/40 bg-danger/10 p-4 space-y-3 max-w-md">
+              <p className="text-sm font-bold text-danger-strong dark:text-danger uppercase tracking-wide flex items-center gap-2">
                 <AlertTriangle size={16} /> Confirmá la cancelación
               </p>
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-danger">
                 Esto dará de baja tu suscripción en Mercado Pago. Los débitos automáticos se detendrán. ¿Estás seguro?
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={handleCancelar}
                   disabled={cargando}
-                  className="px-4 py-2 bg-red-600 text-white border-2 border-red-800 font-bold text-sm disabled:opacity-50"
+                  className="px-4 py-2 bg-danger text-white border border-danger font-bold text-sm disabled:opacity-50"
                 >
                   {cargando ? 'Cancelando...' : 'Sí, cancelar suscripción'}
                 </button>
                 <button
                   onClick={() => { setConfirmando(false); setError(null); }}
-                  className="px-4 py-2 border-2 border-slate-400 font-bold text-sm text-slate-600"
+                  className="px-4 py-2 border border-line-strong font-bold text-sm text-muted"
                 >
                   No, volver
                 </button>
@@ -1266,30 +1343,30 @@ const SeccionAccesoRemoto: React.FC = () => {
   if (!permiso || permiso.estado === 'revocado') return null;
 
   return (
-    <div className="mt-10 border-t-2 border-slate-200 pt-8">
-      <h2 className="font-sketch font-black text-xl uppercase tracking-tight text-slate-800 mb-1 flex items-center gap-2">
-        <ShieldCheck size={20} className="text-orange-500" /> Acceso remoto de soporte
+    <div className="mt-10 border-t border-line pt-8">
+      <h2 className="font-display font-bold text-xl uppercase tracking-tight text-content mb-1 flex items-center gap-2">
+        <ShieldCheck size={20} className="text-brand-600" /> Acceso remoto de soporte
       </h2>
 
       {permiso.estado === 'pendiente' && (
-        <div className="border-2 border-amber-400 bg-amber-50 p-4 max-w-md space-y-3">
-          <p className="text-sm font-black text-amber-700 uppercase tracking-wide">Solicitud pendiente</p>
-          <p className="text-sm text-amber-700 leading-relaxed">
+        <div className="border border-warn/40 bg-warn/10 p-4 max-w-md space-y-3">
+          <p className="text-sm font-bold text-warn-strong dark:text-warn uppercase tracking-wide">Solicitud pendiente</p>
+          <p className="text-sm text-warn-strong dark:text-warn leading-relaxed">
             El equipo de ActivaQR solicitó acceso remoto a tus activos para brindarte soporte.
             {permiso.costoMensual ? ` Costo adicional: $${permiso.costoMensual.toLocaleString('es-AR')}/mes.` : ''}
           </p>
-          <p className="text-xs text-amber-600">Si recibiste el link por email, hacé click en "Aprobar acceso" en ese email.</p>
+          <p className="text-xs text-warn-strong dark:text-warn">Si recibiste el link por email, hacé click en "Aprobar acceso" en ese email.</p>
         </div>
       )}
 
       {permiso.estado === 'activo' && (
         <div className="space-y-4 max-w-lg">
-          <div className="border-2 border-emerald-400 bg-emerald-50 px-4 py-3 flex items-center justify-between gap-3">
+          <div className="border border-ok/40 bg-ok/10 px-4 py-3 flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-black text-emerald-700 uppercase tracking-wide flex items-center gap-1">
+              <p className="text-sm font-bold text-ok-strong dark:text-ok uppercase tracking-wide flex items-center gap-1">
                 <ShieldCheck size={14} /> Acceso activo
               </p>
-              <p className="text-xs text-emerald-600 mt-0.5">
+              <p className="text-xs text-ok-strong dark:text-ok mt-0.5">
                 El soporte de ActivaQR puede ver tus activos y mediciones.
                 {permiso.costoMensual ? ` $${permiso.costoMensual.toLocaleString('es-AR')}/mes.` : ''}
               </p>
@@ -1297,21 +1374,21 @@ const SeccionAccesoRemoto: React.FC = () => {
             {!revocar ? (
               <button
                 onClick={() => setRevocar(true)}
-                className="flex items-center gap-1 text-xs font-bold text-red-600 border-2 border-red-300 px-3 py-2 hover:border-red-600 transition-colors whitespace-nowrap"
+                className="flex items-center gap-1 text-xs font-bold text-danger border border-danger/40 px-3 py-2 hover:border-danger transition-colors whitespace-nowrap"
               >
                 <ShieldOff size={13} /> Revocar
               </button>
             ) : (
               <div className="flex gap-2">
-                <button onClick={handleRevocar} className="text-xs font-bold bg-red-600 text-white border-2 border-red-800 px-3 py-2">Confirmar</button>
-                <button onClick={() => setRevocar(false)} className="text-xs font-bold border-2 border-slate-300 px-3 py-2">No</button>
+                <button onClick={handleRevocar} className="text-xs font-bold bg-danger text-white border border-danger px-3 py-2">Confirmar</button>
+                <button onClick={() => setRevocar(false)} className="text-xs font-bold border border-line px-3 py-2">No</button>
               </div>
             )}
           </div>
 
           <button
             onClick={() => setMostrarChat((v) => !v)}
-            className="flex items-center gap-2 text-sm font-bold border-2 border-slate-900 px-4 py-2 hover:bg-slate-50 transition-colors"
+            className="flex items-center gap-2 text-sm font-bold border border-line px-4 py-2 hover:bg-subtle transition-colors"
           >
             <MessageSquare size={16} />
             {mostrarChat ? 'Ocultar chat' : 'Abrir chat con soporte'}
@@ -1330,12 +1407,12 @@ const SeccionAccesoRemoto: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-5">
-        <h2 className="font-sketch text-xl font-black uppercase tracking-wide text-slate-900 mb-3">Guia de inicio</h2>
-        <p className="text-sm text-slate-500 mb-4">Revive el tour de bienvenida que aparece al usar la app por primera vez.</p>
+      <div className="bg-surface border border-line rounded-lg shadow-soft p-5">
+        <h2 className="font-display text-xl font-bold uppercase tracking-wide text-content mb-3">Guia de inicio</h2>
+        <p className="text-sm text-muted mb-4">Revive el tour de bienvenida que aparece al usar la app por primera vez.</p>
         <button
           onClick={() => { localStorage.removeItem('activaqr_tour_done'); window.location.reload(); }}
-          className="flex items-center gap-2 bg-white text-slate-700 px-4 py-2 font-bold border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] transition-all text-sm"
+          className="press inline-flex items-center gap-2 rounded-md bg-surface text-muted px-4 py-2 font-semibold border border-line hover:text-content hover:border-line-strong transition-colors text-sm"
         >
           <RotateCcw size={15} />
           Reactivar guia de inicio

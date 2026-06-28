@@ -28,8 +28,8 @@ const ESTADO_BADGE: Record<string, string> = {
 
 const VIBRACION_OPTS: FormMedicion['vibracion'][] = ['ninguna', 'leve', 'moderada', 'alta'];
 
-const inputCls = 'w-full border-2 border-slate-300 px-3 h-12 text-base outline-none focus:border-orange-500 bg-white';
-const labelCls = 'block text-xs font-black uppercase tracking-wider text-slate-600 mb-1';
+const inputCls = 'w-full border border-slate-300 px-3 h-12 text-base outline-none focus:border-brand-600 bg-white';
+const labelCls = 'block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1';
 
 export const DashboardOperador: React.FC = () => {
   const { usuario, logout } = useAuth();
@@ -116,27 +116,27 @@ export const DashboardOperador: React.FC = () => {
     return (
       <div className="min-h-screen bg-slate-100 px-4 py-6">
         <div className="max-w-lg mx-auto space-y-4">
-          <div className="bg-slate-900 text-white px-5 py-4 border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)]">
-            <p className="text-xs font-black uppercase tracking-wider text-orange-400 mb-0.5">Registrar medicion</p>
-            <h1 className="font-black text-xl leading-tight">{activoSeleccionado.nombre}</h1>
+          <div className="bg-slate-900 text-white px-5 py-4 border border-slate-900 shadow-soft">
+            <p className="text-xs font-bold uppercase tracking-wider text-orange-400 mb-0.5">Registrar medicion</p>
+            <h1 className="font-bold text-xl leading-tight">{activoSeleccionado.nombre}</h1>
             <p className="text-sm text-slate-300">{activoSeleccionado.codigo}</p>
           </div>
 
           {exito ? (
-            <div className="bg-white border-2 border-emerald-400 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.6)] p-6 text-center space-y-4">
-              <p className="font-black text-2xl text-emerald-700 uppercase">Registrada</p>
+            <div className="bg-white border border-emerald-400 shadow-soft p-6 text-center space-y-4">
+              <p className="font-bold text-2xl text-emerald-700 uppercase">Registrada</p>
               <p className="text-slate-600 text-sm">La medicion fue guardada correctamente.</p>
               <button
                 onClick={cerrarMedicion}
-                className="w-full min-h-[52px] bg-slate-900 text-white font-black border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.6)] text-base uppercase tracking-wide"
+                className="w-full min-h-[52px] bg-slate-900 text-white font-bold border border-slate-900 shadow-soft text-base uppercase tracking-wide"
               >
                 Volver a la lista
               </button>
             </div>
           ) : (
-            <form onSubmit={handleEnviar} className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.6)] p-5 space-y-4">
+            <form onSubmit={handleEnviar} className="bg-white border border-slate-800 shadow-soft p-5 space-y-4">
               {errorMedicion && (
-                <div className="border-2 border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                <div className="border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
                   {errorMedicion}
                 </div>
               )}
@@ -181,7 +181,7 @@ export const DashboardOperador: React.FC = () => {
                 <label className={labelCls}>Vibracion</label>
                 <div className="grid grid-cols-2 gap-2">
                   {VIBRACION_OPTS.map((v) => (
-                    <label key={v} className={`flex items-center gap-3 border-2 px-3 min-h-[52px] cursor-pointer font-bold text-base capitalize transition-colors ${form.vibracion === v ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-slate-300 text-slate-700'}`}>
+                    <label key={v} className={`flex items-center gap-3 border px-3 min-h-[52px] cursor-pointer font-bold text-base capitalize transition-colors ${form.vibracion === v ? 'border-brand-600 bg-orange-50 text-brand-700' : 'border-slate-300 text-slate-700'}`}>
                       <input
                         type="radio"
                         name="vibracion"
@@ -201,7 +201,7 @@ export const DashboardOperador: React.FC = () => {
                 <textarea
                   value={form.observaciones}
                   onChange={(e) => setForm((p) => ({ ...p, observaciones: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-3 py-2 text-base outline-none focus:border-orange-500 bg-white min-h-[80px] resize-none"
+                  className="w-full border border-slate-300 px-3 py-2 text-base outline-none focus:border-brand-600 bg-white min-h-[80px] resize-none"
                   placeholder="Novedades, ruidos, olores, etc."
                 />
               </div>
@@ -210,14 +210,14 @@ export const DashboardOperador: React.FC = () => {
                 <button
                   type="button"
                   onClick={cerrarMedicion}
-                  className="flex-1 min-h-[52px] border-2 border-slate-400 font-bold text-slate-600 text-base"
+                  className="flex-1 min-h-[52px] border border-slate-400 font-bold text-slate-600 text-base"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={enviando}
-                  className="flex-[2] min-h-[52px] bg-orange-500 text-white font-black border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] text-base uppercase tracking-wide disabled:opacity-50"
+                  className="flex-[2] min-h-[52px] bg-brand-600 text-white font-bold border border-slate-800 shadow-soft text-base uppercase tracking-wide disabled:opacity-50"
                 >
                   {enviando ? 'Guardando...' : 'Registrar medicion'}
                 </button>
@@ -234,26 +234,26 @@ export const DashboardOperador: React.FC = () => {
     <div className="min-h-screen bg-slate-100 px-4 py-6">
       <div className="max-w-lg mx-auto space-y-4">
         {/* Header */}
-        <div className="bg-slate-900 text-white px-5 py-4 border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] flex items-center justify-between">
+        <div className="bg-slate-900 text-white px-5 py-4 border border-slate-900 shadow-soft flex items-center justify-between">
           <div>
-            <p className="text-xs font-black uppercase tracking-wider text-orange-400">ActivaQR</p>
-            <p className="font-black text-lg leading-tight">{usuario?.nombre}</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-orange-400">ActivaQR</p>
+            <p className="font-bold text-lg leading-tight">{usuario?.nombre}</p>
             <p className="text-xs text-slate-400">{usuario?.empresa?.nombre}</p>
           </div>
           <button
             onClick={logout}
-            className="border-2 border-slate-600 text-slate-300 px-3 py-2 text-xs font-bold uppercase hover:border-slate-300 transition-colors"
+            className="border border-slate-600 text-slate-300 px-3 py-2 text-xs font-bold uppercase hover:border-slate-300 transition-colors"
           >
             Salir
           </button>
         </div>
 
-        <h2 className="font-black text-xl uppercase tracking-tight text-slate-800 px-1">
+        <h2 className="font-bold text-xl uppercase tracking-tight text-slate-800 px-1">
           Activos a controlar
         </h2>
 
         {error && (
-          <div className="border-2 border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>
+          <div className="border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>
         )}
 
         {cargando ? (
@@ -264,29 +264,29 @@ export const DashboardOperador: React.FC = () => {
           <div className="space-y-3">
             {activos.map((activo) => {
               const ultimaMedicion = activo.mediciones?.[0];
-              const estadoCls = ESTADO_BADGE[activo.estado] ?? 'bg-slate-100 border-slate-300 text-slate-600';
+              const estadoCls = ESTADO_BADGE[activo.estado] ?? 'text-muted';
               return (
                 <div
                   key={activo.id}
-                  className="bg-white border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.6)] p-4"
+                  className="bg-white border border-slate-800 shadow-soft p-4"
                 >
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="min-w-0">
-                      <p className="text-xs font-black uppercase tracking-wider text-orange-500">{activo.codigo}</p>
-                      <h3 className="font-black text-lg text-slate-900 leading-tight truncate">{activo.nombre}</h3>
+                      <p className="text-xs font-bold uppercase tracking-wider text-brand-600">{activo.codigo}</p>
+                      <h3 className="font-bold text-lg text-slate-900 leading-tight truncate">{activo.nombre}</h3>
                       {ultimaMedicion && (
                         <p className="text-xs text-slate-400 mt-0.5">
                           Ultima medicion: {ultimaMedicion.fecha.slice(0, 10)}
                         </p>
                       )}
                     </div>
-                    <span className={`text-xs font-black uppercase px-2 py-1 border-2 whitespace-nowrap flex-shrink-0 ${estadoCls}`}>
+                    <span className={`text-xs font-semibold whitespace-nowrap flex-shrink-0 ${estadoCls}`}>
                       {activo.estado}
                     </span>
                   </div>
                   <button
                     onClick={() => abrirMedicion(activo)}
-                    className="w-full min-h-[52px] bg-orange-500 text-white font-black border-2 border-slate-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] text-base uppercase tracking-wide hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
+                    className="w-full min-h-[52px] bg-brand-600 text-white font-bold border border-slate-800 shadow-soft text-base uppercase tracking-wide hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
                   >
                     Registrar medicion
                   </button>

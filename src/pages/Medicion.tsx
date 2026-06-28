@@ -8,6 +8,7 @@ import { useActivos } from '../hooks/useActivos';
 import { QrScanner, extraerActivoId } from '../components/QrScanner';
 import { Medicion as MedicionType, EstadoMedicion, Activo } from '../data/types';
 import { StatusBadge } from '../components/ui/StatusBadge';
+import { Button, Card, EmptyState, Input, Select, Textarea } from '../components/ui';
 import { CategoriaEquipo, ParametroCategoria, getCategoria } from '../data/categoriasApi';
 
 // ── Lógica de alertas (espejo del backend) ────────────────────────────────────
@@ -94,12 +95,12 @@ function BarraUmbral({ valor, min, alerta, critico, max, invertido = false }: {
 
   return (
     <div className="mt-1.5 space-y-1">
-      <div className="h-2 bg-slate-100 rounded-none border border-slate-200 overflow-hidden">
+      <div className="h-2 bg-subtle rounded-sm border border-line overflow-hidden">
         <div className={`h-full transition-all duration-300 ${color}`} style={{ width: `${pct}%` }} />
       </div>
       {nivel !== 'normal' && (
-        <p className={`text-xs font-black uppercase tracking-wide ${
-          nivel === 'urgente' ? 'text-red-600' : nivel === 'critico' ? 'text-red-500' : 'text-amber-600'
+        <p className={`text-xs font-semibold ${
+          nivel === 'urgente' ? 'text-danger' : nivel === 'critico' ? 'text-danger' : 'text-warn-strong dark:text-warn'
         }`}>{label}</p>
       )}
     </div>
@@ -123,7 +124,7 @@ function ParamDinamicoInput({
     const boolVal = value === true || value === 'true';
     return (
       <div className="mb-4">
-        <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
+        <label className="block text-xs font-semibold text-muted tracking-wide mb-1">
           {param.nombre}
         </label>
         <div className="flex gap-2">
@@ -132,10 +133,10 @@ function ParamDinamicoInput({
               key={String(b)}
               type="button"
               onClick={() => onChange(b)}
-              className={`flex-1 h-12 font-bold uppercase border-2 transition-colors ${
+              className={`press flex-1 h-11 rounded-md font-semibold border transition-colors ${
                 boolVal === b
-                  ? 'bg-slate-900 text-white border-slate-900'
-                  : 'border-slate-300 text-slate-600 hover:border-slate-500 bg-white'
+                  ? 'bg-brand-600 text-white border-brand-600'
+                  : 'border-line text-muted hover:border-line-strong bg-surface'
               }`}
             >
               {b ? 'Sí' : 'No'}
@@ -149,14 +150,11 @@ function ParamDinamicoInput({
   if (param.tipo === 'texto') {
     return (
       <div className="mb-4">
-        <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
-          {param.nombre}
-        </label>
-        <input
+        <Input
+          label={param.nombre}
           type="text"
           value={strVal}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full border-2 border-slate-300 px-3 h-11 text-sm outline-none focus:border-orange-500 bg-white"
         />
       </div>
     );
@@ -165,9 +163,9 @@ function ParamDinamicoInput({
   // numerico / porcentaje
   return (
     <div className="mb-4">
-      <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
+      <label className="block text-xs font-semibold text-muted tracking-wide mb-1">
         {param.nombre}{param.unidad ? ` (${param.unidad})` : ''}
-        {param.obligatorio && <span className="text-red-500 ml-1">*</span>}
+        {param.obligatorio && <span className="text-danger ml-1">*</span>}
       </label>
       <input
         type="number"
@@ -177,7 +175,7 @@ function ParamDinamicoInput({
         required={param.obligatorio}
         value={strVal}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full border-2 border-slate-300 px-4 h-14 text-xl font-mono outline-none focus:border-orange-500 text-center bg-white"
+        className="w-full border border-line rounded-md bg-surface px-4 h-14 text-xl font-mono text-content outline-none focus:border-brand-600 focus:shadow-ring text-center"
         placeholder="0"
       />
       <BarraUmbral
@@ -328,145 +326,149 @@ export const Medicion: React.FC = () => {
   if (submitted && savedMedicion && activo) {
     return (
       <div className="max-w-lg mx-auto">
-        <div className="bg-[#FFFEF7] border-2 border-slate-700 shadow-[4px_4px_0px_0px_#1e293b] p-6 text-center">
+        <Card padding="md" className="text-center">
           <CheckCircle size={48} className="text-emerald-500 mx-auto mb-3" />
-          <h2 className="font-sketch text-4xl font-black text-slate-900 uppercase mb-1">Medición Registrada</h2>
-          <div className="font-sketch font-bold text-orange-500 text-2xl mb-4">{activo.codigo}</div>
-          <div className="text-left bg-slate-50 border-2 border-slate-200 p-4 space-y-2 mb-4">
+          <h2 className="font-display text-2xl font-bold text-content mb-1">Medición registrada</h2>
+          <div className="font-mono font-bold text-brand-600 text-xl mb-4">{activo.codigo}</div>
+          <div className="text-left bg-subtle border border-line rounded-md p-4 space-y-2 mb-4">
             <div className="flex justify-between">
-              <span className="text-xs font-bold uppercase text-slate-500">Fecha</span>
-              <span className="font-mono text-sm">{format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es })}</span>
+              <span className="text-xs font-semibold text-muted">Fecha</span>
+              <span className="font-mono text-sm text-content">{format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es })}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-xs font-bold uppercase text-slate-500">Temperatura</span>
-              <span className="font-mono font-bold text-sm">{savedMedicion.temperatura}°C</span>
+              <span className="text-xs font-semibold text-muted">Temperatura</span>
+              <span className="font-mono font-bold text-sm text-content">{savedMedicion.temperatura}°C</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-xs font-bold uppercase text-slate-500">Estado</span>
+              <span className="text-xs font-semibold text-muted">Estado</span>
               <StatusBadge estado={savedMedicion.estado} size="sm" />
             </div>
             <div className="flex justify-between">
-              <span className="text-xs font-bold uppercase text-slate-500">Técnico</span>
-              <span className="text-sm">{getTecnicoNombre(savedMedicion.tecnicoId)}</span>
+              <span className="text-xs font-semibold text-muted">Técnico</span>
+              <span className="text-sm text-content">{getTecnicoNombre(savedMedicion.tecnicoId)}</span>
             </div>
             {savedMedicion.observaciones && (
               <div>
-                <span className="text-xs font-bold uppercase text-slate-500 block">Observaciones</span>
-                <span className="text-sm text-slate-600">{savedMedicion.observaciones}</span>
+                <span className="text-xs font-semibold text-muted block">Observaciones</span>
+                <span className="text-sm text-muted">{savedMedicion.observaciones}</span>
               </div>
             )}
           </div>
           <div className="flex gap-3">
-            <button
+            <Button
+              type="button"
               onClick={() => {
                 setSubmitted(false);
                 setForm({ temperatura: '', amperaje: '', presion: '', vibracion: 'ninguna', horasMarcha: '', voltaje: '', porcentajeBateria: '', nivelToner: '', contador: '', estado: 'normal', observaciones: '', tecnicoId: '' });
               setParametrosExtra({});
               }}
-              className="flex-1 bg-orange-500 text-white px-4 py-3 font-sketch font-bold text-xl border-2 border-slate-800"
+              className="flex-1"
             >
               Nueva Medición
-            </button>
-            <button
+            </Button>
+            <Button
+              type="button"
               onClick={() => navigate(`/activos/${activo!.id}`)}
-              className="flex-1 border-2 border-slate-800 px-4 py-3 font-sketch font-bold text-xl text-slate-700"
+              variant="secondary"
+              className="flex-1"
             >
               Ver Activo
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="max-w-lg mx-auto pb-24">
+    <div className="max-w-lg mx-auto pb-24 space-y-4 animate-fade-up">
       {escaneando && (
         <QrScanner onResult={onEscaneo} onClose={() => setEscaneando(false)} />
       )}
       {/* Header */}
-      <div className="flex items-center gap-3 mb-4">
-        <button onClick={() => navigate(-1)} className="border-2 border-slate-300 p-2 hover:border-slate-800 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
+      <div className="flex items-center gap-3">
+        <Button type="button" variant="secondary" size="sm" onClick={() => navigate(-1)} aria-label="Volver">
           <ArrowLeft size={18} />
-        </button>
-        <h1 className="font-sketch text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 uppercase tracking-tight">Tomar Medición</h1>
+        </Button>
+        <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight">Tomar medición</h1>
       </div>
 
       {/* Search by código */}
       {!activoId && (
-        <div className="bg-[#FFFEF7] border-2 border-slate-700 shadow-[3px_3px_0px_0px_#1e293b] p-4 mb-4">
-          <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-2">Buscar por Código de Activo</label>
+        <Card padding="md">
+          <label className="block text-xs font-semibold text-muted tracking-wide mb-2">Buscar por código de activo</label>
           <div className="flex gap-2">
-            <div className="flex items-center gap-2 border-2 border-slate-300 px-3 h-14 flex-1">
-              <Search size={18} className="text-slate-400 flex-shrink-0" />
+            <div className="flex items-center gap-2 border border-line rounded-md bg-surface px-3 h-14 flex-1 focus-within:border-brand-600 focus-within:shadow-ring">
+              <Search size={18} className="text-faint flex-shrink-0" />
               <input
                 type="text"
                 placeholder="Ej: HOR-MOT-001"
                 value={searchCodigo}
                 onChange={(e) => setSearchCodigo(e.target.value)}
-                className="flex-1 outline-none text-xl font-mono uppercase bg-transparent"
+                className="flex-1 outline-none text-xl font-mono uppercase bg-transparent text-content placeholder:text-faint min-w-0"
               />
             </div>
-            <button
+            <Button
+              type="button"
               onClick={() => setEscaneando(true)}
               title="Escanear QR"
-              className="flex items-center justify-center gap-2 bg-slate-900 text-white px-4 h-14 font-sketch font-bold uppercase border-2 border-slate-900 shadow-[3px_3px_0px_0px_#f97316] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all"
+              className="h-14"
+              iconLeft={<Camera size={20} />}
             >
-              <Camera size={20} />
               <span className="hidden sm:inline">Escanear</span>
-            </button>
+            </Button>
           </div>
           {searchCodigo && !activo && (
-            <p className="text-red-500 text-sm mt-1 font-semibold">Activo no encontrado</p>
+            <p className="text-danger text-sm mt-2 font-semibold">Activo no encontrado</p>
           )}
-        </div>
+        </Card>
       )}
 
       {activoId && !activo && (
-        <div className="bg-[#FFFEF7] border-2 border-slate-700 shadow-[3px_3px_0px_0px_#1e293b] p-6 text-center">
-          <p className="font-black text-lg text-slate-800 mb-1 uppercase">Activo no encontrado</p>
-          <p className="text-slate-600 text-sm mb-4">Este equipo no pertenece a tu cuenta o todavia se esta cargando.</p>
+        <Card padding="md" className="text-center">
+          <p className="font-display font-bold text-lg text-content mb-1">Activo no encontrado</p>
+          <p className="text-muted text-sm mb-4">Este equipo no pertenece a tu cuenta o todavía se está cargando.</p>
           <a
             href={`#/ficha/${activoId}`}
-            className="inline-block bg-orange-500 text-white px-5 py-3 font-sketch font-bold uppercase border-2 border-slate-900 shadow-[3px_3px_0px_0px_#1e293b]"
+            className="inline-flex items-center justify-center h-11 px-5 rounded-md bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700 transition-colors"
           >
             Ver ficha del equipo
           </a>
-        </div>
+        </Card>
       )}
 
       {activo && (
         <>
           {/* Activo info */}
-          <div className="bg-slate-900 text-white border-2 border-slate-700 shadow-[3px_3px_0px_0px_#1e293b] p-4 mb-4">
+          <Card padding="md">
             <div className="flex justify-between items-start">
               <div>
-                <div className="font-sketch font-black text-3xl text-orange-400">{activo.codigo}</div>
-                <div className="font-semibold text-white text-sm">{activo.nombre}</div>
-                <div className="text-slate-400 text-xs mt-0.5">{getSectorNombre(activo.sectorId)} · {activo.ubicacion}</div>
+                <div className="font-mono font-bold text-3xl text-brand-600">{activo.codigo}</div>
+                <div className="font-semibold text-content text-sm">{activo.nombre}</div>
+                <div className="text-muted text-xs mt-0.5">{getSectorNombre(activo.sectorId)} / {activo.ubicacion}</div>
               </div>
               <StatusBadge estado={activo.estado} />
             </div>
             {lastMedicion && (
-              <div className="mt-3 pt-3 border-t border-slate-700 text-xs text-slate-400">
+              <div className="mt-3 pt-3 border-t border-line text-xs text-muted">
                 Última medición: {format(parseISO(lastMedicion.fecha), 'dd/MM/yyyy', { locale: es })} —
-                {' '}<span className="text-orange-300 font-mono">{lastMedicion.temperatura}°C</span>
+                {' '}<span className="text-brand-600 font-mono">{lastMedicion.temperatura}°C</span>
               </div>
             )}
-          </div>
+          </Card>
 
           {/* Banner de alerta automática */}
           {estadoAuto !== 'normal' && (
-            <div className={`border-2 px-4 py-3 flex items-center gap-3 ${
+            <div className={`border rounded-md px-4 py-3 flex items-center gap-3 ${
               estadoAuto === 'urgente'
-                ? 'border-red-600 bg-red-600 text-white'
+                ? 'border-danger bg-danger text-white'
                 : estadoAuto === 'critico'
-                ? 'border-red-400 bg-red-50 text-red-700'
-                : 'border-amber-400 bg-amber-50 text-amber-800'
+                ? 'border-danger/50 bg-danger/10 text-danger-strong dark:text-danger'
+                : 'border-warn/50 bg-warn/10 text-warn-strong dark:text-warn'
             }`}>
               {estadoAuto === 'urgente' ? <Zap size={20} /> : <AlertTriangle size={20} />}
               <div>
-                <p className="font-black uppercase text-sm tracking-wide">
+                <p className="font-bold text-sm">
                   {estadoAuto === 'urgente' ? 'Intervención urgente requerida'
                     : estadoAuto === 'critico' ? 'Estado crítico detectado'
                     : 'Valor fuera del rango normal'}
@@ -479,13 +481,14 @@ export const Medicion: React.FC = () => {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="bg-[#FFFEF7] border-2 border-slate-700 shadow-[3px_3px_0px_0px_#1e293b] p-4 space-y-5">
+          <Card as="section" padding="md">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Temperature */}
             {mideTemperatura && (
             <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
+              <label className="block text-xs font-semibold text-muted tracking-wide mb-1">
                 Temperatura (°C)
-                {lastMedicion && <span className="ml-2 text-slate-400 font-normal normal-case">Anterior: {lastMedicion.temperatura}°C</span>}
+                {lastMedicion && <span className="ml-2 text-faint font-normal">Anterior: {lastMedicion.temperatura}°C</span>}
               </label>
               <input
                 type="number"
@@ -493,7 +496,7 @@ export const Medicion: React.FC = () => {
                 required
                 value={form.temperatura}
                 onChange={(e) => setForm((p) => ({ ...p, temperatura: e.target.value }))}
-                className="w-full border-2 border-slate-300 px-4 h-14 text-2xl font-mono font-black outline-none focus:border-orange-500 text-center bg-white"
+                className="w-full border border-line rounded-md bg-surface px-4 h-14 text-2xl font-mono font-bold text-content outline-none focus:border-brand-600 focus:shadow-ring text-center"
                 placeholder="0.0"
               />
               <BarraUmbral valor={form.temperatura}
@@ -504,16 +507,16 @@ export const Medicion: React.FC = () => {
             {/* Amperaje */}
             {mideAmperaje && (
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
+                <label className="block text-xs font-semibold text-muted tracking-wide mb-1">
                   Amperaje (A)
-                  <span className="ml-2 text-slate-400 font-normal normal-case">Normal: {activo.amperajeNormal}A</span>
+                  <span className="ml-2 text-faint font-normal">Normal: {activo.amperajeNormal}A</span>
                 </label>
                 <input
                   type="number"
                   step="0.1"
                   value={form.amperaje}
                   onChange={(e) => setForm((p) => ({ ...p, amperaje: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-4 h-14 text-xl font-mono outline-none focus:border-orange-500 text-center bg-white"
+                  className="w-full border border-line rounded-md bg-surface px-4 h-14 text-xl font-mono text-content outline-none focus:border-brand-600 focus:shadow-ring text-center"
                   placeholder="0.0"
                 />
                 <BarraUmbral valor={form.amperaje}
@@ -524,16 +527,16 @@ export const Medicion: React.FC = () => {
             {/* Presión */}
             {midePresion && (
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
+                <label className="block text-xs font-semibold text-muted tracking-wide mb-1">
                   Presión (bar)
-                  <span className="ml-2 text-slate-400 font-normal normal-case">Normal: {activo.presionNormal} bar</span>
+                  <span className="ml-2 text-faint font-normal">Normal: {activo.presionNormal} bar</span>
                 </label>
                 <input
                   type="number"
                   step="0.1"
                   value={form.presion}
                   onChange={(e) => setForm((p) => ({ ...p, presion: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-4 h-14 text-xl font-mono outline-none focus:border-orange-500 text-center bg-white"
+                  className="w-full border border-line rounded-md bg-surface px-4 h-14 text-xl font-mono text-content outline-none focus:border-brand-600 focus:shadow-ring text-center"
                   placeholder="0.0"
                 />
                 <BarraUmbral valor={form.presion}
@@ -544,17 +547,17 @@ export const Medicion: React.FC = () => {
             {/* Vibración */}
             {mideVibracion && (
             <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-2">Vibración</label>
+              <label className="block text-xs font-semibold text-muted tracking-wide mb-2">Vibración</label>
               <div className="grid grid-cols-2 gap-2">
                 {(['ninguna', 'leve', 'moderada', 'alta'] as const).map((v) => (
                   <button
                     key={v}
                     type="button"
                     onClick={() => setForm((p) => ({ ...p, vibracion: v }))}
-                    className={`h-12 font-sketch text-lg font-bold uppercase border-2 transition-colors ${
+                    className={`press h-12 rounded-md text-sm font-semibold border transition-colors ${
                       form.vibracion === v
-                        ? 'bg-slate-900 text-white border-slate-900'
-                        : 'border-slate-300 text-slate-600 hover:border-slate-500 bg-white'
+                        ? 'bg-brand-600 text-white border-brand-600'
+                        : 'border-line text-muted hover:border-line-strong bg-surface'
                     }`}
                   >
                     {v}
@@ -566,12 +569,12 @@ export const Medicion: React.FC = () => {
 
             {/* Horas marcha */}
             <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Horas de Marcha</label>
+              <label className="block text-xs font-semibold text-muted tracking-wide mb-1">Horas de marcha</label>
               <input
                 type="number"
                 value={form.horasMarcha}
                 onChange={(e) => setForm((p) => ({ ...p, horasMarcha: e.target.value }))}
-                className="w-full border-2 border-slate-300 px-4 h-14 text-xl font-mono outline-none focus:border-orange-500 text-center bg-white"
+                className="w-full border border-line rounded-md bg-surface px-4 h-14 text-xl font-mono text-content outline-none focus:border-brand-600 focus:shadow-ring text-center"
                 placeholder={String(activo.horasActuales)}
               />
             </div>
@@ -579,13 +582,13 @@ export const Medicion: React.FC = () => {
             {/* Voltaje */}
             {mideVoltaje && (
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Voltaje (V)</label>
+                <label className="block text-xs font-semibold text-muted tracking-wide mb-1">Voltaje (V)</label>
                 <input
                   type="number"
                   step="0.1"
                   value={form.voltaje}
                   onChange={(e) => setForm((p) => ({ ...p, voltaje: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-4 h-14 text-xl font-mono outline-none focus:border-orange-500 text-center bg-white"
+                  className="w-full border border-line rounded-md bg-surface px-4 h-14 text-xl font-mono text-content outline-none focus:border-brand-600 focus:shadow-ring text-center"
                   placeholder="0.0"
                 />
               </div>
@@ -594,14 +597,14 @@ export const Medicion: React.FC = () => {
             {/* Batería */}
             {mideBateria && (
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Batería (%)</label>
+                <label className="block text-xs font-semibold text-muted tracking-wide mb-1">Batería (%)</label>
                 <input
                   type="number"
                   min="0"
                   max="100"
                   value={form.porcentajeBateria}
                   onChange={(e) => setForm((p) => ({ ...p, porcentajeBateria: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-4 h-14 text-xl font-mono outline-none focus:border-orange-500 text-center bg-white"
+                  className="w-full border border-line rounded-md bg-surface px-4 h-14 text-xl font-mono text-content outline-none focus:border-brand-600 focus:shadow-ring text-center"
                   placeholder="0"
                 />
                 <BarraUmbral valor={form.porcentajeBateria}
@@ -612,14 +615,14 @@ export const Medicion: React.FC = () => {
             {/* Nivel de tóner */}
             {mideToner && (
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Nivel de tóner (%)</label>
+                <label className="block text-xs font-semibold text-muted tracking-wide mb-1">Nivel de tóner (%)</label>
                 <input
                   type="number"
                   min="0"
                   max="100"
                   value={form.nivelToner}
                   onChange={(e) => setForm((p) => ({ ...p, nivelToner: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-4 h-14 text-xl font-mono outline-none focus:border-orange-500 text-center bg-white"
+                  className="w-full border border-line rounded-md bg-surface px-4 h-14 text-xl font-mono text-content outline-none focus:border-brand-600 focus:shadow-ring text-center"
                   placeholder="0"
                 />
                 <BarraUmbral valor={form.nivelToner}
@@ -630,12 +633,12 @@ export const Medicion: React.FC = () => {
             {/* Contador */}
             {mideContador && (
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Contador (páginas/ciclos)</label>
+                <label className="block text-xs font-semibold text-muted tracking-wide mb-1">Contador (páginas/ciclos)</label>
                 <input
                   type="number"
                   value={form.contador}
                   onChange={(e) => setForm((p) => ({ ...p, contador: e.target.value }))}
-                  className="w-full border-2 border-slate-300 px-4 h-14 text-xl font-mono outline-none focus:border-orange-500 text-center bg-white"
+                  className="w-full border border-line rounded-md bg-surface px-4 h-14 text-xl font-mono text-content outline-none focus:border-brand-600 focus:shadow-ring text-center"
                   placeholder="0"
                 />
               </div>
@@ -644,8 +647,8 @@ export const Medicion: React.FC = () => {
             {/* Parámetros dinámicos de la categoría */}
             {categoria && categoria.parametros.length > 0 && (
               <div className="space-y-4">
-                <div className="border-t-2 border-dashed border-slate-300 pt-3">
-                  <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-3">
+                <div className="border-t border-line pt-3">
+                  <p className="text-xs font-semibold text-muted mb-3">
                     {categoria.icono} {categoria.nombre}
                   </p>
                   {categoria.parametros.map((param) => (
@@ -662,22 +665,22 @@ export const Medicion: React.FC = () => {
 
             {/* Estado visual — tarjetas grandes */}
             <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Estado Visual</label>
+              <label className="block text-xs font-semibold text-muted tracking-wide mb-1">Estado visual</label>
               {tieneUmbrales && estadoAuto !== 'normal' && (
-                <p className="text-xs text-slate-500 mb-2">
+                <p className="text-xs text-muted mb-2">
                   El sistema calculó <strong className={estadoAuto === 'urgente' ? 'text-red-600' : estadoAuto === 'critico' ? 'text-red-500' : 'text-amber-600'}>
                     {estadoAuto.toUpperCase()}
                   </strong> automáticamente. Podés confirmarlo o escalarlo manualmente.
                 </p>
               )}
-              <div className="flex flex-col gap-3">
+              <div className="grid grid-cols-1 gap-3">
                 <button
                   type="button"
                   onClick={() => setForm((p) => ({ ...p, estado: 'normal' }))}
-                  className={`w-full h-16 font-sketch font-black uppercase text-2xl border-2 transition-all ${
+                  className={`press w-full h-12 rounded-md font-semibold border transition-all ${
                     form.estado === 'normal'
-                      ? 'bg-emerald-500 text-white border-emerald-700 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.5)]'
-                      : 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                      ? 'bg-ok text-white border-ok'
+                      : 'bg-surface text-ok-strong dark:text-ok border-line hover:border-ok'
                   }`}
                 >
                   Normal
@@ -685,10 +688,10 @@ export const Medicion: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setForm((p) => ({ ...p, estado: 'revision' }))}
-                  className={`w-full h-16 font-sketch font-black uppercase text-2xl border-2 transition-all ${
+                  className={`press w-full h-12 rounded-md font-semibold border transition-all ${
                     form.estado === 'revision'
-                      ? 'bg-orange-500 text-white border-orange-700 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.5)]'
-                      : 'bg-orange-50 text-orange-700 border-orange-300'
+                      ? 'bg-warn text-white border-warn'
+                      : 'bg-surface text-warn-strong dark:text-warn border-line hover:border-warn'
                   }`}
                 >
                   Revisión
@@ -696,10 +699,10 @@ export const Medicion: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setForm((p) => ({ ...p, estado: 'urgente' }))}
-                  className={`w-full h-16 font-sketch font-black uppercase text-2xl border-2 transition-all ${
+                  className={`press w-full h-12 rounded-md font-semibold border transition-all ${
                     form.estado === 'urgente'
-                      ? 'bg-red-600 text-white border-red-800 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.5)]'
-                      : 'bg-red-50 text-red-700 border-red-300'
+                      ? 'bg-danger text-white border-danger'
+                      : 'bg-surface text-danger-strong dark:text-danger border-line hover:border-danger'
                   }`}
                 >
                   Urgente
@@ -708,51 +711,48 @@ export const Medicion: React.FC = () => {
             </div>
 
             {/* Observaciones */}
-            <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Observaciones</label>
-              <textarea
-                value={form.observaciones}
-                onChange={(e) => setForm((p) => ({ ...p, observaciones: e.target.value }))}
-                rows={3}
-                className="w-full border-2 border-slate-300 px-3 py-3 text-base outline-none focus:border-orange-500 bg-white"
-                placeholder="Notas adicionales sobre el estado del equipo..."
-              />
-            </div>
+            <Textarea
+              label="Observaciones"
+              value={form.observaciones}
+              onChange={(e) => setForm((p) => ({ ...p, observaciones: e.target.value }))}
+              rows={3}
+              placeholder="Notas adicionales sobre el estado del equipo..."
+            />
 
             {/* Técnico */}
-            <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-slate-600 mb-1">Técnico Responsable</label>
-              <select
-                required
-                value={form.tecnicoId}
-                onChange={(e) => setForm((p) => ({ ...p, tecnicoId: e.target.value }))}
-                className="w-full border-2 border-slate-300 px-3 h-14 text-xl outline-none focus:border-orange-500 bg-white"
-              >
-                <option value="">Seleccionar técnico...</option>
-                {tecnicosActivos.map((t) => (
-                  <option key={t.id} value={t.id}>{t.nombre}</option>
-                ))}
-              </select>
-            </div>
+            <Select
+              required
+              label="Técnico responsable"
+              value={form.tecnicoId}
+              onChange={(e) => setForm((p) => ({ ...p, tecnicoId: e.target.value }))}
+              className="text-base"
+            >
+              <option value="">Seleccionar técnico...</option>
+              {tecnicosActivos.map((t) => (
+                <option key={t.id} value={t.id}>{t.nombre}</option>
+              ))}
+            </Select>
 
             {/* Submit sticky en mobile */}
-            <div className="fixed bottom-0 left-0 right-0 md:relative md:bottom-auto md:left-auto md:right-auto p-4 md:p-0 bg-[#FAFAF7] md:bg-transparent border-t-2 border-slate-200 md:border-0 z-30">
-              <button
+            <div className="fixed bottom-0 left-0 right-0 md:relative md:bottom-auto md:left-auto md:right-auto p-4 md:p-0 bg-canvas/95 md:bg-transparent border-t border-line md:border-0 z-30 backdrop-blur-sm md:backdrop-blur-none">
+              <Button
                 type="submit"
-                className="w-full bg-orange-500 text-white px-4 h-16 font-sketch font-black text-2xl uppercase border-2 border-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.8)] transition-all"
+                block
+                size="lg"
               >
                 Registrar Medición
-              </button>
+              </Button>
             </div>
           </form>
+          </Card>
         </>
       )}
 
       {!activo && !activoId && (
-        <div className="text-center text-slate-400 py-12">
-          <ClipboardList size={48} className="mx-auto mb-3 opacity-30" />
-          <p className="font-sketch text-2xl">Escaneá un código QR o buscá por código</p>
-        </div>
+        <EmptyState
+          icon={<ClipboardList size={32} />}
+          title="Escaneá un QR o buscá por código"
+        />
       )}
     </div>
   );

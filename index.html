@@ -4,16 +4,29 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>ActivaQR - Activos bajo control</title>
-    <meta name="theme-color" content="#F97316" />
+    <meta name="theme-color" content="#FFFFFF" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="ActivaQR" />
     <meta name="description" content="Gestión inteligente de activos industriales con QR, mediciones y mantenimiento predictivo." />
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <script>
+      // Aplica el tema guardado antes del primer render (evita flash de color).
+      // Light es el tema por defecto; solo se va a dark si el usuario lo eligió.
+      (function () {
+        try {
+          if (localStorage.getItem('activaqr_theme') === 'dark') {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
     <style>
       @media print { .no-print { display: none !important; } .print-label { page-break-inside: avoid; } }
-      body { background: #FAFAF7; margin: 0; }
+      body { margin: 0; }
     </style>
   </head>
   <body>
