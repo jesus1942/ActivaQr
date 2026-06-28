@@ -73,27 +73,44 @@ for (const size of sizes) {
 await sharp(base).resize(180, 180).flatten({ background: NAVY }).png().toFile('./public/apple-touch-icon.png');
 await sharp(base).resize(64, 64).png().toFile('./public/favicon.png');
 
-// 5. Miniatura para previews (og:image 1200x630): logo + nombre sobre navy con glow.
+// 5. Miniatura para previews (og:image 1200x630): logo COMPLETO (sin recorte)
+//    sobre placa neumórfica + UNA sola línea ondulada vertical.
 const OGW = 1200, OGH = 630;
+// Logo completo (símbolo entero, contain -> nunca se recorta). Bien arriba con aire.
+const LOGO = 196;
 const ogSimbolo = await sharp(simboloTeal)
-  .resize(260, 260, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+  .resize(LOGO, LOGO, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
   .png()
   .toBuffer();
+const cx = OGW / 2, cy = 210;
 const ogFondo = `<svg xmlns="http://www.w3.org/2000/svg" width="${OGW}" height="${OGH}">
   <defs>
-    <radialGradient id="og" cx="30%" cy="20%" r="90%">
+    <radialGradient id="og" cx="30%" cy="18%" r="95%">
       <stop offset="0%" stop-color="#13283f"/>
       <stop offset="100%" stop-color="${NAVY}"/>
     </radialGradient>
+    <linearGradient id="ogline" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2DD4BF" stop-opacity="0"/>
+      <stop offset="45%" stop-color="#5EEAD4" stop-opacity="0.65"/>
+      <stop offset="100%" stop-color="#0FB5A6" stop-opacity="0"/>
+    </linearGradient>
+    <!-- Neumorfismo: doble sombra suave (luz arriba-izq, sombra abajo-der) -->
+    <filter id="neu" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="-9" dy="-9" stdDeviation="13" flood-color="#1b2c49" flood-opacity="0.9"/>
+      <feDropShadow dx="11" dy="12" stdDeviation="16" flood-color="#04070d" flood-opacity="0.95"/>
+    </filter>
   </defs>
   <rect width="${OGW}" height="${OGH}" fill="url(#og)"/>
-  <path d="M -50 180 C 300 60, 250 360, 600 260 C 950 160, 900 460, 1300 360" stroke="${TEAL_HEX}" stroke-opacity="0.35" stroke-width="3" fill="none"/>
-  <path d="M -50 420 C 300 320, 300 560, 650 460 C 1000 360, 950 600, 1300 520" stroke="#22D3EE" stroke-opacity="0.25" stroke-width="2" fill="none"/>
-  <text x="600" y="500" font-family="Manrope, Arial, sans-serif" font-size="84" font-weight="800" fill="#F1F5F9" text-anchor="middle">ActivaQR</text>
-  <text x="600" y="552" font-family="Inter, Arial, sans-serif" font-size="30" fill="#2DD4BF" text-anchor="middle" letter-spacing="6">ACTIVOS BAJO CONTROL</text>
+  <!-- UNA sola línea ondulada vertical -->
+  <path d="M 1020 -50 C 1180 180, 940 430, 1100 690" stroke="url(#ogline)" stroke-width="3" fill="none"/>
+  <!-- Placa neumórfica -->
+  <circle cx="${cx}" cy="${cy}" r="148" fill="#0e1828" filter="url(#neu)"/>
+  <circle cx="${cx}" cy="${cy}" r="148" fill="none" stroke="#2DD4BF" stroke-opacity="0.25" stroke-width="1.5"/>
+  <text x="${cx}" y="470" font-family="Manrope, Arial, sans-serif" font-size="86" font-weight="800" fill="#F1F5F9" text-anchor="middle">ActivaQR</text>
+  <text x="${cx}" y="524" font-family="Inter, Arial, sans-serif" font-size="29" fill="#2DD4BF" text-anchor="middle" letter-spacing="6">ACTIVOS BAJO CONTROL</text>
 </svg>`;
 await sharp(Buffer.from(ogFondo))
-  .composite([{ input: ogSimbolo, left: Math.round((OGW - 260) / 2), top: 70 }])
+  .composite([{ input: ogSimbolo, left: Math.round(cx - LOGO / 2), top: Math.round(cy - LOGO / 2) }])
   .png()
   .toFile('./public/og-image.png');
 console.log('Generated og-image.png');

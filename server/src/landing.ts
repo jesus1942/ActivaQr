@@ -339,6 +339,14 @@ export function renderLanding(appUrl: string, whatsapp?: string, apoyo?: { cafec
   /* Apoyo */
   .apoyo-btn{border:1px solid var(--line);box-shadow:0 8px 20px rgba(0,0,0,.25);border-radius:12px}
   .apoyo-btn:hover{transform:translateY(-1px);box-shadow:0 0 18px rgba(45,212,191,.25)}
+  /* Neutralizar estilos INLINE del HTML viejo (ganan por especificidad -> !important) */
+  [style*="background:#fff"],[style*="background:#f8fafc"],[style*="background: #fff"]{background:transparent !important}
+  [style*="background:#0f172a"]{background:rgba(20,24,34,.55) !important;backdrop-filter:blur(10px) !important;border-radius:14px}
+  [style*="background:#f97316"]{background:var(--tealbr) !important;color:#06231f !important;border-color:transparent !important;box-shadow:0 0 20px rgba(45,212,191,.35) !important}
+  [style*="color:#0f172a"],[style*="color:var(--negro)"]{color:var(--text) !important}
+  [style*="color:#ea580c"],[style*="color:#f97316"]{color:var(--tealbr) !important}
+  [style*="color:#475569"],[style*="color:#64748b"],[style*="color:var(--gris)"]{color:var(--gris) !important}
+  [style*="border:3px solid #0f172a"],[style*="border-top:3px solid #0f172a"],[style*="border-bottom:3px solid #0f172a"],[style*="border:3px solid var(--negro)"],[style*="border-top:3px solid var(--negro)"]{border-color:var(--line) !important}
   @media print{.aurora{display:none}}
 </style>
 </head>
