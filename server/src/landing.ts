@@ -353,23 +353,22 @@ export function renderLanding(appUrl: string, whatsapp?: string, apoyo?: { cafec
 <body>
 
 <div class="aurora" aria-hidden="true">
-  <div class="g" style="top:-15%;left:8%;width:24vw;height:130vh;background:#14B8A6;opacity:.45"></div>
-  <div class="g" style="top:-15%;left:50%;width:22vw;height:130vh;background:#22D3EE;opacity:.32"></div>
-  <div class="g" style="top:-15%;left:84%;width:22vw;height:130vh;background:#2DD4BF;opacity:.3"></div>
-  <svg viewBox="0 0 1440 1000" preserveAspectRatio="xMidYMid slice">
-    <defs><linearGradient id="lv" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#2DD4BF" stop-opacity="0"/>
-      <stop offset="35%" stop-color="#5EEAD4" stop-opacity="0.5"/>
-      <stop offset="70%" stop-color="#22D3EE" stop-opacity="0.45"/>
-      <stop offset="100%" stop-color="#0FB5A6" stop-opacity="0"/>
-    </linearGradient></defs>
-    <g stroke="url(#lv)" fill="none">
-      <path d="M 180 -60 C 300 230, 90 520, 230 790 C 330 990, 150 1140, 250 1320" stroke-width="2"/>
-      <path d="M 560 -60 C 440 250, 660 540, 500 800 C 380 1010, 600 1150, 470 1320" stroke-width="1.6"/>
-      <path d="M 900 -60 C 1030 240, 770 540, 940 800 C 1070 1020, 820 1150, 960 1320" stroke-width="1.6"/>
-      <path d="M 1240 -60 C 1120 260, 1340 540, 1190 810 C 1070 1020, 1300 1160, 1170 1320" stroke-width="1.4"/>
-    </g>
-  </svg>
+  <div id="auroraInner" style="position:absolute;inset:-20% 0;will-change:transform">
+    <div class="g" style="top:-12%;left:55%;width:26vw;height:150vh;background:#14B8A6;opacity:.4"></div>
+    <svg viewBox="0 0 1440 1000" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%">
+      <defs>
+        <linearGradient id="lv" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#2DD4BF" stop-opacity="0"/>
+          <stop offset="38%" stop-color="#5EEAD4" stop-opacity="0.7"/>
+          <stop offset="72%" stop-color="#22D3EE" stop-opacity="0.6"/>
+          <stop offset="100%" stop-color="#0FB5A6" stop-opacity="0"/>
+        </linearGradient>
+        <filter id="lvglow" x="-60%" y="-30%" width="220%" height="160%"><feGaussianBlur stdDeviation="5"/></filter>
+      </defs>
+      <!-- UNA sola linea ondulada vertical -->
+      <path d="M 760 -60 C 930 250, 620 540, 820 810 C 970 1020, 680 1160, 860 1330" stroke="url(#lv)" stroke-width="2.6" fill="none" filter="url(#lvglow)"/>
+    </svg>
+  </div>
 </div>
 
 <nav>
@@ -709,6 +708,20 @@ const observer = new IntersectionObserver(function(entries){
   });
 }, {threshold:0.12});
 document.querySelectorAll('.reveal').forEach(function(el){ observer.observe(el); });
+
+// Parallax suave del fondo aurora
+var auroraInner = document.getElementById('auroraInner');
+if(auroraInner){
+  var ticking = false;
+  window.addEventListener('scroll', function(){
+    if(ticking) return;
+    ticking = true;
+    requestAnimationFrame(function(){
+      ticking = false;
+      auroraInner.style.transform = 'translate3d(0,' + (window.scrollY * 0.18) + 'px,0)';
+    });
+  }, {passive:true});
+}
 
 </script>
 

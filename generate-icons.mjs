@@ -13,7 +13,7 @@ const NAVY = '#0B1120';                     // fondo
 // 1. Extraer solo el simbolo (parte superior del logo)
 const recortado = await sharp(SRC).trim({ threshold: 10 }).toBuffer();
 const m = await sharp(recortado).metadata();
-const altoSimbolo = Math.round(m.height * 0.76);
+const altoSimbolo = Math.round(m.height * 0.83);  // 0.83 = símbolo completo sin recortar el fondo de los loops
 const simbolo = await sharp(recortado)
   .extract({ left: 0, top: 0, width: m.width, height: altoSimbolo })
   .trim({ threshold: 10 })
