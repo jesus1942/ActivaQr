@@ -29,6 +29,8 @@ import { FichaPublica } from './pages/FichaPublica';
 import { AprobarAccesoRemoto } from './pages/AprobarAccesoRemoto';
 import { ResetPassword } from './pages/ResetPassword';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { ToastProvider } from './components/ui/Toast';
 import { DashboardOperador } from './pages/DashboardOperador';
 import { PantallaTrialVencido, SeccionTracker } from './components/TrialUI';
 import { PantallaAceptarPoliticas } from './components/PantallaAceptarPoliticas';
@@ -145,7 +147,9 @@ function AuthedApp() {
 function AppInterna() {
   return (
     <ErrorBoundary variant="full" scope="la app">
-      <AuthProvider>
+      <ThemeProvider>
+       <ToastProvider>
+        <AuthProvider>
         <BrowserRouter>
           <ScrollToTop />
           <Routes>
@@ -155,7 +159,9 @@ function AppInterna() {
             <Route path="/*" element={<AuthedApp />} />
           </Routes>
         </BrowserRouter>
-      </AuthProvider>
+        </AuthProvider>
+       </ToastProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

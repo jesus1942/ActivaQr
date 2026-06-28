@@ -1,4 +1,6 @@
 // v1.1.0
+// Indicador de estado del activo/medición. Mantiene la API anterior
+// (estado + size), pero evita el patrón visual de badge/píldora.
 import React from 'react';
 import { EstadoActivo, EstadoMedicion } from '../../data/types';
 
@@ -9,27 +11,30 @@ interface StatusBadgeProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-const statusConfig: Record<EstadoType, { border: string; text: string; bg: string; label: string; rotate: string }> = {
-  normal:       { border: 'border-emerald-600', text: 'text-emerald-700', bg: 'bg-emerald-100/70', label: 'NORMAL',   rotate: 'rotate-[-1deg]' },
-  alerta:       { border: 'border-orange-500',  text: 'text-orange-700',  bg: 'bg-orange-100/70',  label: 'ALERTA',   rotate: 'rotate-[1deg]'  },
-  critico:      { border: 'border-red-700',     text: 'text-red-700',     bg: 'bg-red-100/70',     label: 'CRÍTICO',  rotate: 'rotate-[-1deg]' },
-  mantenimiento:{ border: 'border-blue-700',    text: 'text-blue-700',    bg: 'bg-blue-100/70',    label: 'MANT.',    rotate: 'rotate-[1deg]'  },
-  revision:     { border: 'border-yellow-600',  text: 'text-yellow-800',  bg: 'bg-yellow-100/70',  label: 'REVISIÓN', rotate: 'rotate-[-1deg]' },
-  urgente:      { border: 'border-red-700',     text: 'text-red-700',     bg: 'bg-red-100/70',     label: 'URGENTE',  rotate: 'rotate-[1deg]'  },
+const statusConfig: Record<EstadoType, { marker: string; text: string; label: string }> = {
+  normal:        { marker: 'bg-ok',        text: 'text-ok-strong dark:text-ok',             label: 'Normal' },
+  alerta:        { marker: 'bg-warn',      text: 'text-warn-strong dark:text-warn',         label: 'Alerta' },
+  critico:       { marker: 'bg-danger',    text: 'text-danger-strong dark:text-danger',     label: 'Crítico' },
+  mantenimiento: { marker: 'bg-brand-600', text: 'text-brand-700 dark:text-brand-300',      label: 'Mantenimiento' },
+  revision:      { marker: 'bg-warn',      text: 'text-warn-strong dark:text-warn',         label: 'Revisión' },
+  urgente:       { marker: 'bg-danger',    text: 'text-danger-strong dark:text-danger',     label: 'Urgente' },
 };
 
 const sizeConfig = {
-  sm: 'text-base px-2.5 py-0.5',
-  md: 'text-lg px-3 py-1',
-  lg: 'text-xl px-4 py-1.5',
+  sm: 'text-xs gap-1.5',
+  md: 'text-sm gap-2',
+  lg: 'text-base gap-2',
 };
+
+const markerSize = { sm: 'w-1 h-3', md: 'w-1 h-4', lg: 'w-1.5 h-5' };
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ estado, size = 'md' }) => {
   const config = statusConfig[estado] || statusConfig.normal;
   return (
     <span
-      className={`inline-block font-sketch font-bold uppercase tracking-wider border-2 ${config.border} ${config.text} ${config.bg} ${config.rotate} ${sizeConfig[size]}`}
+      className={`inline-flex items-center font-semibold leading-none ${config.text} ${sizeConfig[size]}`}
     >
+      <span className={`rounded-sm ${config.marker} ${markerSize[size]}`} />
       {config.label}
     </span>
   );
