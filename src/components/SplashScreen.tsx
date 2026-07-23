@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
-const DURACION = 2600;
-const FADE_START = 2050;
+const DURACION = 900;
+const FADE_START = 620;
 
 // Logo claro (para fondo oscuro).
 const LOGO_SRC = '/ActivaQr/company-logo1.png';

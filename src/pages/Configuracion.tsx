@@ -1265,14 +1265,18 @@ const SeccionAccesoRemoto: React.FC = () => {
   const [revocar, setRevocar] = useState(false);
 
   const planesConAcceso = ['empresa', 'industrial'];
-  if (!planesConAcceso.includes(plan)) return null;
+  const tieneAcceso = planesConAcceso.includes(plan);
 
   useEffect(() => {
+    if (!tieneAcceso) {
+      setCargando(false);
+      return;
+    }
     getSolicitudCliente()
       .then(setPermiso)
       .catch(() => {})
       .finally(() => setCargando(false));
-  }, []);
+  }, [tieneAcceso]);
 
   useEffect(() => {
     if (!mostrarChat || permiso?.estado !== 'activo') return;
@@ -1289,7 +1293,7 @@ const SeccionAccesoRemoto: React.FC = () => {
     setRevocar(false);
   };
 
-  if (cargando) return null;
+  if (!tieneAcceso || cargando) return null;
   if (!permiso || permiso.estado === 'revocado') return null;
 
   return (

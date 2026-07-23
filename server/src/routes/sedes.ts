@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../prisma';
 import { resolveEmpresaId } from '../tenant';
+import { requireAdmin } from '../auth';
 
 const router = Router();
 
@@ -34,7 +35,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // POST /api/sedes
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', requireAdmin as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
     const { nombre, direccion, ciudad } = req.body ?? {};
@@ -51,7 +52,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // PUT /api/sedes/:id
-router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.put('/:id', requireAdmin as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
     const existing = await prisma.sede.findFirst({
@@ -71,7 +72,7 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // DELETE /api/sedes/:id
-router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', requireAdmin as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
     const existing = await prisma.sede.findFirst({

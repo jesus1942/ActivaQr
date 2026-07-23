@@ -1,6 +1,12 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { resolveEmpresaId } from '../tenant';
+import { AuthRequest } from '../auth';
+import {
+  calcularEstadoAutomatico,
+  calcularEstadoParametrosExtra,
+  peorEstado,
+} from '../alertas';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -21,28 +27,61 @@ const toDate = (v: unknown): Date | null =>
 const toNum = (v: unknown): number | null =>
   v === undefined || v === null || v === '' ? null : Number(v);
 
+function payload(req: Request): { items: any[]; deletedIds: string[] } {
+  // Clientes viejos pueden seguir enviando un array. Se acepta para upsert,
+  // pero nunca se interpreta una omisión como borrado.
+  if (Array.isArray(req.body)) return { items: req.body, deletedIds: [] };
+  const items = Array.isArray(req.body?.items) ? req.body.items : [];
+  const deletedIds: string[] = Array.isArray(req.body?.deletedIds)
+    ? [...new Set<string>(req.body.deletedIds.filter((id: unknown): id is string => typeof id === 'string' && id.length > 0))]
+    : [];
+  return { items, deletedIds };
+}
+
+function idsDuplicados(items: any[]): boolean {
+  const ids = items.map((i) => i?.id).filter(Boolean);
+  return new Set(ids).size !== ids.length;
+}
+
+function auditoriaSync(req: Request, empresaId: string, entidad: string, upserts: number, eliminados: number) {
+  const auth = (req as AuthRequest).auth;
+  return prisma.registroAuditoria.create({
+    data: {
+      empresaId,
+      usuarioId: auth?.userId ?? null,
+      usuarioNombre: auth?.email ?? 'desconocido',
+      usuarioRol: auth?.rol ?? null,
+      accion: 'editar',
+      entidad: `sync_${entidad}`,
+      detalle: JSON.stringify({ upserts, eliminados }),
+    },
+  });
+}
+
 /**
- * Sincronización por entidad: el frontend envía el array completo.
- * Hacemos upsert de cada elemento y borramos los que ya no estén.
- * Por seguridad, si el array llega vacío NO borramos nada (evita
- * limpiar la base por una condición de carrera en la carga inicial).
+ * Sincronización por entidad:
+ * - upserts explícitos en `items`
+ * - bajas explícitas en `deletedIds`
+ * - cada ID se valida contra el tenant antes del upsert
+ * - la auditoría se escribe dentro de la misma transacción
  */
 
 // ───────── Sectores ─────────
 router.put('/sectores', asyncHandler(async (req, res) => {
   const empresaId = await resolveEmpresaId(req);
-  const items: any[] = Array.isArray(req.body) ? req.body : [];
+  const { items, deletedIds } = payload(req);
+  if (idsDuplicados(items)) return res.status(400).json({ error: 'Hay IDs de sectores duplicados.' });
   const ids = items.map((i) => i.id);
-
-  const totalEnBd = await prisma.sector.count({ where: { empresaId } });
-  if (totalEnBd > 3 && items.length < totalEnBd * 0.75) {
-    console.error(`[sync/sectores] CANCELADO empresa=${empresaId}: ${items.length} vs ${totalEnBd}.`);
-    return res.status(409).json({ code: 'sync_inconsistente', error: 'Sectores faltantes — recarga la pagina.', enBd: totalEnBd, enCliente: items.length });
+  const existentes = ids.length
+    ? await prisma.sector.findMany({ where: { id: { in: ids } }, select: { id: true, empresaId: true } })
+    : [];
+  if (existentes.some((item) => item.empresaId !== empresaId)) {
+    return res.status(403).json({ code: 'tenant_violation', error: 'Un sector pertenece a otra empresa.' });
   }
 
   await prisma.$transaction([
-    ...(ids.length
-      ? [prisma.sector.deleteMany({ where: { empresaId, id: { notIn: ids } } })]
+    ...(deletedIds.length
+      ? [prisma.sector.deleteMany({ where: { empresaId, id: { in: deletedIds } } })]
       : []),
     ...items.map((i) =>
       prisma.sector.upsert({
@@ -57,25 +96,27 @@ router.put('/sectores', asyncHandler(async (req, res) => {
         update: { nombre: i.nombre, color: i.color ?? null, activo: i.activo ?? true },
       })
     ),
+    auditoriaSync(req, empresaId, 'sectores', items.length, deletedIds.length),
   ]);
-  res.json({ synced: items.length });
+  res.json({ synced: items.length, deleted: deletedIds.length });
 }));
 
 // ───────── Tipos ─────────
 router.put('/tipos', asyncHandler(async (req, res) => {
   const empresaId = await resolveEmpresaId(req);
-  const items: any[] = Array.isArray(req.body) ? req.body : [];
+  const { items, deletedIds } = payload(req);
+  if (idsDuplicados(items)) return res.status(400).json({ error: 'Hay IDs de tipos duplicados.' });
   const ids = items.map((i) => i.id);
-
-  const totalEnBd = await prisma.tipoActivo.count({ where: { empresaId } });
-  if (totalEnBd > 3 && items.length < totalEnBd * 0.75) {
-    console.error(`[sync/tipos] CANCELADO empresa=${empresaId}: ${items.length} vs ${totalEnBd}.`);
-    return res.status(409).json({ code: 'sync_inconsistente', error: 'Tipos faltantes — recarga la pagina.', enBd: totalEnBd, enCliente: items.length });
+  const existentes = ids.length
+    ? await prisma.tipoActivo.findMany({ where: { id: { in: ids } }, select: { id: true, empresaId: true } })
+    : [];
+  if (existentes.some((item) => item.empresaId !== empresaId)) {
+    return res.status(403).json({ code: 'tenant_violation', error: 'Un tipo de activo pertenece a otra empresa.' });
   }
 
   await prisma.$transaction([
-    ...(ids.length
-      ? [prisma.tipoActivo.deleteMany({ where: { empresaId, id: { notIn: ids } } })]
+    ...(deletedIds.length
+      ? [prisma.tipoActivo.deleteMany({ where: { empresaId, id: { in: deletedIds } } })]
       : []),
     ...items.map((i) => {
       const data = {
@@ -97,8 +138,9 @@ router.put('/tipos', asyncHandler(async (req, res) => {
         update: data,
       });
     }),
+    auditoriaSync(req, empresaId, 'tipos', items.length, deletedIds.length),
   ]);
-  res.json({ synced: items.length });
+  res.json({ synced: items.length, deleted: deletedIds.length });
 }));
 
 // ───────── Personal (ex-tecnicos) — no-op: se gestionan via /api/operadores
@@ -109,26 +151,14 @@ router.put('/tecnicos', asyncHandler(async (_req, res) => {
 // ───────── Activos ─────────
 router.put('/activos', asyncHandler(async (req, res) => {
   const empresaId = await resolveEmpresaId(req);
-  const items: any[] = Array.isArray(req.body) ? req.body : [];
+  const { items, deletedIds } = payload(req);
+  if (idsDuplicados(items)) return res.status(400).json({ error: 'Hay IDs de activos duplicados.' });
   const ids = items.map((i) => i.id);
-
-  // Defensa anti-borrado masivo: si el cliente sincroniza un array que
-  // omite mas del 25% de los activos existentes en BD, es casi seguro
-  // que es un bug del frontend (carga fallida + creacion sobre estado
-  // vacio). Cancelar el sync entero antes de perder datos del cliente.
-  // El frontend deberia mandar un flag explicito si de verdad quiere
-  // borrar muchos activos a la vez.
-  const totalEnBd = await prisma.activo.count({ where: { empresaId } });
-  if (totalEnBd > 5 && items.length < totalEnBd * 0.75) {
-    console.error(
-      `[sync/activos] CANCELADO empresa=${empresaId}: cliente envio ${items.length} activos pero la BD tiene ${totalEnBd}. Probable bug del frontend.`
-    );
-    return res.status(409).json({
-      code: 'sync_inconsistente',
-      error: 'El navegador envio menos activos de los que hay registrados. Recarga la pagina y reintenta.',
-      enBd: totalEnBd,
-      enCliente: items.length,
-    });
+  const existentes = ids.length
+    ? await prisma.activo.findMany({ where: { id: { in: ids } }, select: { id: true, empresaId: true } })
+    : [];
+  if (existentes.some((item) => item.empresaId !== empresaId)) {
+    return res.status(403).json({ code: 'tenant_violation', error: 'Un activo pertenece a otra empresa.' });
   }
 
 
@@ -159,24 +189,30 @@ router.put('/activos', asyncHandler(async (req, res) => {
       })
     : [];
   const sedesValidas = new Set(sedesExistentes.map((s) => s.id));
+  const sectorIds = items.map((i) => i.sectorId).filter((id): id is string => typeof id === 'string' && id.length > 0);
+  const tipoIds = items.map((i) => i.tipoId).filter((id): id is string => typeof id === 'string' && id.length > 0);
+  const [sectoresExistentes, tiposExistentes] = await Promise.all([
+    sectorIds.length ? prisma.sector.findMany({ where: { id: { in: sectorIds }, empresaId }, select: { id: true } }) : [],
+    tipoIds.length ? prisma.tipoActivo.findMany({ where: { id: { in: tipoIds }, empresaId }, select: { id: true } }) : [],
+  ]);
+  const sectoresValidos = new Set(sectoresExistentes.map((s) => s.id));
+  const tiposValidos = new Set(tiposExistentes.map((t) => t.id));
 
   // Filtrar activos invalidos: sin sectorId o tipoId, los descartamos para
   // que un activo malo no tire toda la transaccion (y que el frontend al
   // menos sincronice el resto).
   const itemsValidos = items.filter((i) => {
-    const sectorOk = typeof i.sectorId === 'string' && i.sectorId.trim().length > 0;
-    const tipoOk = typeof i.tipoId === 'string' && i.tipoId.trim().length > 0;
+    const sectorOk = typeof i.sectorId === 'string' && sectoresValidos.has(i.sectorId);
+    const tipoOk = typeof i.tipoId === 'string' && tiposValidos.has(i.tipoId);
     if (!sectorOk || !tipoOk) {
       console.warn('[sync/activos] descartando activo sin sectorId/tipoId:', i.id, i.codigo);
       return false;
     }
     return true;
   });
-  const idsValidos = itemsValidos.map((i) => i.id);
-
   await prisma.$transaction([
-    ...(idsValidos.length
-      ? [prisma.activo.deleteMany({ where: { empresaId, id: { notIn: idsValidos } } })]
+    ...(deletedIds.length
+      ? [prisma.activo.deleteMany({ where: { empresaId, id: { in: deletedIds } } })]
       : []),
     ...itemsValidos.map((i) => {
       const respCandidato = typeof i.responsableId === 'string' ? i.responsableId.trim() : '';
@@ -204,12 +240,29 @@ router.put('/activos', asyncHandler(async (req, res) => {
         temperaturaAlerta: toNum(i.temperaturaAlerta),
         temperaturaCritica: toNum(i.temperaturaCritica),
         amperajeNormal: toNum(i.amperajeNormal),
+        amperajeAlerta: toNum(i.amperajeAlerta),
+        amperajeCritico: toNum(i.amperajeCritico),
         presionNormal: toNum(i.presionNormal),
+        presionAlerta: toNum(i.presionAlerta),
+        presionCritica: toNum(i.presionCritica),
+        voltajeMin: toNum(i.voltajeMin),
+        voltajeMax: toNum(i.voltajeMax),
+        voltajeAlerta: toNum(i.voltajeAlerta),
+        bateriaAlerta: toNum(i.bateriaAlerta),
+        bateriaCritica: toNum(i.bateriaCritica),
+        tonerAlerta: toNum(i.tonerAlerta),
+        tonerCritico: toNum(i.tonerCritico),
         intervaloMedicionHoras: toNum(i.intervaloMedicionHoras),
         intervaloLubricacionHoras: toNum(i.intervaloLubricacionHoras),
         intervaloRodamientoHoras: toNum(i.intervaloRodamientoHoras),
         proximoMantenimiento: toDate(i.proximoMantenimiento),
         notas: i.notas ?? null,
+        visibilidadPublica: i.visibilidadPublica ?? undefined,
+        esItinerante: !!i.esItinerante,
+        locacionBase: i.locacionBase ?? null,
+        locacionActual: i.locacionActual ?? null,
+        fechaSalida: toDate(i.fechaSalida),
+        fechaRetorno: toDate(i.fechaRetorno),
       };
       return prisma.activo.upsert({
         where: { id: i.id },
@@ -217,20 +270,35 @@ router.put('/activos', asyncHandler(async (req, res) => {
         update: data,
       });
     }),
+    auditoriaSync(req, empresaId, 'activos', itemsValidos.length, deletedIds.length),
   ]);
-  res.json({ synced: itemsValidos.length, descartados: items.length - itemsValidos.length });
+  res.json({ synced: itemsValidos.length, deleted: deletedIds.length, descartados: items.length - itemsValidos.length });
 }));
 
 // ───────── Mediciones ─────────
 router.put('/mediciones', asyncHandler(async (req, res) => {
   const empresaId = await resolveEmpresaId(req);
-  const items: any[] = Array.isArray(req.body) ? req.body : [];
+  const { items, deletedIds } = payload(req);
+  if (idsDuplicados(items)) return res.status(400).json({ error: 'Hay IDs de mediciones duplicados.' });
   const ids = items.map((i) => i.id);
-
-  const totalEnBd = await prisma.medicion.count({ where: { activo: { empresaId } } });
-  if (totalEnBd > 10 && items.length < totalEnBd * 0.75) {
-    console.error(`[sync/mediciones] CANCELADO empresa=${empresaId}: ${items.length} vs ${totalEnBd}.`);
-    return res.status(409).json({ code: 'sync_inconsistente', error: 'Mediciones faltantes — recarga.', enBd: totalEnBd, enCliente: items.length });
+  const existentes = ids.length
+    ? await prisma.medicion.findMany({ where: { id: { in: ids } }, select: { id: true, activo: { select: { empresaId: true } } } })
+    : [];
+  if (existentes.some((item) => item.activo.empresaId !== empresaId)) {
+    return res.status(403).json({ code: 'tenant_violation', error: 'Una medición pertenece a otra empresa.' });
+  }
+  const existentesIds = new Set(existentes.map((item) => item.id));
+  const activoIds = [...new Set(items.map((i) => i.activoId).filter((id): id is string => typeof id === 'string'))];
+  const activosValidos = activoIds.length
+    ? await prisma.activo.findMany({
+        where: { id: { in: activoIds }, empresaId },
+        include: { tipo: { include: { categoria: { include: { parametros: true } } } } },
+      })
+    : [];
+  const activosValidosIds = new Set(activosValidos.map((item) => item.id));
+  const activosPorId = new Map(activosValidos.map((item) => [item.id, item]));
+  if (items.some((item) => !activosValidosIds.has(item.activoId))) {
+    return res.status(403).json({ code: 'tenant_violation', error: 'El activo de una medición no pertenece a esta empresa.' });
   }
 
   // Defensa: tecnicoId con ID que no es Usuario real rompe la FK y tira
@@ -245,10 +313,33 @@ router.put('/mediciones', asyncHandler(async (req, res) => {
   const tecnicosValidos = new Set(usuariosOk.map((u) => u.id));
 
   await prisma.$transaction([
-    ...(ids.length
-      ? [prisma.medicion.deleteMany({ where: { activo: { empresaId }, id: { notIn: ids } } })]
+    ...(deletedIds.length
+      ? [prisma.medicion.deleteMany({ where: { activo: { empresaId }, id: { in: deletedIds } } })]
       : []),
     ...items.map((i) => {
+      const activo = activosPorId.get(i.activoId)!;
+      const estadoCalculado = peorEstado(
+        calcularEstadoAutomatico(
+          {
+            temperatura: toNum(i.temperatura),
+            amperaje: toNum(i.amperaje),
+            presion: toNum(i.presion),
+            voltaje: toNum(i.voltaje),
+            porcentajeBateria: toNum(i.porcentajeBateria),
+            nivelToner: toNum(i.nivelToner),
+            vibracion: i.vibracion,
+          },
+          activo,
+        ),
+        calcularEstadoParametrosExtra(i.parametrosExtra, activo.tipo.categoria?.parametros ?? []),
+      );
+      const estadoAutomatico = estadoCalculado === 'urgente' || estadoCalculado === 'critico'
+        ? 'urgente'
+        : estadoCalculado === 'alerta'
+          ? 'revision'
+          : 'normal';
+      const nivelEstado: Record<string, number> = { normal: 0, revision: 1, urgente: 2 };
+      const estadoManual = ['normal', 'revision', 'urgente'].includes(i.estado) ? i.estado : 'normal';
       const data = {
         activoId: i.activoId,
         tecnicoId: typeof i.tecnicoId === 'string' && tecnicosValidos.has(i.tecnicoId) ? i.tecnicoId : null,
@@ -268,44 +359,76 @@ router.put('/mediciones', asyncHandler(async (req, res) => {
           i.parametrosExtra && typeof i.parametrosExtra === 'object' && !Array.isArray(i.parametrosExtra)
             ? i.parametrosExtra
             : undefined,
-        estado: i.estado ?? 'normal',
+        estado: nivelEstado[estadoManual] >= nivelEstado[estadoAutomatico] ? estadoManual : estadoAutomatico,
         observaciones: i.observaciones ?? null,
         origen: i.origen ?? 'manual',
       };
+      const fotos = Array.isArray(i.fotos)
+        ? i.fotos
+            .map((foto: any) => typeof foto === 'string' ? { url: foto } : foto?.url ? { url: foto.url } : null)
+            .filter(Boolean)
+        : [];
       return prisma.medicion.upsert({
         where: { id: i.id },
-        create: { id: i.id, ...data },
+        create: {
+          id: i.id,
+          ...data,
+          ...(!existentesIds.has(i.id) && fotos.length ? { fotos: { create: fotos } } : {}),
+        } as any,
         update: data,
       });
     }),
+    auditoriaSync(req, empresaId, 'mediciones', items.length, deletedIds.length),
   ]);
-  res.json({ synced: items.length });
+  res.json({ synced: items.length, deleted: deletedIds.length });
 }));
 
 // ───────── Tareas ─────────
 router.put('/tareas', asyncHandler(async (req, res) => {
   const empresaId = await resolveEmpresaId(req);
-  const items: any[] = Array.isArray(req.body) ? req.body : [];
+  const { items, deletedIds } = payload(req);
+  if (idsDuplicados(items)) return res.status(400).json({ error: 'Hay IDs de tareas duplicados.' });
   const ids = items.map((i) => i.id);
-
-  const totalEnBd = await prisma.tareaMantenimiento.count({ where: { activo: { empresaId } } });
-  if (totalEnBd > 5 && items.length < totalEnBd * 0.75) {
-    console.error(`[sync/tareas] CANCELADO empresa=${empresaId}: ${items.length} vs ${totalEnBd}.`);
-    return res.status(409).json({ code: 'sync_inconsistente', error: 'Tareas faltantes — recarga.', enBd: totalEnBd, enCliente: items.length });
+  const existentes = ids.length
+    ? await prisma.tareaMantenimiento.findMany({ where: { id: { in: ids } }, select: { id: true, activo: { select: { empresaId: true } } } })
+    : [];
+  if (existentes.some((item) => item.activo.empresaId !== empresaId)) {
+    return res.status(403).json({ code: 'tenant_violation', error: 'Una tarea pertenece a otra empresa.' });
   }
+  const activoIds = [...new Set(items.map((i) => i.activoId).filter((id): id is string => typeof id === 'string'))];
+  const activosValidos = activoIds.length
+    ? await prisma.activo.findMany({ where: { id: { in: activoIds }, empresaId }, select: { id: true } })
+    : [];
+  const activosValidosIds = new Set(activosValidos.map((item) => item.id));
+  if (items.some((item) => !activosValidosIds.has(item.activoId))) {
+    return res.status(403).json({ code: 'tenant_violation', error: 'El activo de una tarea no pertenece a esta empresa.' });
+  }
+  const responsableIds = [...new Set(items.map((i) => i.responsableId).filter((id): id is string => typeof id === 'string' && id.length > 0))];
+  const responsablesValidos = responsableIds.length
+    ? await prisma.usuario.findMany({ where: { id: { in: responsableIds }, empresaId, activo: true }, select: { id: true } })
+    : [];
+  const responsablesValidosIds = new Set(responsablesValidos.map((item) => item.id));
   await prisma.$transaction([
-    ...(ids.length
-      ? [prisma.tareaMantenimiento.deleteMany({ where: { activo: { empresaId }, id: { notIn: ids } } })]
+    ...(deletedIds.length
+      ? [prisma.tareaMantenimiento.deleteMany({ where: { activo: { empresaId }, id: { in: deletedIds } } })]
       : []),
     ...items.map((i) => {
       const data = {
         activoId: i.activoId,
-        responsableId: i.responsableId ?? null,
+        responsableId: typeof i.responsableId === 'string' && responsablesValidosIds.has(i.responsableId)
+          ? i.responsableId
+          : null,
         tipo: i.tipo,
         fechaProgramada: toDate(i.fechaProgramada) ?? new Date(),
         fechaRealizada: toDate(i.fechaRealizada),
         estado: i.estado ?? 'pendiente',
         observaciones: i.observaciones ?? null,
+        prioridad: i.prioridad ?? 'media',
+        numero: toNum(i.numero),
+        materiales: i.materiales ?? null,
+        horasTrabajo: toNum(i.horasTrabajo),
+        cerradaPor: i.cerradaPor ?? null,
+        fotos: i.fotos ?? undefined,
       };
       return prisma.tareaMantenimiento.upsert({
         where: { id: i.id },
@@ -313,8 +436,9 @@ router.put('/tareas', asyncHandler(async (req, res) => {
         update: data,
       });
     }),
+    auditoriaSync(req, empresaId, 'tareas', items.length, deletedIds.length),
   ]);
-  res.json({ synced: items.length });
+  res.json({ synced: items.length, deleted: deletedIds.length });
 }));
 
 export default router;

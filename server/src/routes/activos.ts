@@ -174,7 +174,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // POST /api/activos
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', requireAdmin as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
     const data = pickActivoData(req.body);
@@ -237,7 +237,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // PUT /api/activos/:id
-router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.put('/:id', requireAdmin as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
     const existing = await prisma.activo.findFirst({
@@ -300,7 +300,7 @@ const FOTO_MAX_CHARS = 400_000; // ~300KB binario en base64
 const FOTO_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
 
 // POST /api/activos/:id/foto
-router.post('/:id/foto', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/:id/foto', requireAdmin as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
     const existing = await prisma.activo.findFirst({
@@ -333,7 +333,7 @@ router.post('/:id/foto', async (req: Request, res: Response, next: NextFunction)
 });
 
 // DELETE /api/activos/:id/foto
-router.delete('/:id/foto', async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id/foto', requireAdmin as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
     const existing = await prisma.activo.findFirst({

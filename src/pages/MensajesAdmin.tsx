@@ -25,7 +25,9 @@ export const MensajesAdmin: React.FC = () => {
         })
       );
       setPermisos(Object.fromEntries(entries));
-    } catch {}
+    } catch {
+      // La pantalla conserva el último estado visible y permite reintentar.
+    }
     finally { setCargando(false); }
   }, []);
 

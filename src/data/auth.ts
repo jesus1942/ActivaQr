@@ -3,6 +3,8 @@
  * Cliente de autenticación del frontend.
  * Guarda el token JWT en sessionStorage: la sesión se cierra al matar la app.
  */
+import { encolarOperacion } from './offlineQueue';
+
 export const API_URL: string | undefined = import.meta.env.VITE_API_URL;
 
 const TOKEN_KEY = 'activaqr_token';
@@ -199,7 +201,6 @@ export async function apiPutOffline<T = unknown>(path: string, body: unknown): P
 }
 
 async function apiEnvioConCola<T = unknown>(path: string, method: 'POST' | 'PUT' | 'PATCH', body: unknown): Promise<ResultadoPostOffline<T>> {
-  const { encolarOperacion } = await import('./offlineQueue');
   try {
     const res = await apiFetch(path, { method, body: JSON.stringify(body) });
     if (!res.ok) {

@@ -283,8 +283,13 @@ router.post(
       if (!activoId || !tipo || !fechaProgramada) {
         return res.status(400).json({ error: 'activoId, tipo y fechaProgramada son obligatorios.' });
       }
+      const activo = await prisma.activo.findFirst({
+        where: { id: activoId, empresaId: req.params.id },
+        select: { id: true },
+      });
+      if (!activo) return res.status(404).json({ error: 'Activo no encontrado en la empresa autorizada.' });
       const tarea = await prisma.tareaMantenimiento.create({
-        data: { activoId, tipo, fechaProgramada: new Date(fechaProgramada), observaciones, estado: 'pendiente' },
+        data: { activoId: activo.id, tipo, fechaProgramada: new Date(fechaProgramada), observaciones, estado: 'pendiente' },
       });
       void registrarAuditoria({
         empresaId: req.params.id,

@@ -6,7 +6,7 @@
  * Jerarquía: urgente > critico > alerta > normal
  */
 
-type NivelAlerta = 'normal' | 'alerta' | 'critico' | 'urgente';
+export type NivelAlerta = 'normal' | 'alerta' | 'critico' | 'urgente';
 
 const NIVEL: Record<NivelAlerta, number> = {
   normal: 0, alerta: 1, critico: 2, urgente: 3,
@@ -14,6 +14,52 @@ const NIVEL: Record<NivelAlerta, number> = {
 
 function peor(a: NivelAlerta, b: NivelAlerta): NivelAlerta {
   return NIVEL[a] >= NIVEL[b] ? a : b;
+}
+
+export function peorEstado(a: NivelAlerta, b: NivelAlerta): NivelAlerta {
+  return peor(a, b);
+}
+
+export interface ParametroConUmbrales {
+  clave: string;
+  tipo: 'numerico' | 'porcentaje' | 'booleano' | 'texto' | 'seleccion';
+  umbralAlerta?: number | null;
+  umbralCritico?: number | null;
+  umbralUrgente?: number | null;
+  minNormal?: number | null;
+  maxNormal?: number | null;
+  invertido?: boolean;
+}
+
+/** Evalúa parámetros configurables de una categoría (pH, cloro, RPM, etc.). */
+export function calcularEstadoParametrosExtra(
+  valores: Record<string, unknown> | null | undefined,
+  parametros: ParametroConUmbrales[],
+): NivelAlerta {
+  if (!valores) return 'normal';
+  let estado: NivelAlerta = 'normal';
+
+  for (const parametro of parametros) {
+    if (parametro.tipo !== 'numerico' && parametro.tipo !== 'porcentaje') continue;
+    const valor = Number(valores[parametro.clave]);
+    if (!Number.isFinite(valor)) continue;
+
+    let actual: NivelAlerta = 'normal';
+    if (parametro.invertido) {
+      if (parametro.umbralUrgente != null && valor <= parametro.umbralUrgente) actual = 'urgente';
+      else if (parametro.umbralCritico != null && valor <= parametro.umbralCritico) actual = 'critico';
+      else if (parametro.umbralAlerta != null && valor <= parametro.umbralAlerta) actual = 'alerta';
+      else if (parametro.minNormal != null && valor < parametro.minNormal) actual = 'alerta';
+    } else {
+      if (parametro.umbralUrgente != null && valor >= parametro.umbralUrgente) actual = 'urgente';
+      else if (parametro.umbralCritico != null && valor >= parametro.umbralCritico) actual = 'critico';
+      else if (parametro.umbralAlerta != null && valor >= parametro.umbralAlerta) actual = 'alerta';
+      else if (parametro.maxNormal != null && valor > parametro.maxNormal) actual = 'alerta';
+      else if (parametro.minNormal != null && valor < parametro.minNormal) actual = 'alerta';
+    }
+    estado = peor(estado, actual);
+  }
+  return estado;
 }
 
 /** Evalúa un valor numérico contra umbrales (menor = peor, ej: batería, tóner). */

@@ -67,7 +67,7 @@ export const Login: React.FC = () => {
   // Si llega con ?demo=1 limpiar sesión previa sin recargar la página
   React.useEffect(() => {
     if (isDemo) clearSession();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotExito, setForgotExito] = useState(false);
   const [forgotError, setForgotError] = useState<string | null>(null);

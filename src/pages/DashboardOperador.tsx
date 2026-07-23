@@ -93,16 +93,19 @@ const PRIORIDAD_BADGE: Record<string, string> = {
 const VIBRACION_OPTS: FormMedicion['vibracion'][] = ['ninguna', 'leve', 'moderada', 'alta'];
 const inputCls = 'w-full border border-line px-3 h-12 text-base outline-none focus:border-brand-600 bg-surface';
 const labelCls = 'block text-xs font-black uppercase tracking-wider text-muted mb-1';
+const CACHE_OPERADOR = 'activaqr-operador-cache-v1';
 
 type Vista = 'activos' | 'tareas' | 'medicion' | 'cerrar_ot';
 
 export const DashboardOperador: React.FC = () => {
   const { usuario, logout } = useAuth();
+  const cacheKey = `${CACHE_OPERADOR}:${usuario?.empresaId ?? 'sin-empresa'}:${usuario?.id ?? 'sin-usuario'}`;
   const [vista, setVista] = useState<Vista>('activos');
   const [activos, setActivos] = useState<Activo[]>([]);
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [datosOffline, setDatosOffline] = useState(false);
   const [scannerAbierto, setScannerAbierto] = useState(false);
 
   const [activoSeleccionado, setActivoSeleccionado] = useState<Activo | null>(null);
@@ -120,6 +123,7 @@ export const DashboardOperador: React.FC = () => {
   const cargarDatos = useCallback(async () => {
     setCargando(true);
     setError(null);
+    setDatosOffline(false);
     try {
       const [rActivos, rTareas] = await Promise.all([
         apiFetch('activos').then(r => r.json()),
@@ -127,12 +131,28 @@ export const DashboardOperador: React.FC = () => {
       ]);
       if (Array.isArray(rActivos)) setActivos(rActivos);
       if (Array.isArray(rTareas)) setTareas(rTareas.filter((t: Tarea) => t.estado !== 'completado'));
+      localStorage.setItem(cacheKey, JSON.stringify({
+        activos: Array.isArray(rActivos) ? rActivos : [],
+        tareas: Array.isArray(rTareas) ? rTareas : [],
+        guardadoEn: new Date().toISOString(),
+      }));
     } catch (e) {
-      setError('Error al cargar datos. Revisá tu conexión.');
+      try {
+        const cache = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+        if (Array.isArray(cache?.activos) && Array.isArray(cache?.tareas)) {
+          setActivos(cache.activos);
+          setTareas(cache.tareas.filter((t: Tarea) => t.estado !== 'completado'));
+          setDatosOffline(true);
+        } else {
+          setError('Error al cargar datos. Revisá tu conexión.');
+        }
+      } catch {
+        setError('Error al cargar datos. Revisá tu conexión.');
+      }
     } finally {
       setCargando(false);
     }
-  }, []);
+  }, [cacheKey]);
 
   useEffect(() => { cargarDatos(); }, [cargarDatos]);
 
@@ -481,6 +501,12 @@ export const DashboardOperador: React.FC = () => {
       </div>
 
       <div className="px-4 py-5 max-w-lg mx-auto space-y-4">
+        {datosOffline && (
+          <div className="border border-warn bg-warn/10 px-4 py-3 text-sm font-semibold text-warn-strong dark:text-warn flex items-center gap-2">
+            <CloudOff size={16} />
+            Trabajando con la última ronda descargada. Los nuevos registros quedarán en cola.
+          </div>
+        )}
 
         {/* Botón QR scanner — solo en pestaña activos */}
         {vista === 'activos' && (

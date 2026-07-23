@@ -1,6 +1,6 @@
 // v1.1.0
 import { HashRouter as BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -8,35 +8,36 @@ function ScrollToTop() {
   return null;
 }
 import { Layout } from './components/layout/Layout';
-import { Dashboard } from './pages/Dashboard';
-import { Indicadores } from './pages/Indicadores';
-import { Auditoria } from './pages/Auditoria';
-import { Activos } from './pages/Activos';
-import { ActivoDetalle } from './pages/ActivoDetalle';
-import { Medicion } from './pages/Medicion';
-import { Mantenimiento } from './pages/Mantenimiento';
-import { Reportes } from './pages/Reportes';
-import { ImportarDatos } from './pages/ImportarDatos';
-import { GestionQR } from './pages/GestionQR';
-import { Configuracion } from './pages/Configuracion';
-import { Mensajes } from './pages/Mensajes';
-import { MensajesAdmin } from './pages/MensajesAdmin';
-import { AdminTestimonios } from './pages/AdminTestimonios';
-import { Admin } from './pages/Admin';
-import { Analitica } from './pages/Analitica';
 import { Login } from './pages/Login';
-import { FichaPublica } from './pages/FichaPublica';
-import { AprobarAccesoRemoto } from './pages/AprobarAccesoRemoto';
-import { ResetPassword } from './pages/ResetPassword';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './components/ui/Toast';
-import { DashboardOperador } from './pages/DashboardOperador';
 import { PantallaTrialVencido, SeccionTracker } from './components/TrialUI';
 import { PantallaAceptarPoliticas } from './components/PantallaAceptarPoliticas';
 import { SplashScreen } from './components/SplashScreen';
 import { ErrorBoundary, RutaProtegida } from './components/ErrorBoundary';
 import { useState, useCallback } from 'react';
+
+const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })));
+const Indicadores = lazy(() => import('./pages/Indicadores').then((m) => ({ default: m.Indicadores })));
+const Auditoria = lazy(() => import('./pages/Auditoria').then((m) => ({ default: m.Auditoria })));
+const Activos = lazy(() => import('./pages/Activos').then((m) => ({ default: m.Activos })));
+const ActivoDetalle = lazy(() => import('./pages/ActivoDetalle').then((m) => ({ default: m.ActivoDetalle })));
+const Medicion = lazy(() => import('./pages/Medicion').then((m) => ({ default: m.Medicion })));
+const Mantenimiento = lazy(() => import('./pages/Mantenimiento').then((m) => ({ default: m.Mantenimiento })));
+const Reportes = lazy(() => import('./pages/Reportes').then((m) => ({ default: m.Reportes })));
+const ImportarDatos = lazy(() => import('./pages/ImportarDatos').then((m) => ({ default: m.ImportarDatos })));
+const GestionQR = lazy(() => import('./pages/GestionQR').then((m) => ({ default: m.GestionQR })));
+const Configuracion = lazy(() => import('./pages/Configuracion').then((m) => ({ default: m.Configuracion })));
+const Mensajes = lazy(() => import('./pages/Mensajes').then((m) => ({ default: m.Mensajes })));
+const MensajesAdmin = lazy(() => import('./pages/MensajesAdmin').then((m) => ({ default: m.MensajesAdmin })));
+const AdminTestimonios = lazy(() => import('./pages/AdminTestimonios').then((m) => ({ default: m.AdminTestimonios })));
+const Admin = lazy(() => import('./pages/Admin').then((m) => ({ default: m.Admin })));
+const Analitica = lazy(() => import('./pages/Analitica').then((m) => ({ default: m.Analitica })));
+const FichaPublica = lazy(() => import('./pages/FichaPublica').then((m) => ({ default: m.FichaPublica })));
+const AprobarAccesoRemoto = lazy(() => import('./pages/AprobarAccesoRemoto').then((m) => ({ default: m.AprobarAccesoRemoto })));
+const ResetPassword = lazy(() => import('./pages/ResetPassword').then((m) => ({ default: m.ResetPassword })));
+const DashboardOperador = lazy(() => import('./pages/DashboardOperador').then((m) => ({ default: m.DashboardOperador })));
 
 const SPLASH_KEY = 'aqr_splash_shown';
 
@@ -152,12 +153,14 @@ function AppInterna() {
         <AuthProvider>
         <BrowserRouter>
           <ScrollToTop />
-          <Routes>
-            <Route path="/ficha/:id" element={<RutaProtegida scope="Ficha publica"><FichaPublica /></RutaProtegida>} />
-            <Route path="/acceso-remoto/aprobar/:token" element={<RutaProtegida scope="Aprobacion de acceso remoto"><AprobarAccesoRemoto /></RutaProtegida>} />
-            <Route path="/reset-password" element={<RutaProtegida scope="Reset de contrasena"><ResetPassword /></RutaProtegida>} />
-            <Route path="/*" element={<AuthedApp />} />
-          </Routes>
+          <Suspense fallback={<div className="min-h-screen bg-slate-950" aria-label="Cargando" />}>
+            <Routes>
+              <Route path="/ficha/:id" element={<RutaProtegida scope="Ficha publica"><FichaPublica /></RutaProtegida>} />
+              <Route path="/acceso-remoto/aprobar/:token" element={<RutaProtegida scope="Aprobacion de acceso remoto"><AprobarAccesoRemoto /></RutaProtegida>} />
+              <Route path="/reset-password" element={<RutaProtegida scope="Reset de contrasena"><ResetPassword /></RutaProtegida>} />
+              <Route path="/*" element={<AuthedApp />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
         </AuthProvider>
        </ToastProvider>

@@ -61,6 +61,33 @@ function calcularEstado(form: Record<string, string>, activo: Activo): NivelAler
   return e;
 }
 
+function calcularEstadoExtra(
+  valores: Record<string, string | number | boolean>,
+  parametros: ParametroCategoria[],
+): NivelAlerta {
+  let e: NivelAlerta = 'normal';
+  for (const param of parametros) {
+    if (param.tipo !== 'numerico' && param.tipo !== 'porcentaje') continue;
+    const valor = Number(valores[param.clave]);
+    if (!Number.isFinite(valor)) continue;
+    let actual: NivelAlerta = 'normal';
+    if (param.invertido) {
+      if (param.umbralUrgente != null && valor <= param.umbralUrgente) actual = 'urgente';
+      else if (param.umbralCritico != null && valor <= param.umbralCritico) actual = 'critico';
+      else if (param.umbralAlerta != null && valor <= param.umbralAlerta) actual = 'alerta';
+      else if (param.minNormal != null && valor < param.minNormal) actual = 'alerta';
+    } else {
+      if (param.umbralUrgente != null && valor >= param.umbralUrgente) actual = 'urgente';
+      else if (param.umbralCritico != null && valor >= param.umbralCritico) actual = 'critico';
+      else if (param.umbralAlerta != null && valor >= param.umbralAlerta) actual = 'alerta';
+      else if (param.maxNormal != null && valor > param.maxNormal) actual = 'alerta';
+      else if (param.minNormal != null && valor < param.minNormal) actual = 'alerta';
+    }
+    e = peor(e, actual);
+  }
+  return e;
+}
+
 // Barra de progreso con color según posición en el rango.
 function BarraUmbral({ valor, min, alerta, critico, max, invertido = false }: {
   valor: string; min?: number | null; alerta?: number | null;
@@ -290,15 +317,21 @@ export const Medicion: React.FC = () => {
 
   // Estado calculado automáticamente en tiempo real.
   const estadoAuto = useMemo(
-    () => activo ? calcularEstado(form, activo) : 'normal',
-    [form, activo],
+    () => activo
+      ? peor(calcularEstado(form, activo), calcularEstadoExtra(parametrosExtra, categoria?.parametros ?? []))
+      : 'normal',
+    [form, activo, parametrosExtra, categoria?.parametros],
   );
 
   // El estado manual solo se muestra si supera al automático.
   const tieneUmbrales = activo && (
     activo.temperaturaAlerta != null || activo.temperaturaCritica != null ||
     (activo as any).amperajeAlerta != null || (activo as any).presionAlerta != null ||
-    (activo as any).bateriaAlerta != null || (activo as any).tonerAlerta != null
+    (activo as any).bateriaAlerta != null || (activo as any).tonerAlerta != null ||
+    (categoria?.parametros ?? []).some((p) =>
+      p.umbralAlerta != null || p.umbralCritico != null || p.umbralUrgente != null ||
+      p.minNormal != null || p.maxNormal != null
+    )
   );
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -328,6 +361,7 @@ export const Medicion: React.FC = () => {
       observaciones: form.observaciones,
       tecnicoId: form.tecnicoId,
       ...(Object.keys(parametrosExtra).length > 0 ? { parametrosExtra } : {}),
+      ...(fotos.length > 0 ? { fotos } : {}),
     };
     addMedicion(newMedicion);
 

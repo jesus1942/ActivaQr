@@ -50,6 +50,12 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globIgnores: [
+          '**/jspdf*.js',
+          '**/html2canvas*.js',
+          '**/generateCategoricalChart*.js',
+          '**/purify*.js',
+        ],
         importScripts: ['push-sw.js'],
         runtimeCaching: [
           {

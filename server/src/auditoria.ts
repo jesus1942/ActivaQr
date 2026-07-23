@@ -1,6 +1,8 @@
 /**
  * Registro de auditoría — trazabilidad de acciones sobre entidades.
- * Fire-and-forget: nunca debe romper la operación principal si falla.
+ * La sincronización masiva escribe auditoría dentro de su transacción.
+ * Para operaciones individuales este helper no rompe la operación, pero
+ * deja un error explícito y estructurado para monitoreo.
  */
 import { prisma } from './prisma';
 import { AuthRequest } from './auth';
@@ -37,8 +39,15 @@ export async function registrarAuditoria(params: {
         detalle: params.detalle ?? null,
       },
     });
-  } catch {
-    // silencioso: la auditoría nunca debe interrumpir el flujo principal
+  } catch (error) {
+    console.error('[AUDITORIA_ERROR]', JSON.stringify({
+      empresaId: params.empresaId ?? null,
+      usuarioId: params.usuarioId ?? null,
+      accion: params.accion,
+      entidad: params.entidad,
+      entidadId: params.entidadId ?? null,
+      error: error instanceof Error ? error.message : String(error),
+    }));
   }
 }
 

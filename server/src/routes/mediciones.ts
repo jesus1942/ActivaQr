@@ -1,7 +1,12 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../prisma';
 import { resolveEmpresaId } from '../tenant';
-import { calcularEstadoAutomatico, estadoMedicionAActivo } from '../alertas';
+import {
+  calcularEstadoAutomatico,
+  calcularEstadoParametrosExtra,
+  estadoMedicionAActivo,
+  peorEstado,
+} from '../alertas';
 import { enviarPushAEmpresa } from '../push';
 import { auditar } from '../auditoria';
 import { AuthRequest, requireAdmin } from '../auth';
@@ -53,6 +58,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       observaciones,
       origen,
       fotos,
+      parametrosExtra,
     } = req.body ?? {};
 
     if (!activoId || typeof activoId !== 'string') {
@@ -61,22 +67,46 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
     const activo = await prisma.activo.findFirst({
       where: { id: activoId, empresaId },
+      include: {
+        tipo: {
+          include: {
+            categoria: { include: { parametros: true } },
+          },
+        },
+      },
     });
     if (!activo) return res.status(404).json({ error: 'Activo no encontrado' });
+    const tecnicoValido = typeof tecnicoId === 'string' && tecnicoId
+      ? await prisma.usuario.findFirst({ where: { id: tecnicoId, empresaId, activo: true }, select: { id: true } })
+      : null;
 
     // Calcular estado automático a partir de umbrales del activo.
     // Si el técnico no envió estado (o envió 'normal'), lo calculamos.
     // Si envió 'urgente'/'critico', respetamos su criterio visual.
-    const estadoCalculado = calcularEstadoAutomatico(
-      { temperatura, amperaje, presion, voltaje, porcentajeBateria, nivelToner, vibracion },
-      activo,
+    const estadoCalculado = peorEstado(
+      calcularEstadoAutomatico(
+        { temperatura, amperaje, presion, voltaje, porcentajeBateria, nivelToner, vibracion },
+        activo,
+      ),
+      calcularEstadoParametrosExtra(
+        parametrosExtra && typeof parametrosExtra === 'object' && !Array.isArray(parametrosExtra)
+          ? parametrosExtra
+          : null,
+        activo.tipo.categoria?.parametros ?? [],
+      ),
     );
     // El estado final es el peor entre el calculado y el enviado por el técnico.
-    const nivelManual: Record<string, number> = { normal: 0, revision: 1, alerta: 1, critico: 2, urgente: 3 };
-    const nivelCalc: Record<string, number> = { normal: 0, alerta: 1, critico: 2, urgente: 3 };
-    const estadoFinal = (nivelManual[estado ?? 'normal'] ?? 0) >= (nivelCalc[estadoCalculado] ?? 0)
-      ? (estado ?? 'normal')
-      : estadoCalculado;
+    const estadoAutomaticoPersistible: 'normal' | 'revision' | 'urgente' =
+      estadoCalculado === 'urgente' || estadoCalculado === 'critico'
+        ? 'urgente'
+        : estadoCalculado === 'alerta'
+          ? 'revision'
+          : 'normal';
+    const nivelPersistible: Record<string, number> = { normal: 0, revision: 1, urgente: 2 };
+    const estadoManual = ['normal', 'revision', 'urgente'].includes(estado) ? estado : 'normal';
+    const estadoFinal = nivelPersistible[estadoManual] >= nivelPersistible[estadoAutomaticoPersistible]
+      ? estadoManual
+      : estadoAutomaticoPersistible;
 
     // Fotos: aceptamos string (solo URL) o objeto con evidencia forense
     // (capturedLat, capturedLng, capturedAt, deviceModel, fuenteUbicacion).
@@ -109,7 +139,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     const medicion = await prisma.medicion.create({
       data: {
         activoId,
-        tecnicoId,
+        tecnicoId: tecnicoValido?.id ?? null,
         fecha: fecha ? new Date(fecha) : undefined,
         temperatura,
         amperaje,
@@ -123,6 +153,10 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         estado: estadoFinal as any,
         observaciones,
         origen,
+        parametrosExtra:
+          parametrosExtra && typeof parametrosExtra === 'object' && !Array.isArray(parametrosExtra)
+            ? parametrosExtra
+            : undefined,
         ...(fotosCreate ? { fotos: fotosCreate } : {}),
       },
       include: { tecnico: { select: { id: true, nombre: true, cargo: true } }, fotos: true },

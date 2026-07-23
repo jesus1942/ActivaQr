@@ -7,8 +7,9 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
+    "test": "node --import tsx --test src/*.test.ts",
     "start": "node dist/index.js",
-    "start:railway": "tsx prisma/clearOldForeignKeys.ts ; prisma db push --accept-data-loss && tsx prisma/seed.ts && tsx prisma/ensureAdmin.ts && tsx src/index.ts",
+    "start:railway": "node dist/prisma/bootstrapMigrations.js && node dist/prisma/seed.js && node dist/prisma/ensureAdmin.js && node dist/src/index.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
@@ -23,23 +24,23 @@
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.21.2",
+    "express": "^4.22.2",
     "express-rate-limit": "^8.5.2",
     "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.2",
     "resend": "^6.12.4",
     "stripe": "^22.2.0",
-    "tsx": "^4.19.2",
     "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
-    "@types/express": "^4.17.21",
+    "@types/express": "^4.17.25",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.10.5",
     "@types/web-push": "^3.6.4",
     "prisma": "^5.22.0",
+    "tsx": "^4.23.1",
     "typescript": "^5.7.3"
   }
 }

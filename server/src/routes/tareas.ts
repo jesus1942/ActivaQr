@@ -68,12 +68,15 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       where: { id: activoId, empresaId },
     });
     if (!activo) return res.status(404).json({ error: 'Activo no encontrado' });
+    const responsableValido = typeof responsableId === 'string' && responsableId
+      ? await prisma.usuario.findFirst({ where: { id: responsableId, empresaId, activo: true }, select: { id: true } })
+      : null;
 
     const numero = await proximoNumeroOT(empresaId);
     const tarea = await prisma.tareaMantenimiento.create({
       data: {
         activoId,
-        responsableId,
+        responsableId: responsableValido?.id ?? null,
         numero,
         tipo,
         prioridad: ['baja', 'media', 'alta'].includes(prioridad) ? prioridad : 'media',
@@ -117,6 +120,12 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
     } = req.body ?? {};
 
     const data: any = { responsableId, tipo, estado, observaciones, materiales };
+    if (responsableId !== undefined) {
+      const responsableValido = typeof responsableId === 'string' && responsableId
+        ? await prisma.usuario.findFirst({ where: { id: responsableId, empresaId, activo: true }, select: { id: true } })
+        : null;
+      data.responsableId = responsableValido?.id ?? null;
+    }
     if (['baja', 'media', 'alta'].includes(prioridad)) data.prioridad = prioridad;
     if (typeof horasTrabajo === 'number') data.horasTrabajo = horasTrabajo;
     if (Array.isArray(fotos)) data.fotos = fotos;

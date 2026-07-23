@@ -161,7 +161,6 @@ export const Activos: React.FC = () => {
       if (target) openEdit(target);
       navigate(location.pathname, { replace: true, state: null });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
   const handleSubmit = (e: React.FormEvent) => {

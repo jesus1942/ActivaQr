@@ -6,8 +6,8 @@
  * - Si no → persiste en localStorage (modo demo / offline).
  *
  * El frontend siempre trabaja con arrays planos. En modo remoto, las
- * lecturas traen la lista por GET y las escrituras envían el array
- * completo a /sync/<entidad> (upsert + borrado de los que ya no están).
+ * lecturas traen la lista por GET y las escrituras calculan cambios
+ * explícitos. El backend nunca interpreta una omisión como un borrado.
  */
 import {
   Activo,
@@ -71,23 +71,54 @@ function write<T>(key: string, value: T): void {
 // y al primer cambio del usuario el sync borra TODO en backend. Pasa la
 // excepcion para que useStorage decida (no marcar cargado=true, mostrar
 // banner, bloquear sync).
+const snapshots = new Map<string, unknown[]>();
+const syncQueues = new Map<string, Promise<void>>();
+
+function cloneItems<T>(items: T[]): T[] {
+  return typeof structuredClone === 'function'
+    ? structuredClone(items)
+    : JSON.parse(JSON.stringify(items));
+}
+
 async function apiGet<T>(path: string): Promise<T[]> {
   const res = await fetch(`${API_URL}/${path}`, { headers: { ...authHeaders() } });
   if (!res.ok) throw new Error(`GET ${path} → ${res.status}`);
-  return (await res.json()) as T[];
+  const items = (await res.json()) as T[];
+  snapshots.set(path, cloneItems(items));
+  return items;
 }
 
 async function apiSync<T>(entidad: string, data: T[]): Promise<void> {
-  try {
+  const anterior = syncQueues.get(entidad) ?? Promise.resolve();
+  const siguiente = anterior.catch(() => undefined).then(async () => {
+    const prev = snapshots.get(entidad) ?? [];
+    const prevById = new Map(prev.map((item: any) => [item.id, item]));
+    const nextById = new Map((data as any[]).map((item) => [item.id, item]));
+    const items = (data as any[]).filter((item) => {
+      const old = prevById.get(item.id);
+      return !old || JSON.stringify(old) !== JSON.stringify(item);
+    });
+    const deletedIds = prev
+      .map((item: any) => item.id)
+      .filter((id) => typeof id === 'string' && !nextById.has(id));
+
+    if (items.length === 0 && deletedIds.length === 0) return;
+
     const res = await fetch(`${API_URL}/sync/${entidad}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ items, deletedIds }),
     });
-    if (!res.ok) throw new Error(`SYNC ${entidad} → ${res.status}`);
-  } catch (e) {
-    console.error('Error sincronizando con la API:', e);
-  }
+    if (!res.ok) {
+      const detalle = await res.json().catch(() => null);
+      throw new Error(detalle?.error || `SYNC ${entidad} → ${res.status}`);
+    }
+    snapshots.set(entidad, cloneItems(data));
+  });
+  syncQueues.set(entidad, siguiente);
+  return siguiente.finally(() => {
+    if (syncQueues.get(entidad) === siguiente) syncQueues.delete(entidad);
+  });
 }
 
 // La API devuelve los activos con objetos anidados (sector, tipo, etc.).
@@ -119,7 +150,11 @@ export function ensureSeed(): void {
 // ─────────────────────────────────────────────────────────────
 
 export async function getActivos(): Promise<Activo[]> {
-  if (useRemote) return (await apiGet<any>('activos')).map(flattenActivo);
+  if (useRemote) {
+    const activos = (await apiGet<any>('activos')).map(flattenActivo);
+    snapshots.set('activos', cloneItems(activos));
+    return activos;
+  }
   return read(KEYS.activos, seedActivos);
 }
 

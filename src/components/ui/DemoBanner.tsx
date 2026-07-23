@@ -44,7 +44,7 @@ export const DemoBanner: React.FC = () => {
   if (!usuario || usuario.email !== 'demo@activaqr.com') return null;
 
   return (
-    <div className="w-full border-b-2 border-black bg-slate-900 text-white flex items-center justify-between px-4 py-2 text-sm font-medium">
+    <div className="fixed inset-x-0 top-0 z-[70] min-h-9 border-b border-brand-500/40 bg-slate-950/95 text-white backdrop-blur flex items-center justify-between gap-3 px-3 md:px-4 py-2 text-xs md:text-sm font-medium">
       <span style={{ color: '#f97316' }}>
         {expirado
           ? 'Sesion expirada'
@@ -55,7 +55,7 @@ export const DemoBanner: React.FC = () => {
       {expirado && (
         <button
           onClick={logout}
-          className="ml-4 border border-brand-600 text-brand-400 px-3 py-0.5 text-xs font-bold hover:bg-brand-600 hover:text-white transition-colors"
+          className="flex-shrink-0 border border-brand-600 text-brand-400 px-3 py-0.5 text-xs font-bold hover:bg-brand-600 hover:text-white transition-colors"
         >
           Cerrar sesion
         </button>

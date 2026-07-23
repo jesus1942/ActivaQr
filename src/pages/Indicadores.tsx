@@ -38,16 +38,7 @@ export const Indicadores: React.FC = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { usuario } = useAuth();
-
-  if (!hasFeature(usuario?.empresa?.plan, 'indicadores')) {
-    return (
-      <FeatureLock
-        feature="indicadores"
-        titulo="Indicadores"
-        descripcion="Disponibilidad, cumplimiento de tareas, equipos con más fallas y tendencias. Una vista de control mensual para tomar decisiones sobre tu mantenimiento."
-      />
-    );
-  }
+  const tieneAcceso = hasFeature(usuario?.empresa?.plan, 'indicadores');
 
   const generarInforme = () => {
     if (!kpis) return;
@@ -60,8 +51,19 @@ export const Indicadores: React.FC = () => {
   };
 
   useEffect(() => {
+    if (!tieneAcceso) return;
     getKpis().then(setKpis).catch((e) => setError(e.message));
-  }, []);
+  }, [tieneAcceso]);
+
+  if (!tieneAcceso) {
+    return (
+      <FeatureLock
+        feature="indicadores"
+        titulo="Indicadores"
+        descripcion="Disponibilidad, cumplimiento de tareas, equipos con más fallas y tendencias. Una vista de control mensual para tomar decisiones sobre tu mantenimiento."
+      />
+    );
+  }
 
   if (error) return <p className="text-danger font-bold">{error}</p>;
   if (!kpis) return <p className="text-muted">Cargando indicadores...</p>;

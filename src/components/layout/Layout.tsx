@@ -9,14 +9,17 @@ import { DemoBanner } from '../ui/DemoBanner';
 import { SyncBadge } from '../ui/SyncBadge';
 import { TrialBanner } from '../TrialUI';
 import { AuroraBg } from '../ui/AuroraBg';
+import { useAuth } from '../../context/AuthContext';
 
 export const Layout: React.FC = () => {
   const cargando = useCargaRemota();
   const errorSync = useErrorSync();
   const location = useLocation();
+  const { usuario } = useAuth();
+  const esDemo = usuario?.email === 'demo@activaqr.com';
 
   return (
-    <div className="flex flex-col md:flex-row h-screen max-w-full bg-transparent overflow-hidden">
+    <div className={`flex flex-col md:flex-row h-screen max-w-full bg-transparent overflow-hidden ${esDemo ? 'pt-9' : ''}`}>
       <AuroraBg />
       <DemoBanner />
       {cargando && <PantallaCarga />}

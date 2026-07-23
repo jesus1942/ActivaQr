@@ -30,7 +30,8 @@ import documentosRouter from './routes/documentos';
 import cuentaRouter from './routes/cuenta';
 import testimoniosRouter, { adminTestimoniosRouter } from './routes/testimonios';
 import { enviarPushASuperadmin } from './push';
-import { requireAuth, requireAuthAndActiveEmpresa, requireSuperadmin } from './auth';
+import { requireAdmin, requireAuth, requireAuthAndActiveEmpresa, requireSuperadmin } from './auth';
+import { createOriginValidator } from './corsPolicy';
 import { seedCategorias } from './seedCategorias';
 import { seedFallasMotorDiesel } from './seedFallasMotorDiesel';
 import { seedFallasCintaTransportadora } from './seedFallasCintaTransportadora';
@@ -48,9 +49,10 @@ const app = express();
 app.use(helmet({ contentSecurityPolicy: false }));
 
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://jesus1942.github.io,https://activaqr-production.up.railway.app').split(',').map(s => s.trim());
+const isOriginAllowed = createOriginValidator(ALLOWED_ORIGINS, process.env.NODE_ENV === 'production');
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || ALLOWED_ORIGINS.some(o => origin.startsWith(o)) || (process.env.NODE_ENV !== 'production' && (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')))) {
+    if (isOriginAllowed(origin)) {
       callback(null, true);
     } else {
       callback(new Error('CORS not allowed'));
@@ -216,7 +218,7 @@ app.use('/api/activos', requireAuthAndActiveEmpresa, activosRouter);
 app.use('/api/activos', requireAuthAndActiveEmpresa, ubicacionesRouter);
 app.use('/api/mediciones', requireAuthAndActiveEmpresa, medicionesRouter);
 app.use('/api/tareas', requireAuthAndActiveEmpresa, tareasRouter);
-app.use('/api/sync', requireAuthAndActiveEmpresa, syncRouter);
+app.use('/api/sync', requireAuthAndActiveEmpresa, requireAdmin, syncRouter);
 app.use('/api/categorias', requireAuthAndActiveEmpresa, categoriasRouter);
 app.use('/api/suscripcion', requireAuthAndActiveEmpresa, suscripcionRouter);
 app.use('/api/operadores', requireAuthAndActiveEmpresa, operadoresRouter);

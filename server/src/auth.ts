@@ -40,14 +40,41 @@ function leerToken(req: Request): string | null {
 /**
  * Middleware: exige un token válido. Deja el payload en req.auth.
  */
-export function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
+async function validarUsuarioActual(payload: TokenPayload): Promise<TokenPayload | null> {
+  const usuario = await prisma.usuario.findUnique({
+    where: { id: payload.userId },
+    select: { id: true, email: true, rol: true, empresaId: true, activo: true },
+  });
+  if (!usuario?.activo) return null;
+  if (
+    usuario.email !== payload.email ||
+    usuario.rol !== payload.rol ||
+    usuario.empresaId !== payload.empresaId
+  ) {
+    return null;
+  }
+  return payload;
+}
+
+export async function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
   const token = leerToken(req);
   const payload = token ? verificarToken(token) : null;
   if (!payload) {
     return res.status(401).json({ error: 'No autorizado. Iniciá sesión.' });
   }
-  req.auth = payload;
-  next();
+  try {
+    const actual = await validarUsuarioActual(payload);
+    if (!actual) {
+      return res.status(401).json({
+        code: 'sesion_revocada',
+        error: 'La sesión fue revocada o tus permisos cambiaron. Iniciá sesión nuevamente.',
+      });
+    }
+    req.auth = actual;
+    next();
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -55,7 +82,7 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
  * Se ejecuta en cada request — el bloqueo es inmediato al suspender.
  * Los superadmin nunca son bloqueados.
  */
-export function requireAuthAndActiveEmpresa(
+export async function requireAuthAndActiveEmpresa(
   req: AuthRequest,
   res: Response,
   next: NextFunction
@@ -65,45 +92,51 @@ export function requireAuthAndActiveEmpresa(
   if (!payload) {
     return res.status(401).json({ error: 'No autorizado. Iniciá sesión.' });
   }
-  req.auth = payload;
+  try {
+    const actual = await validarUsuarioActual(payload);
+    if (!actual) {
+      return res.status(401).json({
+        code: 'sesion_revocada',
+        error: 'La sesión fue revocada o tus permisos cambiaron. Iniciá sesión nuevamente.',
+      });
+    }
+    req.auth = actual;
 
-  // Superadmin: siempre pasa.
-  if (payload.rol === 'superadmin' || !payload.empresaId) {
-    return next();
-  }
+    // Superadmin: siempre pasa.
+    if (actual.rol === 'superadmin' || !actual.empresaId) {
+      return next();
+    }
 
-  // Verificar estado de la empresa en DB (sin caché, tiempo real).
-  prisma.empresa
-    .findUnique({
-      where: { id: payload.empresaId },
+    // Verificar estado de la empresa en DB (sin caché, tiempo real).
+    const empresa = await prisma.empresa.findUnique({
+      where: { id: actual.empresaId! },
       select: { estado: true, esTrial: true, trialFin: true, trialLecturaFin: true },
-    })
-    .then((empresa) => {
-      if (!empresa || empresa.estado === 'suspendida') {
-        return res.status(403).json({
-          code: 'empresa_suspendida',
-          error: 'Tu suscripción está suspendida. Contactá al administrador.',
-        });
-      }
+    });
+    if (!empresa || empresa.estado === 'suspendida') {
+      return res.status(403).json({
+        code: 'empresa_suspendida',
+        error: 'Tu suscripción está suspendida. Contactá al administrador.',
+      });
+    }
 
-      // Fases del trial autogestionado.
-      const fase = faseTrial(empresa);
-      if (fase === 'vencido') {
-        return res.status(403).json({
-          code: 'trial_vencido',
-          error: 'Tu período de prueba terminó. Suscribite para seguir usando ActivaQR.',
-        });
-      }
-      if (fase === 'lectura' && req.method !== 'GET' && req.method !== 'HEAD') {
-        return res.status(403).json({
-          code: 'trial_lectura',
-          error: 'Tu prueba está en modo solo lectura. Suscribite para volver a cargar datos.',
-        });
-      }
+    const fase = faseTrial(empresa);
+    if (fase === 'vencido') {
+      return res.status(403).json({
+        code: 'trial_vencido',
+        error: 'Tu período de prueba terminó. Suscribite para seguir usando ActivaQR.',
+      });
+    }
+    if (fase === 'lectura' && req.method !== 'GET' && req.method !== 'HEAD') {
+      return res.status(403).json({
+        code: 'trial_lectura',
+        error: 'Tu prueba está en modo solo lectura. Suscribite para volver a cargar datos.',
+      });
+    }
 
-      next();
-    })
-    .catch(next);
+    next();
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**

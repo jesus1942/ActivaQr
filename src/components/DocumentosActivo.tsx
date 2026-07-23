@@ -13,7 +13,7 @@ export const DocumentosActivo: React.FC<{ activoId: string }> = ({ activoId }) =
   const inputRef = useRef<HTMLInputElement>(null);
 
   const cargar = () => getDocumentos(activoId).then(setDocs).catch(() => {});
-  useEffect(() => { cargar(); /* eslint-disable-next-line */ }, [activoId]);
+  useEffect(() => { cargar(); }, [activoId]);
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

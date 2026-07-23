@@ -137,7 +137,13 @@ export function useStorage<T>(key: string, initialValue: T) {
         return;
       }
       const fn = remoteSave[key];
-      if (fn) void fn(value);
+      if (fn) {
+        void fn(value).catch((e) => {
+          console.error(`[useStorage] Error guardando "${key}":`, e);
+          _errorSync = e instanceof Error ? e.message : `No se pudieron guardar los ${key}.`;
+          _notificarError();
+        });
+      }
     } else {
       localStorage.setItem(key, JSON.stringify(value));
     }

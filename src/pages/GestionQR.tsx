@@ -80,7 +80,7 @@ export const GestionQR: React.FC = () => {
                           <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(qrValue)}" width="120" height="120" />
                           <div style="font-size:9px; color:#aaa; word-break:break-all;">${qrValue}</div>
                         </div>
-                        <script>window.onload = function() { window.print(); }<\/script>
+                        <script>window.onload = function() { window.print(); }</script>
                       </body></html>
                     `);
                     printWindow.document.close();

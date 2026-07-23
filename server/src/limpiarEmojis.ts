@@ -12,7 +12,7 @@ import { prisma } from './prisma';
 
 // Cubre los principales bloques Unicode de emojis: emoticons, simbolos, transporte,
 // banderas, sombreros, etc. Excluye box-drawing (los `─` de separadores).
-const RANGO_EMOJI = /[\u{1F300}-\u{1FAFF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu;
+const RANGO_EMOJI = /[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu;
 
 function limpiar(texto: string | null | undefined): string | null {
   if (!texto) return texto ?? null;
