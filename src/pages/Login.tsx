@@ -4,6 +4,7 @@ import { LogIn, Lock, Mail, UserPlus, Building2, User, Phone } from 'lucide-reac
 import { useAuth } from '../context/AuthContext';
 import { apiFetch, logout as clearSession } from '../data/auth';
 import { AuroraBg } from '../components/ui/AuroraBg';
+import { useNavigate } from 'react-router-dom';
 
 const LOGO = '/ActivaQr/company-logo-hd.png';      // negro (tema claro)
 const LOGO_DARK_SRC = '/ActivaQr/company-logo1.png'; // blanco (tema oscuro)
@@ -22,6 +23,7 @@ function isRegistroParam() {
 
 export const Login: React.FC = () => {
   const { login, registro } = useAuth();
+  const navigate = useNavigate();
   const isDemo = isDemoParam();
   const [vistaRegistro, setVistaRegistro] = useState(isRegistroParam());
   const [regEmpresa, setRegEmpresa] = useState('');
@@ -52,6 +54,7 @@ export const Login: React.FC = () => {
         telefono: regTelefono || undefined,
         aceptaPoliticas: true,
       });
+      navigate('/', { replace: true });
     } catch (err) {
       setRegError(err instanceof Error ? err.message : 'No se pudo crear la cuenta.');
     } finally {
@@ -79,6 +82,7 @@ export const Login: React.FC = () => {
     setCargando(true);
     try {
       await login(email, password);
+      navigate('/', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al iniciar sesión.');
     } finally {

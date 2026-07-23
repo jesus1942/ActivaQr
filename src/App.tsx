@@ -140,6 +140,7 @@ function AuthedApp() {
           </>
         )}
       </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </>
   );
