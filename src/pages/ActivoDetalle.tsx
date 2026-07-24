@@ -20,9 +20,9 @@ function fmt(fecha: string | null | undefined, fmtStr = 'dd/MM/yyyy'): string {
     return '—';
   }
 }
-import { ArrowLeft, Printer, ClipboardList, Pencil, Trash2, FileDown, FileText } from 'lucide-react';
+import { ArrowLeft, Printer, Download, ClipboardList, Pencil, Trash2, FileDown, FileText } from 'lucide-react';
 import { exportarFichaActivoPdf } from '../utils/exportPdf';
-import { imprimirEtiquetaQR } from '../utils/imprimirEtiqueta';
+import { descargarEtiquetaQR, imprimirEtiquetaQR } from '../utils/imprimirEtiqueta';
 import { useActivos } from '../hooks/useActivos';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { EstadoOperativoBadge, ESTADOS_OPERATIVOS } from '../components/ui/EstadoOperativoBadge';
@@ -103,22 +103,32 @@ export const ActivoDetalle: React.FC = () => {
     window.alert('Tarea predictiva creada y agregada al historial de mantenimiento.');
   };
 
-  const handlePrint = () => {
+  const getEtiquetaOpts = () => {
     const svg = qrRef.current;
     if (!svg) {
       alert('No se pudo generar el QR. Recarga la pagina y reintenta.');
-      return;
+      return null;
     }
     const viewBox = svg.getAttribute('viewBox') ?? '0 0 29 29';
     const inner = svg.innerHTML;
     const empresaNombre = (usuario?.empresa as { nombre?: string } | null)?.nombre;
-    imprimirEtiquetaQR({
+    return {
       codigo: activo.codigo,
       nombre: activo.nombre,
       qrSvgString: inner,
       qrViewBox: viewBox,
       empresaNombre,
-    });
+    };
+  };
+
+  const handlePrint = () => {
+    const opts = getEtiquetaOpts();
+    if (opts) imprimirEtiquetaQR(opts);
+  };
+
+  const handleDownloadLabel = () => {
+    const opts = getEtiquetaOpts();
+    if (opts) descargarEtiquetaQR(opts);
   };
 
   const handleDelete = () => {
@@ -313,6 +323,13 @@ export const ActivoDetalle: React.FC = () => {
             >
               <Printer size={16} />
               Imprimir Etiqueta
+            </button>
+            <button
+              onClick={handleDownloadLabel}
+              className="w-full flex items-center justify-center gap-2 border border-line bg-surface px-4 py-2.5 font-bold text-content hover:bg-subtle shadow-soft transition-colors mb-2"
+            >
+              <Download size={16} />
+              Descargar Etiqueta SVG
             </button>
             <button
               onClick={() => exportarFichaActivoPdf({
