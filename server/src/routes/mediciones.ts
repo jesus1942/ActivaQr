@@ -13,6 +13,46 @@ import { AuthRequest, requireAdmin } from '../auth';
 
 const router = Router();
 
+export function validarParametrosExtra(
+  valores: unknown,
+  parametros: Array<{
+    nombre: string;
+    clave: string;
+    tipo: string;
+    obligatorio: boolean;
+    opciones: unknown;
+  }>,
+): string | null {
+  const objeto = valores && typeof valores === 'object' && !Array.isArray(valores)
+    ? valores as Record<string, unknown>
+    : {};
+  for (const parametro of parametros) {
+    const valor = objeto[parametro.clave];
+    const vacio = valor === undefined || valor === null || valor === '';
+    if (parametro.obligatorio && vacio) {
+      return `El campo "${parametro.nombre}" es obligatorio.`;
+    }
+    if (vacio) continue;
+    if (
+      (parametro.tipo === 'numerico' || parametro.tipo === 'porcentaje')
+      && !Number.isFinite(Number(valor))
+    ) {
+      return `El campo "${parametro.nombre}" debe ser numérico.`;
+    }
+    if (
+      parametro.tipo === 'booleano'
+      && ![true, false, 'true', 'false'].includes(valor as boolean | string)
+    ) {
+      return `El campo "${parametro.nombre}" debe ser Sí o No.`;
+    }
+    if (parametro.tipo === 'seleccion' && Array.isArray(parametro.opciones)) {
+      const permitido = parametro.opciones.some((opcion) => String(opcion) === String(valor));
+      if (!permitido) return `La respuesta de "${parametro.nombre}" no es válida.`;
+    }
+  }
+  return null;
+}
+
 // GET /api/mediciones?activoId=
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -76,6 +116,11 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       },
     });
     if (!activo) return res.status(404).json({ error: 'Activo no encontrado' });
+    const errorParametros = validarParametrosExtra(
+      parametrosExtra,
+      activo.tipo.categoria?.parametros ?? [],
+    );
+    if (errorParametros) return res.status(400).json({ error: errorParametros });
     const tecnicoValido = typeof tecnicoId === 'string' && tecnicoId
       ? await prisma.usuario.findFirst({ where: { id: tecnicoId, empresaId, activo: true }, select: { id: true } })
       : null;
@@ -85,7 +130,15 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     // Si envió 'urgente'/'critico', respetamos su criterio visual.
     const estadoCalculado = peorEstado(
       calcularEstadoAutomatico(
-        { temperatura, amperaje, presion, voltaje, porcentajeBateria, nivelToner, vibracion },
+        {
+          temperatura: activo.tipo.mideTemperatura ? temperatura : null,
+          amperaje: activo.tipo.mideAmperaje ? amperaje : null,
+          presion: activo.tipo.midePresion ? presion : null,
+          voltaje: activo.tipo.mideVoltaje ? voltaje : null,
+          porcentajeBateria: activo.tipo.mideBateria ? porcentajeBateria : null,
+          nivelToner: activo.tipo.mideToner ? nivelToner : null,
+          vibracion: activo.tipo.mideVibracion ? vibracion : null,
+        },
         activo,
       ),
       calcularEstadoParametrosExtra(
@@ -141,15 +194,15 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         activoId,
         tecnicoId: tecnicoValido?.id ?? null,
         fecha: fecha ? new Date(fecha) : undefined,
-        temperatura,
-        amperaje,
-        presion,
-        vibracion,
-        horasMarcha,
-        voltaje,
-        porcentajeBateria,
-        nivelToner,
-        contador,
+        temperatura: activo.tipo.mideTemperatura ? temperatura : null,
+        amperaje: activo.tipo.mideAmperaje ? amperaje : null,
+        presion: activo.tipo.midePresion ? presion : null,
+        vibracion: activo.tipo.mideVibracion ? vibracion : 'ninguna',
+        horasMarcha: activo.tipo.mideHoras ? horasMarcha : null,
+        voltaje: activo.tipo.mideVoltaje ? voltaje : null,
+        porcentajeBateria: activo.tipo.mideBateria ? porcentajeBateria : null,
+        nivelToner: activo.tipo.mideToner ? nivelToner : null,
+        contador: activo.tipo.mideContador ? contador : null,
         estado: estadoFinal as any,
         observaciones,
         origen,

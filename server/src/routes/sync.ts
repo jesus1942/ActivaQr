@@ -113,6 +113,24 @@ router.put('/tipos', asyncHandler(async (req, res) => {
   if (existentes.some((item) => item.empresaId !== empresaId)) {
     return res.status(403).json({ code: 'tenant_violation', error: 'Un tipo de activo pertenece a otra empresa.' });
   }
+  const categoriaIds = [...new Set(
+    items
+      .map((item) => item.categoriaId)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0),
+  )];
+  const categoriasPermitidas = categoriaIds.length
+    ? await prisma.categoriaEquipo.findMany({
+        where: {
+          id: { in: categoriaIds },
+          OR: [{ empresaId: null }, { empresaId }],
+        },
+        select: { id: true },
+      })
+    : [];
+  const categoriasPermitidasIds = new Set(categoriasPermitidas.map((categoria) => categoria.id));
+  if (categoriaIds.some((id) => !categoriasPermitidasIds.has(id))) {
+    return res.status(403).json({ code: 'tenant_violation', error: 'Una categoría no pertenece a esta empresa.' });
+  }
 
   await prisma.$transaction([
     ...(deletedIds.length
@@ -122,6 +140,7 @@ router.put('/tipos', asyncHandler(async (req, res) => {
       const data = {
         nombre: i.nombre,
         icono: i.icono ?? null,
+        categoriaId: i.categoriaId ?? null,
         mideTemperatura: !!i.mideTemperatura,
         mideAmperaje: !!i.mideAmperaje,
         midePresion: !!i.midePresion,
@@ -130,6 +149,7 @@ router.put('/tipos', asyncHandler(async (req, res) => {
         mideToner: !!i.mideToner,
         mideContador: !!i.mideContador,
         mideVoltaje: !!i.mideVoltaje,
+        mideHoras: i.mideHoras !== false,
         activo: i.activo ?? true,
       };
       return prisma.tipoActivo.upsert({
@@ -321,13 +341,13 @@ router.put('/mediciones', asyncHandler(async (req, res) => {
       const estadoCalculado = peorEstado(
         calcularEstadoAutomatico(
           {
-            temperatura: toNum(i.temperatura),
-            amperaje: toNum(i.amperaje),
-            presion: toNum(i.presion),
-            voltaje: toNum(i.voltaje),
-            porcentajeBateria: toNum(i.porcentajeBateria),
-            nivelToner: toNum(i.nivelToner),
-            vibracion: i.vibracion,
+            temperatura: activo.tipo.mideTemperatura ? toNum(i.temperatura) : null,
+            amperaje: activo.tipo.mideAmperaje ? toNum(i.amperaje) : null,
+            presion: activo.tipo.midePresion ? toNum(i.presion) : null,
+            voltaje: activo.tipo.mideVoltaje ? toNum(i.voltaje) : null,
+            porcentajeBateria: activo.tipo.mideBateria ? toNum(i.porcentajeBateria) : null,
+            nivelToner: activo.tipo.mideToner ? toNum(i.nivelToner) : null,
+            vibracion: activo.tipo.mideVibracion ? i.vibracion : null,
           },
           activo,
         ),
@@ -344,15 +364,15 @@ router.put('/mediciones', asyncHandler(async (req, res) => {
         activoId: i.activoId,
         tecnicoId: typeof i.tecnicoId === 'string' && tecnicosValidos.has(i.tecnicoId) ? i.tecnicoId : null,
         fecha: toDate(i.fecha) ?? new Date(),
-        temperatura: toNum(i.temperatura),
-        amperaje: toNum(i.amperaje),
-        presion: toNum(i.presion),
-        vibracion: i.vibracion ?? 'ninguna',
-        horasMarcha: toNum(i.horasMarcha),
-        voltaje: toNum(i.voltaje),
-        porcentajeBateria: toNum(i.porcentajeBateria) != null ? Math.round(toNum(i.porcentajeBateria)!) : null,
-        nivelToner: toNum(i.nivelToner) != null ? Math.round(toNum(i.nivelToner)!) : null,
-        contador: toNum(i.contador) != null ? Math.round(toNum(i.contador)!) : null,
+        temperatura: activo.tipo.mideTemperatura ? toNum(i.temperatura) : null,
+        amperaje: activo.tipo.mideAmperaje ? toNum(i.amperaje) : null,
+        presion: activo.tipo.midePresion ? toNum(i.presion) : null,
+        vibracion: activo.tipo.mideVibracion ? i.vibracion ?? 'ninguna' : 'ninguna',
+        horasMarcha: activo.tipo.mideHoras ? toNum(i.horasMarcha) : null,
+        voltaje: activo.tipo.mideVoltaje ? toNum(i.voltaje) : null,
+        porcentajeBateria: activo.tipo.mideBateria && toNum(i.porcentajeBateria) != null ? Math.round(toNum(i.porcentajeBateria)!) : null,
+        nivelToner: activo.tipo.mideToner && toNum(i.nivelToner) != null ? Math.round(toNum(i.nivelToner)!) : null,
+        contador: activo.tipo.mideContador && toNum(i.contador) != null ? Math.round(toNum(i.contador)!) : null,
         // Valores de parametros de categoria (pH, cloro, etc.) — sin esto,
         // todo lo que el usuario cargue en parametros custom se pierde.
         parametrosExtra:

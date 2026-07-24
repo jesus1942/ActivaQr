@@ -8,6 +8,10 @@ export interface ParametroCategoria {
   nombre: string;
   unidad?: string;
   tipo: 'numerico' | 'porcentaje' | 'booleano' | 'texto' | 'seleccion';
+  opciones?: string[] | null;
+  valoresAlerta?: string[] | null;
+  valoresCritico?: string[] | null;
+  valoresUrgente?: string[] | null;
   obligatorio: boolean;
   orden: number;
   minNormal?: number | null;

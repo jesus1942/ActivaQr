@@ -269,6 +269,10 @@ model ParametroCategoria {
   clave         String
   unidad        String?
   tipo          TipoParametro @default(numerico)
+  opciones      Json?
+  valoresAlerta Json?
+  valoresCritico Json?
+  valoresUrgente Json?
   obligatorio   Boolean       @default(false)
   orden         Int           @default(0)
   minNormal     Float?
@@ -297,6 +301,7 @@ model TipoActivo {
   mideToner        Boolean @default(false)
   mideContador     Boolean @default(false)
   mideVoltaje      Boolean @default(false)
+  mideHoras        Boolean @default(true)
   activo           Boolean @default(true)
 
   empresa   Empresa          @relation(fields: [empresaId], references: [id], onDelete: Cascade)

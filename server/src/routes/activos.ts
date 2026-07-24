@@ -111,7 +111,15 @@ function pickActivoData(body: any) {
 
 const includeRelaciones = {
   sector: true,
-  tipo: true,
+  tipo: {
+    include: {
+      categoria: {
+        include: {
+          parametros: { orderBy: { orden: 'asc' as const } },
+        },
+      },
+    },
+  },
   responsable: { select: { id: true, nombre: true, cargo: true } },
   sede: true,
 };

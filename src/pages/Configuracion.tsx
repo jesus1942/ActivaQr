@@ -221,7 +221,7 @@ interface TiposProps {
   deleteTipo: (id: string) => void;
 }
 
-const MIDE_FIELDS: { key: keyof Pick<TipoActivo, 'mideTemperatura' | 'mideAmperaje' | 'midePresion' | 'mideVibracion' | 'mideBateria' | 'mideToner' | 'mideContador' | 'mideVoltaje'>; label: string }[] = [
+const MIDE_FIELDS: { key: keyof Pick<TipoActivo, 'mideTemperatura' | 'mideAmperaje' | 'midePresion' | 'mideVibracion' | 'mideBateria' | 'mideToner' | 'mideContador' | 'mideVoltaje' | 'mideHoras'>; label: string }[] = [
   { key: 'mideTemperatura', label: 'Temperatura' },
   { key: 'mideAmperaje', label: 'Amperaje' },
   { key: 'midePresion', label: 'Presión' },
@@ -230,6 +230,7 @@ const MIDE_FIELDS: { key: keyof Pick<TipoActivo, 'mideTemperatura' | 'mideAmpera
   { key: 'mideToner', label: 'Tóner/Consumible' },
   { key: 'mideContador', label: 'Contador (páginas/ciclos)' },
   { key: 'mideVoltaje', label: 'Voltaje' },
+  { key: 'mideHoras', label: 'Horas de marcha' },
 ];
 
 const TiposSection: React.FC<TiposProps> = ({ tipos, addTipo, updateTipo, deleteTipo }) => {
@@ -242,13 +243,13 @@ const TiposSection: React.FC<TiposProps> = ({ tipos, addTipo, updateTipo, delete
   }, []);
 
   const empty: Omit<TipoActivo, 'id'> = {
-    nombre: '', categoriaId: null, mideTemperatura: true, mideAmperaje: false, midePresion: false, mideVibracion: false, mideBateria: false, mideToner: false, mideContador: false, mideVoltaje: false, activo: true,
+    nombre: '', categoriaId: null, mideTemperatura: true, mideAmperaje: false, midePresion: false, mideVibracion: false, mideBateria: false, mideToner: false, mideContador: false, mideVoltaje: false, mideHoras: true, activo: true,
   };
   const [form, setForm] = useState<Omit<TipoActivo, 'id'>>(empty);
 
   const startAdd = () => { setForm(empty); setAdding(true); setEditing(null); };
   const startEdit = (t: TipoActivo) => {
-    setForm({ nombre: t.nombre, icono: t.icono, categoriaId: t.categoriaId ?? null, mideTemperatura: t.mideTemperatura, mideAmperaje: t.mideAmperaje, midePresion: t.midePresion, mideVibracion: t.mideVibracion, mideBateria: t.mideBateria ?? false, mideToner: t.mideToner ?? false, mideContador: t.mideContador ?? false, mideVoltaje: t.mideVoltaje ?? false, activo: t.activo });
+    setForm({ nombre: t.nombre, icono: t.icono, categoriaId: t.categoriaId ?? null, mideTemperatura: t.mideTemperatura, mideAmperaje: t.mideAmperaje, midePresion: t.midePresion, mideVibracion: t.mideVibracion, mideBateria: t.mideBateria ?? false, mideToner: t.mideToner ?? false, mideContador: t.mideContador ?? false, mideVoltaje: t.mideVoltaje ?? false, mideHoras: t.mideHoras !== false, activo: t.activo });
     setEditing(t); setAdding(false);
   };
   const cancel = () => { setAdding(false); setEditing(null); };
@@ -549,7 +550,20 @@ const slugificar = (s: string) =>
     .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 
 const CategoriaCard: React.FC<CategoriaCardProps> = ({ cat, expandido, onToggle, isGlobal, onEliminar, onParametroAgregado }) => {
-  const empty = { nombre: '', unidad: '', tipo: 'numerico' as ParametroCategoria['tipo'], umbralAlerta: '', umbralCritico: '', umbralUrgente: '', invertido: false };
+  const empty = {
+    nombre: '',
+    unidad: '',
+    tipo: 'numerico' as ParametroCategoria['tipo'],
+    obligatorio: false,
+    opciones: '',
+    valoresAlerta: '',
+    valoresCritico: '',
+    valoresUrgente: '',
+    umbralAlerta: '',
+    umbralCritico: '',
+    umbralUrgente: '',
+    invertido: false,
+  };
   const [paramForm, setParamForm] = useState(empty);
   const [agregando, setAgregando] = useState(false);
   const [guardandoParam, setGuardandoParam] = useState(false);
@@ -568,6 +582,19 @@ const CategoriaCard: React.FC<CategoriaCardProps> = ({ cat, expandido, onToggle,
         clave: slugificar(paramForm.nombre) || `param_${Date.now()}`,
         unidad: paramForm.unidad || undefined,
         tipo: paramForm.tipo,
+        obligatorio: paramForm.obligatorio,
+        opciones: paramForm.tipo === 'seleccion'
+          ? paramForm.opciones.split(',').map((v) => v.trim()).filter(Boolean)
+          : undefined,
+        valoresAlerta: !esNumerico
+          ? paramForm.valoresAlerta.split(',').map((v) => v.trim()).filter(Boolean)
+          : undefined,
+        valoresCritico: !esNumerico
+          ? paramForm.valoresCritico.split(',').map((v) => v.trim()).filter(Boolean)
+          : undefined,
+        valoresUrgente: !esNumerico
+          ? paramForm.valoresUrgente.split(',').map((v) => v.trim()).filter(Boolean)
+          : undefined,
         orden: cat.parametros.length + 1,
         umbralAlerta: esNumerico && paramForm.umbralAlerta !== '' ? Number(paramForm.umbralAlerta) : undefined,
         umbralCritico: esNumerico && paramForm.umbralCritico !== '' ? Number(paramForm.umbralCritico) : undefined,
@@ -623,6 +650,8 @@ const CategoriaCard: React.FC<CategoriaCardProps> = ({ cat, expandido, onToggle,
                 <span className="font-semibold min-w-0 truncate">{p.nombre}</span>
                 <div className="flex items-center gap-2 text-faint flex-shrink-0 flex-wrap justify-end">
                   {p.unidad && <span className="font-mono">{p.unidad}</span>}
+                  {p.obligatorio && <span className="font-bold text-content">obligatorio</span>}
+                  {p.opciones?.length ? <span>{p.opciones.join(' / ')}</span> : null}
                   {p.umbralAlerta != null && <span className="text-warn-strong dark:text-warn">alerta:{p.umbralAlerta}</span>}
                   {p.umbralCritico != null && <span className="text-danger">critico:{p.umbralCritico}</span>}
                   {p.invertido && <span title="Valor bajo es peor">baja</span>}
@@ -675,6 +704,28 @@ const CategoriaCard: React.FC<CategoriaCardProps> = ({ cat, expandido, onToggle,
                     </div>
                   </div>
 
+                  <label className="flex items-center gap-2 text-xs text-muted cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={paramForm.obligatorio}
+                      onChange={(e) => setParamForm((p) => ({ ...p, obligatorio: e.target.checked }))}
+                    />
+                    Campo obligatorio
+                  </label>
+
+                  {paramForm.tipo === 'seleccion' && (
+                    <div>
+                      <label className="text-xs font-black uppercase tracking-wider text-muted">Opciones separadas por coma *</label>
+                      <input
+                        required
+                        value={paramForm.opciones}
+                        onChange={(e) => setParamForm((p) => ({ ...p, opciones: e.target.value }))}
+                        className="w-full border border-line px-2 h-9 text-sm outline-none focus:border-brand-600 bg-surface"
+                        placeholder="Bueno, Regular, Malo"
+                      />
+                    </div>
+                  )}
+
                   {esNumerico && (
                     <>
                       <div className="grid grid-cols-3 gap-2">
@@ -703,6 +754,37 @@ const CategoriaCard: React.FC<CategoriaCardProps> = ({ cat, expandido, onToggle,
                         El valor es peligroso cuando <strong>baja</strong> (ej: presión de aceite, batería, nivel)
                       </label>
                     </>
+                  )}
+
+                  {!esNumerico && paramForm.tipo !== 'texto' && (
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted">
+                        Indicá qué respuestas cambian el estado. Para Sí/No usá <strong>true</strong> o <strong>false</strong>.
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div>
+                          <label className="text-xs font-black uppercase tracking-wider text-warn-strong dark:text-warn">Alerta</label>
+                          <input value={paramForm.valoresAlerta}
+                            onChange={(e) => setParamForm((p) => ({ ...p, valoresAlerta: e.target.value }))}
+                            className="w-full border border-line px-2 h-9 text-sm outline-none focus:border-warn bg-surface"
+                            placeholder="regular" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-black uppercase tracking-wider text-danger">Crítico</label>
+                          <input value={paramForm.valoresCritico}
+                            onChange={(e) => setParamForm((p) => ({ ...p, valoresCritico: e.target.value }))}
+                            className="w-full border border-line px-2 h-9 text-sm outline-none focus:border-danger bg-surface"
+                            placeholder="malo" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-black uppercase tracking-wider text-danger-strong dark:text-danger">Urgente</label>
+                          <input value={paramForm.valoresUrgente}
+                            onChange={(e) => setParamForm((p) => ({ ...p, valoresUrgente: e.target.value }))}
+                            className="w-full border border-line px-2 h-9 text-sm outline-none focus:border-danger bg-surface"
+                            placeholder="false, severo" />
+                        </div>
+                      </div>
+                    </div>
                   )}
 
                   <div className="flex justify-end gap-2 pt-1">

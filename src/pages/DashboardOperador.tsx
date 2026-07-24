@@ -6,6 +6,7 @@ import { QrScanner, extraerActivoId } from '../components/QrScanner';
 import { SyncBadge } from '../components/ui/SyncBadge';
 import { extraerEvidencia, EvidenciaForense } from '../data/evidenciaForense';
 import { DiagnosticoSugerido } from '../components/DiagnosticoSugerido';
+import { ParametroCategoria } from '../data/categoriasApi';
 import { ScanLine, ClipboardList, CheckCircle2, AlertTriangle, LogOut, ChevronRight, X, CloudOff, Camera, ShieldCheck } from 'lucide-react';
 
 const MAX_DIM_FOTO = 1280;
@@ -45,7 +46,23 @@ interface Activo {
   estado: string;
   estadoOperativo: string;
   sector?: { nombre: string };
-  tipo?: { nombre: string };
+  tipo?: {
+    nombre: string;
+    mideTemperatura?: boolean;
+    mideAmperaje?: boolean;
+    midePresion?: boolean;
+    mideVibracion?: boolean;
+    mideBateria?: boolean;
+    mideToner?: boolean;
+    mideContador?: boolean;
+    mideVoltaje?: boolean;
+    mideHoras?: boolean;
+    categoria?: {
+      id: string;
+      nombre: string;
+      parametros: ParametroCategoria[];
+    } | null;
+  };
   mediciones: { fecha: string }[];
 }
 
@@ -65,7 +82,119 @@ interface FormMedicion {
   amperaje: string;
   presion: string;
   vibracion: 'ninguna' | 'leve' | 'moderada' | 'alta';
+  porcentajeBateria: string;
+  nivelToner: string;
+  contador: string;
+  voltaje: string;
+  horasMarcha: string;
   observaciones: string;
+}
+
+const FORM_INICIAL: FormMedicion = {
+  temperatura: '',
+  amperaje: '',
+  presion: '',
+  vibracion: 'ninguna',
+  porcentajeBateria: '',
+  nivelToner: '',
+  contador: '',
+  voltaje: '',
+  horasMarcha: '',
+  observaciones: '',
+};
+
+function CampoDinamicoOperador({
+  parametro,
+  valor,
+  onChange,
+}: {
+  parametro: ParametroCategoria;
+  valor: string | number | boolean | undefined;
+  onChange: (valor: string | number | boolean) => void;
+}) {
+  const vacio = valor === undefined || valor === null || valor === '';
+  const etiqueta = (
+    <>
+      {parametro.nombre}{parametro.unidad ? ` (${parametro.unidad})` : ''}
+      {parametro.obligatorio && <span className="text-danger ml-1">*</span>}
+    </>
+  );
+
+  if (parametro.tipo === 'booleano') {
+    const seleccionado = valor === true || valor === 'true';
+    return (
+      <div>
+        <label className={labelCls}>{etiqueta}</label>
+        <div className="grid grid-cols-2 gap-2">
+          {[true, false].map((opcion) => (
+            <button
+              key={String(opcion)}
+              type="button"
+              onClick={() => onChange(opcion)}
+              className={`min-h-[52px] border px-3 font-bold transition-colors ${
+                !vacio && seleccionado === opcion
+                  ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-600/15 dark:text-brand-300'
+                  : 'border-line text-content bg-surface'
+              }`}
+            >
+              {opcion ? 'Sí' : 'No'}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (parametro.tipo === 'seleccion') {
+    return (
+      <div>
+        <label className={labelCls}>{etiqueta}</label>
+        <select
+          required={parametro.obligatorio}
+          value={vacio ? '' : String(valor)}
+          onChange={(e) => onChange(e.target.value)}
+          className={`${inputCls} capitalize`}
+        >
+          <option value="">Seleccionar...</option>
+          {(parametro.opciones ?? []).map((opcion) => (
+            <option key={opcion} value={opcion}>{opcion}</option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+
+  if (parametro.tipo === 'texto') {
+    return (
+      <div>
+        <label className={labelCls}>{etiqueta}</label>
+        <input
+          type="text"
+          required={parametro.obligatorio}
+          value={vacio ? '' : String(valor)}
+          onChange={(e) => onChange(e.target.value)}
+          className={inputCls}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <label className={labelCls}>{etiqueta}</label>
+      <input
+        type="number"
+        step={parametro.tipo === 'porcentaje' ? '1' : '0.1'}
+        min={parametro.tipo === 'porcentaje' ? '0' : undefined}
+        max={parametro.tipo === 'porcentaje' ? '100' : undefined}
+        required={parametro.obligatorio}
+        value={vacio ? '' : String(valor)}
+        onChange={(e) => onChange(e.target.value)}
+        className={inputCls}
+        placeholder="0"
+      />
+    </div>
+  );
 }
 
 const ESTADO_BADGE: Record<string, string> = {
@@ -110,7 +239,8 @@ export const DashboardOperador: React.FC = () => {
 
   const [activoSeleccionado, setActivoSeleccionado] = useState<Activo | null>(null);
   const [tareaSeleccionada, setTareaSeleccionada] = useState<Tarea | null>(null);
-  const [form, setForm] = useState<FormMedicion>({ temperatura: '', amperaje: '', presion: '', vibracion: 'ninguna', observaciones: '' });
+  const [form, setForm] = useState<FormMedicion>(FORM_INICIAL);
+  const [parametrosExtra, setParametrosExtra] = useState<Record<string, string | number | boolean>>({});
   const [enviando, setEnviando] = useState(false);
   const [exito, setExito] = useState(false);
   const [guardadoOffline, setGuardadoOffline] = useState(false);
@@ -158,7 +288,8 @@ export const DashboardOperador: React.FC = () => {
 
   const abrirMedicion = (activo: Activo) => {
     setActivoSeleccionado(activo);
-    setForm({ temperatura: '', amperaje: '', presion: '', vibracion: 'ninguna', observaciones: '' });
+    setForm(FORM_INICIAL);
+    setParametrosExtra({});
     setFoto(null);
     setEvidenciaFoto(null);
     setExito(false);
@@ -210,14 +341,29 @@ export const DashboardOperador: React.FC = () => {
     setErrorForm(null);
     setGuardadoOffline(false);
     try {
+      const parametros = activoSeleccionado.tipo?.categoria?.parametros ?? [];
+      const faltante = parametros.find((parametro) => (
+        parametro.obligatorio
+        && (parametrosExtra[parametro.clave] === undefined || parametrosExtra[parametro.clave] === '')
+      ));
+      if (faltante) {
+        throw new Error(`Completá el campo obligatorio "${faltante.nombre}".`);
+      }
+      const tipo = activoSeleccionado.tipo;
       const body: Record<string, unknown> = {
         activoId: activoSeleccionado.id,
-        vibracion: form.vibracion,
         observaciones: form.observaciones || undefined,
       };
-      if (form.temperatura !== '') body.temperatura = parseFloat(form.temperatura);
-      if (form.amperaje !== '') body.amperaje = parseFloat(form.amperaje);
-      if (form.presion !== '') body.presion = parseFloat(form.presion);
+      if (tipo?.mideTemperatura && form.temperatura !== '') body.temperatura = parseFloat(form.temperatura);
+      if (tipo?.mideAmperaje && form.amperaje !== '') body.amperaje = parseFloat(form.amperaje);
+      if (tipo?.midePresion && form.presion !== '') body.presion = parseFloat(form.presion);
+      if (tipo?.mideVibracion) body.vibracion = form.vibracion;
+      if (tipo?.mideBateria && form.porcentajeBateria !== '') body.porcentajeBateria = parseInt(form.porcentajeBateria);
+      if (tipo?.mideToner && form.nivelToner !== '') body.nivelToner = parseInt(form.nivelToner);
+      if (tipo?.mideContador && form.contador !== '') body.contador = parseInt(form.contador);
+      if (tipo?.mideVoltaje && form.voltaje !== '') body.voltaje = parseFloat(form.voltaje);
+      if (tipo?.mideHoras !== false && form.horasMarcha !== '') body.horasMarcha = parseInt(form.horasMarcha);
+      if (Object.keys(parametrosExtra).length > 0) body.parametrosExtra = parametrosExtra;
       if (foto) {
         body.fotos = [{
           url: foto,
@@ -316,19 +462,24 @@ export const DashboardOperador: React.FC = () => {
           ) : (
             <form onSubmit={handleEnviarMedicion} className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-5 space-y-4">
               {errorForm && <div className="border border-danger bg-danger/10 px-4 py-3 text-sm font-semibold text-danger-strong dark:text-danger">{errorForm}</div>}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
-                  { key: 'temperatura', label: 'Temperatura (°C)', placeholder: '25.0' },
-                  { key: 'amperaje', label: 'Amperaje (A)', placeholder: '10.0' },
-                  { key: 'presion', label: 'Presión (bar)', placeholder: '1.5' },
-                ].map(({ key, label, placeholder }) => (
+                  activoSeleccionado.tipo?.mideTemperatura ? { key: 'temperatura', label: 'Temperatura (°C)', placeholder: '25.0', step: '0.1' } : null,
+                  activoSeleccionado.tipo?.mideAmperaje ? { key: 'amperaje', label: 'Amperaje (A)', placeholder: '10.0', step: '0.1' } : null,
+                  activoSeleccionado.tipo?.midePresion ? { key: 'presion', label: 'Presión (bar)', placeholder: '1.5', step: '0.1' } : null,
+                  activoSeleccionado.tipo?.mideVoltaje ? { key: 'voltaje', label: 'Voltaje (V)', placeholder: '220', step: '0.1' } : null,
+                  activoSeleccionado.tipo?.mideBateria ? { key: 'porcentajeBateria', label: 'Batería (%)', placeholder: '100', step: '1' } : null,
+                  activoSeleccionado.tipo?.mideToner ? { key: 'nivelToner', label: 'Nivel de tóner (%)', placeholder: '100', step: '1' } : null,
+                  activoSeleccionado.tipo?.mideContador ? { key: 'contador', label: 'Contador (páginas/ciclos)', placeholder: '0', step: '1' } : null,
+                  activoSeleccionado.tipo?.mideHoras !== false ? { key: 'horasMarcha', label: 'Horas de marcha', placeholder: '0', step: '1' } : null,
+                ].filter((campo): campo is { key: keyof FormMedicion; label: string; placeholder: string; step: string } => campo !== null).map(({ key, label, placeholder, step }) => (
                   <div key={key}>
                     <label className={labelCls}>{label}</label>
-                    <input type="number" step="0.1" value={(form as any)[key]} onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))} className={inputCls} placeholder={placeholder} />
+                    <input type="number" step={step} value={form[key]} onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))} className={inputCls} placeholder={placeholder} />
                   </div>
                 ))}
               </div>
-              <div>
+              {activoSeleccionado.tipo?.mideVibracion && <div>
                 <label className={labelCls}>Vibración</label>
                 <div className="grid grid-cols-2 gap-2">
                   {VIBRACION_OPTS.map(v => (
@@ -338,7 +489,26 @@ export const DashboardOperador: React.FC = () => {
                     </label>
                   ))}
                 </div>
-              </div>
+              </div>}
+
+              {(activoSeleccionado.tipo?.categoria?.parametros?.length ?? 0) > 0 && (
+                <div className="border-t border-dashed border-line pt-4 space-y-4">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-wider text-brand-600 flex items-center gap-1.5">
+                      <ClipboardList size={13} /> {activoSeleccionado.tipo?.categoria?.nombre}
+                    </p>
+                    <p className="text-xs text-faint mt-1">Completá sólo los controles que corresponden a este equipo.</p>
+                  </div>
+                  {activoSeleccionado.tipo?.categoria?.parametros.map((parametro) => (
+                    <CampoDinamicoOperador
+                      key={parametro.id}
+                      parametro={parametro}
+                      valor={parametrosExtra[parametro.clave]}
+                      onChange={(valor) => setParametrosExtra((prev) => ({ ...prev, [parametro.clave]: valor }))}
+                    />
+                  ))}
+                </div>
+              )}
               <div>
                 <label className={labelCls}>Observaciones</label>
                 <textarea value={form.observaciones} onChange={e => setForm(p => ({ ...p, observaciones: e.target.value }))} className="w-full border border-line px-3 py-2 text-base outline-none focus:border-brand-600 bg-surface min-h-[80px] resize-none" placeholder="Novedades, ruidos, olores, anomalías..." />

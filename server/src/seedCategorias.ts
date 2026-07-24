@@ -20,6 +20,10 @@ type ParametroInput = {
   clave: string;
   unidad?: string;
   tipo?: 'numerico' | 'porcentaje' | 'booleano' | 'texto' | 'seleccion';
+  opciones?: string[];
+  valoresAlerta?: string[];
+  valoresCritico?: string[];
+  valoresUrgente?: string[];
   obligatorio?: boolean;
   orden?: number;
   minNormal?: number;
@@ -39,6 +43,26 @@ type CategoriaInput = {
 };
 
 const CATEGORIAS_GLOBALES: CategoriaInput[] = [
+  {
+    nombre: 'Informática / Laptop',
+    icono: 'laptop',
+    descripcion: 'Control operativo de notebooks y laptops: encendido, batería, periféricos, conectividad y estado físico.',
+    orden: 5,
+    parametros: [
+      { nombre: 'Enciende correctamente', clave: 'enciende_correctamente', tipo: 'booleano', obligatorio: true, orden: 1, valoresUrgente: ['false'] },
+      { nombre: 'Estado de batería', clave: 'estado_bateria', tipo: 'seleccion', obligatorio: true, orden: 2, opciones: ['bueno', 'regular', 'malo', 'sin batería'], valoresAlerta: ['regular'], valoresCritico: ['malo'] },
+      { nombre: 'Cargador funcionando', clave: 'cargador_funcionando', tipo: 'booleano', obligatorio: true, orden: 3, valoresCritico: ['false'] },
+      { nombre: 'Pantalla funcionando', clave: 'pantalla_funcionando', tipo: 'booleano', obligatorio: true, orden: 4, valoresCritico: ['false'] },
+      { nombre: 'Teclado funcionando', clave: 'teclado_funcionando', tipo: 'booleano', obligatorio: true, orden: 5, valoresAlerta: ['false'] },
+      { nombre: 'Touchpad funcionando', clave: 'touchpad_funcionando', tipo: 'booleano', obligatorio: true, orden: 6, valoresAlerta: ['false'] },
+      { nombre: 'Conexión Wi-Fi', clave: 'wifi_funcionando', tipo: 'booleano', obligatorio: true, orden: 7, valoresAlerta: ['false'] },
+      { nombre: 'Espacio disponible', clave: 'espacio_disponible', unidad: 'GB', orden: 8, invertido: true, umbralAlerta: 20, umbralCritico: 10, umbralUrgente: 5 },
+      { nombre: 'Temperatura de CPU', clave: 'temperatura_cpu', unidad: '°C', orden: 9, umbralAlerta: 75, umbralCritico: 90, umbralUrgente: 100 },
+      { nombre: 'Ciclos de batería', clave: 'ciclos_bateria', unidad: 'ciclos', orden: 10, umbralAlerta: 500, umbralCritico: 800, umbralUrgente: 1000 },
+      { nombre: 'Ruido del ventilador', clave: 'ruido_ventilador', tipo: 'seleccion', orden: 11, opciones: ['normal', 'leve', 'fuerte', 'no aplica'], valoresAlerta: ['leve'], valoresCritico: ['fuerte'] },
+      { nombre: 'Daños físicos', clave: 'danos_fisicos', tipo: 'seleccion', obligatorio: true, orden: 12, opciones: ['ninguno', 'leve', 'moderado', 'severo'], valoresAlerta: ['leve'], valoresCritico: ['moderado'], valoresUrgente: ['severo'] },
+    ],
+  },
   // ───────────────────────── ENERGÍA Y FUERZA MOTRIZ ─────────────────────────
   {
     nombre: 'Motor Diesel / Generador',
@@ -677,6 +701,10 @@ export async function seedCategorias() {
             clave: p.clave,
             unidad: p.unidad,
             tipo: p.tipo ?? 'numerico',
+            opciones: p.opciones,
+            valoresAlerta: p.valoresAlerta,
+            valoresCritico: p.valoresCritico,
+            valoresUrgente: p.valoresUrgente,
             obligatorio: p.obligatorio ?? false,
             orden: p.orden ?? 0,
             minNormal: p.minNormal,
@@ -707,6 +735,10 @@ export async function seedCategorias() {
             clave: p.clave,
             unidad: p.unidad,
             tipo: p.tipo ?? 'numerico',
+            opciones: p.opciones,
+            valoresAlerta: p.valoresAlerta,
+            valoresCritico: p.valoresCritico,
+            valoresUrgente: p.valoresUrgente,
             obligatorio: p.obligatorio ?? false,
             orden: p.orden ?? 0,
             minNormal: p.minNormal,
@@ -722,7 +754,41 @@ export async function seedCategorias() {
     created++;
   }
 
-  console.log(`seedCategorias: ${created} creadas, ${updated} completadas, ${skipped} ya existían.`);
+  const categoriaLaptop = await prisma.categoriaEquipo.findFirst({
+    where: { nombre: 'Informática / Laptop', empresaId: null },
+    select: { id: true },
+  });
+  let tiposLaptopActualizados = 0;
+  if (categoriaLaptop) {
+    const tipos = await prisma.tipoActivo.findMany({
+      select: { id: true, nombre: true, categoriaId: true },
+    });
+    const candidatos = tipos.filter((tipo) => {
+      const nombre = tipo.nombre.trim().toLowerCase();
+      return (nombre.includes('laptop') || nombre.includes('notebook'))
+        && tipo.categoriaId !== categoriaLaptop.id;
+    });
+    for (const tipo of candidatos) {
+      await prisma.tipoActivo.update({
+        where: { id: tipo.id },
+        data: {
+          categoriaId: categoriaLaptop.id,
+          mideTemperatura: false,
+          mideAmperaje: false,
+          midePresion: false,
+          mideVibracion: false,
+          mideBateria: false,
+          mideToner: false,
+          mideContador: false,
+          mideVoltaje: false,
+          mideHoras: false,
+        },
+      });
+      tiposLaptopActualizados++;
+    }
+  }
+
+  console.log(`seedCategorias: ${created} creadas, ${updated} completadas, ${skipped} ya existían, ${tiposLaptopActualizados} tipos Laptop vinculados.`);
 }
 
 // Run directly if called as script

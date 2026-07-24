@@ -23,12 +23,21 @@ export function peorEstado(a: NivelAlerta, b: NivelAlerta): NivelAlerta {
 export interface ParametroConUmbrales {
   clave: string;
   tipo: 'numerico' | 'porcentaje' | 'booleano' | 'texto' | 'seleccion';
+  valoresAlerta?: unknown;
+  valoresCritico?: unknown;
+  valoresUrgente?: unknown;
   umbralAlerta?: number | null;
   umbralCritico?: number | null;
   umbralUrgente?: number | null;
   minNormal?: number | null;
   maxNormal?: number | null;
   invertido?: boolean;
+}
+
+function contieneValor(configurados: unknown, valor: unknown): boolean {
+  if (!Array.isArray(configurados)) return false;
+  const actual = String(valor).trim().toLowerCase();
+  return configurados.some((item) => String(item).trim().toLowerCase() === actual);
 }
 
 /** Evalúa parámetros configurables de una categoría (pH, cloro, RPM, etc.). */
@@ -40,22 +49,28 @@ export function calcularEstadoParametrosExtra(
   let estado: NivelAlerta = 'normal';
 
   for (const parametro of parametros) {
-    if (parametro.tipo !== 'numerico' && parametro.tipo !== 'porcentaje') continue;
-    const valor = Number(valores[parametro.clave]);
-    if (!Number.isFinite(valor)) continue;
+    const valorOriginal = valores[parametro.clave];
+    if (valorOriginal === undefined || valorOriginal === null || valorOriginal === '') continue;
 
     let actual: NivelAlerta = 'normal';
-    if (parametro.invertido) {
-      if (parametro.umbralUrgente != null && valor <= parametro.umbralUrgente) actual = 'urgente';
-      else if (parametro.umbralCritico != null && valor <= parametro.umbralCritico) actual = 'critico';
-      else if (parametro.umbralAlerta != null && valor <= parametro.umbralAlerta) actual = 'alerta';
-      else if (parametro.minNormal != null && valor < parametro.minNormal) actual = 'alerta';
-    } else {
-      if (parametro.umbralUrgente != null && valor >= parametro.umbralUrgente) actual = 'urgente';
-      else if (parametro.umbralCritico != null && valor >= parametro.umbralCritico) actual = 'critico';
-      else if (parametro.umbralAlerta != null && valor >= parametro.umbralAlerta) actual = 'alerta';
-      else if (parametro.maxNormal != null && valor > parametro.maxNormal) actual = 'alerta';
-      else if (parametro.minNormal != null && valor < parametro.minNormal) actual = 'alerta';
+    if (contieneValor(parametro.valoresUrgente, valorOriginal)) actual = 'urgente';
+    else if (contieneValor(parametro.valoresCritico, valorOriginal)) actual = 'critico';
+    else if (contieneValor(parametro.valoresAlerta, valorOriginal)) actual = 'alerta';
+    else if (parametro.tipo === 'numerico' || parametro.tipo === 'porcentaje') {
+      const valor = Number(valorOriginal);
+      if (!Number.isFinite(valor)) continue;
+      if (parametro.invertido) {
+        if (parametro.umbralUrgente != null && valor <= parametro.umbralUrgente) actual = 'urgente';
+        else if (parametro.umbralCritico != null && valor <= parametro.umbralCritico) actual = 'critico';
+        else if (parametro.umbralAlerta != null && valor <= parametro.umbralAlerta) actual = 'alerta';
+        else if (parametro.minNormal != null && valor < parametro.minNormal) actual = 'alerta';
+      } else {
+        if (parametro.umbralUrgente != null && valor >= parametro.umbralUrgente) actual = 'urgente';
+        else if (parametro.umbralCritico != null && valor >= parametro.umbralCritico) actual = 'critico';
+        else if (parametro.umbralAlerta != null && valor >= parametro.umbralAlerta) actual = 'alerta';
+        else if (parametro.maxNormal != null && valor > parametro.maxNormal) actual = 'alerta';
+        else if (parametro.minNormal != null && valor < parametro.minNormal) actual = 'alerta';
+      }
     }
     estado = peor(estado, actual);
   }

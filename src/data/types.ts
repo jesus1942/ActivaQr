@@ -23,6 +23,7 @@ export interface TipoActivo {
   mideToner?: boolean;
   mideContador?: boolean;
   mideVoltaje?: boolean;
+  mideHoras?: boolean;
   activo: boolean;
 }
 

@@ -67,21 +67,30 @@ function calcularEstadoExtra(
 ): NivelAlerta {
   let e: NivelAlerta = 'normal';
   for (const param of parametros) {
-    if (param.tipo !== 'numerico' && param.tipo !== 'porcentaje') continue;
-    const valor = Number(valores[param.clave]);
-    if (!Number.isFinite(valor)) continue;
+    const valorOriginal = valores[param.clave];
+    if (valorOriginal === undefined || valorOriginal === null || valorOriginal === '') continue;
+    const incluye = (lista?: string[] | null) => (
+      lista?.some((item) => item.trim().toLowerCase() === String(valorOriginal).trim().toLowerCase()) ?? false
+    );
     let actual: NivelAlerta = 'normal';
-    if (param.invertido) {
-      if (param.umbralUrgente != null && valor <= param.umbralUrgente) actual = 'urgente';
-      else if (param.umbralCritico != null && valor <= param.umbralCritico) actual = 'critico';
-      else if (param.umbralAlerta != null && valor <= param.umbralAlerta) actual = 'alerta';
-      else if (param.minNormal != null && valor < param.minNormal) actual = 'alerta';
-    } else {
-      if (param.umbralUrgente != null && valor >= param.umbralUrgente) actual = 'urgente';
-      else if (param.umbralCritico != null && valor >= param.umbralCritico) actual = 'critico';
-      else if (param.umbralAlerta != null && valor >= param.umbralAlerta) actual = 'alerta';
-      else if (param.maxNormal != null && valor > param.maxNormal) actual = 'alerta';
-      else if (param.minNormal != null && valor < param.minNormal) actual = 'alerta';
+    if (incluye(param.valoresUrgente)) actual = 'urgente';
+    else if (incluye(param.valoresCritico)) actual = 'critico';
+    else if (incluye(param.valoresAlerta)) actual = 'alerta';
+    else if (param.tipo === 'numerico' || param.tipo === 'porcentaje') {
+      const valor = Number(valorOriginal);
+      if (!Number.isFinite(valor)) continue;
+      if (param.invertido) {
+        if (param.umbralUrgente != null && valor <= param.umbralUrgente) actual = 'urgente';
+        else if (param.umbralCritico != null && valor <= param.umbralCritico) actual = 'critico';
+        else if (param.umbralAlerta != null && valor <= param.umbralAlerta) actual = 'alerta';
+        else if (param.minNormal != null && valor < param.minNormal) actual = 'alerta';
+      } else {
+        if (param.umbralUrgente != null && valor >= param.umbralUrgente) actual = 'urgente';
+        else if (param.umbralCritico != null && valor >= param.umbralCritico) actual = 'critico';
+        else if (param.umbralAlerta != null && valor >= param.umbralAlerta) actual = 'alerta';
+        else if (param.maxNormal != null && valor > param.maxNormal) actual = 'alerta';
+        else if (param.minNormal != null && valor < param.minNormal) actual = 'alerta';
+      }
     }
     e = peor(e, actual);
   }
@@ -147,11 +156,13 @@ function ParamDinamicoInput({
   const strVal = value === undefined || value === null ? '' : String(value);
 
   if (param.tipo === 'booleano') {
+    const sinValor = value === undefined || value === null || value === '';
     const boolVal = value === true || value === 'true';
     return (
       <div className="mb-4">
         <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">
           {param.nombre}
+          {param.obligatorio && <span className="text-danger ml-1">*</span>}
         </label>
         <div className="flex gap-2">
           {[true, false].map((b) => (
@@ -160,7 +171,7 @@ function ParamDinamicoInput({
               type="button"
               onClick={() => onChange(b)}
               className={`flex-1 h-12 font-bold uppercase border transition-colors ${
-                boolVal === b
+                !sinValor && boolVal === b
                   ? 'bg-slate-900 text-white border-line'
                   : 'border-line text-muted hover:border-content bg-surface'
               }`}
@@ -178,13 +189,37 @@ function ParamDinamicoInput({
       <div className="mb-4">
         <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">
           {param.nombre}
+          {param.obligatorio && <span className="text-danger ml-1">*</span>}
         </label>
         <input
           type="text"
+          required={param.obligatorio}
           value={strVal}
           onChange={(e) => onChange(e.target.value)}
           className="w-full border border-line px-3 h-11 text-sm outline-none focus:border-brand-600 bg-surface"
         />
+      </div>
+    );
+  }
+
+  if (param.tipo === 'seleccion') {
+    return (
+      <div className="mb-4">
+        <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">
+          {param.nombre}
+          {param.obligatorio && <span className="text-danger ml-1">*</span>}
+        </label>
+        <select
+          required={param.obligatorio}
+          value={strVal}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full border border-line px-3 h-12 text-sm outline-none focus:border-brand-600 bg-surface capitalize"
+        >
+          <option value="">Seleccionar...</option>
+          {(param.opciones ?? []).map((opcion) => (
+            <option key={opcion} value={opcion}>{opcion}</option>
+          ))}
+        </select>
       </div>
     );
   }
@@ -269,6 +304,7 @@ export const Medicion: React.FC = () => {
   const mideBateria = tipoActivo?.mideBateria ?? false;
   const mideToner = tipoActivo?.mideToner ?? false;
   const mideContador = tipoActivo?.mideContador ?? false;
+  const mideHoras = tipoActivo?.mideHoras !== false;
 
   // Categoría dinámica
   const [categoria, setCategoria] = useState<CategoriaEquipo | null>(null);
@@ -337,6 +373,14 @@ export const Medicion: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!activo) return;
+    const faltante = (categoria?.parametros ?? []).find((param) => (
+      param.obligatorio
+      && (parametrosExtra[param.clave] === undefined || parametrosExtra[param.clave] === '')
+    ));
+    if (faltante) {
+      alert(`Completá el campo obligatorio "${faltante.nombre}".`);
+      return;
+    }
     const newMedicion: MedicionType = {
       id: `med-${Date.now()}`,
       activoId: activo.id,
@@ -393,10 +437,22 @@ export const Medicion: React.FC = () => {
               <span className="text-xs font-bold uppercase text-muted">Fecha</span>
               <span className="font-mono text-sm">{format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es })}</span>
             </div>
-            <div className="flex justify-between">
+            {mideTemperatura && <div className="flex justify-between">
               <span className="text-xs font-bold uppercase text-muted">Temperatura</span>
               <span className="font-mono font-bold text-sm">{savedMedicion.temperatura}°C</span>
-            </div>
+            </div>}
+            {categoria?.parametros.map((param) => {
+              const valor = savedMedicion.parametrosExtra?.[param.clave];
+              if (valor === undefined || valor === '') return null;
+              return (
+                <div key={param.id} className="flex justify-between gap-3">
+                  <span className="text-xs font-bold uppercase text-muted">{param.nombre}</span>
+                  <span className="font-mono font-bold text-sm text-right capitalize">
+                    {typeof valor === 'boolean' ? (valor ? 'Sí' : 'No') : String(valor)}{param.unidad ? ` ${param.unidad}` : ''}
+                  </span>
+                </div>
+              );
+            })}
             <div className="flex justify-between">
               <span className="text-xs font-bold uppercase text-muted">Estado</span>
               <StatusBadge estado={savedMedicion.estado} size="sm" />
@@ -520,8 +576,8 @@ export const Medicion: React.FC = () => {
             </div>
             {lastMedicion && (
               <div className="mt-3 pt-3 border-t border-line text-xs text-faint">
-                Última medición: {format(parseISO(lastMedicion.fecha), 'dd/MM/yyyy', { locale: es })} —
-                {' '}<span className="text-warn font-mono">{lastMedicion.temperatura}°C</span>
+                Última medición: {format(parseISO(lastMedicion.fecha), 'dd/MM/yyyy', { locale: es })}
+                {mideTemperatura && <> — <span className="text-warn font-mono">{lastMedicion.temperatura}°C</span></>}
               </div>
             )}
           </div>
@@ -636,7 +692,7 @@ export const Medicion: React.FC = () => {
             )}
 
             {/* Horas marcha */}
-            <div>
+            {mideHoras && <div>
               <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Horas de Marcha</label>
               <input
                 type="number"
@@ -645,7 +701,7 @@ export const Medicion: React.FC = () => {
                 className="w-full border border-line px-4 h-14 text-xl font-mono outline-none focus:border-brand-600 text-center bg-surface"
                 placeholder={String(activo.horasActuales)}
               />
-            </div>
+            </div>}
 
             {/* Voltaje */}
             {mideVoltaje && (

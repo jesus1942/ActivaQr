@@ -83,7 +83,7 @@ export const ActivoDetalle: React.FC = () => {
   );
   const mideAlgoCategoria = !!(categoriaTipo && categoriaTipo.parametros.length > 0);
   const esOperativo = mideAlgoFijo || mideAlgoCategoria;
-  const mideHorasMarcha = !!(
+  const mideHorasMarcha = tipoActual?.mideHoras !== false && !!(
     tipoActual?.mideAmperaje || tipoActual?.midePresion || tipoActual?.mideVibracion ||
     tipoActual?.mideContador
   );

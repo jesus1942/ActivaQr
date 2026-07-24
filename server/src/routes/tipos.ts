@@ -5,6 +5,18 @@ import { requireAdmin } from '../auth';
 
 const router = Router();
 
+async function categoriaPermitida(categoriaId: unknown, empresaId: string): Promise<string | null> {
+  if (typeof categoriaId !== 'string' || !categoriaId) return null;
+  const categoria = await prisma.categoriaEquipo.findFirst({
+    where: {
+      id: categoriaId,
+      OR: [{ empresaId: null }, { empresaId }],
+    },
+    select: { id: true },
+  });
+  return categoria?.id ?? null;
+}
+
 // GET /api/tipos
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -49,17 +61,22 @@ router.post('/', requireAdmin as any, async (req: Request, res: Response, next: 
       mideToner,
       mideContador,
       mideVoltaje,
+      mideHoras,
       activo,
     } = req.body ?? {};
     if (!nombre || typeof nombre !== 'string') {
       return res.status(400).json({ error: 'El campo "nombre" es obligatorio' });
+    }
+    const categoriaIdValida = await categoriaPermitida(categoriaId, empresaId);
+    if (categoriaId && !categoriaIdValida) {
+      return res.status(403).json({ error: 'La categoría no pertenece a esta empresa.' });
     }
     const tipo = await prisma.tipoActivo.create({
       data: {
         empresaId,
         nombre,
         icono,
-        categoriaId: categoriaId ?? null,
+        categoriaId: categoriaIdValida,
         mideTemperatura,
         mideAmperaje,
         midePresion,
@@ -68,6 +85,7 @@ router.post('/', requireAdmin as any, async (req: Request, res: Response, next: 
         mideToner,
         mideContador,
         mideVoltaje,
+        mideHoras,
         activo,
       },
     });
@@ -98,14 +116,21 @@ router.put('/:id', requireAdmin as any, async (req: Request, res: Response, next
       mideToner,
       mideContador,
       mideVoltaje,
+      mideHoras,
       activo,
     } = req.body ?? {};
+    const categoriaIdValida = categoriaId === undefined
+      ? undefined
+      : await categoriaPermitida(categoriaId, empresaId);
+    if (categoriaId && !categoriaIdValida) {
+      return res.status(403).json({ error: 'La categoría no pertenece a esta empresa.' });
+    }
     const tipo = await prisma.tipoActivo.update({
       where: { id: req.params.id },
       data: {
         nombre,
         icono,
-        categoriaId: categoriaId !== undefined ? (categoriaId ?? null) : undefined,
+        categoriaId: categoriaIdValida,
         mideTemperatura,
         mideAmperaje,
         midePresion,
@@ -114,6 +139,7 @@ router.put('/:id', requireAdmin as any, async (req: Request, res: Response, next
         mideToner,
         mideContador,
         mideVoltaje,
+        mideHoras,
         activo,
       },
     });

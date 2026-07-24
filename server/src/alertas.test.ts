@@ -5,6 +5,7 @@ import {
   calcularEstadoParametrosExtra,
   peorEstado,
 } from './alertas';
+import { validarParametrosExtra } from './routes/mediciones';
 
 test('escala una temperatura crítica', () => {
   const estado = calcularEstadoAutomatico(
@@ -32,4 +33,66 @@ test('evalúa parámetros configurables normales e invertidos', () => {
   assert.equal(alto, 'critico');
   assert.equal(bajo, 'critico');
   assert.equal(peorEstado(alto, 'urgente'), 'urgente');
+});
+
+test('evalúa respuestas booleanas y selecciones configurables', () => {
+  const estado = calcularEstadoParametrosExtra(
+    {
+      enciende_correctamente: false,
+      estado_bateria: 'malo',
+      danos_fisicos: 'severo',
+    },
+    [
+      {
+        clave: 'enciende_correctamente',
+        tipo: 'booleano',
+        valoresUrgente: ['false'],
+      },
+      {
+        clave: 'estado_bateria',
+        tipo: 'seleccion',
+        valoresCritico: ['malo'],
+      },
+      {
+        clave: 'danos_fisicos',
+        tipo: 'seleccion',
+        valoresUrgente: ['severo'],
+      },
+    ],
+  );
+  assert.equal(estado, 'urgente');
+});
+
+test('rechaza checklists incompletos o selecciones inválidas', () => {
+  const parametros = [
+    {
+      nombre: 'Enciende correctamente',
+      clave: 'enciende_correctamente',
+      tipo: 'booleano',
+      obligatorio: true,
+      opciones: null,
+    },
+    {
+      nombre: 'Estado de batería',
+      clave: 'estado_bateria',
+      tipo: 'seleccion',
+      obligatorio: true,
+      opciones: ['bueno', 'regular', 'malo'],
+    },
+  ];
+  assert.match(validarParametrosExtra({}, parametros) ?? '', /obligatorio/);
+  assert.match(
+    validarParametrosExtra(
+      { enciende_correctamente: true, estado_bateria: 'desconocido' },
+      parametros,
+    ) ?? '',
+    /no es válida/,
+  );
+  assert.equal(
+    validarParametrosExtra(
+      { enciende_correctamente: false, estado_bateria: 'malo' },
+      parametros,
+    ),
+    null,
+  );
 });

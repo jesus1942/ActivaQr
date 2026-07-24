@@ -13,6 +13,16 @@ const includeParametros = {
   },
 };
 
+function listaValores(valor: unknown): string[] | undefined {
+  if (!Array.isArray(valor)) return undefined;
+  return [...new Set(
+    valor
+      .filter((item): item is string => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter(Boolean),
+  )];
+}
+
 // ─── GET /api/categorias ─── lista globales + propias de la empresa ─────────
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -85,7 +95,8 @@ router.post('/:id/parametros', requireAdmin, async (req: AuthRequest, res: Respo
     if (!cat) return res.status(404).json({ error: 'Categoría no encontrada o no editable.' });
 
     const {
-      nombre, clave, unidad, tipo, obligatorio, orden,
+      nombre, clave, unidad, tipo, obligatorio, orden, opciones,
+      valoresAlerta, valoresCritico, valoresUrgente,
       minNormal, maxNormal, umbralAlerta, umbralCritico, umbralUrgente, invertido,
     } = req.body ?? {};
     if (!nombre || !clave) return res.status(400).json({ error: 'Los campos "nombre" y "clave" son obligatorios.' });
@@ -94,6 +105,10 @@ router.post('/:id/parametros', requireAdmin, async (req: AuthRequest, res: Respo
       data: {
         categoriaId: req.params.id,
         nombre, clave, unidad, tipo, obligatorio, orden,
+        opciones: listaValores(opciones),
+        valoresAlerta: listaValores(valoresAlerta),
+        valoresCritico: listaValores(valoresCritico),
+        valoresUrgente: listaValores(valoresUrgente),
         minNormal, maxNormal, umbralAlerta, umbralCritico, umbralUrgente,
         invertido: invertido ?? false,
       },
@@ -144,13 +159,18 @@ router.put('/:id/parametros/:paramId', requireAdmin, async (req: AuthRequest, re
     if (!existente) return res.status(404).json({ error: 'Parámetro no encontrado.' });
 
     const {
-      nombre, clave, unidad, tipo, obligatorio, orden,
+      nombre, clave, unidad, tipo, obligatorio, orden, opciones,
+      valoresAlerta, valoresCritico, valoresUrgente,
       minNormal, maxNormal, umbralAlerta, umbralCritico, umbralUrgente, invertido,
     } = req.body ?? {};
     const param = await prisma.parametroCategoria.update({
       where: { id: req.params.paramId },
       data: {
         nombre, clave, unidad, tipo, obligatorio, orden,
+        opciones: opciones !== undefined ? listaValores(opciones) : undefined,
+        valoresAlerta: valoresAlerta !== undefined ? listaValores(valoresAlerta) : undefined,
+        valoresCritico: valoresCritico !== undefined ? listaValores(valoresCritico) : undefined,
+        valoresUrgente: valoresUrgente !== undefined ? listaValores(valoresUrgente) : undefined,
         minNormal, maxNormal, umbralAlerta, umbralCritico, umbralUrgente, invertido,
       },
     });
