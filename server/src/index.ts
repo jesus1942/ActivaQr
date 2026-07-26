@@ -46,6 +46,10 @@ import { enviarEmailLead } from './email';
 
 const app = express();
 
+// Railway pone un proxy delante: sin esto, req.ip es la IP del proxy y los
+// rate limits se comparten entre todos los usuarios en vez de ser por visitante.
+app.set('trust proxy', 1);
+
 app.use(helmet({ contentSecurityPolicy: false }));
 
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://activaqr.net,https://www.activaqr.net,https://jesus1942.github.io,https://activaqr-production.up.railway.app').split(',').map(s => s.trim());
@@ -79,6 +83,11 @@ const apiLimiter = rateLimit({
   message: { error: 'Demasiadas solicitudes. Esperá un momento.' },
 });
 app.use('/api/', apiLimiter);
+
+// Endpoints públicos sin auth: acotados por IP para frenar spam de bots
+// (cada lead dispara email + push; cada visita inserta en la DB).
+const leadsLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: 'Demasiadas solicitudes. Intentá más tarde.' } });
+const visitasLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, message: { error: 'Demasiadas solicitudes.' } });
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -114,7 +123,7 @@ app.get('/api/politicas/version', (_req, res) => {
 });
 
 // Captura de leads desde la landing (sin auth).
-app.post('/api/leads', async (req: Request, res: Response) => {
+app.post('/api/leads', leadsLimiter, async (req: Request, res: Response) => {
   const { nombre, empresa, email, telefono, mensaje } = req.body ?? {};
   if (!nombre || !email) {
     return res.status(400).json({ error: 'Nombre y email son obligatorios.' });
@@ -193,7 +202,7 @@ app.use('/api/public', publicRouter);
 app.use('/api/public/fallas', fallasPublicRouter);
 
 // Analítica propia de visitas (sin auth: la landing y las fichas públicas la llaman).
-app.use('/api/visitas', visitasRouter);
+app.use('/api/visitas', visitasLimiter, visitasRouter);
 
 // Acceso remoto: rutas de admin van dentro de /api/admin (ver accesoRemotoRouter)
 // Rutas del cliente para acceso remoto.
