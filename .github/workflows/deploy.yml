@@ -28,12 +28,32 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
+      - name: Verificar secret VITE_API_URL
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        run: |
+          if [ -z "$VITE_API_URL" ]; then
+            echo "::error::El secret VITE_API_URL está VACÍO. Cargalo en Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          echo "VITE_API_URL definido: ${#VITE_API_URL} caracteres"
+
       - name: Build
         run: npm run build
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
           # Dominio propio (activaqr.net): la app se sirve desde la raíz.
           VITE_BASE: /
+
+      - name: Verificar que el build apunta a la API del dominio
+        run: |
+          if grep -rq "api.activaqr.net" dist/assets/; then
+            echo "OK: el build contiene https://api.activaqr.net"
+          else
+            echo "::error::El build NO contiene api.activaqr.net — el secret VITE_API_URL tiene otro valor."
+            grep -roh "https://[a-zA-Z0-9.-]*" dist/assets/*.js | grep -v "fonts\|w3.org\|schema" | sort -u | head -5 || true
+            exit 1
+          fi
 
       - name: Configurar Pages
         uses: actions/configure-pages@v4
