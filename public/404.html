@@ -4,14 +4,12 @@
   <meta charset="utf-8">
   <title>ActivaQR</title>
   <script>
-    // GitHub Pages SPA redirect
+    // GitHub Pages SPA redirect: la app usa HashRouter, así que alcanza con
+    // volver a la base conservando el hash. En github.io la base es el nombre
+    // del repo; con dominio propio es la raíz.
     var l = window.location;
-    l.replace(l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-      l.pathname.split('/').slice(0, 2).join('/') +
-      '/?/' + l.pathname.slice(1).split('/').slice(1).join('/').replace(/&/g, '~and~') +
-      (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-      l.hash
-    );
+    var base = l.hostname.endsWith('github.io') ? '/' + l.pathname.split('/')[1] + '/' : '/';
+    l.replace(l.protocol + '//' + l.host + base + l.hash);
   </script>
 </head>
 </html>

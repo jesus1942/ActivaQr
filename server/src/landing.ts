@@ -54,7 +54,7 @@ export function renderLanding(appUrl: string, whatsapp?: string, apoyo?: { cafec
 <meta property="og:url" content="https://activaqr-production.up.railway.app/" />
 <meta property="og:title" content="ActivaQR — Mantenimiento que llega hasta el campo" />
 <meta property="og:description" content="Tu técnico escanea el QR, carga la medición y la foto desde el celular. Si no hay señal, queda guardado y sube solo cuando vuelve la conexión." />
-<meta property="og:image" content="https://jesus1942.github.io/ActivaQr/company-logo-hd.png" />
+<meta property="og:image" content="https://activaqr.net/company-logo-hd.png" />
 <meta property="og:locale" content="es_AR" />
 <meta property="og:site_name" content="ActivaQR" />
 
@@ -62,7 +62,7 @@ export function renderLanding(appUrl: string, whatsapp?: string, apoyo?: { cafec
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="ActivaQR — Mantenimiento que llega hasta el campo" />
 <meta name="twitter:description" content="Pensado para empresas de servicios y mantenimiento. Funciona en el pad sin señal, en la mina, en la góndola del aerogenerador." />
-<meta name="twitter:image" content="https://jesus1942.github.io/ActivaQr/company-logo-hd.png" />
+<meta name="twitter:image" content="https://activaqr.net/company-logo-hd.png" />
 
 <!-- Schema.org: SoftwareApplication -->
 <script type="application/ld+json">
@@ -107,7 +107,7 @@ export function renderLanding(appUrl: string, whatsapp?: string, apoyo?: { cafec
 }
 </script>
 
-<link rel="icon" type="image/png" href="https://jesus1942.github.io/ActivaQr/favicon.png" />
+<link rel="icon" type="image/png" href="https://activaqr.net/favicon.png" />
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   :root{--naranja:#f97316;--negro:#0f172a;--gris:#475569;--gris-c:#94a3b8;--fondo:#fafafa}

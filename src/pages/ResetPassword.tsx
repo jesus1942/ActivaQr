@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Lock } from 'lucide-react';
 import { apiFetch } from '../data/auth';
 
-const LOGO = '/ActivaQr/company-logo-hd.png';
+const LOGO = `${import.meta.env.BASE_URL}company-logo-hd.png`;
 
 export const ResetPassword: React.FC = () => {
   const params = new URLSearchParams(window.location.hash.split('?')[1] ?? '');

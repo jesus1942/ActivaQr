@@ -48,7 +48,7 @@ const app = express();
 
 app.use(helmet({ contentSecurityPolicy: false }));
 
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://jesus1942.github.io,https://activaqr-production.up.railway.app').split(',').map(s => s.trim());
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://activaqr.net,https://www.activaqr.net,https://jesus1942.github.io,https://activaqr-production.up.railway.app').split(',').map(s => s.trim());
 const isOriginAllowed = createOriginValidator(ALLOWED_ORIGINS, process.env.NODE_ENV === 'production');
 app.use(cors({
   origin: (origin, callback) => {
@@ -83,7 +83,7 @@ app.use('/api/', apiLimiter);
 app.use(express.json({ limit: '10mb' }));
 
 // Landing pública en la raíz.
-const APP_PUBLIC_URL = process.env.APP_PUBLIC_URL || 'https://jesus1942.github.io/ActivaQr/';
+const APP_PUBLIC_URL = process.env.APP_PUBLIC_URL || 'https://activaqr.net/';
 app.get('/', (req, res) => {
   // Registrar visita a la landing (fire-and-forget, nunca demora la página).
   registrarVisita(req, 'landing').catch(() => {});

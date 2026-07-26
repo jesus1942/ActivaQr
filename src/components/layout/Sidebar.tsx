@@ -31,8 +31,8 @@ import { hasFeature, type Feature } from '../../data/planes';
 import { Sheet } from '../ui/Sheet';
 import { ThemeToggle } from '../ui/ThemeToggle';
 
-const LOGO_LIGHT = '/ActivaQr/company-logo-hd.png';   // negro, fondo claro
-const LOGO_DARK  = '/ActivaQr/company-logo1.png';      // claro, fondo oscuro
+const LOGO_LIGHT = `${import.meta.env.BASE_URL}company-logo-hd.png`;   // negro, fondo claro
+const LOGO_DARK  = `${import.meta.env.BASE_URL}company-logo1.png`;      // claro, fondo oscuro
 
 interface NavItem {
   to: string;

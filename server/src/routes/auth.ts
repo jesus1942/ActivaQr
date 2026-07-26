@@ -277,7 +277,7 @@ router.post('/forgot-password', async (req, res: Response, next: NextFunction) =
         where: { id: usuario.id },
         data: { resetToken: token, resetTokenExpiry: expiry },
       });
-      const appPublicUrl = process.env.APP_PUBLIC_URL || 'https://jesus1942.github.io/ActivaQr/';
+      const appPublicUrl = process.env.APP_PUBLIC_URL || 'https://activaqr.net/';
       const resetUrl = `${appPublicUrl}#/reset-password?token=${token}`;
 
       if (usuario.telegramChatId) {

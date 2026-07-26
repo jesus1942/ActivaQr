@@ -178,7 +178,7 @@ router.post('/empresas/:id/reset-password', async (req: AuthRequest, res: Respon
     });
 
     // 4. Notificar al cliente con motivo "admin-reset"
-    const appPublicUrl = process.env.APP_PUBLIC_URL || 'https://jesus1942.github.io/ActivaQr/';
+    const appPublicUrl = process.env.APP_PUBLIC_URL || 'https://activaqr.net/';
     const resetUrl = `${appPublicUrl}#/reset-password?token=${resetToken}`;
     let canalUsado: 'telegram' | 'email' | 'admin-fallback' = 'email';
 
@@ -267,7 +267,7 @@ router.post('/empresas/:id/suscripcion', async (req: AuthRequest, res: Response,
       return res.status(400).json({ error: 'La empresa no tiene un administrador con email.' });
     }
 
-    const backUrl = process.env.MP_BACK_URL || 'https://jesus1942.github.io/ActivaQr/';
+    const backUrl = process.env.MP_BACK_URL || 'https://activaqr.net/';
 
     const pre = await crearPreapproval({
       empresaId: empresa.id,
@@ -316,7 +316,7 @@ router.post('/empresas/:id/link-pago', async (req: AuthRequest, res: Response, n
       return res.status(409).json({ code: 'politicas_no_aceptadas', error: 'La empresa todavia no acepto la Politica de Uso y Privacidad.' });
     }
 
-    const backUrl = process.env.MP_BACK_URL || 'https://jesus1942.github.io/ActivaQr/';
+    const backUrl = process.env.MP_BACK_URL || 'https://activaqr.net/';
     const desc = descripcion || `Pago ActivaQR — ${empresa.nombre}`;
     const payerEmail = empresa.usuarios[0]?.email;
 
@@ -343,7 +343,7 @@ router.post('/empresas/:id/stripe-suscripcion', async (req: AuthRequest, res: Re
       return res.status(409).json({ code: 'politicas_no_aceptadas', error: 'La empresa todavia no acepto la Politica de Uso y Privacidad.' });
     }
 
-    const backUrl = process.env.APP_PUBLIC_URL || 'https://jesus1942.github.io/ActivaQr/';
+    const backUrl = process.env.APP_PUBLIC_URL || 'https://activaqr.net/';
     const result = await crearStripeSubscripcion({
       empresaId: empresa.id,
       monto: montoNum,
@@ -374,7 +374,7 @@ router.post('/empresas/:id/stripe-link-pago', async (req: AuthRequest, res: Resp
       return res.status(409).json({ code: 'politicas_no_aceptadas', error: 'La empresa todavia no acepto la Politica de Uso y Privacidad.' });
     }
 
-    const backUrl = process.env.APP_PUBLIC_URL || 'https://jesus1942.github.io/ActivaQr/';
+    const backUrl = process.env.APP_PUBLIC_URL || 'https://activaqr.net/';
     const desc = descripcion || `Pago ActivaQR — ${empresa.nombre}`;
     const result = await crearStripePagoUnico({ empresaId: empresa.id, monto: montoNum, moneda: moneda as 'usd' | 'uyu', descripcion: desc, backUrl });
 

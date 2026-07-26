@@ -32,6 +32,8 @@ jobs:
         run: npm run build
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          # Dominio propio (activaqr.net): la app se sirve desde la raíz.
+          VITE_BASE: /
 
       - name: Configurar Pages
         uses: actions/configure-pages@v4

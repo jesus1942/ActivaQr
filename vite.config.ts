@@ -2,8 +2,11 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Base configurable: '/' para dominio propio (activaqr.net), '/ActivaQr/' para GitHub Pages sin dominio.
+const base = process.env.VITE_BASE || '/ActivaQr/';
+
 export default defineConfig({
-  base: '/ActivaQr/',
+  base,
   plugins: [
     react(),
     VitePWA({
@@ -17,8 +20,8 @@ export default defineConfig({
         background_color: '#0B1120',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/ActivaQr/',
-        scope: '/ActivaQr/',
+        start_url: base,
+        scope: base,
         lang: 'es',
         categories: ['business', 'productivity', 'utilities'],
         icons: [
@@ -36,14 +39,14 @@ export default defineConfig({
             name: 'Tomar Medición',
             short_name: 'Medición',
             description: 'Cargar medición desde campo',
-            url: '/ActivaQr/#/medicion',
+            url: `${base}#/medicion`,
             icons: [{ src: 'icons/icon-96.png', sizes: '96x96' }]
           },
           {
             name: 'Ver Activos',
             short_name: 'Activos',
             description: 'Lista de activos',
-            url: '/ActivaQr/#/activos',
+            url: `${base}#/activos`,
             icons: [{ src: 'icons/icon-96.png', sizes: '96x96' }]
           }
         ]

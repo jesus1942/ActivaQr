@@ -1,6 +1,10 @@
 /* Manejador de notificaciones push para ActivaQR.
    Importado por el service worker generado (Workbox) vía importScripts. */
 
+// El SW vive en la raíz del deploy, así que su propia URL determina la base
+// ('/' con dominio propio, '/ActivaQr/' en GitHub Pages sin dominio).
+const BASE = new URL('./', self.location.href).pathname;
+
 self.addEventListener('push', (event) => {
   let data = {};
   try {
@@ -11,8 +15,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'ActivaQR';
   const options = {
     body: data.body || '',
-    icon: '/ActivaQr/icons/icon-192.png',
-    badge: '/ActivaQr/icons/icon-96.png',
+    icon: BASE + 'icons/icon-192.png',
+    badge: BASE + 'icons/icon-96.png',
     data: { url: data.url || '#/' },
   };
   event.waitUntil(self.registration.showNotification(title, options));
@@ -21,11 +25,11 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const rawUrl = (event.notification.data && event.notification.data.url) || '#/';
-  const target = '/ActivaQr/' + (rawUrl.startsWith('#') ? rawUrl : '#/' + rawUrl.replace(/^#?\/?/, ''));
+  const target = BASE + (rawUrl.startsWith('#') ? rawUrl : '#/' + rawUrl.replace(/^#?\/?/, ''));
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
-        if (client.url.indexOf('/ActivaQr/') !== -1 && 'focus' in client) {
+        if (client.url.indexOf(BASE) !== -1 && 'focus' in client) {
           client.navigate(target);
           return client.focus();
         }

@@ -26,7 +26,7 @@ const aprobacionLimiter = rateLimit({
 const router = Router();
 
 const PLANES_ACCESO_REMOTO = ['empresa', 'industrial'];
-const APP_URL = process.env.APP_URL || 'https://jesus1942.github.io/ActivaQr';
+const APP_URL = process.env.APP_URL || 'https://activaqr.net';
 
 // ── Superadmin: solicitar acceso a una empresa ────────────────────────────────
 

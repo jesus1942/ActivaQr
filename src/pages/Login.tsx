@@ -6,8 +6,8 @@ import { apiFetch, logout as clearSession } from '../data/auth';
 import { AuroraBg } from '../components/ui/AuroraBg';
 import { useNavigate } from 'react-router-dom';
 
-const LOGO = '/ActivaQr/company-logo-hd.png';      // negro (tema claro)
-const LOGO_DARK_SRC = '/ActivaQr/company-logo1.png'; // blanco (tema oscuro)
+const LOGO = `${import.meta.env.BASE_URL}company-logo-hd.png`;      // negro (tema claro)
+const LOGO_DARK_SRC = `${import.meta.env.BASE_URL}company-logo1.png`; // blanco (tema oscuro)
 
 const DEMO_EMAIL = 'demo@activaqr.com';
 const DEMO_PASS = 'demo1234';
