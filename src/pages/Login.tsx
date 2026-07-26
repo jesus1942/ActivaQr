@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { LogIn, Lock, Mail, UserPlus, Building2, User, Phone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { apiFetch, logout as clearSession } from '../data/auth';
+import { API_URL, apiFetch, logout as clearSession } from '../data/auth';
 import { AuroraBg } from '../components/ui/AuroraBg';
 import { useNavigate } from 'react-router-dom';
 
@@ -35,7 +35,7 @@ export const Login: React.FC = () => {
   const [regError, setRegError] = useState<string | null>(null);
   const [regCargando, setRegCargando] = useState(false);
 
-  const apiBase = (import.meta.env.VITE_API_URL || '').replace(/\/api\/?$/, '');
+  const apiBase = (API_URL || '').replace(/\/api$/, '');
 
   const handleRegistro = async (e: React.FormEvent) => {
     e.preventDefault();

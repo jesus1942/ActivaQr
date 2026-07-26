@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { ShieldCheck, ExternalLink, AlertTriangle } from 'lucide-react';
 import { aceptarPoliticas } from '../data/cuentaApi';
+import { API_URL } from '../data/auth';
 import { useAuth } from '../context/AuthContext';
 
-const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/api\/?$/, '');
+const API_BASE = (API_URL || '').replace(/\/api$/, '');
 
 interface Props {
   onAceptada: () => void;

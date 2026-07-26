@@ -29,7 +29,8 @@ import { authHeaders } from './auth';
 
 export type { Activo, Medicion, TareaMantenimiento, Sector, TipoActivo, Tecnico } from './types';
 
-export const API_URL: string | undefined = import.meta.env.VITE_API_URL;
+import { API_URL } from './apiUrl';
+export { API_URL };
 export const useRemote = Boolean(API_URL);
 
 const KEYS = {

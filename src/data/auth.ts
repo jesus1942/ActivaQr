@@ -5,7 +5,8 @@
  */
 import { encolarOperacion } from './offlineQueue';
 
-export const API_URL: string | undefined = import.meta.env.VITE_API_URL;
+import { API_URL } from './apiUrl';
+export { API_URL };
 
 const TOKEN_KEY = 'activaqr_token';
 const USER_KEY = 'activaqr_user';
