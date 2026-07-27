@@ -104,7 +104,19 @@ self.addEventListener('activate', function (e) {
 );
 
 // ── Archivos que deben vivir en la raiz del dominio ────────────────────────
-const aLaRaiz = ['robots.txt', 'sitemap.xml', 'favicon.png', 'og-image.png', 'apple-touch-icon.png'];
+// La landing referencia el logo y la miniatura desde la raiz del dominio
+// (og:image, favicon): sin estas copias quedaban en 404 y las vistas previas
+// de WhatsApp y LinkedIn salian sin imagen.
+const aLaRaiz = [
+  'robots.txt',
+  'sitemap.xml',
+  'favicon.png',
+  'og-image.png',
+  'apple-touch-icon.png',
+  'company-logo-hd.png',
+  'company-logo1.png',
+  'company-logo.png',
+];
 for (const archivo of aLaRaiz) {
   const origen = join(dist, 'app', archivo);
   if (existsSync(origen)) copyFileSync(origen, join(dist, archivo));

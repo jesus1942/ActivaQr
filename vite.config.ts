@@ -13,7 +13,9 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'og-image.png', 'icons/*.png'],
+      // og-image queda afuera: solo se usa en las vistas previas de WhatsApp y
+      // redes, que la piden desde la raiz del dominio, nunca desde la app.
+      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'icons/*.png'],
       manifest: {
         name: 'ActivaQR — Activos bajo control',
         short_name: 'ActivaQR',
@@ -55,6 +57,18 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Lo que NO se precarga al instalar la app. Se descarga la primera vez
+        // que se usa y queda cacheado (ver runtimeCaching). El objetivo es que
+        // el tecnico en el campo tenga offline lo que necesita —cargar
+        // mediciones— sin esperar megas de librerias que quiza no abra nunca.
+        globIgnores: [
+          'og-image.png',                    // solo para previews de WhatsApp y redes
+          'assets/jspdf*.js',                // exportar PDF
+          'assets/html2canvas*.js',          // capturas para el PDF
+          'assets/generateCategoricalChart*.js', // graficos de analitica
+          'assets/index.es-*.js',            // dependencia de los graficos
+          'assets/purify.es-*.js',           // saneado de HTML para el PDF
+        ],
         globIgnores: [
           '**/jspdf*.js',
           '**/html2canvas*.js',
@@ -72,6 +86,13 @@ export default defineConfig({
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
             handler: 'CacheFirst',
             options: { cacheName: 'gstatic-fonts-cache', expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 } }
+          },
+          {
+            // Lo excluido del precache: se guarda al primer uso y desde ahi
+            // queda disponible sin conexion.
+            urlPattern: ({ request, sameOrigin }) => sameOrigin && (request.destination === 'script' || request.destination === 'image'),
+            handler: 'StaleWhileRevalidate',
+            options: { cacheName: 'activaqr-bajo-demanda', expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 30 } }
           }
         ]
       }
