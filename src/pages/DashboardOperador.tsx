@@ -7,37 +7,9 @@ import { SyncBadge } from '../components/ui/SyncBadge';
 import { extraerEvidencia, EvidenciaForense } from '../data/evidenciaForense';
 import { DiagnosticoSugerido } from '../components/DiagnosticoSugerido';
 import { ParametroCategoria } from '../data/categoriasApi';
+import { comprimirImagen } from '../utils/comprimirImagen';
 import { ScanLine, ClipboardList, CheckCircle2, AlertTriangle, LogOut, ChevronRight, X, CloudOff, Camera, ShieldCheck } from 'lucide-react';
 
-const MAX_DIM_FOTO = 1280;
-
-async function comprimirFoto(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let { width, height } = img;
-        if (width > MAX_DIM_FOTO || height > MAX_DIM_FOTO) {
-          const ratio = Math.min(MAX_DIM_FOTO / width, MAX_DIM_FOTO / height);
-          width *= ratio;
-          height *= ratio;
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return reject(new Error('No se pudo crear canvas'));
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', 0.7));
-      };
-      img.onerror = () => reject(new Error('Imagen invalida'));
-      img.src = reader.result as string;
-    };
-    reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
-    reader.readAsDataURL(file);
-  });
-}
 
 interface Activo {
   id: string;
@@ -307,7 +279,7 @@ export const DashboardOperador: React.FC = () => {
       // Extraer evidencia del archivo ORIGINAL antes de comprimir (la compresion
       // descarta EXIF). Si no hay GPS en la imagen, intenta navigator.geolocation.
       const evidencia = await extraerEvidencia(file).catch(() => null);
-      const dataUrl = await comprimirFoto(file);
+      const dataUrl = await comprimirImagen(file);
       setFoto(dataUrl);
       setEvidenciaFoto(evidencia);
     } catch (err) {

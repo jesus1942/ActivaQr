@@ -9,6 +9,7 @@ import { QrScanner, extraerActivoId } from '../components/QrScanner';
 import { Medicion as MedicionType, EstadoMedicion, Activo } from '../data/types';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { CategoriaEquipo, ParametroCategoria, getCategoria } from '../data/categoriasApi';
+import { comprimirImagen } from '../utils/comprimirImagen';
 
 // ── Lógica de alertas (espejo del backend) ────────────────────────────────────
 type NivelAlerta = 'normal' | 'alerta' | 'critico' | 'urgente';
@@ -334,19 +335,23 @@ export const Medicion: React.FC = () => {
 
   // Fotos adjuntas a la medición
   const [fotos, setFotos] = useState<string[]>([]); // base64 data URLs
+  const [errorFoto, setErrorFoto] = useState<string | null>(null);
   const fotoInputRef = useRef<HTMLInputElement>(null);
 
   const agregarFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const archivos = Array.from(e.target.files ?? []);
-    archivos.forEach((archivo) => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const result = ev.target?.result as string;
-        if (result) setFotos((prev) => [...prev, result]);
-      };
-      reader.readAsDataURL(archivo);
-    });
     e.target.value = '';
+    archivos.forEach(async (archivo) => {
+      try {
+        // Sin comprimir, la foto cruda del celular (4-8 MB) viajaba entera por
+        // la red de la planta y se guardaba asi. Se reduce conservando el
+        // detalle necesario para revisar el equipo.
+        const dataUrl = await comprimirImagen(archivo);
+        setFotos((prev) => [...prev, dataUrl]);
+      } catch {
+        setErrorFoto('No se pudo procesar una de las fotos. Probá sacarla de nuevo.');
+      }
+    });
   };
   const setParamExtra = (clave: string, val: string | number | boolean) =>
     setParametrosExtra((p) => ({ ...p, [clave]: val }));
@@ -865,6 +870,9 @@ export const Medicion: React.FC = () => {
               >
                 <ImagePlus size={20} /> Agregar foto
               </button>
+              {errorFoto && (
+                <p className="mt-2 text-xs font-bold text-red-500">{errorFoto}</p>
+              )}
               {fotos.length > 0 && (
                 <div className="flex gap-2 mt-2 flex-wrap">
                   {fotos.map((src, i) => (

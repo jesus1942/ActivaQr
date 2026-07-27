@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Send, ImagePlus, Mic, Square } from 'lucide-react';
 import { MensajeRemoto, MensajePayload } from '../data/accesoRemotoApi';
 import { extraerEvidencia } from '../data/evidenciaForense';
+import { comprimirImagen } from '../utils/comprimirImagen';
 import { EvidenciaForenseBadge, DatosEvidencia } from './EvidenciaForenseBadge';
 
 interface Props {
@@ -12,39 +13,8 @@ interface Props {
   cargando?: boolean;
 }
 
-const MAX_DIM = 1280;
 const MAX_SEGUNDOS = 60;
 
-/** Comprime una imagen a JPEG con dimensión máxima MAX_DIM y devuelve un data URL. */
-function comprimirImagen(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        let { width, height } = img;
-        if (width > height && width > MAX_DIM) {
-          height = Math.round((height * MAX_DIM) / width);
-          width = MAX_DIM;
-        } else if (height > MAX_DIM) {
-          width = Math.round((width * MAX_DIM) / height);
-          height = MAX_DIM;
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return reject(new Error('No se pudo procesar la imagen.'));
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', 0.7));
-      };
-      img.onerror = () => reject(new Error('No se pudo leer la imagen.'));
-      img.src = reader.result as string;
-    };
-    reader.onerror = () => reject(new Error('No se pudo leer el archivo.'));
-    reader.readAsDataURL(file);
-  });
-}
 
 function blobADataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
