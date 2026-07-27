@@ -73,17 +73,13 @@ export function renderLanding(appUrl: string, whatsapp?: string, apoyo?: { cafec
   "applicationCategory": "BusinessApplication",
   "operatingSystem": "Web, iOS, Android",
   "description": "Sistema SaaS de gestión de activos industriales con códigos QR. Mantenimiento preventivo y predictivo, alertas automáticas, historial digitalizado y soporte remoto.",
-  "url": "https://activaqr-production.up.railway.app/",
+  "url": "https://activaqr.net/",
   "offers": {
-    "@type": "Offer",
-    "price": "150",
+    "@type": "AggregateOffer",
     "priceCurrency": "USD",
-    "priceSpecification": {
-      "@type": "UnitPriceSpecification",
-      "price": "150",
-      "priceCurrency": "USD",
-      "unitText": "mes"
-    }
+    "lowPrice": "20",
+    "highPrice": "179",
+    "offerCount": "3"
   },
   "provider": {
     "@type": "Person",
@@ -545,11 +541,11 @@ export function renderLanding(appUrl: string, whatsapp?: string, apoyo?: { cafec
 <section id="planes" class="reveal">
   <div class="wrap">
     <h2 class="titulo">Planes</h2>
-    <p class="bajada">Empezá chico y crecé cuando lo necesites. Todos con débito automático mensual por Mercado Pago.</p>
+    <p class="bajada">Empezá chico y crecé cuando lo necesites. Todos con débito automático mensual por Mercado Pago. <strong>30 días gratis, sin tarjeta.</strong></p>
     <div class="planes">
       <div class="plan">
         <h3>Inicial</h3>
-        <p class="precio">Para arrancar</p>
+        <p class="precio"><span style="font-size:34px;letter-spacing:0">USD 20</span> <span style="font-size:13px;font-weight:700;text-transform:none;letter-spacing:0">/ mes</span></p>
         <ul>
           <li>Hasta 10 activos</li>
           <li>2 técnicos</li>
@@ -557,23 +553,23 @@ export function renderLanding(appUrl: string, whatsapp?: string, apoyo?: { cafec
           <li>Alertas automáticas</li>
           <li>Reportes en PDF</li>
         </ul>
-        <a class="btn btn-negro" href="#contacto">Lo quiero</a>
+        <a class="btn btn-negro" href="${appUrl}#/login?registro=1" target="_blank" rel="noopener">Empezar gratis</a>
       </div>
       <div class="plan destacado">
         <h3>Empresa</h3>
-        <p class="precio">El más elegido</p>
+        <p class="precio"><span style="font-size:34px;letter-spacing:0">USD 69</span> <span style="font-size:13px;font-weight:700;text-transform:none;letter-spacing:0">/ mes</span></p>
         <ul>
           <li>Hasta 100 activos</li>
-          <li>5 técnicos</li>
+          <li>10 técnicos</li>
           <li>Ficha QR pública siempre activa</li>
           <li>Soporte remoto incluido</li>
           <li>Sectores e importación CSV</li>
         </ul>
-        <a class="btn btn-naranja" href="#contacto">Lo quiero</a>
+        <a class="btn btn-naranja" href="${appUrl}#/login?registro=1" target="_blank" rel="noopener">Empezar gratis</a>
       </div>
       <div class="plan">
         <h3>Industrial</h3>
-        <p class="precio">Sin límites</p>
+        <p class="precio"><span style="font-size:34px;letter-spacing:0">USD 179</span> <span style="font-size:13px;font-weight:700;text-transform:none;letter-spacing:0">/ mes</span></p>
         <ul>
           <li>Activos ilimitados</li>
           <li>Técnicos ilimitados</li>
@@ -581,9 +577,10 @@ export function renderLanding(appUrl: string, whatsapp?: string, apoyo?: { cafec
           <li>Todo lo de Empresa</li>
           <li>Acompañamiento dedicado</li>
         </ul>
-        <a class="btn btn-negro" href="#contacto">Lo quiero</a>
+        <a class="btn btn-negro" href="#contacto">Hablemos</a>
       </div>
     </div>
+    <p style="text-align:center;margin-top:22px;font-size:13px;color:var(--gris)">Se cobra en pesos, al tipo de cambio del día. Sin costo de instalación ni permanencia mínima.</p>
   </div>
 </section>
 
