@@ -60,12 +60,18 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const activoId =
       typeof req.query.activoId === 'string' ? req.query.activoId : undefined;
 
+    // Las fotos se guardan como data URL base64 dentro de la fila: incluirlas
+    // en el listado completo hacia que la app descargara varios MB en cada
+    // arranque, y crecia sin techo. Solo se envian al pedir un activo puntual.
     const mediciones = await prisma.medicion.findMany({
       where: {
         ...(activoId ? { activoId } : {}),
         activo: { empresaId }, // garantiza aislamiento multi-tenant
       },
-      include: { tecnico: { select: { id: true, nombre: true, cargo: true } }, fotos: true },
+      include: {
+        tecnico: { select: { id: true, nombre: true, cargo: true } },
+        ...(activoId ? { fotos: true } : {}),
+      },
       orderBy: { fecha: 'desc' },
     });
     res.json(mediciones);
