@@ -47,6 +47,29 @@ import {
   saveTecnicos,
 } from '../data/store';
 
+import { getUsuario } from '../data/auth';
+
+/**
+ * Clave de la copia local, siempre atada a la empresa de la sesion activa.
+ * Sin ese prefijo, dos cuentas usadas en el mismo dispositivo podrian verse
+ * los datos entre si. Si no hay sesion, no se cachea nada.
+ */
+function claveCache(key: string): string | null {
+  const usuario = getUsuario();
+  if (!usuario?.empresaId) return null;
+  return `aqr_cache_${usuario.empresaId}_${key}`;
+}
+
+function guardarCache(key: string, data: unknown): void {
+  const ck = claveCache(key);
+  if (!ck) return;
+  try {
+    localStorage.setItem(ck, JSON.stringify(data));
+  } catch {
+    // Sin espacio en el dispositivo: la app sigue andando contra la API.
+  }
+}
+
 // Mapa clave → funciones remotas de la API.
 const remoteGet: Record<string, () => Promise<any>> = {
   activos: getActivos,
@@ -74,15 +97,36 @@ const remoteSave: Record<string, (d: any) => Promise<void>> = {
  * así el resto de la app no cambia.
  */
 export function useStorage<T>(key: string, initialValue: T) {
-  const [value, setValueState] = useState<T>(() => {
-    if (useRemote) return initialValue;
+  // Copia local de lo ultimo que devolvio la API. Permite abrir la app
+  // mostrando datos al instante mientras se refresca por detras, en vez de
+  // tapar todo con la pantalla de carga durante un viaje a la nube.
+  const leerCache = (): { valor: T; hubo: boolean } => {
     try {
-      const item = localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
+      const ck = claveCache(key);
+      if (!ck) return { valor: initialValue, hubo: false };
+      const item = localStorage.getItem(ck);
+      if (!item) return { valor: initialValue, hubo: false };
+      return { valor: JSON.parse(item) as T, hubo: true };
     } catch {
-      return initialValue;
+      return { valor: initialValue, hubo: false };
     }
-  });
+  };
+
+  const cacheInicial = useRef<{ valor: T; hubo: boolean } | null>(null);
+  if (cacheInicial.current === null) {
+    cacheInicial.current = useRemote
+      ? leerCache()
+      : (() => {
+          try {
+            const item = localStorage.getItem(key);
+            return { valor: item ? (JSON.parse(item) as T) : initialValue, hubo: !!item };
+          } catch {
+            return { valor: initialValue, hubo: false };
+          }
+        })();
+  }
+
+  const [value, setValueState] = useState<T>(cacheInicial.current.valor);
 
   // En local ya está cargado; en remoto, hasta que llegue la API no persistimos.
   const cargado = useRef(!useRemote);
@@ -97,13 +141,19 @@ export function useStorage<T>(key: string, initialValue: T) {
       cargado.current = true;
       return;
     }
-    _pendientes++;
-    _notificar();
+    // Solo se tapa la app con la pantalla de carga si no hay nada que mostrar.
+    // Con datos en cache, el refresco ocurre en segundo plano.
+    const bloquea = !cacheInicial.current!.hubo;
+    if (bloquea) {
+      _pendientes++;
+      _notificar();
+    }
     fn().then((data) => {
       if (cancelado) return;
       omitirGuardado.current = true;
       setValueState(data as T);
       cargado.current = true;
+      guardarCache(key, data);
     }).catch((e) => {
       if (cancelado) return;
       // CRITICO: si el GET falla, NO marcar cargado=true. Eso disparaba
@@ -112,12 +162,14 @@ export function useStorage<T>(key: string, initialValue: T) {
       _errorSync = `No se pudieron cargar los ${key} del servidor. Recargá la página o revisá tu conexión.`;
       _notificarError();
     }).finally(() => {
-      if (!cancelado) { _pendientes = Math.max(0, _pendientes - 1); _notificar(); }
+      if (!cancelado && bloquea) { _pendientes = Math.max(0, _pendientes - 1); _notificar(); }
     });
     return () => {
       cancelado = true;
-      _pendientes = Math.max(0, _pendientes - 1);
-      _notificar();
+      if (bloquea) {
+        _pendientes = Math.max(0, _pendientes - 1);
+        _notificar();
+      }
     };
   }, [key]);
 
