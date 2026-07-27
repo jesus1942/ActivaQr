@@ -7,6 +7,7 @@ import { requireAuth, requireSuperadmin, AuthRequest } from '../auth';
 import { crearPreapproval, cancelarPreapproval, crearLinkPago, mpConfigurado } from '../mercadopago';
 import { stripeConfigurado, crearStripeSubscripcion, crearStripePagoUnico } from '../stripe';
 import { enviarEmailSuscripcion, enviarEmailResetPassword } from '../email';
+import { generarResetToken } from '../resetTokens';
 import { enviarLinkRecuperacion, notificarAdminRecuperacion } from '../telegram';
 import { enviarPushAEmpresa } from '../push';
 
@@ -170,11 +171,11 @@ router.post('/empresas/:id/reset-password', async (req: AuthRequest, res: Respon
     // 3. Invalidar la pwd actual + emitir token de reset
     const tokenAleatorio = crypto.randomBytes(48).toString('hex'); // imposible adivinar
     const passwordHashInvalido = await bcrypt.hash(tokenAleatorio, 10);
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
+    // El token viaja al cliente; en la DB queda solo su hash.
+    const { token: resetToken, tokenHash, expiry: resetTokenExpiry } = generarResetToken();
     await prisma.usuario.update({
       where: { id: admin.id },
-      data: { passwordHash: passwordHashInvalido, resetToken, resetTokenExpiry },
+      data: { passwordHash: passwordHashInvalido, resetToken: tokenHash, resetTokenExpiry },
     });
 
     // 4. Notificar al cliente con motivo "admin-reset"

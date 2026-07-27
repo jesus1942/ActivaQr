@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { prisma } from '../prisma';
 import { firmarToken, requireAuth, AuthRequest, DEMO_TOKEN_TTL } from '../auth';
 import { enviarEmailResetPassword } from '../email';
+import { generarResetToken, hashResetToken } from '../resetTokens';
 import { enviarLinkRecuperacion, notificarAdminRecuperacion } from '../telegram';
 import { registrarAuditoria } from '../auditoria';
 import { faseTrial } from '../trial';
@@ -271,11 +272,11 @@ router.post('/forgot-password', async (req, res: Response, next: NextFunction) =
       where: { email: String(email).toLowerCase().trim() },
     });
     if (usuario) {
-      const token = crypto.randomBytes(32).toString('hex');
-      const expiry = new Date(Date.now() + 60 * 60 * 1000);
+      // El token viaja en el link; en la DB queda solo su hash.
+      const { token, tokenHash, expiry } = generarResetToken();
       await prisma.usuario.update({
         where: { id: usuario.id },
-        data: { resetToken: token, resetTokenExpiry: expiry },
+        data: { resetToken: tokenHash, resetTokenExpiry: expiry },
       });
       const appPublicUrl = process.env.APP_PUBLIC_URL || 'https://activaqr.net/';
       const resetUrl = `${appPublicUrl}#/reset-password?token=${token}`;
@@ -322,7 +323,7 @@ router.post('/reset-password', async (req, res: Response, next: NextFunction) =>
       return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres.' });
     }
     const usuario = await prisma.usuario.findFirst({
-      where: { resetToken: String(token), resetTokenExpiry: { gt: new Date() } },
+      where: { resetToken: hashResetToken(token), resetTokenExpiry: { gt: new Date() } },
     });
     if (!usuario) {
       return res.status(400).json({ error: 'Token invalido o expirado' });
