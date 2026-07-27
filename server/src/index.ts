@@ -63,6 +63,10 @@ app.use(cors({
     }
   },
   credentials: true,
+  // Sin esto el navegador cachea el permiso CORS unos pocos segundos y
+  // antepone un OPTIONS a casi cada request: el doble de viajes contra el
+  // servidor. 24 h es el maximo que respetan los navegadores.
+  maxAge: 86400,
 }));
 
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: 'Demasiados intentos. Intentá en 15 minutos.' } });
