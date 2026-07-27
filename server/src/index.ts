@@ -86,7 +86,13 @@ app.use('/api/', apiLimiter);
 
 // Endpoints públicos sin auth: acotados por IP para frenar spam de bots
 // (cada lead dispara email + push; cada visita inserta en la DB).
-const leadsLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: 'Demasiadas solicitudes. Intentá más tarde.' } });
+const leadsLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 15, // varias personas pueden salir por la misma IP (planta, oficina)
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Ya recibimos varias solicitudes desde esta conexión. Escribinos por WhatsApp y te respondemos al toque.' },
+});
 const visitasLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, message: { error: 'Demasiadas solicitudes.' } });
 
 app.use(express.json({ limit: '10mb' }));

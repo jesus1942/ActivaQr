@@ -674,13 +674,20 @@ ${seccionApoyo}
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(datos)
       });
-      if (!r.ok) throw new Error('fallo');
+      if (!r.ok) {
+        // Mostrar el motivo real del servidor (limite alcanzado, falta un dato)
+        // en vez de un error generico que parece la app rota.
+        var detalle = await r.json().catch(function () { return null; });
+        throw new Error((detalle && detalle.error) || '');
+      }
       msg.className = 'form-msg ok';
       msg.textContent = 'Listo! Recibimos tu solicitud. Te contactamos a la brevedad.';
       this.reset();
     } catch (err) {
       msg.className = 'form-msg err';
-      msg.textContent = 'No pudimos enviar el formulario. Escribinos directamente por email.';
+      msg.textContent = (err && err.message)
+        ? err.message
+        : 'No pudimos enviar el formulario. Escribinos por WhatsApp y te respondemos al toque.';
     } finally {
       btn.disabled = false; btn.textContent = 'Solicitar acceso';
     }
