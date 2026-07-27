@@ -345,6 +345,15 @@ export function renderLanding(appUrl: string, whatsapp?: string, apoyo?: { cafec
   [style*="border:3px solid #0f172a"],[style*="border-top:3px solid #0f172a"],[style*="border-bottom:3px solid #0f172a"],[style*="border:3px solid var(--negro)"],[style*="border-top:3px solid var(--negro)"]{border-color:var(--line) !important}
   @media print{.aurora{display:none}}
 </style>
+
+<!-- Google Ads (gtag.js) — medicion de campanas. Declarado en la Politica de Privacidad. -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=AW-805828630"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'AW-805828630');
+</script>
 </head>
 <body>
 
