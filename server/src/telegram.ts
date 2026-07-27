@@ -41,3 +41,26 @@ export async function notificarAdminRecuperacion(opts: {
   const texto = `<b>ActivaQR — Solicitud de recuperacion</b>\n\nCliente sin Telegram configurado:\n<b>${opts.clienteNombre}</b> (${opts.clienteEmail})\n\nLink de recuperacion (1 hora):\n${opts.resetUrl}\n\nReenviale este link al cliente.`;
   await sendMessage(opts.adminChatId, texto);
 }
+
+/**
+ * Aviso al dueño de ActivaQR de un alta autogestionada desde la landing.
+ * Usa TELEGRAM_ADMIN_CHAT_ID; si no está configurado, no hace nada.
+ */
+export async function notificarAltaTrial(opts: {
+  empresaNombre: string;
+  adminNombre: string;
+  adminEmail: string;
+  adminTelefono?: string | null;
+  trialFin: Date;
+}): Promise<void> {
+  const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+  if (!adminChatId) return;
+  const vence = opts.trialFin.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const telefono = opts.adminTelefono ? `\nTel: ${opts.adminTelefono}` : '';
+  const texto =
+    `<b>ActivaQR — Alta nueva desde la landing</b>\n\n` +
+    `<b>${opts.empresaNombre}</b>\n` +
+    `${opts.adminNombre} (${opts.adminEmail})${telefono}\n\n` +
+    `Plan inicial en trial, vence el ${vence}.`;
+  await sendMessage(adminChatId, texto);
+}

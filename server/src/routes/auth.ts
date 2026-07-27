@@ -3,9 +3,10 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '../prisma';
 import { firmarToken, requireAuth, AuthRequest, DEMO_TOKEN_TTL } from '../auth';
-import { enviarEmailResetPassword } from '../email';
+import { enviarEmailResetPassword, enviarEmailAltaTrial } from '../email';
 import { generarResetToken, hashResetToken } from '../resetTokens';
-import { enviarLinkRecuperacion, notificarAdminRecuperacion } from '../telegram';
+import { enviarLinkRecuperacion, notificarAdminRecuperacion, notificarAltaTrial } from '../telegram';
+import { enviarPushASuperadmin } from '../push';
 import { registrarAuditoria } from '../auditoria';
 import { faseTrial } from '../trial';
 import { POLITICAS_VERSION } from '../politicas';
@@ -84,6 +85,30 @@ router.post('/registro', async (req, res: Response, next: NextFunction) => {
       entidadId: empresa.id,
       detalle: 'alta trial autogestionada',
     });
+
+    // Avisar al dueño de ActivaQR por los tres canales. Nunca demora ni
+    // rompe el alta: si un canal falla, queda el error en los logs.
+    const panelUrl = `${process.env.APP_PUBLIC_URL || 'https://activaqr.net/'}#/admin`;
+    enviarEmailAltaTrial({
+      empresaNombre: empresa.nombre,
+      adminNombre: usuario.nombre,
+      adminEmail: usuario.email,
+      adminTelefono: usuario.telefono,
+      trialFin,
+      panelUrl,
+    }).catch((e) => console.error('[registro] email alta:', e));
+    notificarAltaTrial({
+      empresaNombre: empresa.nombre,
+      adminNombre: usuario.nombre,
+      adminEmail: usuario.email,
+      adminTelefono: usuario.telefono,
+      trialFin,
+    }).catch((e) => console.error('[registro] telegram alta:', e));
+    enviarPushASuperadmin({
+      title: `Alta nueva: ${empresa.nombre}`,
+      body: `${usuario.nombre} · ${usuario.email} — trial 30 días`,
+      url: '#/admin',
+    }).catch((e) => console.error('[registro] push alta:', e));
 
     const token = firmarToken({
       userId: usuario.id,

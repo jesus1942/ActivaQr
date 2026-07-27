@@ -316,3 +316,71 @@ export async function enviarEmailAccesoRemoto(params: {
 </body></html>`,
   });
 }
+
+/**
+ * Aviso al dueño de ActivaQR: alguien creó su cuenta desde la landing.
+ * A diferencia de un lead, acá la empresa ya existe y está operando en trial.
+ */
+export async function enviarEmailAltaTrial(params: {
+  empresaNombre: string;
+  adminNombre: string;
+  adminEmail: string;
+  adminTelefono?: string | null;
+  trialFin: Date;
+  panelUrl: string;
+}): Promise<boolean> {
+  if (!emailConfigurado()) return false;
+  const destino = process.env.LEAD_EMAIL || process.env.RESEND_FROM_EMAIL;
+  if (!destino) return false;
+
+  const resend = getResend();
+  const from = process.env.RESEND_FROM || 'ActivaQR <noreply@activaqr.com>';
+  const vence = params.trialFin.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const fila = (k: string, v?: string | null) =>
+    v ? `<tr><td style="padding:6px 0;font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;width:130px;vertical-align:top;">${k}</td><td style="padding:6px 0;font-size:14px;color:#0f172a;">${v}</td></tr>` : '';
+
+  await resend.emails.send({
+    from,
+    to: destino,
+    replyTo: params.adminEmail,
+    subject: `Alta nueva ActivaQR — ${params.empresaNombre} (trial 30 días)`,
+    html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;"><tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
+<tr><td style="background:#0f172a;padding:20px 28px;border:3px solid #0f172a;border-bottom:none;">
+  <span style="font-size:20px;font-weight:900;color:#f97316;text-transform:uppercase;letter-spacing:2px;">ActivaQR</span>
+  <span style="float:right;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;">Alta autogestionada</span>
+</td></tr>
+<tr><td style="background:#fff;border:3px solid #0f172a;border-top:none;padding:28px;">
+  <h1 style="margin:0 0 6px;font-size:22px;font-weight:900;color:#0f172a;">${params.empresaNombre}</h1>
+  <p style="margin:0 0 18px;font-size:13px;color:#475569;">Creó su cuenta desde la landing. Ya está operando con el trial de 30 días (plan inicial).</p>
+  <table width="100%" cellpadding="0" cellspacing="0">
+    ${fila('Responsable', params.adminNombre)}
+    ${fila('Email', `<a href="mailto:${params.adminEmail}" style="color:#f97316;">${params.adminEmail}</a>`)}
+    ${fila('Teléfono', params.adminTelefono)}
+    ${fila('Trial vence', vence)}
+  </table>
+  <p style="margin:18px 0 8px;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;">Acciones</p>
+  <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+    <tr>
+      <td style="padding:0 8px 0 0;">
+        <a href="${params.panelUrl}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;font-weight:900;font-size:13px;padding:10px 20px;border:2px solid #0f172a;text-transform:uppercase;letter-spacing:1px;">
+          Ver en el panel
+        </a>
+      </td>
+      ${params.adminTelefono ? `<td>
+        <a href="https://wa.me/${params.adminTelefono.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${params.adminNombre}! Soy de ActivaQR, vi que creaste la cuenta de ${params.empresaNombre}. Cualquier cosa que necesites para arrancar, avisame.`)}" style="display:inline-block;background:#22c55e;color:#fff;text-decoration:none;font-weight:900;font-size:13px;padding:10px 20px;border:2px solid #22c55e;text-transform:uppercase;letter-spacing:1px;">
+          WhatsApp
+        </a>
+      </td>` : ''}
+    </tr>
+  </table>
+</td></tr>
+<tr><td style="background:#0f172a;padding:14px 28px;border:3px solid #0f172a;border-top:none;">
+  <p style="margin:0;font-size:11px;color:#475569;text-align:center;">© ${new Date().getFullYear()} ActivaQR — Alta creada desde la landing.</p>
+</td></tr>
+</table></td></tr></table></body></html>`,
+  });
+  return true;
+}
