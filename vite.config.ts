@@ -2,8 +2,10 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// Base configurable: '/' para dominio propio (activaqr.net), '/ActivaQr/' para GitHub Pages sin dominio.
-const base = process.env.VITE_BASE || '/ActivaQr/';
+// La app se sirve bajo /app/ en el dominio propio: la raiz la ocupa la landing
+// (ver scripts/build-site.mjs). VITE_BASE permite otra ubicacion — por ejemplo
+// '/ActivaQr/' para publicar en GitHub Pages sin dominio propio.
+const base = process.env.VITE_BASE || '/app/';
 
 export default defineConfig({
   base,

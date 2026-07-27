@@ -26,7 +26,9 @@ jobs:
           cache: npm
 
       - name: Instalar dependencias
-        run: npm ci
+        run: |
+          npm ci
+          npm ci --prefix server
 
       - name: Verificar secret VITE_API_URL
         env:
@@ -38,22 +40,27 @@ jobs:
           fi
           echo "VITE_API_URL definido: ${#VITE_API_URL} caracteres"
 
-      - name: Build
-        run: npm run build
+      # Arma el sitio completo: landing indexable en la raíz + app en /app/.
+      - name: Build del sitio
+        run: npm run build:site
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          # Dominio propio (activaqr.net): la app se sirve desde la raíz.
-          VITE_BASE: /
 
-      - name: Verificar que el build apunta a la API del dominio
+      - name: Verificar el sitio publicado
         run: |
-          if grep -rq "api.activaqr.net" dist/assets/; then
-            echo "OK: el build contiene https://api.activaqr.net"
-          else
+          if ! grep -rq "api.activaqr.net" dist/app/assets/; then
             echo "::error::El build NO contiene api.activaqr.net — el secret VITE_API_URL tiene otro valor."
-            grep -roh "https://[a-zA-Z0-9.-]*" dist/assets/*.js | grep -v "fonts\|w3.org\|schema" | sort -u | head -5 || true
             exit 1
           fi
+          if ! grep -q "id=\"planes\"" dist/index.html; then
+            echo "::error::La raíz del sitio no es la landing: no se encontró la sección de planes."
+            exit 1
+          fi
+          if ! grep -q "indexOf('#/')" dist/index.html; then
+            echo "::error::Falta el rescate de los QR viejos en la landing."
+            exit 1
+          fi
+          echo "OK: landing en la raíz, app en /app/, QR viejos redirigidos."
 
       - name: Configurar Pages
         uses: actions/configure-pages@v4

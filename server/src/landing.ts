@@ -47,11 +47,11 @@ export function renderLanding(appUrl: string, whatsapp?: string, apoyo?: { cafec
 <meta name="description" content="El técnico escanea el QR, carga la medición y la foto desde el celular. Funciona sin señal: queda guardado y se sincroniza cuando vuelve la conexión. Para contratistas y empresas de servicios que necesitan que el trabajo del campo llegue ordenado al cliente." />
 <meta name="keywords" content="mantenimiento industrial, gestion de activos con QR, CMMS para contratistas, mantenimiento Vaca Muerta, O&M aerogeneradores Patagonia, software mantenimiento offline, planilla digital de mantenimiento" />
 <meta name="author" content="ActivaQR" />
-<link rel="canonical" href="https://activaqr-production.up.railway.app/" />
+<link rel="canonical" href="https://activaqr.net/" />
 
 <!-- Open Graph (WhatsApp, LinkedIn, Facebook) -->
 <meta property="og:type" content="website" />
-<meta property="og:url" content="https://activaqr-production.up.railway.app/" />
+<meta property="og:url" content="https://activaqr.net/" />
 <meta property="og:title" content="ActivaQR — Mantenimiento que llega hasta el campo" />
 <meta property="og:description" content="Tu técnico escanea el QR, carga la medición y la foto desde el celular. Si no hay señal, queda guardado y sube solo cuando vuelve la conexión." />
 <meta property="og:image" content="https://activaqr.net/company-logo-hd.png" />
