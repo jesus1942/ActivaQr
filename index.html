@@ -36,6 +36,35 @@
     <meta name="twitter:description" content="Gestión inteligente de activos industriales con QR, mediciones y mantenimiento predictivo." />
     <meta name="twitter:image" content="https://activaqr.net/og-image.png" />
 
+    <link rel="canonical" href="https://activaqr.net/" />
+
+    <!-- Datos estructurados: como se presenta ActivaQR en Google y en asistentes de IA -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "ActivaQR",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web, iOS, Android",
+      "url": "https://activaqr.net/",
+      "description": "Gestión de activos industriales con códigos QR. Ficha técnica pública al escanear, carga de mediciones desde el celular incluso sin señal, alertas automáticas por umbrales y mantenimiento preventivo. Pensado para PyMEs industriales de Argentina.",
+      "inLanguage": "es-AR",
+      "offers": {
+        "@type": "AggregateOffer",
+        "priceCurrency": "USD",
+        "lowPrice": "20",
+        "highPrice": "179",
+        "offerCount": "3"
+      },
+      "provider": {
+        "@type": "Organization",
+        "name": "ActivaQR",
+        "url": "https://activaqr.net/",
+        "areaServed": "AR"
+      }
+    }
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -45,7 +74,24 @@
     </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Contenido para quien llega sin JavaScript (incluidos buscadores).
+           React lo reemplaza al montar la app. -->
+      <noscript>
+        <h1>ActivaQR — Gestión de activos industriales con QR</h1>
+        <p>
+          Pegás un código QR en la máquina. Cualquiera con un celular lo escanea
+          y ve la ficha del equipo al instante: qué es, dónde está, cómo viene
+          funcionando y a quién llamar. Sin instalar nada, sin contraseña.
+        </p>
+        <p>
+          El personal registrado carga mediciones desde el celular —aunque no
+          haya señal—, registra mantenimientos y recibe alertas cuando un valor
+          se va de rango. Planes desde USD 20 por mes, con 30 días gratis.
+        </p>
+        <p>Esta aplicación necesita JavaScript. Activalo para ingresar.</p>
+      </noscript>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
