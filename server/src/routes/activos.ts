@@ -304,7 +304,11 @@ router.delete('/:id', requireAdmin as any, async (req: Request, res: Response, n
 // ───────── Foto principal del activo ─────────
 // Data URL JPEG/PNG/WebP comprimida en el cliente. Limite chico a proposito:
 // si llega algo mas grande es que el cliente no comprimio (bug) o es abuso.
-const FOTO_MAX_CHARS = 400_000; // ~300KB binario en base64
+// Las fotos son evidencia tecnica: se suben a 1600 px con calidad alta para
+// que se pueda leer un manometro o ver una fisura. Eso da 300-500 KB, que en
+// base64 son 400-670 mil caracteres. El tope deja margen para fotos con mucho
+// detalle sin abrir la puerta a subir archivos crudos de 8 MB.
+const FOTO_MAX_CHARS = 2_000_000; // ~1,5 MB binario en base64
 const FOTO_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
 
 // POST /api/activos/:id/foto
