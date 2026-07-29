@@ -11,8 +11,19 @@ export { API_URL };
 const TOKEN_KEY = 'activaqr_token';
 const USER_KEY = 'activaqr_user';
 
-// La sesión vive en sessionStorage para que se cierre cuando se mata la app.
-const authStore = window.sessionStorage;
+/**
+ * La sesión vive en localStorage para que sobreviva a cerrar la app.
+ *
+ * Estaba en sessionStorage, que se borra al matar la aplicacion: el tecnico
+ * que cerraba la app en el pad o en el socavon tenia que volver a iniciar
+ * sesion, y eso exige conexion. Justo donde la app tiene que funcionar sin
+ * señal, quedaba inutilizable aunque los datos estuvieran en el celular.
+ *
+ * No es un permiso indefinido: el token dura 7 dias (2 h en la cuenta demo) y
+ * getToken verifica el vencimiento en el propio dispositivo, asi que la sesion
+ * caduca sola aunque nunca vuelva a haber internet.
+ */
+const authStore = window.localStorage;
 
 export interface UsuarioSesion {
   id: string;
