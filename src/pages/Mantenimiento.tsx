@@ -18,6 +18,7 @@ import { exportarCsv } from '../utils/exportCsv';
 import { useActivos } from '../hooks/useActivos';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { TareaMantenimiento } from '../data/types';
+import { DialogViewport } from '../components/ui/DialogViewport';
 
 const emptyTarea = {
   activoId: '',
@@ -329,7 +330,10 @@ export const Mantenimiento: React.FC = () => {
 
       {/* Modal nueva tarea */}
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <DialogViewport
+          className="bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onEscape={() => { setShowModal(false); setEditId(null); }}
+        >
           <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border border-line bg-slate-900 text-white sticky top-0">
               <h2 className="font-black uppercase tracking-wide">{editId ? 'Editar Tarea' : 'Nueva Tarea de Mantenimiento'}</h2>
@@ -440,7 +444,7 @@ export const Mantenimiento: React.FC = () => {
               </div>
             </form>
           </div>
-        </div>
+        </DialogViewport>
       )}
     </div>
   );

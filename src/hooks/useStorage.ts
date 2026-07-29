@@ -19,8 +19,15 @@ export function useCargaRemota() {
 // de red en el GET inicial hacia que el sync borrara la BD del cliente
 // (deleteMany con array vacio).
 let _errorSync: string | null = null;
+const _erroresCarga = new Map<string, string>();
 const _errorListeners = new Set<() => void>();
 const _notificarError = () => _errorListeners.forEach((fn) => fn());
+function actualizarErrorCarga(key: string, error: string | null) {
+  if (error) _erroresCarga.set(key, error);
+  else _erroresCarga.delete(key);
+  _errorSync = _erroresCarga.values().next().value ?? null;
+  _notificarError();
+}
 export const errorSyncStore = {
   subscribe: (fn: () => void) => { _errorListeners.add(fn); return () => _errorListeners.delete(fn); },
   getSnapshot: () => _errorSync,
@@ -88,6 +95,28 @@ const remoteSave: Record<string, (d: any) => Promise<void>> = {
   tecnicos: saveTecnicos,
 };
 
+const esperar = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Railway, una PWA que recupera señal y algunos navegadores móviles pueden
+ * fallar en el primer intento aunque el servidor ya esté disponible. Durante
+ * el arranque hacemos reintentos cortos antes de declarar una desconexión.
+ */
+async function cargarConReintentos<T>(fn: () => Promise<T>): Promise<T> {
+  const pausas = [0, 600, 1_500];
+  let ultimoError: unknown;
+  for (const pausa of pausas) {
+    if (pausa) await esperar(pausa);
+    try {
+      return await fn();
+    } catch (error) {
+      ultimoError = error;
+      if (!navigator.onLine) break;
+    }
+  }
+  throw ultimoError;
+}
+
 /**
  * Hook de persistencia.
  * - Modo remoto (VITE_API_URL): carga desde la API y guarda los cambios en ella.
@@ -148,19 +177,22 @@ export function useStorage<T>(key: string, initialValue: T) {
       _pendientes++;
       _notificar();
     }
-    fn().then((data) => {
+    cargarConReintentos(fn).then((data) => {
       if (cancelado) return;
       omitirGuardado.current = true;
       setValueState(data as T);
       cargado.current = true;
       guardarCache(key, data);
+      actualizarErrorCarga(key, null);
     }).catch((e) => {
       if (cancelado) return;
       // CRITICO: si el GET falla, NO marcar cargado=true. Eso disparaba
       // el sync con el array inicial vacio y BORRABA la BD del cliente.
       console.error(`[useStorage] Error cargando "${key}":`, e);
-      _errorSync = `No se pudieron cargar los ${key} del servidor. Recargá la página o revisá tu conexión.`;
-      _notificarError();
+      actualizarErrorCarga(
+        key,
+        `No se pudieron cargar los ${key} del servidor. Recargá la página o revisá tu conexión.`
+      );
     }).finally(() => {
       if (!cancelado && bloquea) { _pendientes = Math.max(0, _pendientes - 1); _notificar(); }
     });
@@ -192,8 +224,10 @@ export function useStorage<T>(key: string, initialValue: T) {
       if (fn) {
         void fn(value).catch((e) => {
           console.error(`[useStorage] Error guardando "${key}":`, e);
-          _errorSync = e instanceof Error ? e.message : `No se pudieron guardar los ${key}.`;
-          _notificarError();
+          actualizarErrorCarga(
+            `save:${key}`,
+            e instanceof Error ? e.message : `No se pudieron guardar los ${key}.`
+          );
         });
       }
     } else {

@@ -56,6 +56,7 @@ import {
 import { PanelAccesoRemoto } from '../components/PanelAccesoRemoto';
 import { NotificacionesPush } from '../components/NotificacionesPush';
 import { apiFetch } from '../data/auth';
+import { DialogViewport } from '../components/ui/DialogViewport';
 
 const PLANES = ['inicial', 'empresa', 'industrial'] as const;
 
@@ -63,7 +64,7 @@ const PLANES = ['inicial', 'empresa', 'industrial'] as const;
 const Modal: React.FC<{ titulo: string; icono?: React.ReactNode; onClose: () => void; children: React.ReactNode; maxW?: string }> = ({
   titulo, icono, onClose, children, maxW = 'max-w-md',
 }) => (
-  <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 pb-safe" onClick={onClose}>
+  <DialogViewport className="z-50 bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 pb-safe" onEscape={onClose}>
     <div
       className={`bg-surface/85 backdrop-blur-xl border border-line shadow-soft w-full ${maxW} max-h-[92vh] overflow-y-auto`}
       onClick={(e) => e.stopPropagation()}
@@ -76,7 +77,7 @@ const Modal: React.FC<{ titulo: string; icono?: React.ReactNode; onClose: () => 
       </div>
       <div className="p-5">{children}</div>
     </div>
-  </div>
+  </DialogViewport>
 );
 
 // ── Campo helper ───────────────────────────────────────────────────────────────
@@ -306,7 +307,7 @@ const ModalWhatsapp: React.FC<{
   const completo = soloDigitos ? `${pais.codigo}${soloDigitos}` : '';
 
   return (
-    <div className="fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 pb-safe">
+    <DialogViewport className="z-[60] bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 pb-safe" onEscape={onOmitir}>
       <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft w-full max-w-sm max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between border border-line px-5 py-3 bg-slate-900 text-white">
           <h2 className="font-display font-black text-base uppercase tracking-wide">{titulo}</h2>
@@ -373,7 +374,7 @@ const ModalWhatsapp: React.FC<{
           </div>
         </div>
       </div>
-    </div>
+    </DialogViewport>
   );
 };
 
@@ -1121,7 +1122,7 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <DialogViewport className="z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4" onEscape={onClose}>
       <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft w-full max-w-md my-8">
         <div className="flex items-center justify-between border border-line px-5 py-3">
           <h2 className="font-display font-black text-xl uppercase">Nueva empresa</h2>
@@ -1216,7 +1217,7 @@ const ModalNuevaEmpresa: React.FC<{ onClose: () => void; onCreada: () => void }>
         }
         .campo:focus { border-color: #f97316; }
       `}</style>
-    </div>
+    </DialogViewport>
   );
 };
 

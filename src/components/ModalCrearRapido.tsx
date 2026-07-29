@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
+import { DialogViewport } from './ui/DialogViewport';
 
 interface Props {
   abierto: boolean;
@@ -31,7 +32,7 @@ export const ModalCrearRapido: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+    <DialogViewport className="bg-slate-900/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4" onEscape={cerrar}>
       <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft w-full max-w-sm">
         <div className="flex items-center justify-between p-4 border border-line bg-slate-900 text-white">
           <h3 className="font-black uppercase tracking-wide text-sm">{titulo}</h3>
@@ -67,6 +68,6 @@ export const ModalCrearRapido: React.FC<Props> = ({
           </div>
         </form>
       </div>
-    </div>
+    </DialogViewport>
   );
 };

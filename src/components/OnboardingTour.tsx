@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { DialogViewport } from './ui/DialogViewport';
 
 const TOUR_KEY = 'activaqr_tour_done';
 
@@ -96,15 +97,15 @@ export const OnboardingTour: React.FC = () => {
 
   if (esCentrado) {
     return (
-      <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+      <DialogViewport className="bg-slate-900/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4" onEscape={omitir}>
         {burbuja}
-      </div>
+      </DialogViewport>
     );
   }
 
   return (
-    <div className="fixed top-4 left-4 z-[200]">
+    <DialogViewport className="bg-slate-900/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4" onEscape={omitir}>
       {burbuja}
-    </div>
+    </DialogViewport>
   );
 };

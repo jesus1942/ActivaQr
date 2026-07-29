@@ -14,6 +14,7 @@ import { ModalPlantillaMantenimiento } from '../components/ModalPlantillaManteni
 import { buscarPlantilla, PlantillaMantenimiento, TareaSugerida } from '../data/plantillasMantenimiento';
 import { ESTADOS_OPERATIVOS } from '../components/ui/EstadoOperativoBadge';
 import { Activo, EstadoActivo, EstadoOperativo, TipoActivo, ClaveVisibilidad, VISIBILIDAD_DEFAULT, VISIBILIDAD_LABELS } from '../data/types';
+import { DialogViewport } from '../components/ui/DialogViewport';
 
 const LIMITES_ACTIVOS: Record<string, number | null> = {
   inicial:    10,
@@ -346,7 +347,10 @@ export const Activos: React.FC = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+        <DialogViewport
+          className="bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4"
+          onEscape={() => setShowModal(false)}
+        >
           <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border border-line bg-slate-900 text-white sticky top-0 z-10">
               <h2 className="font-black uppercase tracking-wide">{editId ? 'Editar Activo' : 'Nuevo Activo'}</h2>
@@ -579,7 +583,7 @@ export const Activos: React.FC = () => {
               </div>
             </form>
           </div>
-        </div>
+        </DialogViewport>
       )}
 
       <ModalCrearRapido

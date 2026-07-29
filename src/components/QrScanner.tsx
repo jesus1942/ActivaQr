@@ -1,6 +1,7 @@
 // v1.1.0
 import React, { useEffect, useRef, useState } from 'react';
 import { Camera, X } from 'lucide-react';
+import { DialogViewport } from './ui/DialogViewport';
 
 /**
  * Escáner de QR usando la cámara del dispositivo.
@@ -101,7 +102,7 @@ export const QrScanner: React.FC<{
   }, [onResult]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4">
+    <DialogViewport className="z-50 bg-black/90 flex flex-col items-center justify-center p-4" onEscape={onClose}>
       <button
         onClick={onClose}
         className="absolute top-4 right-4 bg-surface text-content p-2 border border-line"
@@ -136,6 +137,6 @@ export const QrScanner: React.FC<{
           </p>
         </>
       )}
-    </div>
+    </DialogViewport>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, ChevronRight } from 'lucide-react';
 import { PlantillaMantenimiento, TareaSugerida } from '../data/plantillasMantenimiento';
+import { DialogViewport } from './ui/DialogViewport';
 
 interface Props {
   abierto: boolean;
@@ -43,7 +44,7 @@ export const ModalPlantillaMantenimiento: React.FC<Props> = ({
   const cantidadSel = seleccion.filter(Boolean).length;
 
   return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] flex items-center justify-center p-2 sm:p-4">
+    <DialogViewport className="bg-slate-900/40 backdrop-blur-sm z-[60] flex items-center justify-center p-2 sm:p-4" onEscape={onCerrar}>
       <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border border-line bg-slate-900 text-white sticky top-0 z-10">
           <div className="flex items-center gap-2 min-w-0">
@@ -119,6 +120,6 @@ export const ModalPlantillaMantenimiento: React.FC<Props> = ({
           </button>
         </div>
       </div>
-    </div>
+    </DialogViewport>
   );
 };

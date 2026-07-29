@@ -15,6 +15,7 @@ import {
 import { ChatRemoto } from './ChatRemoto';
 import { exportarCsv } from '../utils/exportCsv';
 import { exportarResumenActivosPdf } from '../utils/exportPdf';
+import { DialogViewport } from './ui/DialogViewport';
 
 const ESTADO_COLOR: Record<string, string> = {
   normal:        'bg-ok/10 border-ok text-ok-strong dark:text-ok',
@@ -159,7 +160,7 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
   const labelCls = 'block text-xs font-black uppercase tracking-wider text-muted mb-1';
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-start justify-center p-2 sm:p-6 overflow-y-auto">
+    <DialogViewport className="z-50 bg-slate-900/40 backdrop-blur-sm flex items-start justify-center p-2 sm:p-6" onEscape={onClose}>
       <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft w-full max-w-3xl my-4">
 
         {/* Header */}
@@ -510,7 +511,7 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
 
         {/* Modal crear tarea */}
         {activoTarea && (
-          <div className="fixed inset-0 z-60 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <DialogViewport className="z-[60] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4" onEscape={() => setActivoTarea(null)}>
             <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft w-full max-w-sm">
               <div className="flex items-center justify-between px-4 py-3 bg-slate-900 text-white">
                 <h3 className="font-black uppercase text-sm">Nueva tarea de mantenimiento</h3>
@@ -554,9 +555,9 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
                 </div>
               </form>
             </div>
-          </div>
+          </DialogViewport>
         )}
       </div>
-    </div>
+    </DialogViewport>
   );
 };

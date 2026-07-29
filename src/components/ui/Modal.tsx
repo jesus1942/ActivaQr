@@ -6,9 +6,9 @@
 // backdrop-filter o transform (la app tiene varios), position:fixed pasa a
 // medirse contra ese contenedor y el dialogo aparece fuera de la pantalla —
 // se ve el fondo desenfocado pero hay que buscar el cuadro scrolleando.
-import React, { useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import React from 'react';
 import { X } from 'lucide-react';
+import { DialogViewport } from './DialogViewport';
 
 interface ModalProps {
   open: boolean;
@@ -29,21 +29,10 @@ export const Modal: React.FC<ModalProps> = ({
   footer,
   size = 'md',
 }) => {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    document.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
-    };
-  }, [open, onClose]);
-
   if (!open) return null;
 
-  return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+  return (
+    <DialogViewport className="z-[60] flex items-center justify-center p-4" onEscape={onClose}>
       <div
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
@@ -70,7 +59,6 @@ export const Modal: React.FC<ModalProps> = ({
           <div className="px-6 py-4 border-t border-line flex justify-end gap-3">{footer}</div>
         )}
       </div>
-    </div>,
-    document.body
+    </DialogViewport>
   );
 };

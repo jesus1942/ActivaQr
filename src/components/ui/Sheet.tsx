@@ -5,9 +5,9 @@
 // Igual que Modal, se monta con portal en <body>: dentro de un contenedor
 // con backdrop-filter o transform, position:fixed deja de referirse a la
 // pantalla y el panel termina fuera de vista.
-import React, { useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import React from 'react';
 import { X } from 'lucide-react';
+import { DialogViewport } from './DialogViewport';
 
 interface SheetProps {
   open: boolean;
@@ -24,17 +24,6 @@ export const Sheet: React.FC<SheetProps> = ({
   children,
   side = 'right',
 }) => {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    document.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
-    };
-  }, [open, onClose]);
-
   if (!open) return null;
 
   const panelPos =
@@ -42,8 +31,8 @@ export const Sheet: React.FC<SheetProps> = ({
       ? 'right-0 top-0 h-full w-full max-w-md rounded-l-xl animate-slide-in-right'
       : 'left-0 right-0 bottom-0 max-h-[88vh] rounded-t-xl animate-slide-up';
 
-  return createPortal(
-    <div className="fixed inset-0 z-[60]">
+  return (
+    <DialogViewport className="z-[60]" onEscape={onClose}>
       <div
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
@@ -72,7 +61,6 @@ export const Sheet: React.FC<SheetProps> = ({
         )}
         <div className="px-6 py-5 overflow-y-auto flex-1">{children}</div>
       </div>
-    </div>,
-    document.body
+    </DialogViewport>
   );
 };
