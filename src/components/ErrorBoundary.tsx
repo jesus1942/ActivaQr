@@ -118,11 +118,11 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
     // variante inline: card embebida que no destruye el layout (sidebar + navegacion siguen activos)
     return (
-      <div className="bg-surface border border-danger shadow-soft max-w-2xl mx-auto my-6 p-6 space-y-4">
+      <div className="bg-surface border border-danger shadow-soft max-w-2xl min-w-0 mx-auto my-4 sm:my-6 p-4 sm:p-6 space-y-4 overflow-hidden">
         <div className="flex items-start gap-3">
           <AlertTriangle size={22} className="text-danger flex-shrink-0 mt-0.5" />
-          <div>
-            <h2 className="font-display font-black text-xl uppercase tracking-tight text-content">
+          <div className="min-w-0">
+            <h2 className="font-display font-black text-lg sm:text-xl uppercase tracking-tight text-content break-words">
               {scopeLabel}: algo fallo
             </h2>
             <p className="text-sm text-muted mt-1">
@@ -134,24 +134,24 @@ export class ErrorBoundary extends React.Component<Props, State> {
         <p className="text-xs font-mono text-muted bg-subtle border border-line p-2.5 break-words">
           {error.message || error.name || 'Error desconocido'}
         </p>
-        <div className="flex flex-wrap gap-2 pt-1">
+        <div className="grid grid-cols-1 min-[390px]:grid-cols-2 gap-2 pt-1">
           <button
             onClick={() => this.setState({ error: null, errorInfo: null, copiado: false })}
-            className="flex items-center gap-1.5 bg-brand-600 text-white px-4 py-2 font-bold uppercase tracking-wide text-sm border border-line shadow-soft hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
+            className="flex items-center justify-center gap-1.5 bg-brand-600 text-white px-3 py-2 font-bold uppercase tracking-wide text-sm border border-line shadow-soft hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
           >
             <RotateCw size={14} /> Reintentar
           </button>
           {this.props.onVolver && (
             <button
               onClick={this.props.onVolver}
-              className="flex items-center gap-1.5 border border-line text-content px-4 py-2 font-bold uppercase tracking-wide text-sm hover:border-content transition-colors"
+              className="flex items-center justify-center gap-1.5 border border-line text-content px-3 py-2 font-bold uppercase tracking-wide text-sm hover:border-content transition-colors"
             >
               <Home size={14} /> Inicio
             </button>
           )}
           <button
             onClick={this.copiarError}
-            className="flex items-center gap-1.5 border border-line text-content px-4 py-2 font-bold uppercase tracking-wide text-sm hover:border-content transition-colors"
+            className="flex items-center justify-center gap-1.5 border border-line text-content px-3 py-2 font-bold uppercase tracking-wide text-sm hover:border-content transition-colors min-[390px]:col-span-2"
           >
             {this.state.copiado ? <><Check size={14} /> Copiado</> : <><Copy size={14} /> Copiar error</>}
           </button>

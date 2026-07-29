@@ -40,8 +40,9 @@
   color-scheme: dark;
 }
 
-* {
+*, *::before, *::after {
   font-family: var(--font-body);
+  box-sizing: border-box;
 }
 
 h1, h2, h3, .font-display {
@@ -71,11 +72,27 @@ html, body {
   text-rendering: optimizeLegibility;
 }
 
-#root { overflow-x: hidden; max-width: 100%; }
+#root { overflow-x: clip; width: 100%; max-width: 100%; }
 
 body {
   background-color: transparent;
   transition: color 200ms ease;
+  min-width: 0;
+}
+
+/* Mobile-first: cualquier contenido de usuario (emails, CUIT, códigos,
+   errores del navegador) debe poder contraerse sin ensanchar la pantalla. */
+p, h1, h2, h3, h4, dd, dt, li, button, label {
+  overflow-wrap: anywhere;
+}
+
+img, svg, canvas, video {
+  max-width: 100%;
+}
+
+button, input, select, textarea {
+  min-width: 0;
+  max-width: 100%;
 }
 
 #root {

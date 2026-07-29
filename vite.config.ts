@@ -88,7 +88,7 @@ export default defineConfig({
           {
             // Lo excluido del precache: se guarda al primer uso y desde ahi
             // queda disponible sin conexion.
-            urlPattern: ({ request, sameOrigin }) => sameOrigin && (request.destination === 'script' || request.destination === 'image'),
+            urlPattern: ({ request, sameOrigin }) => sameOrigin && request.destination === 'image',
             handler: 'StaleWhileRevalidate',
             options: { cacheName: 'activaqr-bajo-demanda', expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 30 } }
           }

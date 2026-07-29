@@ -636,10 +636,10 @@ export const Admin: React.FC = () => {
           </button>
         </div>
       )}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight flex items-center gap-2">
-            <Building2 size={32} /> Administración
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight flex items-center gap-2 min-w-0">
+            <Building2 size={28} className="shrink-0 sm:w-8 sm:h-8" /> <span className="min-w-0 break-words">Administración</span>
             {solicitudes.length > 0 && (
               <span className="inline-flex items-center justify-center w-6 h-6 bg-brand-600 text-white text-xs font-black border border-line">
                 {solicitudes.length}
@@ -648,19 +648,19 @@ export const Admin: React.FC = () => {
           </h1>
           <p className="text-muted text-sm mt-1">{empresas.length} empresas registradas</p>
           {stripeOk === false && (
-            <div className="flex items-center gap-1.5 mt-1 text-xs font-black uppercase tracking-wide text-warn-strong dark:text-warn bg-warn/10 border border-warn px-2 py-1 w-fit">
-              <AlertTriangle size={13} /> Stripe no configurado — USD/UYU no disponible
+            <div className="flex items-start gap-1.5 mt-1 text-xs font-black uppercase tracking-wide text-warn-strong dark:text-warn bg-warn/10 border border-warn px-2 py-1 max-w-full w-fit">
+              <AlertTriangle size={13} className="shrink-0 mt-0.5" /> <span className="break-words">Stripe no configurado — USD/UYU no disponible</span>
             </div>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:w-auto">
           <button
             onClick={() => {
               if (modoSeed) { setModoSeed(false); return; }
               const ok = confirm('Activar MODO SEED?\n\nVa a aparecer un boton para sembrar datasets demo en cada empresa. Es destructivo si te equivocas de fila. Solo activalo cuando lo necesites.\n\nSe desactiva automaticamente al cerrar la pestaña.');
               if (ok) setModoSeed(true);
             }}
-            className={`flex items-center gap-2 px-4 py-2 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-sm ${
+            className={`min-w-0 flex items-center justify-center gap-2 px-3 sm:px-4 py-2 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-xs sm:text-sm ${
               modoSeed ? 'bg-danger text-white' : 'bg-surface text-content'
             }`}
             title="Habilita herramientas de seed (destructivas). Oculto por default."
@@ -674,7 +674,7 @@ export const Admin: React.FC = () => {
                 if (res.ok) { cargar(); } else { alert('Error al recrear demo'); }
               } catch { alert('Error al recrear demo'); }
             }}
-            className="flex items-center gap-2 bg-surface text-content px-4 py-2 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-sm"
+            className="min-w-0 flex items-center justify-center gap-2 bg-surface text-content px-3 sm:px-4 py-2 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-xs sm:text-sm"
             title="Recrear empresa y usuario demo si fueron eliminados"
           >
             Recrear demo
@@ -693,14 +693,14 @@ export const Admin: React.FC = () => {
               'Ultimo Pago': e.mpUltimoPago ?? '',
               'Creada': e.creadaEn,
             })))}
-            className="flex items-center gap-2 bg-surface text-content px-4 py-2 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-sm"
+            className="min-w-0 flex items-center justify-center gap-2 bg-surface text-content px-3 sm:px-4 py-2 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-xs sm:text-sm"
             title="Exportar lista de empresas a CSV"
           >
             <Download size={16} /> CSV
           </button>
           <button
             onClick={() => setModalAbierto(true)}
-            className="flex items-center gap-2 bg-brand-600 text-white px-4 py-2 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all"
+            className="min-w-0 flex items-center justify-center gap-2 bg-brand-600 text-white px-3 sm:px-4 py-2 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all text-xs sm:text-base"
           >
             <Plus size={18} /> Nueva empresa
           </button>
@@ -818,15 +818,17 @@ export const Admin: React.FC = () => {
                   const diasCompleto = fase === 'activo' ? Math.ceil((fin - ahora) / 86400000) : 0;
                   const diasLectura = fase === 'lectura' ? Math.ceil((lecturaFin - ahora) / 86400000) : 0;
                   return (
-                    <div className={`mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 border text-xs font-black uppercase ${
+                    <div className={`mt-1.5 inline-flex max-w-full items-center gap-1.5 px-2 py-0.5 border text-xs font-black uppercase ${
                       fase === 'activo' ? 'border-brand-600 bg-brand-50 dark:bg-brand-600/15 text-brand-700 dark:text-brand-300'
                       : fase === 'lectura' ? 'border-warn bg-warn/10 text-warn-strong dark:text-warn'
                       : 'border-danger bg-danger/10 text-danger-strong dark:text-danger'
                     }`}>
-                      <Clock size={11} />
-                      {fase === 'activo' && `Trial — ${diasCompleto}d restantes`}
-                      {fase === 'lectura' && `Solo lectura — ${diasLectura}d`}
-                      {fase === 'vencido' && 'Trial vencido'}
+                      <Clock size={11} className="shrink-0" />
+                      <span className="break-words">
+                        {fase === 'activo' && `Trial — ${diasCompleto}d restantes`}
+                        {fase === 'lectura' && `Solo lectura — ${diasLectura}d`}
+                        {fase === 'vencido' && 'Trial vencido'}
+                      </span>
                     </div>
                   );
                 })()}
@@ -842,7 +844,7 @@ export const Admin: React.FC = () => {
                 </div>
 
                 {emp.usuarios[0] && (
-                  <p className="text-xs text-muted mt-1 font-mono truncate">
+                  <p className="text-xs text-muted mt-1 font-mono break-all">
                     {emp.usuarios[0].email}
                     {emp.usuarios[0].telefono && (
                       <span className="ml-2 text-faint">· {emp.usuarios[0].telefono}</span>
@@ -1497,4 +1499,3 @@ const Campo: React.FC<{ label: string; children: React.ReactNode }> = ({ label, 
     {children}
   </div>
 );
-
