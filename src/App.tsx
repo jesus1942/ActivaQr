@@ -17,6 +17,7 @@ import { PantallaAceptarPoliticas } from './components/PantallaAceptarPoliticas'
 import { SplashScreen } from './components/SplashScreen';
 import { ErrorBoundary, RutaProtegida } from './components/ErrorBoundary';
 import { useState, useCallback } from 'react';
+import { prepararInicio } from './data/startup';
 
 const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })));
 const Indicadores = lazy(() => import('./pages/Indicadores').then((m) => ({ default: m.Indicadores })));
@@ -39,20 +40,26 @@ const AprobarAccesoRemoto = lazy(() => import('./pages/AprobarAccesoRemoto').the
 const ResetPassword = lazy(() => import('./pages/ResetPassword').then((m) => ({ default: m.ResetPassword })));
 const DashboardOperador = lazy(() => import('./pages/DashboardOperador').then((m) => ({ default: m.DashboardOperador })));
 
-const SPLASH_KEY = 'aqr_splash_shown';
-
 function AppConSplash() {
-  const yaVisto = sessionStorage.getItem(SPLASH_KEY) === '1';
-  const [splashDone, setSplashDone] = useState(yaVisto);
+  const [inicioListo, setInicioListo] = useState(false);
+  const [splashDone, setSplashDone] = useState(false);
+
+  useEffect(() => {
+    let vigente = true;
+    prepararInicio().finally(() => {
+      if (vigente) setInicioListo(true);
+    });
+    return () => { vigente = false; };
+  }, []);
+
   const onDone = useCallback(() => {
-    sessionStorage.setItem(SPLASH_KEY, '1');
     setSplashDone(true);
   }, []);
 
   return (
     <>
-      {!splashDone && <SplashScreen onDone={onDone} />}
-      <AppInterna />
+      {!splashDone && <SplashScreen ready={inicioListo} onDone={onDone} />}
+      {inicioListo && <AppInterna />}
     </>
   );
 }

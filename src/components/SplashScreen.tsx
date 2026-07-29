@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 
-const DURACION = 900;
-const FADE_START = 620;
+const MIN_DURACION = 1_800;
+const FADE_DURACION = 360;
+const MAX_DURACION = 30_000;
 
 // Logo claro (para fondo oscuro).
 const LOGO_SRC = '/ActivaQr/company-logo1.png';
@@ -9,9 +10,14 @@ const LOGO_SRC = '/ActivaQr/company-logo1.png';
 // Splash sobrio: fondo oscuro, una cinta vertical ondulada turquesa con glow,
 // el logo centrado con halo y una barra de progreso fina. Coherente con el
 // resto del rediseño (oscuro/teal, neumorfismo suave).
-export function SplashScreen({ onDone }: { onDone: () => void }) {
+export function SplashScreen({ ready, onDone }: { ready: boolean; onDone: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [visible, setVisible] = useState(true);
+  const readyRef = useRef(ready);
+
+  useEffect(() => {
+    readyRef.current = ready;
+  }, [ready]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -33,6 +39,7 @@ export function SplashScreen({ onDone }: { onDone: () => void }) {
     logo.src = LOGO_SRC;
 
     let startTime: number | null = null;
+    let fadeStart: number | null = null;
     let raf: number;
 
     const draw = (ts: number) => {
@@ -45,8 +52,10 @@ export function SplashScreen({ onDone }: { onDone: () => void }) {
 
       ctx.clearRect(0, 0, w, h);
 
-      let alpha = 1;
-      if (t > FADE_START) alpha = Math.max(0, 1 - (t - FADE_START) / (DURACION - FADE_START));
+      const puedeCerrar = readyRef.current && t >= MIN_DURACION;
+      if ((puedeCerrar || t >= MAX_DURACION) && fadeStart === null) fadeStart = t;
+      const fadeT = fadeStart === null ? 0 : t - fadeStart;
+      const alpha = Math.max(0, 1 - fadeT / FADE_DURACION);
       ctx.globalAlpha = alpha;
 
       // Fondo oscuro con gradiente vertical
@@ -117,7 +126,9 @@ export function SplashScreen({ onDone }: { onDone: () => void }) {
       const barH = 3;
       const barX = cx - barW / 2;
       const barY = cy + h * 0.13;
-      const progreso = Math.min(1, t / FADE_START);
+      const progreso = fadeStart === null
+        ? Math.min(0.88, t / 5_000)
+        : Math.min(1, 0.88 + (fadeT / FADE_DURACION) * 0.12);
 
       ctx.fillStyle = 'rgba(148,163,184,0.18)';
       ctx.fillRect(barX, barY, barW, barH);
@@ -129,7 +140,7 @@ export function SplashScreen({ onDone }: { onDone: () => void }) {
       ctx.fillRect(barX, barY, barW * progreso, barH);
       ctx.restore();
 
-      if (t < DURACION) {
+      if (fadeStart === null || fadeT < FADE_DURACION) {
         raf = requestAnimationFrame(draw);
       } else {
         setVisible(false);

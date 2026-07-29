@@ -22,10 +22,52 @@ let _errorSync: string | null = null;
 const _erroresCarga = new Map<string, string>();
 const _errorListeners = new Set<() => void>();
 const _notificarError = () => _errorListeners.forEach((fn) => fn());
+let _retryVersion = 0;
+let _retryTimer: number | null = null;
+let _retryIntento = 0;
+let _onlineListenerConfigurado = false;
+const _retryListeners = new Set<() => void>();
+const _notificarRetry = () => _retryListeners.forEach((fn) => fn());
+
+export function reintentarCargasRemotas() {
+  if (_retryTimer !== null) {
+    window.clearTimeout(_retryTimer);
+    _retryTimer = null;
+  }
+  _retryVersion++;
+  _notificarRetry();
+}
+
+function programarReintentoAutomatico() {
+  if (_retryTimer !== null || !navigator.onLine) return;
+  const pausas = [2_000, 4_000, 8_000, 15_000, 30_000];
+  const pausa = pausas[Math.min(_retryIntento, pausas.length - 1)];
+  _retryIntento++;
+  _retryTimer = window.setTimeout(() => {
+    _retryTimer = null;
+    reintentarCargasRemotas();
+  }, pausa);
+}
+
+function asegurarReintentoAlVolverLaRed() {
+  if (_onlineListenerConfigurado) return;
+  _onlineListenerConfigurado = true;
+  window.addEventListener('online', () => {
+    if (_errorSync) reintentarCargasRemotas();
+  });
+}
+
 function actualizarErrorCarga(key: string, error: string | null) {
   if (error) _erroresCarga.set(key, error);
   else _erroresCarga.delete(key);
   _errorSync = _erroresCarga.values().next().value ?? null;
+  if (_errorSync === null) {
+    _retryIntento = 0;
+    if (_retryTimer !== null) {
+      window.clearTimeout(_retryTimer);
+      _retryTimer = null;
+    }
+  }
   _notificarError();
 }
 export const errorSyncStore = {
@@ -126,6 +168,11 @@ async function cargarConReintentos<T>(fn: () => Promise<T>): Promise<T> {
  * así el resto de la app no cambia.
  */
 export function useStorage<T>(key: string, initialValue: T) {
+  asegurarReintentoAlVolverLaRed();
+  const retryVersion = useSyncExternalStore(
+    (fn) => { _retryListeners.add(fn); return () => _retryListeners.delete(fn); },
+    () => _retryVersion,
+  );
   // Copia local de lo ultimo que devolvio la API. Permite abrir la app
   // mostrando datos al instante mientras se refresca por detras, en vez de
   // tapar todo con la pantalla de carga durante un viaje a la nube.
@@ -193,6 +240,7 @@ export function useStorage<T>(key: string, initialValue: T) {
         key,
         `No se pudieron cargar los ${key} del servidor. Recargá la página o revisá tu conexión.`
       );
+      programarReintentoAutomatico();
     }).finally(() => {
       if (!cancelado && bloquea) { _pendientes = Math.max(0, _pendientes - 1); _notificar(); }
     });
@@ -203,7 +251,7 @@ export function useStorage<T>(key: string, initialValue: T) {
         _notificar();
       }
     };
-  }, [key]);
+  }, [key, retryVersion]);
 
   // Persistencia de los cambios.
   useEffect(() => {

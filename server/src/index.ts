@@ -140,8 +140,14 @@ app.get('/politica-privacidad', (_req, res) => {
   res.send(renderPoliticaPrivacidad(APP_PUBLIC_URL));
 });
 
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok' });
+app.get('/api/health', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok', database: 'ok' });
+  } catch (error) {
+    console.error('[health] Base de datos no disponible:', error);
+    res.status(503).json({ status: 'starting', database: 'unavailable' });
+  }
 });
 
 app.get('/api/politicas/version', (_req, res) => {

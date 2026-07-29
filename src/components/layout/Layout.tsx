@@ -4,7 +4,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { PantallaCarga } from '../PantallaCarga';
-import { useCargaRemota, useErrorSync } from '../../hooks/useStorage';
+import { reintentarCargasRemotas, useCargaRemota, useErrorSync } from '../../hooks/useStorage';
 import { DemoBanner } from '../ui/DemoBanner';
 import { SyncBadge } from '../ui/SyncBadge';
 import { TrialBanner } from '../TrialUI';
@@ -34,16 +34,18 @@ export const Layout: React.FC = () => {
               <AlertTriangle size={18} className="flex-shrink-0" />
               <div className="min-w-0">
                 <p className="text-sm font-semibold">Sin conexión con el servidor</p>
-                <p className="text-xs opacity-90 truncate">
-                  Tus cambios NO se están guardando para no borrar nada. Recargá cuando vuelva la conexión.
+                <p className="text-xs opacity-90 break-words">
+                  Protegimos tus datos y estamos reintentando automáticamente.
                 </p>
               </div>
             </div>
             <button
-              onClick={() => window.location.reload()}
+              onClick={reintentarCargasRemotas}
+              disabled={cargando}
               className="press flex items-center gap-1.5 bg-white/15 text-white px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-white/25 transition-colors flex-shrink-0"
             >
-              <RefreshCw size={13} /> Reintentar
+              <RefreshCw size={13} className={cargando ? 'animate-spin' : ''} />
+              {cargando ? 'Conectando' : 'Reintentar'}
             </button>
           </div>
         )}

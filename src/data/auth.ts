@@ -81,6 +81,18 @@ function guardarSesion(token: string, usuario: UsuarioSesion) {
   authStore.setItem(USER_KEY, JSON.stringify(usuario));
 }
 
+/** Refresca los datos visibles de una sesion ya validada sin reemplazar el JWT. */
+export function actualizarUsuarioSesion(usuario: UsuarioSesion) {
+  if (!getToken()) return;
+  authStore.setItem(USER_KEY, JSON.stringify(usuario));
+}
+
+/** Quita solamente la identidad; conserva las copias offline de cada empresa. */
+export function limpiarSesion() {
+  authStore.removeItem(TOKEN_KEY);
+  authStore.removeItem(USER_KEY);
+}
+
 export function logout() {
   authStore.clear();
   localStorage.clear();
