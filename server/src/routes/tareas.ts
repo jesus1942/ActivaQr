@@ -3,6 +3,7 @@ import { prisma } from '../prisma';
 import { resolveEmpresaId } from '../tenant';
 import { auditar } from '../auditoria';
 import { AuthRequest, requireAdmin } from '../auth';
+import { siguienteCicloMantenimiento } from '../mantenimientoService';
 
 const router = Router();
 
@@ -103,6 +104,7 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
     const empresaId = await resolveEmpresaId(req);
     const existing = await prisma.tareaMantenimiento.findFirst({
       where: { id: req.params.id, activo: { empresaId } },
+      include: { activo: true },
     });
     if (!existing) return res.status(404).json({ error: 'Tarea no encontrada' });
 
@@ -147,6 +149,14 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
       data,
       include: { responsable: { select: { id: true, nombre: true, cargo: true } } },
     });
+    const seCompletaAhora = estado === 'completado' && existing.estado !== 'completado';
+    if (seCompletaAhora && /preventiv/i.test(tarea.tipo)) {
+      const fechaCierre = tarea.fechaRealizada ?? new Date();
+      const siguiente = siguienteCicloMantenimiento(existing.activo, fechaCierre);
+      if (siguiente) {
+        await prisma.activo.update({ where: { id: existing.activoId }, data: siguiente });
+      }
+    }
     const accion = estado === 'completado' ? 'cerrar' : 'editar';
     void auditar(req as AuthRequest, accion, 'orden_trabajo', tarea.id, tarea.numero ? `OT-${String(tarea.numero).padStart(5, '0')}` : tarea.tipo);
     res.json(tarea);

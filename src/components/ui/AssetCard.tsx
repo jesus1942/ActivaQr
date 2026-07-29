@@ -20,6 +20,7 @@ import { Activo, Medicion } from '../../data/types';
 import { StatusBadge } from './StatusBadge';
 import { EstadoOperativoBadge } from './EstadoOperativoBadge';
 import { MapPin, Clock, User, Pencil } from 'lucide-react';
+import { resumenMantenimiento } from '../../utils/mantenimiento';
 
 interface AssetCardProps {
   activo: Activo;
@@ -32,6 +33,7 @@ interface AssetCardProps {
 export const AssetCard: React.FC<AssetCardProps> = ({ activo, lastMedicion, sectorNombre, responsableNombre, onEdit }) => {
   const navigate = useNavigate();
   const qrValue = `${window.location.origin}${import.meta.env.BASE_URL}#/ficha/${activo.id}`;
+  const mantenimiento = resumenMantenimiento(activo, lastMedicion ? [lastMedicion] : []);
 
   return (
     <div
@@ -110,9 +112,12 @@ export const AssetCard: React.FC<AssetCardProps> = ({ activo, lastMedicion, sect
             <span>Última medición: {fmtFecha(lastMedicion.fecha)}</span>
           </div>
         )}
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-muted">
+        <div className={`flex items-start gap-1.5 text-xs font-semibold ${mantenimiento?.vencido ? 'text-danger' : 'text-muted'}`}>
           <Clock size={11} />
-          <span>Prox. mant.: {fmtFecha(activo.proximoMantenimiento)}</span>
+          <span>
+            Próx. mant.: {mantenimiento?.principal ?? fmtFecha(activo.proximoMantenimiento)}
+            {mantenimiento?.detalle && <span className="block font-normal">{mantenimiento.detalle}</span>}
+          </span>
         </div>
       </div>
     </div>

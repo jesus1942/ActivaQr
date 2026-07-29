@@ -19,6 +19,9 @@ interface FichaActivo {
   fechaIngreso: string;
   proximoMantenimiento: string;
   horasActuales: number;
+  kilometrosActuales?: number;
+  estrategiaMantenimiento?: 'horas' | 'kilometros' | 'fecha';
+  proximoMantenimientoLectura?: number | null;
   temperaturaMin: number;
   temperaturaMax: number;
   temperaturaAlerta: number;
@@ -220,8 +223,21 @@ export const FichaPublica: React.FC = () => {
           <Fila label="Responsable" value={activo.responsable?.nombre} />
           <Fila label="Tel. responsable" value={activo.responsable?.telefono} />
           <Fila label="Horas actuales" value={llevaHoras && activo.horasActuales ? `${activo.horasActuales} hs` : undefined} />
+          <Fila
+            label="Kilometraje actual"
+            value={activo.estrategiaMantenimiento === 'kilometros'
+              ? `${(activo.kilometrosActuales ?? 0).toLocaleString('es-AR')} km`
+              : undefined}
+          />
           <Fila label="Fecha ingreso" value={activo.fechaIngreso ? activo.fechaIngreso.slice(0, 10) : undefined} />
-          <Fila label="Proximo mant." value={activo.proximoMantenimiento ? activo.proximoMantenimiento.slice(0, 10) : undefined} />
+          <Fila
+            label="Próximo mant."
+            value={activo.estrategiaMantenimiento === 'horas'
+              ? `${activo.proximoMantenimientoLectura?.toLocaleString('es-AR') ?? '—'} h`
+              : activo.estrategiaMantenimiento === 'kilometros'
+                ? `${activo.proximoMantenimientoLectura?.toLocaleString('es-AR') ?? '—'} km`
+                : activo.proximoMantenimiento?.slice(0, 10)}
+          />
           {activo.esItinerante && (
             <>
               <Fila label="Tipo" value="Itinerante" />

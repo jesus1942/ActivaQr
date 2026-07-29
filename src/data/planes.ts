@@ -12,6 +12,12 @@
 
 export type Plan = 'inicial' | 'empresa' | 'industrial';
 
+export const LIMITE_ACTIVOS_POR_PLAN: Record<Plan, number | null> = {
+  inicial: 50,
+  empresa: 200,
+  industrial: null,
+};
+
 export type Feature =
   | 'indicadores'        // KPIs basicos (disponibilidad, cumplimiento)
   | 'kpisEjecutivos'     // MTTR/MTBF y tendencias avanzadas

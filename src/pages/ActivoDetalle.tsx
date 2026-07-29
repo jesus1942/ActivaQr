@@ -37,6 +37,7 @@ import { CategoriaEquipo, getCategoria } from '../data/categoriasApi';
 import { API_URL } from '../data/auth';
 import { useAuth } from '../context/AuthContext';
 import { puedeEliminarActivos } from '../data/permisos';
+import { resumenMantenimiento } from '../utils/mantenimiento';
 
 export const ActivoDetalle: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -83,10 +84,12 @@ export const ActivoDetalle: React.FC = () => {
   );
   const mideAlgoCategoria = !!(categoriaTipo && categoriaTipo.parametros.length > 0);
   const esOperativo = mideAlgoFijo || mideAlgoCategoria;
-  const mideHorasMarcha = tipoActual?.mideHoras !== false && !!(
+  const mideHorasMarcha = activo.estrategiaMantenimiento === 'horas' || (
+    !activo.estrategiaMantenimiento && tipoActual?.mideHoras !== false && !!(
     tipoActual?.mideAmperaje || tipoActual?.midePresion || tipoActual?.mideVibracion ||
     tipoActual?.mideContador
-  );
+  ));
+  const mantenimiento = resumenMantenimiento(activo, activoMediciones);
 
   const handleCrearTareaPredictiva = (texto: string) => {
     const nueva: TareaMantenimiento = {
@@ -153,7 +156,12 @@ export const ActivoDetalle: React.FC = () => {
       { label: 'Intervalo Medición', value: `${activo.intervaloMedicionHoras} hs` },
       { label: 'Intervalo Lubricación', value: activo.intervaloLubricacionHoras ? `${activo.intervaloLubricacionHoras} hs` : 'N/A' },
     ] : []),
-    { label: 'Prox. Mantenimiento', value: fmt(activo.proximoMantenimiento) },
+    ...(activo.estrategiaMantenimiento === 'kilometros' ? [
+      { label: 'Kilometraje actual', value: `${(activo.kilometrosActuales ?? 0).toLocaleString('es-AR')} km` },
+    ] : []),
+    { label: 'Plan preventivo', value: mantenimiento
+      ? `${mantenimiento.principal} — ${mantenimiento.detalle}`
+      : fmt(activo.proximoMantenimiento) },
     { label: 'Desplazamiento', value: activo.esItinerante ? 'Itinerante' : 'Fijo' },
     ...(activo.esItinerante ? [
       { label: 'Locacion base', value: activo.locacionBase ?? undefined },
@@ -302,7 +310,7 @@ export const ActivoDetalle: React.FC = () => {
               {activoTareas.length > 0 && (
                 <p className="text-xs text-muted mt-2">
                   Tareas registradas: {activoTareas.length} · Proxima:{' '}
-                  {fmt(activo.proximoMantenimiento)}
+                  {mantenimiento?.principal ?? fmt(activo.proximoMantenimiento)}
                 </p>
               )}
             </div>

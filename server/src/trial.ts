@@ -1,7 +1,7 @@
 /**
  * Lógica de fases del free trial autogestionado.
  *
- *  activo   → acceso completo (con tope de 10 activos del plan inicial)
+ *  activo   → acceso completo (con tope de 50 activos del plan inicial)
  *  lectura  → solo lectura: puede ver y escanear QR, no puede escribir
  *  vencido  → bloqueo total, debe pagar
  *  null     → la empresa no es trial (cliente pago)

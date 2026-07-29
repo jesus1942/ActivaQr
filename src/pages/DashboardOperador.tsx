@@ -17,6 +17,9 @@ interface Activo {
   nombre: string;
   estado: string;
   estadoOperativo: string;
+  estrategiaMantenimiento?: 'horas' | 'kilometros' | 'fecha';
+  horasActuales?: number;
+  kilometrosActuales?: number;
   sector?: { nombre: string };
   tipo?: {
     nombre: string;
@@ -59,6 +62,7 @@ interface FormMedicion {
   contador: string;
   voltaje: string;
   horasMarcha: string;
+  kilometraje: string;
   observaciones: string;
 }
 
@@ -72,6 +76,7 @@ const FORM_INICIAL: FormMedicion = {
   contador: '',
   voltaje: '',
   horasMarcha: '',
+  kilometraje: '',
   observaciones: '',
 };
 
@@ -334,7 +339,14 @@ export const DashboardOperador: React.FC = () => {
       if (tipo?.mideToner && form.nivelToner !== '') body.nivelToner = parseInt(form.nivelToner);
       if (tipo?.mideContador && form.contador !== '') body.contador = parseInt(form.contador);
       if (tipo?.mideVoltaje && form.voltaje !== '') body.voltaje = parseFloat(form.voltaje);
-      if (tipo?.mideHoras !== false && form.horasMarcha !== '') body.horasMarcha = parseInt(form.horasMarcha);
+      if (
+        (activoSeleccionado.estrategiaMantenimiento === 'horas'
+          || (!activoSeleccionado.estrategiaMantenimiento && tipo?.mideHoras !== false))
+        && form.horasMarcha !== ''
+      ) body.horasMarcha = parseInt(form.horasMarcha);
+      if (activoSeleccionado.estrategiaMantenimiento === 'kilometros' && form.kilometraje !== '') {
+        body.kilometraje = parseInt(form.kilometraje);
+      }
       if (Object.keys(parametrosExtra).length > 0) body.parametrosExtra = parametrosExtra;
       if (foto) {
         body.fotos = [{
@@ -443,7 +455,13 @@ export const DashboardOperador: React.FC = () => {
                   activoSeleccionado.tipo?.mideBateria ? { key: 'porcentajeBateria', label: 'Batería (%)', placeholder: '100', step: '1' } : null,
                   activoSeleccionado.tipo?.mideToner ? { key: 'nivelToner', label: 'Nivel de tóner (%)', placeholder: '100', step: '1' } : null,
                   activoSeleccionado.tipo?.mideContador ? { key: 'contador', label: 'Contador (páginas/ciclos)', placeholder: '0', step: '1' } : null,
-                  activoSeleccionado.tipo?.mideHoras !== false ? { key: 'horasMarcha', label: 'Horas de marcha', placeholder: '0', step: '1' } : null,
+                  (activoSeleccionado.estrategiaMantenimiento === 'horas'
+                    || (!activoSeleccionado.estrategiaMantenimiento && activoSeleccionado.tipo?.mideHoras !== false))
+                    ? { key: 'horasMarcha', label: 'Horas de marcha', placeholder: String(activoSeleccionado.horasActuales ?? 0), step: '1' }
+                    : null,
+                  activoSeleccionado.estrategiaMantenimiento === 'kilometros'
+                    ? { key: 'kilometraje', label: 'Kilometraje actual', placeholder: String(activoSeleccionado.kilometrosActuales ?? 0), step: '1' }
+                    : null,
                 ].filter((campo): campo is { key: keyof FormMedicion; label: string; placeholder: string; step: string } => campo !== null).map(({ key, label, placeholder, step }) => (
                   <div key={key}>
                     <label className={labelCls}>{label}</label>

@@ -41,6 +41,20 @@ function fmtNum(n?: number | null, unit = ''): string {
   return `${n}${unit}`;
 }
 
+function fmtMantenimiento(activo: Activo): string {
+  if (activo.estrategiaMantenimiento === 'horas') {
+    return activo.proximoMantenimientoLectura == null
+      ? '—'
+      : `${activo.proximoMantenimientoLectura.toLocaleString('es-AR')} h`;
+  }
+  if (activo.estrategiaMantenimiento === 'kilometros') {
+    return activo.proximoMantenimientoLectura == null
+      ? '—'
+      : `${activo.proximoMantenimientoLectura.toLocaleString('es-AR')} km`;
+  }
+  return fmtFecha(activo.proximoMantenimiento);
+}
+
 function header(doc: jsPDF, titulo: string, subtitulo: string) {
   const W = doc.internal.pageSize.getWidth();
   doc.setFillColor(...SLATE900);
@@ -144,7 +158,10 @@ export function exportarFichaActivoPdf(p: FichaActivoPdfParams) {
     ['Responsable', p.responsableNombre || '—'],
     ['Fecha ingreso', fmtFecha(p.activo.fechaIngreso)],
     ...(llevaHoras ? [['Horas actuales', fmtNum(p.activo.horasActuales, ' hs')] as [string, string]] : []),
-    ['Prox. mantenimiento', fmtFecha(p.activo.proximoMantenimiento)],
+    ...(p.activo.estrategiaMantenimiento === 'kilometros'
+      ? [['Kilometraje actual', fmtNum(p.activo.kilometrosActuales, ' km')] as [string, string]]
+      : []),
+    ['Prox. mantenimiento', fmtMantenimiento(p.activo)],
     ['Estado operativo', labelEstado(p.activo.estadoOperativo ?? 'operativo')],
   ];
 
@@ -406,7 +423,7 @@ export function exportarResumenActivosPdf(p: ResumenActivosPdfParams) {
 
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...BLACK);
-    doc.text(fmtFecha(a.proximoMantenimiento), colX[7], y + 2);
+    doc.text(fmtMantenimiento(a), colX[7], y + 2);
 
     y += 6.5;
   });

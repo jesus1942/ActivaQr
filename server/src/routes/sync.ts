@@ -7,6 +7,8 @@ import {
   calcularEstadoParametrosExtra,
   peorEstado,
 } from '../alertas';
+import { estrategiaValida, unidadMantenimientoValida } from '../mantenimiento';
+import { registrarLecturaMantenimiento, siguienteCicloMantenimiento } from '../mantenimientoService';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -251,6 +253,15 @@ router.put('/activos', asyncHandler(async (req, res) => {
         fechaIngreso: toDate(i.fechaIngreso) ?? new Date(),
         ubicacion: i.ubicacion ?? null,
         horasActuales: toNum(i.horasActuales) ?? 0,
+        kilometrosActuales: toNum(i.kilometrosActuales) ?? 0,
+        estrategiaMantenimiento: estrategiaValida(i.estrategiaMantenimiento),
+        intervaloMantenimiento: toNum(i.intervaloMantenimiento),
+        unidadMantenimiento: unidadMantenimientoValida(
+          estrategiaValida(i.estrategiaMantenimiento),
+          i.unidadMantenimiento,
+        ),
+        proximoMantenimientoLectura: toNum(i.proximoMantenimientoLectura),
+        ultimaFechaMantenimiento: toDate(i.ultimaFechaMantenimiento),
         estado: i.estado ?? 'normal',
         estadoOperativo: ['operativo', 'pausa', 'mantenimiento', 'montaje', 'fuera_servicio'].includes(i.estadoOperativo)
           ? i.estadoOperativo
@@ -368,7 +379,12 @@ router.put('/mediciones', asyncHandler(async (req, res) => {
         amperaje: activo.tipo.mideAmperaje ? toNum(i.amperaje) : null,
         presion: activo.tipo.midePresion ? toNum(i.presion) : null,
         vibracion: activo.tipo.mideVibracion ? i.vibracion ?? 'ninguna' : 'ninguna',
-        horasMarcha: activo.tipo.mideHoras ? toNum(i.horasMarcha) : null,
+        horasMarcha: activo.estrategiaMantenimiento === 'horas' || activo.tipo.mideHoras
+          ? toNum(i.horasMarcha)
+          : null,
+        kilometraje: activo.estrategiaMantenimiento === 'kilometros'
+          ? toNum(i.kilometraje)
+          : null,
         voltaje: activo.tipo.mideVoltaje ? toNum(i.voltaje) : null,
         porcentajeBateria: activo.tipo.mideBateria && toNum(i.porcentajeBateria) != null ? Math.round(toNum(i.porcentajeBateria)!) : null,
         nivelToner: activo.tipo.mideToner && toNum(i.nivelToner) != null ? Math.round(toNum(i.nivelToner)!) : null,
@@ -400,6 +416,25 @@ router.put('/mediciones', asyncHandler(async (req, res) => {
     }),
     auditoriaSync(req, empresaId, 'mediciones', items.length, deletedIds.length),
   ]);
+  const maximosPorActivo = new Map<string, { horasMarcha?: number; kilometraje?: number }>();
+  for (const item of items) {
+    const actual = maximosPorActivo.get(item.activoId) ?? {};
+    const horas = toNum(item.horasMarcha);
+    const kilometros = toNum(item.kilometraje);
+    if (horas != null && horas > (actual.horasMarcha ?? -1)) actual.horasMarcha = horas;
+    if (kilometros != null && kilometros > (actual.kilometraje ?? -1)) actual.kilometraje = kilometros;
+    maximosPorActivo.set(item.activoId, actual);
+  }
+  const activosActualizados = await prisma.activo.findMany({
+    where: { id: { in: [...maximosPorActivo.keys()] }, empresaId },
+  });
+  for (const activo of activosActualizados) {
+    await registrarLecturaMantenimiento(
+      prisma,
+      activo,
+      maximosPorActivo.get(activo.id) ?? {},
+    );
+  }
   res.json({ synced: items.length, deleted: deletedIds.length });
 }));
 
@@ -410,7 +445,10 @@ router.put('/tareas', asyncHandler(async (req, res) => {
   if (idsDuplicados(items)) return res.status(400).json({ error: 'Hay IDs de tareas duplicados.' });
   const ids = items.map((i) => i.id);
   const existentes = ids.length
-    ? await prisma.tareaMantenimiento.findMany({ where: { id: { in: ids } }, select: { id: true, activo: { select: { empresaId: true } } } })
+    ? await prisma.tareaMantenimiento.findMany({
+        where: { id: { in: ids } },
+        include: { activo: true },
+      })
     : [];
   if (existentes.some((item) => item.activo.empresaId !== empresaId)) {
     return res.status(403).json({ code: 'tenant_violation', error: 'Una tarea pertenece a otra empresa.' });
@@ -458,6 +496,25 @@ router.put('/tareas', asyncHandler(async (req, res) => {
     }),
     auditoriaSync(req, empresaId, 'tareas', items.length, deletedIds.length),
   ]);
+  const existentesPorId = new Map(existentes.map((tarea) => [tarea.id, tarea]));
+  for (const item of items) {
+    const anterior = existentesPorId.get(item.id);
+    if (
+      anterior
+      &&
+      item.estado === 'completado'
+      && anterior.estado !== 'completado'
+      && /preventiv/i.test(String(item.tipo ?? anterior.tipo ?? ''))
+    ) {
+      const siguiente = siguienteCicloMantenimiento(
+        anterior.activo,
+        toDate(item.fechaRealizada) ?? new Date(),
+      );
+      if (siguiente) {
+        await prisma.activo.update({ where: { id: anterior.activoId }, data: siguiente });
+      }
+    }
+  }
   res.json({ synced: items.length, deleted: deletedIds.length });
 }));
 

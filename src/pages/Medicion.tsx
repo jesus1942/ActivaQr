@@ -307,7 +307,9 @@ export const Medicion: React.FC = () => {
   const mideBateria = tipoActivo?.mideBateria ?? false;
   const mideToner = tipoActivo?.mideToner ?? false;
   const mideContador = tipoActivo?.mideContador ?? false;
-  const mideHoras = tipoActivo?.mideHoras !== false;
+  const mideHoras = activo?.estrategiaMantenimiento === 'horas'
+    || (!activo?.estrategiaMantenimiento && tipoActivo?.mideHoras !== false);
+  const mideKilometros = activo?.estrategiaMantenimiento === 'kilometros';
 
   // Categoría dinámica
   const [categoria, setCategoria] = useState<CategoriaEquipo | null>(null);
@@ -323,6 +325,7 @@ export const Medicion: React.FC = () => {
     presion: '',
     vibracion: 'ninguna' as MedicionType['vibracion'],
     horasMarcha: '',
+    kilometraje: '',
     voltaje: '',
     porcentajeBateria: '',
     nivelToner: '',
@@ -399,6 +402,7 @@ export const Medicion: React.FC = () => {
       presion: parseFloat(form.presion) || 0,
       vibracion: form.vibracion,
       horasMarcha: parseInt(form.horasMarcha) || 0,
+      ...(mideKilometros && form.kilometraje !== '' ? { kilometraje: parseInt(form.kilometraje) } : {}),
       ...(mideVoltaje && form.voltaje !== '' ? { voltaje: parseFloat(form.voltaje) } : {}),
       ...(mideBateria && form.porcentajeBateria !== '' ? { porcentajeBateria: parseInt(form.porcentajeBateria) } : {}),
       ...(mideToner && form.nivelToner !== '' ? { nivelToner: parseInt(form.nivelToner) } : {}),
@@ -417,6 +421,18 @@ export const Medicion: React.FC = () => {
       ...(fotos.length > 0 ? { fotos } : {}),
     };
     addMedicion(newMedicion);
+    if (mideHoras && form.horasMarcha !== '') {
+      const horas = parseInt(form.horasMarcha);
+      if (Number.isFinite(horas) && horas > activo.horasActuales) {
+        updateActivo(activo.id, { horasActuales: horas });
+      }
+    }
+    if (mideKilometros && form.kilometraje !== '') {
+      const kilometros = parseInt(form.kilometraje);
+      if (Number.isFinite(kilometros) && kilometros > (activo.kilometrosActuales ?? 0)) {
+        updateActivo(activo.id, { kilometrosActuales: kilometros });
+      }
+    }
 
     // Actualizar la etiqueta del activo segun el estado calculado.
     // Solo escalamos (nunca bajamos automaticamente: requiere revision manual).
@@ -481,7 +497,7 @@ export const Medicion: React.FC = () => {
             <button
               onClick={() => {
                 setSubmitted(false);
-                setForm({ temperatura: '', amperaje: '', presion: '', vibracion: 'ninguna', horasMarcha: '', voltaje: '', porcentajeBateria: '', nivelToner: '', contador: '', estado: 'normal', observaciones: '', tecnicoId: usuario?.id ?? '' });
+                setForm({ temperatura: '', amperaje: '', presion: '', vibracion: 'ninguna', horasMarcha: '', kilometraje: '', voltaje: '', porcentajeBateria: '', nivelToner: '', contador: '', estado: 'normal', observaciones: '', tecnicoId: usuario?.id ?? '' });
               setParametrosExtra({});
               }}
               className="flex-1 bg-brand-600 text-white px-4 py-3 font-display font-bold text-xl border border-line"
@@ -709,6 +725,20 @@ export const Medicion: React.FC = () => {
                 onChange={(e) => setForm((p) => ({ ...p, horasMarcha: e.target.value }))}
                 className="w-full border border-line px-4 h-14 text-xl font-mono outline-none focus:border-brand-600 text-center bg-surface"
                 placeholder={String(activo.horasActuales)}
+              />
+            </div>}
+
+            {mideKilometros && <div>
+              <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">
+                Kilometraje actual
+              </label>
+              <input
+                type="number"
+                min={activo.kilometrosActuales ?? 0}
+                value={form.kilometraje}
+                onChange={(e) => setForm((p) => ({ ...p, kilometraje: e.target.value }))}
+                className="w-full border border-line px-4 h-14 text-xl font-mono outline-none focus:border-brand-600 text-center bg-surface"
+                placeholder={String(activo.kilometrosActuales ?? 0)}
               />
             </div>}
 

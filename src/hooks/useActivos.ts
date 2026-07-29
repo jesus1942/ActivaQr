@@ -17,6 +17,7 @@ import {
   seedTecnicos,
 } from '../data/seed';
 import { useRemote } from '../data/store';
+import { siguienteCicloLocal } from '../utils/mantenimiento';
 
 export function useActivos() {
   const defaultActivos    = useRemote ? [] : seedActivos;
@@ -77,6 +78,7 @@ export function useActivos() {
   };
 
   const completarTarea = (id: string, fechaRealizada: string, observaciones?: string) => {
+    const tarea = tareas.find((item) => item.id === id);
     setTareas((prev) =>
       prev.map((t) =>
         t.id === id
@@ -84,6 +86,13 @@ export function useActivos() {
           : t
       )
     );
+    if (tarea && /preventiv/i.test(tarea.tipo)) {
+      const activo = activos.find((item) => item.id === tarea.activoId);
+      if (activo) {
+        const siguiente = siguienteCicloLocal(activo, fechaRealizada);
+        if (siguiente) updateActivo(activo.id, siguiente);
+      }
+    }
   };
 
   // ── Sectores ───────────────────────────────────────────────

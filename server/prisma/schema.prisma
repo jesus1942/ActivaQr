@@ -329,6 +329,12 @@ model Activo {
   fechaIngreso              DateTime
   ubicacion                 String?
   horasActuales             Int          @default(0)
+  kilometrosActuales        Int          @default(0)
+  estrategiaMantenimiento   String       @default("fecha")
+  intervaloMantenimiento    Int?
+  unidadMantenimiento       String?
+  proximoMantenimientoLectura Int?
+  ultimaFechaMantenimiento  DateTime?
   estado                    EstadoActivo @default(normal)
   estadoOperativo           EstadoOperativo @default(operativo)
   temperaturaMin            Float?
@@ -392,6 +398,7 @@ model Medicion {
   presion       Float?
   vibracion     Vibracion      @default(ninguna)
   horasMarcha       Int?
+  kilometraje       Int?
   voltaje           Float?
   porcentajeBateria Int?
   nivelToner        Int?

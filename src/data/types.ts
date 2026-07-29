@@ -2,6 +2,8 @@
 export type EstadoActivo = 'normal' | 'alerta' | 'critico' | 'mantenimiento';
 export type EstadoMedicion = 'normal' | 'revision' | 'urgente';
 export type EstadoOperativo = 'operativo' | 'pausa' | 'mantenimiento' | 'montaje' | 'fuera_servicio';
+export type EstrategiaMantenimiento = 'horas' | 'kilometros' | 'fecha';
+export type UnidadMantenimiento = 'horas' | 'kilometros' | 'dias' | 'semanas' | 'meses';
 
 export interface Sector {
   id: string;
@@ -47,6 +49,12 @@ export interface Activo {
   fotoUrl?: string | null;
   responsableId: string;
   horasActuales: number;
+  kilometrosActuales?: number;
+  estrategiaMantenimiento?: EstrategiaMantenimiento;
+  intervaloMantenimiento?: number | null;
+  unidadMantenimiento?: UnidadMantenimiento | null;
+  proximoMantenimientoLectura?: number | null;
+  ultimaFechaMantenimiento?: string | null;
   estado: EstadoActivo;
   estadoOperativo?: EstadoOperativo;
   temperaturaMin: number;
@@ -122,6 +130,7 @@ export interface Medicion {
   presion: number;
   vibracion: 'ninguna' | 'leve' | 'moderada' | 'alta';
   horasMarcha: number;
+  kilometraje?: number;
   estado: EstadoMedicion;
   observaciones: string;
   tecnicoId: string;

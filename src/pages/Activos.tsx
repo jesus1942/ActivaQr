@@ -1,7 +1,7 @@
 // v1.1.0
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { format, addDays } from 'date-fns';
+import { format, addDays, addMonths, addWeeks } from 'date-fns';
 import { Search, Plus, LayoutGrid, List, X, ChevronDown, ChevronUp, Download, FileDown, Lightbulb } from 'lucide-react';
 import { exportarCsv } from '../utils/exportCsv';
 import { exportarResumenActivosPdf } from '../utils/exportPdf';
@@ -13,14 +13,10 @@ import { ModalCrearRapido } from '../components/ModalCrearRapido';
 import { ModalPlantillaMantenimiento } from '../components/ModalPlantillaMantenimiento';
 import { buscarPlantilla, PlantillaMantenimiento, TareaSugerida } from '../data/plantillasMantenimiento';
 import { ESTADOS_OPERATIVOS } from '../components/ui/EstadoOperativoBadge';
-import { Activo, EstadoActivo, EstadoOperativo, TipoActivo, ClaveVisibilidad, VISIBILIDAD_DEFAULT, VISIBILIDAD_LABELS } from '../data/types';
+import { Activo, EstadoActivo, EstadoOperativo, TipoActivo, ClaveVisibilidad, EstrategiaMantenimiento, UnidadMantenimiento, VISIBILIDAD_DEFAULT, VISIBILIDAD_LABELS } from '../data/types';
 import { DialogViewport } from '../components/ui/DialogViewport';
-
-const LIMITES_ACTIVOS: Record<string, number | null> = {
-  inicial:    10,
-  empresa:    50,
-  industrial: null,
-};
+import { resumenMantenimiento } from '../utils/mantenimiento';
+import { LIMITE_ACTIVOS_POR_PLAN, Plan } from '../data/planes';
 
 const ESTADOS: { value: string; label: string }[] = [
   { value: 'todos', label: 'Todos los estados' },
@@ -55,6 +51,12 @@ export const Activos: React.FC = () => {
     ubicacion: '',
     responsableId: tecnicosActivos[0]?.id ?? '',
     horasActuales: 0,
+    kilometrosActuales: 0,
+    estrategiaMantenimiento: 'fecha',
+    intervaloMantenimiento: 1,
+    unidadMantenimiento: 'meses',
+    proximoMantenimientoLectura: null,
+    ultimaFechaMantenimiento: '',
     estado: 'normal',
     estadoOperativo: 'operativo',
     temperaturaMin: 20,
@@ -77,7 +79,7 @@ export const Activos: React.FC = () => {
     intervaloMedicionHoras: 120,
     intervaloLubricacionHoras: 250,
     intervaloRodamientoHoras: 500,
-    proximoMantenimiento: format(new Date(), 'yyyy-MM-dd'),
+    proximoMantenimiento: format(addMonths(new Date(), 1), 'yyyy-MM-dd'),
     notas: '',
     esItinerante: false,
     locacionBase: '',
@@ -139,7 +141,7 @@ export const Activos: React.FC = () => {
 
   const openNew = () => {
     const plan = (usuario?.empresa as { plan?: string } | null)?.plan ?? 'inicial';
-    const limite = LIMITES_ACTIVOS[plan] ?? 10;
+    const limite = LIMITE_ACTIVOS_POR_PLAN[plan as Plan] ?? LIMITE_ACTIVOS_POR_PLAN.inicial;
     if (limite !== null && activos.length >= limite) {
       alert(`Tu plan "${plan}" permite hasta ${limite} activos.\nActualizá tu plan para agregar más.`);
       return;
@@ -150,7 +152,17 @@ export const Activos: React.FC = () => {
     const { id, ...rest } = a;
     void id;
     setEditId(a.id);
-    setForm({ ...rest, visibilidadPublica: rest.visibilidadPublica ?? { ...VISIBILIDAD_DEFAULT } });
+    setForm({
+      ...rest,
+      kilometrosActuales: rest.kilometrosActuales ?? 0,
+      estrategiaMantenimiento: rest.estrategiaMantenimiento ?? (rest.proximoMantenimiento ? 'fecha' : 'horas'),
+      intervaloMantenimiento: rest.intervaloMantenimiento ?? 1,
+      unidadMantenimiento: rest.unidadMantenimiento ?? (rest.proximoMantenimiento ? 'meses' : 'horas'),
+      proximoMantenimientoLectura: rest.proximoMantenimientoLectura ?? null,
+      ultimaFechaMantenimiento: rest.ultimaFechaMantenimiento?.slice(0, 10) ?? '',
+      proximoMantenimiento: rest.proximoMantenimiento?.slice(0, 10) ?? '',
+      visibilidadPublica: rest.visibilidadPublica ?? { ...VISIBILIDAD_DEFAULT },
+    });
     setShowModal(true);
   };
 
@@ -166,14 +178,49 @@ export const Activos: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const plan = { ...form };
+    const estrategia = plan.estrategiaMantenimiento ?? 'fecha';
+    const intervalo = Math.max(1, Number(plan.intervaloMantenimiento) || 1);
+    plan.intervaloMantenimiento = intervalo;
+    const anterior = editId ? activos.find((activo) => activo.id === editId) : null;
+    const cambioEstrategia = anterior?.estrategiaMantenimiento !== estrategia;
+    if (estrategia === 'horas' || estrategia === 'kilometros') {
+      plan.unidadMantenimiento = estrategia;
+      plan.proximoMantenimiento = '';
+      const actual = estrategia === 'horas'
+        ? Number(plan.horasActuales) || 0
+        : Number(plan.kilometrosActuales) || 0;
+      if (!plan.proximoMantenimientoLectura || cambioEstrategia) {
+        plan.proximoMantenimientoLectura = actual + intervalo;
+      }
+    } else {
+      const unidad = (plan.unidadMantenimiento === 'dias'
+        || plan.unidadMantenimiento === 'semanas'
+        || plan.unidadMantenimiento === 'meses')
+        ? plan.unidadMantenimiento
+        : 'meses';
+      plan.unidadMantenimiento = unidad;
+      plan.proximoMantenimientoLectura = null;
+      if (!plan.proximoMantenimiento || cambioEstrategia) {
+        const base = plan.ultimaFechaMantenimiento
+          ? new Date(`${plan.ultimaFechaMantenimiento}T12:00:00`)
+          : new Date();
+        const proxima = unidad === 'dias'
+          ? addDays(base, intervalo)
+          : unidad === 'semanas'
+            ? addWeeks(base, intervalo)
+            : addMonths(base, intervalo);
+        plan.proximoMantenimiento = format(proxima, 'yyyy-MM-dd');
+      }
+    }
     if (editId) {
-      updateActivo(editId, form);
+      updateActivo(editId, plan);
     } else {
       const nuevoId = `act-${Date.now()}`;
-      addActivo({ ...form, id: nuevoId });
+      addActivo({ ...plan, id: nuevoId });
       // Al crear (no editar), buscar plantilla por el nombre del tipo
       // y ofrecerla. Si el usuario la ignora, no pasa nada.
-      const nombreTipo = tipos.find((t) => t.id === form.tipoId)?.nombre;
+      const nombreTipo = tipos.find((t) => t.id === plan.tipoId)?.nombre;
       const plantilla = buscarPlantilla(nombreTipo);
       if (plantilla) {
         setPlantillaSugerida({ plantilla, activoId: nuevoId });
@@ -224,6 +271,9 @@ export const Activos: React.FC = () => {
               Tipo: getTipoNombre(a.tipoId), Marca: a.marca ?? '', Modelo: a.modelo ?? '',
               Estado: a.estado, 'Estado Operativo': a.estadoOperativo,
               'Fecha Ingreso': a.fechaIngreso, 'Horas Actuales': a.horasActuales,
+              'Kilómetros Actuales': a.kilometrosActuales ?? 0,
+              'Estrategia Mantenimiento': a.estrategiaMantenimiento ?? 'fecha',
+              'Próximo Mantenimiento': resumenMantenimiento(a, mediciones.filter((m) => m.activoId === a.id))?.principal ?? '',
               Responsable: getTecnicoNombre(a.responsableId ?? null),
               Ubicacion: a.ubicacion ?? '', Notas: a.notas ?? '',
             })))}
@@ -337,7 +387,9 @@ export const Activos: React.FC = () => {
                   <td className="px-3 py-2 text-muted whitespace-nowrap">{getSectorNombre(a.sectorId)}</td>
                   <td className="px-3 py-2 text-muted whitespace-nowrap">{getTecnicoNombre(a.responsableId)}</td>
                   <td className="px-3 py-2"><StatusBadge estado={a.estado} size="sm" /></td>
-                  <td className="px-3 py-2 text-muted font-mono text-xs whitespace-nowrap">{a.proximoMantenimiento}</td>
+                  <td className="px-3 py-2 text-muted font-mono text-xs whitespace-nowrap">
+                    {resumenMantenimiento(a, mediciones.filter((m) => m.activoId === a.id))?.principal ?? '—'}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -466,15 +518,7 @@ export const Activos: React.FC = () => {
                   className="w-full border border-line px-3 h-11 text-sm outline-none focus:border-brand-600"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Próximo Mantenimiento</label>
-                <input
-                  type="date"
-                  value={form.proximoMantenimiento}
-                  onChange={(e) => setForm((prev) => ({ ...prev, proximoMantenimiento: e.target.value }))}
-                  className="w-full border border-line px-3 h-11 text-sm outline-none focus:border-brand-600"
-                />
-              </div>
+              <PlanMantenimiento form={form} setForm={setForm} />
               <div className="sm:col-span-2">
                 <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Notas</label>
                 <textarea
@@ -617,6 +661,105 @@ export const Activos: React.FC = () => {
 // ── Componente de parámetros de medición (colapsable) ────────────────────────
 type FormActivo = Omit<Activo, 'id'>;
 
+const PlanMantenimiento: React.FC<{
+  form: FormActivo;
+  setForm: React.Dispatch<React.SetStateAction<FormActivo>>;
+}> = ({ form, setForm }) => {
+  const estrategia = form.estrategiaMantenimiento ?? 'fecha';
+  const setEstrategia = (value: EstrategiaMantenimiento) => {
+    setForm((prev) => ({
+      ...prev,
+      estrategiaMantenimiento: value,
+      unidadMantenimiento: value === 'fecha' ? 'meses' : value,
+      proximoMantenimientoLectura: null,
+      proximoMantenimiento: value === 'fecha' ? prev.proximoMantenimiento : '',
+    }));
+  };
+
+  return (
+    <div className="sm:col-span-2 border border-line p-4 space-y-4">
+      <div>
+        <p className="text-sm font-black uppercase tracking-wider text-content">Plan preventivo</p>
+        <p className="text-xs text-muted mt-1">Elegí cómo se consume el intervalo de mantenimiento de este activo.</p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {([
+          ['horas', 'Por horas', 'Maquinaria'],
+          ['kilometros', 'Por kilómetros', 'Vehículos'],
+          ['fecha', 'Por fecha', 'Herramientas y bienes'],
+        ] as const).map(([value, label, detail]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setEstrategia(value)}
+            className={`min-h-[58px] border px-3 py-2 text-left ${
+              estrategia === value
+                ? 'border-brand-600 bg-brand-50 text-brand-700'
+                : 'border-line bg-surface text-content'
+            }`}
+          >
+            <span className="block text-sm font-black">{label}</span>
+            <span className="block text-xs opacity-75">{detail}</span>
+          </button>
+        ))}
+      </div>
+
+      {estrategia === 'horas' && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <CampoNum label="Horómetro actual" campo="horasActuales" form={form} setForm={setForm} unidad="h" />
+          <CampoNum label="Mantenimiento cada" campo="intervaloMantenimiento" form={form} setForm={setForm} unidad="h" />
+          <CampoNum label="Próximo a las" campo="proximoMantenimientoLectura" form={form} setForm={setForm} unidad="h" />
+        </div>
+      )}
+      {estrategia === 'kilometros' && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <CampoNum label="Kilometraje actual" campo="kilometrosActuales" form={form} setForm={setForm} unidad="km" />
+          <CampoNum label="Service cada" campo="intervaloMantenimiento" form={form} setForm={setForm} unidad="km" />
+          <CampoNum label="Próximo a los" campo="proximoMantenimientoLectura" form={form} setForm={setForm} unidad="km" />
+        </div>
+      )}
+      {estrategia === 'fecha' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-[1fr_1.2fr] gap-2">
+            <CampoNum label="Cada" campo="intervaloMantenimiento" form={form} setForm={setForm} />
+            <div>
+              <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Período</label>
+              <select
+                value={form.unidadMantenimiento ?? 'meses'}
+                onChange={(e) => setForm((prev) => ({ ...prev, unidadMantenimiento: e.target.value as UnidadMantenimiento }))}
+                className="w-full border border-line px-3 h-10 text-sm outline-none focus:border-brand-600 bg-surface"
+              >
+                <option value="dias">Días</option>
+                <option value="semanas">Semanas</option>
+                <option value="meses">Meses</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Último mantenimiento</label>
+            <input
+              type="date"
+              value={form.ultimaFechaMantenimiento ?? ''}
+              onChange={(e) => setForm((prev) => ({ ...prev, ultimaFechaMantenimiento: e.target.value }))}
+              className="w-full border border-line px-3 h-10 text-sm outline-none focus:border-brand-600 bg-surface"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Próximo mantenimiento</label>
+            <input
+              type="date"
+              value={form.proximoMantenimiento ?? ''}
+              onChange={(e) => setForm((prev) => ({ ...prev, proximoMantenimiento: e.target.value }))}
+              className="w-full border border-line px-3 h-10 text-sm outline-none focus:border-brand-600 bg-surface"
+            />
+            <p className="text-xs text-muted mt-1">Si lo dejás vacío, se calcula desde el último mantenimiento o desde hoy.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const CampoNum: React.FC<{
   label: string;
   campo: keyof FormActivo;
@@ -752,7 +895,7 @@ const ParametrosMedicion: React.FC<{
 
           <div className="col-span-2 sm:col-span-4">
             <p className="text-xs font-black uppercase tracking-wider text-brand-600 mb-2 mt-2">
-              Intervalos de mantenimiento
+              Frecuencia de control técnico
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <CampoNum label="Medición c/" campo="intervaloMedicionHoras" form={form} setForm={setForm} unidad="hs" />
@@ -765,7 +908,7 @@ const ParametrosMedicion: React.FC<{
             </div>
             {!mide.vibracion && !mide.amperaje && !mide.presion && (
               <p className="text-xs text-muted italic mt-2">
-                Para equipos electrónicos / consumibles, el intervalo suele ser por meses, no por horas. Usá el campo "Próximo mantenimiento" arriba.
+                El vencimiento preventivo por fecha se configura en el bloque "Plan preventivo".
               </p>
             )}
           </div>

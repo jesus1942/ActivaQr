@@ -7,6 +7,13 @@ import { auditar } from '../auditoria';
 import { AuthRequest, requireAdmin } from '../auth';
 import { bloquesExtra, multiplicadorPrecio } from '../planCatalog';
 import { actualizarMontoPreapproval } from '../mercadopago';
+import {
+  enteroPositivo,
+  estrategiaValida,
+  siguienteLectura,
+  sumarIntervaloCalendario,
+  unidadMantenimientoValida,
+} from '../mantenimiento';
 
 const router = Router();
 
@@ -26,6 +33,12 @@ function pickActivoData(body: any) {
     fechaIngreso,
     ubicacion,
     horasActuales,
+    kilometrosActuales,
+    estrategiaMantenimiento,
+    intervaloMantenimiento,
+    unidadMantenimiento,
+    proximoMantenimientoLectura,
+    ultimaFechaMantenimiento,
     estado,
     estadoOperativo,
     temperaturaMin,
@@ -64,6 +77,11 @@ function pickActivoData(body: any) {
     modelo,
     ubicacion,
     horasActuales,
+    kilometrosActuales,
+    estrategiaMantenimiento,
+    intervaloMantenimiento,
+    unidadMantenimiento,
+    proximoMantenimientoLectura,
     estado,
     temperaturaMin,
     temperaturaMax,
@@ -100,6 +118,11 @@ function pickActivoData(body: any) {
   }
 
   if (fechaIngreso !== undefined) data.fechaIngreso = new Date(fechaIngreso);
+  if (ultimaFechaMantenimiento !== undefined) {
+    data.ultimaFechaMantenimiento = ultimaFechaMantenimiento
+      ? new Date(ultimaFechaMantenimiento)
+      : null;
+  }
   if (proximoMantenimiento !== undefined) {
     data.proximoMantenimiento = proximoMantenimiento
       ? new Date(proximoMantenimiento)
@@ -109,6 +132,49 @@ function pickActivoData(body: any) {
   // Quitar undefined para no pisar valores en updates parciales.
   Object.keys(data).forEach((k) => data[k] === undefined && delete data[k]);
   return data;
+}
+
+function completarPlanMantenimiento(data: any, actual?: any) {
+  const estrategia = estrategiaValida(
+    data.estrategiaMantenimiento ?? actual?.estrategiaMantenimiento,
+  );
+  const intervalo = enteroPositivo(
+    data.intervaloMantenimiento ?? actual?.intervaloMantenimiento,
+  );
+  const unidad = unidadMantenimientoValida(
+    estrategia,
+    data.unidadMantenimiento ?? actual?.unidadMantenimiento,
+  );
+  const cambioEstrategia = actual && estrategia !== actual.estrategiaMantenimiento;
+
+  data.estrategiaMantenimiento = estrategia;
+  data.intervaloMantenimiento = intervalo;
+  data.unidadMantenimiento = unidad;
+  if (estrategia === 'horas' || estrategia === 'kilometros') {
+    data.proximoMantenimiento = null;
+    const actualUso = estrategia === 'horas'
+      ? Number(data.horasActuales ?? actual?.horasActuales ?? 0)
+      : Number(data.kilometrosActuales ?? actual?.kilometrosActuales ?? 0);
+    const proximo = enteroPositivo(
+      data.proximoMantenimientoLectura ?? (
+        cambioEstrategia ? null : actual?.proximoMantenimientoLectura
+      ),
+    );
+    data.proximoMantenimientoLectura = proximo ?? (
+      intervalo ? siguienteLectura(actualUso, intervalo) : null
+    );
+  } else {
+    data.proximoMantenimientoLectura = null;
+    const proximaActual = data.proximoMantenimiento ?? (
+      cambioEstrategia ? null : actual?.proximoMantenimiento
+    );
+    if (!proximaActual && intervalo) {
+      const base = data.ultimaFechaMantenimiento
+        ?? actual?.ultimaFechaMantenimiento
+        ?? new Date();
+      data.proximoMantenimiento = sumarIntervaloCalendario(base, intervalo, unidad);
+    }
+  }
 }
 
 const includeRelaciones = {
@@ -247,6 +313,7 @@ router.post('/', requireAdmin as any, async (req: Request, res: Response, next: 
 
     if (!data.fechaIngreso) data.fechaIngreso = new Date();
     if (!data.estadoOperativo) data.estadoOperativo = 'operativo';
+    completarPlanMantenimiento(data);
 
     // Defensa: normalizar strings vacios a null (el frontend manda '' como
     // default cuando no hay seleccion) y descartar IDs que no existen como
@@ -291,6 +358,7 @@ router.put('/:id', requireAdmin as any, async (req: Request, res: Response, next
     if (!existing) return res.status(404).json({ error: 'Activo no encontrado' });
 
     const data = pickActivoData(req.body);
+    completarPlanMantenimiento(data, existing);
     // Misma defensa que en POST.
     if (typeof data.responsableId !== 'string' || data.responsableId.trim() === '') {
       data.responsableId = null;

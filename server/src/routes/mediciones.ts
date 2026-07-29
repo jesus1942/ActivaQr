@@ -10,6 +10,7 @@ import {
 import { enviarPushAEmpresa } from '../push';
 import { auditar } from '../auditoria';
 import { AuthRequest, requireAdmin } from '../auth';
+import { registrarLecturaMantenimiento } from '../mantenimientoService';
 
 const router = Router();
 
@@ -96,6 +97,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       presion,
       vibracion,
       horasMarcha,
+      kilometraje,
       voltaje,
       porcentajeBateria,
       nivelToner,
@@ -204,7 +206,10 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         amperaje: activo.tipo.mideAmperaje ? amperaje : null,
         presion: activo.tipo.midePresion ? presion : null,
         vibracion: activo.tipo.mideVibracion ? vibracion : 'ninguna',
-        horasMarcha: activo.tipo.mideHoras ? horasMarcha : null,
+        horasMarcha: activo.estrategiaMantenimiento === 'horas' || activo.tipo.mideHoras
+          ? horasMarcha
+          : null,
+        kilometraje: activo.estrategiaMantenimiento === 'kilometros' ? kilometraje : null,
         voltaje: activo.tipo.mideVoltaje ? voltaje : null,
         porcentajeBateria: activo.tipo.mideBateria ? porcentajeBateria : null,
         nivelToner: activo.tipo.mideToner ? nivelToner : null,
@@ -229,18 +234,16 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       ? nuevoEstadoActivo
       : null;
 
-    // Actualizar horas si la medición trae un valor mayor.
+    // Actualizar estado; las lecturas de mantenimiento se procesan abajo.
     const data: any = {};
     if (nuevoEstado) data.estado = nuevoEstado;
-    if (
-      typeof medicion.horasMarcha === 'number' &&
-      medicion.horasMarcha > activo.horasActuales
-    ) {
-      data.horasActuales = medicion.horasMarcha;
-    }
     if (Object.keys(data).length > 0) {
       await prisma.activo.update({ where: { id: activoId }, data });
     }
+    await registrarLecturaMantenimiento(prisma, activo, {
+      horasMarcha: medicion.horasMarcha,
+      kilometraje: medicion.kilometraje,
+    });
 
     // Crear tarea de mantenimiento automática cuando el activo escala a crítico o alerta,
     // pero solo si no hay ninguna tarea pendiente o vencida para ese activo.

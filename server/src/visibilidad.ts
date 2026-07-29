@@ -82,6 +82,13 @@ export function aplicarVisibilidad<T extends Record<string, any>>(activo: T): T 
   }
   if (!vis.mantenimiento) {
     a.proximoMantenimiento = null;
+    a.proximoMantenimientoLectura = null;
+    a.estrategiaMantenimiento = null;
+    a.intervaloMantenimiento = null;
+    a.unidadMantenimiento = null;
+    a.ultimaFechaMantenimiento = null;
+    a.horasActuales = null;
+    a.kilometrosActuales = null;
   }
   if (!vis.notas) {
     a.notas = null;
