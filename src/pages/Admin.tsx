@@ -1446,7 +1446,7 @@ export const PanelEstadisticas: React.FC<{ estadisticas: Estadisticas; onReinici
       {estadisticas.trials && (
         <div>
           <p className="text-xs font-black uppercase tracking-wider text-muted mb-2">Cuentas de prueba</p>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-2.5 flex flex-col items-center gap-0.5">
               <span className="font-black text-xl text-content">{estadisticas.trials.total}</span>
               <span className="text-[10px] font-black uppercase text-muted">Total</span>
