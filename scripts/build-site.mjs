@@ -13,7 +13,7 @@
  * La landing detecta ese hash y redirige a /app/ conservando el destino, asi
  * que ningun QR impreso deja de funcionar.
  */
-import { readFileSync, writeFileSync, copyFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, copyFileSync, existsSync, mkdirSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -120,6 +120,21 @@ const aLaRaiz = [
 for (const archivo of aLaRaiz) {
   const origen = join(dist, 'app', archivo);
   if (existsSync(origen)) copyFileSync(origen, join(dist, archivo));
+}
+
+// ── Compatibilidad con la app cacheada en la raiz ──────────────────────────
+// Hasta la mudanza a /app/, la app se servia desde la raiz y sus chunks
+// colgaban de /assets/. Los navegadores y celulares que la tengan instalada
+// siguen pidiendo esas rutas al navegar, y sin esta copia la app se rompe con
+// "Failed to fetch dynamically imported module". Se puede quitar cuando ya no
+// queden clientes con la version vieja instalada.
+const assetsApp = join(dist, 'app', 'assets');
+const assetsRaiz = join(dist, 'assets');
+if (existsSync(assetsApp)) {
+  mkdirSync(assetsRaiz, { recursive: true });
+  for (const archivo of readdirSync(assetsApp)) {
+    copyFileSync(join(assetsApp, archivo), join(assetsRaiz, archivo));
+  }
 }
 
 // Sitemap propio del sitio: la landing es lo unico indexable.

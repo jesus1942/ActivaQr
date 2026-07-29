@@ -1,7 +1,12 @@
 // v1.1.0
 // Sheet (panel deslizante). Por defecto entra desde la derecha en
 // desktop y desde abajo en mobile. Para menús, filtros y detalles.
+//
+// Igual que Modal, se monta con portal en <body>: dentro de un contenedor
+// con backdrop-filter o transform, position:fixed deja de referirse a la
+// pantalla y el panel termina fuera de vista.
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface SheetProps {
@@ -37,7 +42,7 @@ export const Sheet: React.FC<SheetProps> = ({
       ? 'right-0 top-0 h-full w-full max-w-md rounded-l-xl animate-slide-in-right'
       : 'left-0 right-0 bottom-0 max-h-[88vh] rounded-t-xl animate-slide-up';
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[60]">
       <div
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in"
@@ -67,6 +72,7 @@ export const Sheet: React.FC<SheetProps> = ({
         )}
         <div className="px-6 py-5 overflow-y-auto flex-1">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

@@ -10,6 +10,7 @@ import { Medicion as MedicionType, EstadoMedicion, Activo } from '../data/types'
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { CategoriaEquipo, ParametroCategoria, getCategoria } from '../data/categoriasApi';
 import { comprimirImagen } from '../utils/comprimirImagen';
+import { useAuth } from '../context/AuthContext';
 
 // ── Lógica de alertas (espejo del backend) ────────────────────────────────────
 type NivelAlerta = 'normal' | 'alerta' | 'critico' | 'urgente';
@@ -259,6 +260,7 @@ export const Medicion: React.FC = () => {
   const { activoId } = useParams<{ activoId: string }>();
   const navigate = useNavigate();
   const { activos, mediciones, tecnicos, addMedicion, updateActivo, getSectorNombre, getTipo, getTecnicoNombre } = useActivos();
+  const { usuario } = useAuth();
   const tecnicosActivos = tecnicos.filter((t) => t.activo);
 
   const [searchCodigo, setSearchCodigo] = useState('');
@@ -327,7 +329,9 @@ export const Medicion: React.FC = () => {
     contador: '',
     estado: 'normal' as EstadoMedicion,
     observaciones: '',
-    tecnicoId: '',
+    // Quien esta cargando la medicion es, por defecto, el responsable.
+    // Se puede cambiar si la tomo otra persona.
+    tecnicoId: usuario?.id ?? '',
   });
 
   // Dynamic extra params from category
@@ -477,7 +481,7 @@ export const Medicion: React.FC = () => {
             <button
               onClick={() => {
                 setSubmitted(false);
-                setForm({ temperatura: '', amperaje: '', presion: '', vibracion: 'ninguna', horasMarcha: '', voltaje: '', porcentajeBateria: '', nivelToner: '', contador: '', estado: 'normal', observaciones: '', tecnicoId: '' });
+                setForm({ temperatura: '', amperaje: '', presion: '', vibracion: 'ninguna', horasMarcha: '', voltaje: '', porcentajeBateria: '', nivelToner: '', contador: '', estado: 'normal', observaciones: '', tecnicoId: usuario?.id ?? '' });
               setParametrosExtra({});
               }}
               className="flex-1 bg-brand-600 text-white px-4 py-3 font-display font-bold text-xl border border-line"

@@ -183,13 +183,27 @@ export const Sidebar: React.FC = () => {
       <img src={LOGO_DARK} alt="ActivaQR" className="h-10 w-auto object-contain drop-shadow-[0_0_10px_rgba(45,212,191,0.55)] hidden dark:block" />
       <div className="flex items-center gap-2">
         <ThemeToggle />
-        <button
-          onClick={() => navigate('/medicion')}
-          className="press grid place-items-center w-10 h-10 rounded-full bg-brand-600 text-white shadow-soft"
-          title="Nueva medición"
-        >
-          <ScanLine size={18} />
-        </button>
+        {!esSuperadmin && (
+          <button
+            onClick={() => navigate('/medicion')}
+            className="press grid place-items-center w-10 h-10 rounded-full bg-brand-600 text-white shadow-soft"
+            title="Nueva medición"
+          >
+            <ScanLine size={18} />
+          </button>
+        )}
+        {/* Salir siempre a mano en el celular: el superadmin no tiene la hoja
+            "Mas", que era el unico lugar con cerrar sesion. */}
+        {usuario && (
+          <button
+            onClick={logout}
+            className="press grid place-items-center w-10 h-10 rounded-full border border-line text-danger"
+            title="Cerrar sesión"
+            aria-label="Cerrar sesión"
+          >
+            <LogOut size={18} />
+          </button>
+        )}
       </div>
     </header>
   );

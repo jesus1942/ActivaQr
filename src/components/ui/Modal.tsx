@@ -1,7 +1,13 @@
 // v1.1.0
 // Modal centrado del Design System. Overlay con blur, panel con
 // animación scale-in, cierre por backdrop o Escape.
+//
+// Se monta con portal en <body>: si queda dentro de un contenedor con
+// backdrop-filter o transform (la app tiene varios), position:fixed pasa a
+// medirse contra ese contenedor y el dialogo aparece fuera de la pantalla —
+// se ve el fondo desenfocado pero hay que buscar el cuadro scrolleando.
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -36,7 +42,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in"
@@ -64,6 +70,7 @@ export const Modal: React.FC<ModalProps> = ({
           <div className="px-6 py-4 border-t border-line flex justify-end gap-3">{footer}</div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
