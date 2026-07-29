@@ -5,6 +5,8 @@ import { resolveEmpresaId } from '../tenant';
 import { getLimite } from '../planLimits';
 import { auditar } from '../auditoria';
 import { AuthRequest, requireAdmin } from '../auth';
+import { bloquesExtra, multiplicadorPrecio } from '../planCatalog';
+import { actualizarMontoPreapproval } from '../mercadopago';
 
 const router = Router();
 
@@ -196,7 +198,13 @@ router.post('/', requireAdmin as any, async (req: Request, res: Response, next: 
     // Verificar límite de activos del plan.
     const empresa = await prisma.empresa.findUnique({
       where: { id: empresaId },
-      select: { plan: true, _count: { select: { activos: true } } },
+      select: {
+        plan: true,
+        mpEstadoSub: true,
+        mpPreapprovalId: true,
+        mpMonto: true,
+        _count: { select: { activos: true } },
+      },
     });
     if (empresa) {
       const limite = getLimite(empresa.plan);
@@ -205,6 +213,35 @@ router.post('/', requireAdmin as any, async (req: Request, res: Response, next: 
           code: 'limite_plan',
           error: `Tu plan "${empresa.plan}" permite hasta ${limite.activos} activos. Actualizá tu plan para agregar más.`,
         });
+      }
+      if (empresa.plan === 'industrial') {
+        const actuales = empresa._count.activos;
+        const bloqueActual = bloquesExtra('industrial', actuales);
+        const bloqueNuevo = bloquesExtra('industrial', actuales + 1);
+        if (bloqueNuevo > bloqueActual) {
+          if (empresa.mpEstadoSub !== 'authorized' || !empresa.mpPreapprovalId || !empresa.mpMonto) {
+            return res.status(403).json({
+              code: 'recargo_requerido',
+              error: 'Activá la suscripción Industrial para agregar el próximo bloque de 100 equipos.',
+            });
+          }
+          const base = empresa.mpMonto / multiplicadorPrecio('industrial', actuales);
+          const montoNuevo = Math.round(base * multiplicadorPrecio('industrial', actuales + 1));
+          try {
+            await actualizarMontoPreapproval(
+              empresa.mpPreapprovalId,
+              montoNuevo,
+              `ActivaQR Industrial + ${bloqueNuevo} bloque(s) extra`
+            );
+            await prisma.empresa.update({ where: { id: empresaId }, data: { mpMonto: montoNuevo } });
+          } catch (error) {
+            console.error('[ACTIVOS] No se pudo habilitar el bloque adicional:', error);
+            return res.status(503).json({
+              code: 'recargo_no_actualizado',
+              error: 'No pudimos actualizar el abono. Intentá nuevamente o contactanos.',
+            });
+          }
+        }
       }
     }
 

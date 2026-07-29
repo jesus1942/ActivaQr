@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { Clock, Lock, MessageCircle, Eye } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { apiFetch } from '../data/auth';
+import { SubscriptionCheckout } from './SubscriptionCheckout';
 
 const WHATSAPP = '5492804018359';
 
@@ -88,6 +89,7 @@ export const PantallaTrialVencido: React.FC = () => {
           >
             <MessageCircle size={18} /> Quiero suscribirme
           </a>
+          <SubscriptionCheckout empresaNombre={nombre} planInicial={usuario?.empresa?.plan} compact />
           <button
             onClick={logout}
             className="w-full px-4 py-3 border border-line-strong font-bold text-muted hover:border-content transition-colors text-sm uppercase tracking-wide"

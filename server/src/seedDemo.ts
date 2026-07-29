@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import { prisma } from './prisma';
+import { POLITICAS_VERSION } from './politicas';
 
 async function asegurarEscenarioFrio(empresaId: string) {
   const sede = await prisma.sede.findFirst({ where: { empresaId, nombre: 'Buque factoría Austral I' } })
@@ -120,13 +121,14 @@ export async function seedDemo() {
   // Si la empresa demo ya existe, forzar politicas aceptadas para que el modal
   // legal no interrumpa la experiencia demo.
   if (existingUser?.empresa) {
-    if (!existingUser.empresa.politicasAceptadasEn) {
+    if (!existingUser.empresa.politicasAceptadasEn ||
+        existingUser.empresa.politicasVersion !== POLITICAS_VERSION) {
       await prisma.empresa.update({
         where: { id: existingUser.empresa.id },
         data: {
           politicasAceptadasEn: new Date(),
           politicasAceptadasIp: 'seed-demo',
-          politicasVersion: 'demo',
+          politicasVersion: POLITICAS_VERSION,
         },
       });
     }
@@ -147,7 +149,7 @@ export async function seedDemo() {
       estado: 'activa',
       politicasAceptadasEn: new Date(),
       politicasAceptadasIp: 'seed-demo',
-      politicasVersion: 'demo',
+      politicasVersion: POLITICAS_VERSION,
     },
   });
 

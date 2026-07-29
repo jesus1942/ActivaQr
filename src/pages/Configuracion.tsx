@@ -13,6 +13,7 @@ import {
 } from '../data/accesoRemotoApi';
 import { ChatRemoto } from '../components/ChatRemoto';
 import { NotificacionesPush } from '../components/NotificacionesPush';
+import { SubscriptionCheckout } from '../components/SubscriptionCheckout';
 import { apiFetch } from '../data/auth';
 import {
   CategoriaEquipo, ParametroCategoria,
@@ -1132,14 +1133,14 @@ const SeccionTelegram: React.FC = () => {
 };
 
 const PLAN_INFO: { plan: string; label: string; activos: string; tecnicos: string; qr: string; acceso: string }[] = [
-  { plan: 'inicial',    label: 'Inicial',    activos: '10',         tecnicos: '2',         qr: 'Suspendida', acceso: '—' },
-  { plan: 'empresa',    label: 'Empresa',    activos: '50',         tecnicos: '5',         qr: 'Siempre',    acceso: 'Soporte remoto' },
-  { plan: 'industrial', label: 'Industrial', activos: 'Ilimitado',  tecnicos: 'Ilimitado', qr: 'Siempre',    acceso: 'Soporte remoto' },
+  { plan: 'inicial',    label: 'Inicial',    activos: '50',         tecnicos: '3 usuarios',  qr: 'Suspendida', acceso: '—' },
+  { plan: 'empresa',    label: 'Empresa',    activos: '200',        tecnicos: '10 usuarios', qr: 'Siempre',    acceso: 'Soporte remoto' },
+  { plan: 'industrial', label: 'Industrial', activos: '500 + bloques', tecnicos: 'Ilimitado', qr: 'Siempre', acceso: 'Soporte remoto' },
 ];
 
 const SeccionPlan: React.FC = () => {
   const { usuario } = useAuth();
-  const empresaExt = usuario?.empresa as { plan?: string; planSolicitado?: string | null } | null;
+  const empresaExt = usuario?.empresa as { plan?: string; planSolicitado?: string | null; esTrial?: boolean; mpEstadoSub?: string | null; nombre?: string } | null;
   const plan = empresaExt?.plan ?? 'inicial';
   const planSolicitadoActual = empresaExt?.planSolicitado ?? null;
 
@@ -1176,6 +1177,13 @@ const SeccionPlan: React.FC = () => {
           </span>
         </div>
       </div>
+
+      {empresaExt?.mpEstadoSub !== 'authorized' && (
+        <div className="mb-5">
+          <p className="text-xs font-black uppercase tracking-wider text-muted mb-3">Contratar suscripción</p>
+          <SubscriptionCheckout empresaNombre={empresaExt?.nombre ?? 'mi empresa'} planInicial={plan} />
+        </div>
+      )}
 
       {/* Tabla comparativa */}
       <div className="overflow-x-auto mb-5">

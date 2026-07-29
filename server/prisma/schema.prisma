@@ -148,6 +148,9 @@ model Empresa {
   mpEstadoSub     String?   // estado reportado por MP: authorized, paused, cancelled...
   mpMonto         Float?    // monto mensual acordado
   mpUltimoPago    DateTime? // fecha del último pago aprobado
+  fuenteAlta      String?
+  campanaAlta     String?
+  contenidoAlta   String?
 
   usuarios       Usuario[]
   sedes          Sede[]
@@ -533,4 +536,23 @@ model Testimonio {
   creadoEn   DateTime  @default(now())
 
   @@index([estado, creadoEn])
+}
+
+model Lead {
+  id        String   @id @default(uuid())
+  nombre    String
+  empresa   String?
+  email     String
+  telefono  String?
+  mensaje   String?  @db.Text
+  plan      String?
+  source    String?
+  medium    String?
+  campaign  String?
+  content   String?
+  term      String?
+  creadoEn  DateTime @default(now())
+
+  @@index([creadoEn])
+  @@index([source, campaign])
 }

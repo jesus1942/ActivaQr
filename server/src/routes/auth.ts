@@ -19,7 +19,7 @@ const TRIAL_LECTURA_DIAS = 0; // sin fase intermedia: al dia 31 se bloquea total
 // POST /api/auth/registro — alta autogestionada con free trial de 30 dias
 router.post('/registro', async (req, res: Response, next: NextFunction) => {
   try {
-    const { empresaNombre, nombre, email, password, telefono, aceptaPoliticas } = req.body ?? {};
+    const { empresaNombre, nombre, email, password, telefono, aceptaPoliticas, plan, atribucion } = req.body ?? {};
     if (!empresaNombre || !nombre || !email || !password) {
       return res.status(400).json({ error: 'Faltan datos: empresa, nombre, email y contraseña.' });
     }
@@ -49,10 +49,18 @@ router.post('/registro', async (req, res: Response, next: NextFunction) => {
       'desconocida'
     ).slice(0, 64);
 
+    const planTrial = ['inicial', 'empresa', 'industrial'].includes(String(plan))
+      ? String(plan) as 'inicial' | 'empresa' | 'industrial'
+      : 'inicial';
+    const atrib = (value: unknown) =>
+      typeof value === 'string' && value.trim() ? value.trim().slice(0, 120) : null;
     const empresa = await prisma.empresa.create({
       data: {
         nombre: String(empresaNombre).trim(),
-        plan: 'inicial',
+        plan: planTrial,
+        fuenteAlta: atrib(atribucion?.source),
+        campanaAlta: atrib(atribucion?.campaign),
+        contenidoAlta: atrib(atribucion?.content),
         estado: 'activa',
         esTrial: true,
         trialFin,

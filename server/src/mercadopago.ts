@@ -62,10 +62,26 @@ export async function crearPreapproval(params: {
 
 export interface PreapprovalInfo {
   id: string;
+  init_point?: string;
   status: string; // pending | authorized | paused | cancelled
   external_reference?: string;
   payer_email?: string;
   auto_recurring?: { transaction_amount?: number };
+}
+
+export async function actualizarMontoPreapproval(id: string, monto: number, razon: string): Promise<void> {
+  const res = await fetch(`${MP_API}/preapproval/${id}`, {
+    method: 'PUT',
+    headers: headers(),
+    body: JSON.stringify({
+      reason: razon,
+      auto_recurring: { transaction_amount: Math.round(monto), currency_id: 'ARS' },
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { message?: string };
+    throw new Error(body.message || 'No se pudo actualizar el importe de la suscripción.');
+  }
 }
 
 /** Consulta el estado actual de una suscripción por su id. */

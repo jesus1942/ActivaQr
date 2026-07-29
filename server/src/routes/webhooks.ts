@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { prisma } from '../prisma';
 import { obtenerPreapproval, obtenerPago } from '../mercadopago';
+import { cambiosEmpresaPorSuscripcion } from '../suscripcionState';
+import type { PlanId } from '../planCatalog';
 
 const router = Router();
 
@@ -85,13 +87,19 @@ router.post('/mercadopago', async (req: Request, res: Response) => {
     const empresaId = info.external_reference;
     if (!empresaId) return;
 
-    const nuevoEstado = info.status === 'authorized' ? 'activa' : 'suspendida';
     const monto = info.auto_recurring?.transaction_amount;
+    const empresaActual = await prisma.empresa.findUnique({
+      where: { id: empresaId },
+      select: { planSolicitado: true },
+    });
 
     await prisma.empresa.update({
       where: { id: empresaId },
       data: {
-        estado: nuevoEstado,
+        ...cambiosEmpresaPorSuscripcion(
+          info.status,
+          empresaActual?.planSolicitado as PlanId | null | undefined
+        ),
         mpPreapprovalId: info.id,
         mpEstadoSub: info.status,
         mpMonto: monto ?? undefined,
@@ -121,7 +129,7 @@ router.post('/mercadopago', async (req: Request, res: Response) => {
       }
     }
 
-    console.log(`MP webhook: empresa ${empresaId} → ${nuevoEstado} (${info.status})`);
+    console.log(`MP webhook: empresa ${empresaId} procesada (${info.status})`);
   } catch (err) {
     console.error('Error procesando webhook de Mercado Pago:', err);
   }

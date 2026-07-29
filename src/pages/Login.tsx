@@ -21,6 +21,21 @@ function isRegistroParam() {
   return window.location.hash.includes('registro=1');
 }
 
+function parametrosCampana() {
+  const query = window.location.hash.split('?')[1] ?? '';
+  const p = new URLSearchParams(query);
+  return {
+    plan: p.get('plan') ?? 'inicial',
+    atribucion: {
+      source: p.get('utm_source') ?? undefined,
+      medium: p.get('utm_medium') ?? undefined,
+      campaign: p.get('utm_campaign') ?? undefined,
+      content: p.get('utm_content') ?? undefined,
+      term: p.get('utm_term') ?? undefined,
+    },
+  };
+}
+
 export const Login: React.FC = () => {
   const { login, registro } = useAuth();
   const navigate = useNavigate();
@@ -53,6 +68,7 @@ export const Login: React.FC = () => {
         password: regPassword,
         telefono: regTelefono || undefined,
         aceptaPoliticas: true,
+        ...parametrosCampana(),
       });
       navigate('/', { replace: true });
     } catch (err) {
@@ -174,7 +190,7 @@ export const Login: React.FC = () => {
                 {regCargando ? 'Creando…' : 'Crear cuenta y probar'}
               </button>
 
-              <p className="text-[11px] text-faint text-center leading-snug">30 días de acceso completo, hasta 10 activos. Sin tarjeta de crédito.</p>
+              <p className="text-[11px] text-faint text-center leading-snug">30 días de acceso completo con el límite del plan elegido. Sin tarjeta de crédito.</p>
 
               <div className="text-center mt-2">
                 <button type="button" onClick={() => { setVistaRegistro(false); setRegError(null); }} className="text-xs text-muted hover:text-brand-600 underline transition-colors">

@@ -167,6 +167,14 @@ export async function enviarEmailLead(lead: LeadDatos): Promise<boolean> {
 
   const resend = getResend();
   const from = process.env.RESEND_FROM || 'ActivaQR <noreply@activaqr.com>';
+  const esc = (v: string) => v.replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c] as string));
+  const nombre = esc(lead.nombre);
+  const empresa = lead.empresa ? esc(lead.empresa) : undefined;
+  const email = esc(lead.email);
+  const telefono = lead.telefono ? esc(lead.telefono) : undefined;
+  const mensaje = lead.mensaje ? esc(lead.mensaje) : undefined;
   const fila = (k: string, v?: string) =>
     v ? `<tr><td style="padding:6px 0;font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;width:130px;vertical-align:top;">${k}</td><td style="padding:6px 0;font-size:14px;color:#0f172a;">${v}</td></tr>` : '';
 
@@ -174,7 +182,7 @@ export async function enviarEmailLead(lead: LeadDatos): Promise<boolean> {
     from,
     to: destino,
     replyTo: lead.email,
-    subject: `Nuevo lead ActivaQR — ${lead.nombre}${lead.empresa ? ` (${lead.empresa})` : ''}`,
+    subject: `Nuevo lead ActivaQR — ${lead.nombre}${lead.empresa ? ` (${lead.empresa})` : ''}`.replace(/[\r\n]/g, ' '),
     html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/></head>
 <body style="margin:0;padding:0;background:#f1f5f9;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;"><tr><td align="center">
@@ -186,11 +194,11 @@ export async function enviarEmailLead(lead: LeadDatos): Promise<boolean> {
 <tr><td style="background:#fff;border:3px solid #0f172a;border-top:none;padding:28px;">
   <h1 style="margin:0 0 18px;font-size:22px;font-weight:900;color:#0f172a;">Solicitud de acceso</h1>
   <table width="100%" cellpadding="0" cellspacing="0">
-    ${fila('Nombre', lead.nombre)}
-    ${fila('Empresa', lead.empresa)}
-    ${fila('Email', `<a href="mailto:${lead.email}" style="color:#f97316;">${lead.email}</a>`)}
-    ${fila('Teléfono', lead.telefono)}
-    ${fila('Mensaje', lead.mensaje)}
+    ${fila('Nombre', nombre)}
+    ${fila('Empresa', empresa)}
+    ${fila('Email', `<a href="mailto:${email}" style="color:#f97316;">${email}</a>`)}
+    ${fila('Teléfono', telefono)}
+    ${fila('Mensaje', mensaje)}
   </table>
   <p style="margin:18px 0 8px;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;">Responder directamente</p>
   <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;">

@@ -554,39 +554,40 @@ export function renderLanding(appUrl: string, whatsapp?: string, apoyo?: { cafec
     <div class="planes">
       <div class="plan">
         <h3>Inicial</h3>
-        <p class="precio"><span style="font-size:34px;letter-spacing:0">USD 20</span> <span style="font-size:13px;font-weight:700;text-transform:none;letter-spacing:0">/ mes</span></p>
+        <p class="precio"><span style="font-size:34px;letter-spacing:0">USD 29</span> <span style="font-size:13px;font-weight:700;text-transform:none;letter-spacing:0">/ mes</span></p>
         <ul>
-          <li>Hasta 10 activos</li>
-          <li>2 técnicos</li>
+          <li>Hasta 50 equipos</li>
+          <li>3 usuarios</li>
           <li>Mediciones y mantenimientos</li>
           <li>Alertas automáticas</li>
           <li>Reportes en PDF</li>
         </ul>
-        <a class="btn btn-negro" href="${appUrl}#/login?registro=1" target="_blank" rel="noopener">Empezar gratis</a>
+        <a class="btn btn-negro" href="${appUrl}#/login?registro=1&plan=inicial" target="_blank" rel="noopener">Empezar gratis</a>
       </div>
       <div class="plan destacado">
         <h3>Empresa</h3>
-        <p class="precio"><span style="font-size:34px;letter-spacing:0">USD 69</span> <span style="font-size:13px;font-weight:700;text-transform:none;letter-spacing:0">/ mes</span></p>
+        <p class="precio"><span style="font-size:34px;letter-spacing:0">USD 59</span> <span style="font-size:13px;font-weight:700;text-transform:none;letter-spacing:0">/ mes</span></p>
         <ul>
-          <li>Hasta 100 activos</li>
+          <li>Hasta 200 equipos</li>
           <li>10 técnicos</li>
           <li>Ficha QR pública siempre activa</li>
           <li>Soporte remoto incluido</li>
           <li>Sectores e importación CSV</li>
         </ul>
-        <a class="btn btn-naranja" href="${appUrl}#/login?registro=1" target="_blank" rel="noopener">Empezar gratis</a>
+        <a class="btn btn-naranja" href="${appUrl}#/login?registro=1&plan=empresa" target="_blank" rel="noopener">Empezar gratis</a>
       </div>
       <div class="plan">
         <h3>Industrial</h3>
-        <p class="precio"><span style="font-size:34px;letter-spacing:0">USD 179</span> <span style="font-size:13px;font-weight:700;text-transform:none;letter-spacing:0">/ mes</span></p>
+        <p class="precio"><span style="font-size:34px;letter-spacing:0">USD 100</span> <span style="font-size:13px;font-weight:700;text-transform:none;letter-spacing:0">/ mes</span></p>
         <ul>
-          <li>Activos ilimitados</li>
+          <li>Hasta 500 equipos incluidos</li>
+          <li>+USD 20 cada 100 equipos adicionales</li>
           <li>Técnicos ilimitados</li>
           <li>Soporte prioritario</li>
           <li>Todo lo de Empresa</li>
           <li>Acompañamiento dedicado</li>
         </ul>
-        <a class="btn btn-negro" href="#contacto">Hablemos</a>
+        <a class="btn btn-negro" href="${appUrl}#/login?registro=1&plan=industrial" target="_blank" rel="noopener">Empezar gratis</a>
       </div>
     </div>
     <p style="text-align:center;margin-top:22px;font-size:13px;color:var(--gris)">Se cobra en pesos, al tipo de cambio del día. Sin costo de instalación ni permanencia mínima.</p>
@@ -673,12 +674,20 @@ ${seccionApoyo}
       empresa: this.empresa.value.trim(),
       email: this.email.value.trim(),
       telefono: this.telefono.value.trim(),
-      mensaje: this.mensaje.value.trim()
+      mensaje: this.mensaje.value.trim(),
+      plan: new URLSearchParams(window.location.search).get('plan'),
+      atribucion: {
+        source: new URLSearchParams(window.location.search).get('utm_source'),
+        medium: new URLSearchParams(window.location.search).get('utm_medium'),
+        campaign: new URLSearchParams(window.location.search).get('utm_campaign'),
+        content: new URLSearchParams(window.location.search).get('utm_content'),
+        term: new URLSearchParams(window.location.search).get('utm_term')
+      }
     };
     btn.disabled = true; btn.textContent = 'Enviando...';
     msg.className = 'form-msg';
     try {
-      var r = await fetch('/api/leads', {
+      var r = await fetch('https://api.activaqr.net/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(datos)
@@ -747,7 +756,7 @@ function escTesti(s){
 (function cargarMuro(){
   var cont = document.getElementById('muroTestimonios');
   if(!cont) return;
-  fetch('/api/testimonios').then(function(r){ return r.ok ? r.json() : []; }).then(function(lista){
+  fetch('https://api.activaqr.net/api/testimonios').then(function(r){ return r.ok ? r.json() : []; }).then(function(lista){
     if(!Array.isArray(lista) || lista.length === 0){
       cont.innerHTML = '<div class="testi-empty" style="grid-column:1/-1">A&uacute;n no hay testimonios publicados. S&eacute; el primero en dejar el tuyo.</div>';
       return;
@@ -793,7 +802,7 @@ if(testiForm){
     btn.disabled = true; btn.textContent = 'Enviando...';
     msg.className = 'form-msg';
     try {
-      var r = await fetch('/api/testimonios', {
+      var r = await fetch('https://api.activaqr.net/api/testimonios', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(datos)

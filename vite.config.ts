@@ -68,8 +68,6 @@ export default defineConfig({
           'assets/generateCategoricalChart*.js', // graficos de analitica
           'assets/index.es-*.js',            // dependencia de los graficos
           'assets/purify.es-*.js',           // saneado de HTML para el PDF
-        ],
-        globIgnores: [
           '**/jspdf*.js',
           '**/html2canvas*.js',
           '**/generateCategoricalChart*.js',

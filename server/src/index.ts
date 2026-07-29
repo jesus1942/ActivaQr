@@ -43,6 +43,7 @@ import { seedDemo } from './seedDemo';
 import { renderLanding } from './landing';
 import { renderPoliticaUso, renderPoliticaPrivacidad, POLITICAS_VERSION } from './politicas';
 import { enviarEmailLead } from './email';
+import { prisma } from './prisma';
 
 const app = express();
 
@@ -50,7 +51,22 @@ const app = express();
 // rate limits se comparten entre todos los usuarios en vez de ser por visitante.
 app.set('trust proxy', 1);
 
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", 'https://www.googletagmanager.com'],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+      imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+      connectSrc: ["'self'", 'https://api.activaqr.net', 'https://www.google-analytics.com'],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+    },
+  },
+}));
 
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://activaqr.net,https://www.activaqr.net,https://jesus1942.github.io,https://activaqr-production.up.railway.app').split(',').map(s => s.trim());
 const isOriginAllowed = createOriginValidator(ALLOWED_ORIGINS, process.env.NODE_ENV === 'production');
@@ -134,12 +150,27 @@ app.get('/api/politicas/version', (_req, res) => {
 
 // Captura de leads desde la landing (sin auth).
 app.post('/api/leads', leadsLimiter, async (req: Request, res: Response) => {
-  const { nombre, empresa, email, telefono, mensaje } = req.body ?? {};
+  const { nombre, empresa, email, telefono, mensaje, plan, atribucion } = req.body ?? {};
   if (!nombre || !email) {
     return res.status(400).json({ error: 'Nombre y email son obligatorios.' });
   }
-  // Siempre dejamos rastro en logs por si el email no está configurado.
-  console.log('[LEAD]', JSON.stringify({ nombre, empresa, email, telefono, mensaje, fecha: new Date().toISOString() }));
+  const limpio = (valor: unknown, max: number) =>
+    typeof valor === 'string' && valor.trim() ? valor.trim().slice(0, max) : null;
+  await prisma.lead.create({
+    data: {
+      nombre: String(nombre).trim().slice(0, 100),
+      empresa: limpio(empresa, 120),
+      email: String(email).trim().toLowerCase().slice(0, 160),
+      telefono: limpio(telefono, 50),
+      mensaje: limpio(mensaje, 2000),
+      plan: limpio(plan, 30),
+      source: limpio(atribucion?.source, 120),
+      medium: limpio(atribucion?.medium, 120),
+      campaign: limpio(atribucion?.campaign, 120),
+      content: limpio(atribucion?.content, 120),
+      term: limpio(atribucion?.term, 120),
+    },
+  });
   try {
     await enviarEmailLead({ nombre, empresa, email, telefono, mensaje });
   } catch (e) {
@@ -239,7 +270,8 @@ app.use('/api/mediciones', requireAuthAndActiveEmpresa, medicionesRouter);
 app.use('/api/tareas', requireAuthAndActiveEmpresa, tareasRouter);
 app.use('/api/sync', requireAuthAndActiveEmpresa, requireAdmin, syncRouter);
 app.use('/api/categorias', requireAuthAndActiveEmpresa, categoriasRouter);
-app.use('/api/suscripcion', requireAuthAndActiveEmpresa, suscripcionRouter);
+// Suscripción queda accesible aun con el trial vencido para permitir contratar.
+app.use('/api/suscripcion', requireAuth, suscripcionRouter);
 app.use('/api/operadores', requireAuthAndActiveEmpresa, operadoresRouter);
 app.use('/api/tecnicos', requireAuthAndActiveEmpresa, tecnicosRouter);
 app.use('/api/fallas', requireAuthAndActiveEmpresa, fallasRouter);

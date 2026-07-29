@@ -40,6 +40,12 @@ jobs:
           fi
           echo "VITE_API_URL definido: ${#VITE_API_URL} caracteres"
 
+      - name: Calidad y pruebas
+        run: |
+          npm run lint
+          npm test
+          npm run build --prefix server
+
       # Arma el sitio completo: landing indexable en la raíz + app en /app/.
       - name: Build del sitio
         run: npm run build:site

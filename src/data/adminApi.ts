@@ -124,6 +124,31 @@ export async function solicitarUpgrade(plan: string): Promise<void> {
   await parse(await apiFetch('suscripcion/solicitar-upgrade', { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ plan }) }));
 }
 
+export interface PlanComercial {
+  plan: string;
+  nombre: string;
+  precioArs: number | null;
+  precioReferenciaUsd: number;
+  activosIncluidos: number;
+  recargoPorBloqueUsd: number | null;
+  tamanoBloqueExtra: number | null;
+}
+
+export async function getPlanesComerciales(): Promise<{
+  mercadoPagoConfigurado: boolean;
+  planes: PlanComercial[];
+}> {
+  return parse(await apiFetch('suscripcion/planes'));
+}
+
+export async function iniciarSuscripcion(plan: string): Promise<{ initPoint: string }> {
+  return parse(await apiFetch('suscripcion/iniciar', {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ plan }),
+  }));
+}
+
 export async function getSolicitudesUpgrade(): Promise<SolicitudUpgrade[]> {
   return parse(await apiFetch('admin/solicitudes-upgrade'));
 }
