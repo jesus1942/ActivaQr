@@ -18,6 +18,7 @@ import { SplashScreen } from './components/SplashScreen';
 import { ErrorBoundary, RutaProtegida } from './components/ErrorBoundary';
 import { useState, useCallback } from 'react';
 import { prepararInicio } from './data/startup';
+import { ActivosProvider } from './hooks/useActivos';
 
 const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })));
 const Indicadores = lazy(() => import('./pages/Indicadores').then((m) => ({ default: m.Indicadores })));
@@ -115,9 +116,7 @@ function AuthedApp() {
 
   const esSuperadmin = usuario?.rol === 'superadmin';
 
-  return (
-    <>
-    <SeccionTracker />
+  const rutas = (
     <Routes>
       <Route path="/" element={<Layout />}>
         {esSuperadmin ? (
@@ -149,6 +148,16 @@ function AuthedApp() {
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+  );
+
+  const rutasConDatos = !usuario || usuario.rol === 'admin'
+    ? <ActivosProvider>{rutas}</ActivosProvider>
+    : rutas;
+
+  return (
+    <>
+      <SeccionTracker />
+      {rutasConDatos}
     </>
   );
 }

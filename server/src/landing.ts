@@ -4,7 +4,61 @@
  * Sin emojis. El formulario de contacto postea a /api/leads.
  */
 
-export function renderLanding(appUrl: string, whatsapp?: string, apoyo?: { cafecito?: string; mp?: string; stripe?: string }): string {
+import { PLANES, PLAN_IDS, type PlanId } from './planCatalog';
+
+const BENEFICIOS_PLAN: Record<PlanId, string[]> = {
+  inicial: [
+    'Mediciones y mantenimientos',
+    'Alertas automáticas',
+    'Reportes en PDF',
+  ],
+  empresa: [
+    'Ficha QR pública siempre activa',
+    'Soporte remoto incluido',
+    'Sectores e importación CSV',
+  ],
+  industrial: [
+    'Técnicos ilimitados',
+    'Soporte prioritario',
+    'Todo lo de Empresa',
+    'Acompañamiento dedicado',
+  ],
+};
+
+function renderPlanes(appUrl: string): string {
+  return PLAN_IDS.map((plan) => {
+    const config = PLANES[plan];
+    const equipos = plan === 'industrial'
+      ? `Hasta ${config.activosIncluidos} equipos incluidos`
+      : `Hasta ${config.activosIncluidos} equipos`;
+    const usuarios = config.usuariosMaximos
+      ? `${config.usuariosMaximos} ${plan === 'inicial' ? 'usuarios' : 'técnicos'}`
+      : '';
+    const recargo = config.recargoPorBloqueUsd && config.tamanoBloqueExtra
+      ? `+USD ${config.recargoPorBloqueUsd} cada ${config.tamanoBloqueExtra} equipos adicionales`
+      : '';
+    const items = [equipos, recargo, usuarios, ...BENEFICIOS_PLAN[plan]]
+      .filter(Boolean)
+      .map((item) => `<li>${item}</li>`)
+      .join('');
+    const clase = plan === 'empresa' ? 'plan destacado' : 'plan';
+    const boton = plan === 'empresa' ? 'btn btn-naranja' : 'btn btn-negro';
+
+    return `<div class="${clase}">
+        <h3>${config.nombre}</h3>
+        <p class="precio"><span style="font-size:34px;letter-spacing:0">USD ${config.precioReferenciaUsd}</span> <span style="font-size:13px;font-weight:700;text-transform:none;letter-spacing:0">/ mes</span></p>
+        <ul>${items}</ul>
+        <a class="${boton}" href="${appUrl}#/login?registro=1&plan=${plan}" target="_blank" rel="noopener">Empezar gratis</a>
+      </div>`;
+  }).join('');
+}
+
+export function renderLanding(
+  appUrl: string,
+  whatsapp?: string,
+  apoyo?: { cafecito?: string; mp?: string; stripe?: string },
+  contratacionAutomatica = false,
+): string {
   // whatsapp: numero en formato internacional sin signos (ej: 5491112345678)
   const wa = (whatsapp || '').replace(/\D/g, '');
   const waMsg = encodeURIComponent('Hola! Vi ActivaQR y quiero conocer mas sobre la app.');
@@ -35,6 +89,10 @@ export function renderLanding(appUrl: string, whatsapp?: string, apoyo?: { cafec
   </div>
 </section>`
     : '';
+  const planes = renderPlanes(appUrl);
+  const estadoContratacion = contratacionAutomatica
+    ? 'El tenant adhiere el cobro recurrente mensual desde la app mediante Mercado Pago.'
+    : 'Podés iniciar los 30 días de prueba sin tarjeta. La contratación se coordina con ActivaQR mientras se termina de habilitar el cobro recurrente por Mercado Pago.';
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -77,8 +135,8 @@ export function renderLanding(appUrl: string, whatsapp?: string, apoyo?: { cafec
   "offers": {
     "@type": "AggregateOffer",
     "priceCurrency": "USD",
-    "lowPrice": "20",
-    "highPrice": "179",
+    "lowPrice": "${PLANES.inicial.precioReferenciaUsd}",
+    "highPrice": "${PLANES.industrial.precioReferenciaUsd}",
     "offerCount": "3"
   },
   "provider": {
@@ -485,31 +543,45 @@ export function renderLanding(appUrl: string, whatsapp?: string, apoyo?: { cafec
   <div class="wrap" style="max-width:700px;margin:0 auto;text-align:center;">
     <p style="font-size:12px;font-weight:800;color:#ea580c;text-transform:uppercase;letter-spacing:2px;margin:0 0 8px;">Acceso de prueba</p>
     <h2 style="font-size:32px;font-weight:900;color:#0f172a;margin:0 0 16px;">Probá la app sin registrarte</h2>
-    <p style="font-size:15px;color:#475569;margin:0 0 32px;">Ingresá con las siguientes credenciales y explorá todas las funciones con datos de ejemplo reales.</p>
-    <div style="display:inline-block;background:#0f172a;border:3px solid #0f172a;padding:24px 40px;text-align:left;margin-bottom:32px;">
-      <div style="margin-bottom:12px;">
-        <span style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;">Usuario</span><br/>
-        <span style="font-size:18px;font-weight:900;color:#f97316;font-family:monospace;">demo@activaqr.com</span>
-      </div>
-      <div>
-        <span style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;">Contraseña</span><br/>
-        <span style="font-size:18px;font-weight:900;color:#f97316;font-family:monospace;">demo1234</span>
-      </div>
-    </div>
-    <br/>
+    <p style="font-size:15px;color:#475569;margin:0 0 32px;">Abrí una sesión de demostración con datos de ejemplo. El acceso se prepara automáticamente y no modifica la información de otras empresas.</p>
     <a href="${appUrl}#/login?demo=1" style="display:inline-block;background:#f97316;color:#fff;font-size:15px;font-weight:900;text-decoration:none;text-transform:uppercase;letter-spacing:1px;padding:16px 36px;border:3px solid #0f172a;box-shadow:6px 6px 0px #0f172a;">Probar la app ahora &rarr;</a>
   </div>
 </section>
 
 <section id="historia" class="reveal" style="background:#0f172a;border-top:3px solid #0f172a;border-bottom:3px solid #0f172a;padding:64px 0;">
   <div class="wrap" style="max-width:760px;margin:0 auto;">
-    <p style="font-size:12px;font-weight:800;color:#f97316;text-transform:uppercase;letter-spacing:2px;margin:0 0 12px;">La historia detras de ActivaQR</p>
-    <h2 style="font-size:clamp(26px,4vw,36px);font-weight:900;color:#fff;margin:0 0 24px;line-height:1.15;">Naci&oacute; en casa, resolviendo un problema real.</h2>
+    <p style="font-size:12px;font-weight:800;color:#f97316;text-transform:uppercase;letter-spacing:2px;margin:0 0 12px;">Experiencia de campo convertida en producto</p>
+    <h2 style="font-size:clamp(26px,4vw,36px);font-weight:900;color:#fff;margin:0 0 24px;line-height:1.15;">Naci&oacute; para resolver un problema operativo real.</h2>
     <div style="font-size:16px;color:#cbd5e1;line-height:1.7;">
-      <p style="margin:0 0 18px;">No vengo de una gran empresa de software. Soy autodidacta: aprend&iacute; a programar resolviendo problemas concretos de la vida cotidiana, esos que uno vive todos los d&iacute;as y que nadie termina de solucionar bien.</p>
-      <p style="margin:0 0 18px;">ActivaQR empez&oacute; con una idea simple que surgi&oacute; en casa: proteger los equipos con los que trabajo a diario. Saber en qu&eacute; estado est&aacute;n, cu&aacute;ndo necesitan mantenimiento, y poder identificarlos al instante con solo escanear un c&oacute;digo. Que cualquiera que pase al lado de una m&aacute;quina sepa qu&eacute; es y c&oacute;mo est&aacute;, sin papeles ni planillas perdidas.</p>
-      <p style="margin:0;">De esa necesidad real, entre el taller y el teclado, naci&oacute; esta plataforma. Hoy la comparto con vos porque creo que el mismo problema que ten&iacute;a yo, lo tienen muchos.</p>
+      <p style="margin:0 0 18px;">ActivaQR fue creada por Jes&uacute;s Olgu&iacute;n a partir de su experiencia con equipos, electricidad industrial y mantenimiento. El punto de partida no fue una presentaci&oacute;n comercial: fue la necesidad de saber qu&eacute; activo estaba en riesgo, qu&eacute; se hab&iacute;a medido y cu&aacute;ndo correspond&iacute;a intervenir.</p>
+      <p style="margin:0 0 18px;">La plataforma une el equipo f&iacute;sico con su historial digital mediante un QR. Cada medici&oacute;n, foto, alerta y mantenimiento queda asociado al activo y disponible para quien necesita decidir, incluso cuando el trabajo se realiza sin se&ntilde;al.</p>
+      <p style="margin:0;">El producto sigue evolucionando con una prioridad concreta: que el registro de campo sea simple para el t&eacute;cnico y confiable para la empresa que recibe el informe.</p>
     </div>
+  </div>
+</section>
+
+<section id="implementacion" class="reveal">
+  <div class="wrap">
+    <h2 class="titulo">Implementaci&oacute;n acompa&ntilde;ada, sin vender humo</h2>
+    <p class="bajada">ActivaQR es un producto operativo con soporte directo. La puesta en marcha se adapta al inventario y al proceso de mantenimiento que ya usa cada empresa.</p>
+    <div class="grid g3">
+      <div class="card">
+        <p class="num">01 &middot; Relevamiento</p>
+        <h3>Partimos de tu operaci&oacute;n real</h3>
+        <p>Definimos activos, responsables, par&aacute;metros y frecuencia de mantenimiento por horas, kil&oacute;metros o calendario.</p>
+      </div>
+      <div class="card">
+        <p class="num">02 &middot; Puesta en marcha</p>
+        <h3>Carga inicial y capacitaci&oacute;n</h3>
+        <p>Pod&eacute;s importar el inventario por CSV, generar los QR y capacitar a administradores y t&eacute;cnicos antes de salir a campo.</p>
+      </div>
+      <div class="card">
+        <p class="num">03 &middot; Continuidad</p>
+        <h3>Soporte con permiso y trazabilidad</h3>
+        <p>El cliente habilita el acceso remoto cuando lo necesita. Cada intervenci&oacute;n queda registrada y el permiso se puede revocar.</p>
+      </div>
+    </div>
+    <p style="margin-top:24px;color:var(--gris);font-size:14px">Integraciones: exportaci&oacute;n PDF/CSV disponible. Las conexiones con ERP, SCADA u otros sistemas se eval&uacute;an seg&uacute;n la API o el formato de intercambio de cada empresa. Actualmente no se ofrece un SLA formal.</p>
   </div>
 </section>
 
@@ -550,47 +622,12 @@ export function renderLanding(appUrl: string, whatsapp?: string, apoyo?: { cafec
 <section id="planes" class="reveal">
   <div class="wrap">
     <h2 class="titulo">Planes</h2>
-    <p class="bajada">Empezá chico y crecé cuando lo necesites. Todos con débito automático mensual por Mercado Pago. <strong>30 días gratis, sin tarjeta.</strong></p>
+    <p class="bajada">Empezá chico y crecé cuando lo necesites. <strong>30 días gratis, sin tarjeta.</strong></p>
     <div class="planes">
-      <div class="plan">
-        <h3>Inicial</h3>
-        <p class="precio"><span style="font-size:34px;letter-spacing:0">USD 29</span> <span style="font-size:13px;font-weight:700;text-transform:none;letter-spacing:0">/ mes</span></p>
-        <ul>
-          <li>Hasta 50 equipos</li>
-          <li>3 usuarios</li>
-          <li>Mediciones y mantenimientos</li>
-          <li>Alertas automáticas</li>
-          <li>Reportes en PDF</li>
-        </ul>
-        <a class="btn btn-negro" href="${appUrl}#/login?registro=1&plan=inicial" target="_blank" rel="noopener">Empezar gratis</a>
-      </div>
-      <div class="plan destacado">
-        <h3>Empresa</h3>
-        <p class="precio"><span style="font-size:34px;letter-spacing:0">USD 59</span> <span style="font-size:13px;font-weight:700;text-transform:none;letter-spacing:0">/ mes</span></p>
-        <ul>
-          <li>Hasta 200 equipos</li>
-          <li>10 técnicos</li>
-          <li>Ficha QR pública siempre activa</li>
-          <li>Soporte remoto incluido</li>
-          <li>Sectores e importación CSV</li>
-        </ul>
-        <a class="btn btn-naranja" href="${appUrl}#/login?registro=1&plan=empresa" target="_blank" rel="noopener">Empezar gratis</a>
-      </div>
-      <div class="plan">
-        <h3>Industrial</h3>
-        <p class="precio"><span style="font-size:34px;letter-spacing:0">USD 100</span> <span style="font-size:13px;font-weight:700;text-transform:none;letter-spacing:0">/ mes</span></p>
-        <ul>
-          <li>Hasta 500 equipos incluidos</li>
-          <li>+USD 20 cada 100 equipos adicionales</li>
-          <li>Técnicos ilimitados</li>
-          <li>Soporte prioritario</li>
-          <li>Todo lo de Empresa</li>
-          <li>Acompañamiento dedicado</li>
-        </ul>
-        <a class="btn btn-negro" href="${appUrl}#/login?registro=1&plan=industrial" target="_blank" rel="noopener">Empezar gratis</a>
-      </div>
+      ${planes}
     </div>
-    <p style="text-align:center;margin-top:22px;font-size:13px;color:var(--gris)">Se cobra en pesos, al tipo de cambio del día. Sin costo de instalación ni permanencia mínima.</p>
+    <p id="estado-contratacion" style="text-align:center;margin-top:22px;font-size:13px;color:var(--gris)">${estadoContratacion}</p>
+    <p style="text-align:center;margin-top:10px;font-size:13px;color:var(--gris)">Los valores en USD son referencias comerciales. El monto de contratación se informa en pesos antes de confirmar. Sin costo de instalación ni permanencia mínima.</p>
   </div>
 </section>
 
@@ -657,9 +694,9 @@ ${seccionApoyo}
     Gestión de activos industriales con QR. Hecho en Argentina.
     <div style="margin-top:8px"><a href="${appUrl}" target="_blank" rel="noopener" style="color:var(--naranja);text-decoration:none;font-weight:700">Ingresar a la app</a></div>
     <div style="margin-top:10px;font-size:12px;color:var(--gris-c)">
-      <a href="/politica-uso" style="color:var(--gris-c);text-decoration:none;font-weight:600">Pol&iacute;tica de Uso</a>
+      <a href="https://api.activaqr.net/politica-uso" style="color:var(--gris-c);text-decoration:none;font-weight:600">Pol&iacute;tica de Uso</a>
       <span style="margin:0 8px;color:#475569">&middot;</span>
-      <a href="/politica-privacidad" style="color:var(--gris-c);text-decoration:none;font-weight:600">Pol&iacute;tica de Privacidad</a>
+      <a href="https://api.activaqr.net/politica-privacidad" style="color:var(--gris-c);text-decoration:none;font-weight:600">Pol&iacute;tica de Privacidad</a>
     </div>
   </div>
 </footer>
@@ -713,6 +750,22 @@ ${seccionApoyo}
 </script>
 
 <script>
+// La landing de GitHub Pages no conoce las variables protegidas de Railway.
+// Consulta únicamente un booleano público para reflejar el estado real del
+// cobro recurrente sin exponer credenciales ni importes internos.
+(function actualizarEstadoContratacion(){
+  var estado = document.getElementById('estado-contratacion');
+  if(!estado) return;
+  fetch('https://api.activaqr.net/api/contratacion/estado', {cache:'no-store'})
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(data){
+      if(data && data.mercadoPagoHabilitado){
+        estado.textContent = 'El tenant adhiere el cobro recurrente mensual desde la app mediante Mercado Pago.';
+      }
+    })
+    .catch(function(){});
+})();
+
 // Scroll hint: desaparece al bajar
 const hint = document.getElementById('scrollHint');
 if(hint){

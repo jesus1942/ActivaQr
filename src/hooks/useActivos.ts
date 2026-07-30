@@ -1,4 +1,5 @@
 // v1.1.0
+import { createContext, createElement, useContext, type ReactNode } from 'react';
 import { useStorage } from './useStorage';
 import {
   Activo,
@@ -19,7 +20,7 @@ import {
 import { useRemote } from '../data/store';
 import { siguienteCicloLocal } from '../utils/mantenimiento';
 
-export function useActivos() {
+function useActivosState() {
   const defaultActivos    = useRemote ? [] : seedActivos;
   const defaultMediciones = useRemote ? [] : seedMediciones;
   const defaultTareas     = useRemote ? [] : seedTareas;
@@ -198,4 +199,28 @@ export function useActivos() {
     getTipo,
     resetData,
   };
+}
+
+type ActivosContextValue = ReturnType<typeof useActivosState>;
+
+const ActivosContext = createContext<ActivosContextValue | null>(null);
+
+/**
+ * Mantiene una sola copia de los datos operativos durante toda la sesión.
+ *
+ * Antes cada página que llamaba useActivos() volvía a crear seis cargas
+ * remotas completas. Al navegar se repetían consultas y podían convivir
+ * estados distintos intentando sincronizar la misma empresa.
+ */
+export function ActivosProvider({ children }: { children: ReactNode }) {
+  const value = useActivosState();
+  return createElement(ActivosContext.Provider, { value }, children);
+}
+
+export function useActivos(): ActivosContextValue {
+  const value = useContext(ActivosContext);
+  if (!value) {
+    throw new Error('useActivos debe usarse dentro de ActivosProvider');
+  }
+  return value;
 }

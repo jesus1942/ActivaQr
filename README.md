@@ -33,9 +33,9 @@ El mercado argentino y latinoamericano tiene soluciones de mantenimiento industr
 | Alertas por umbrales configurables por equipo | **SI** | Solo vencimientos | Parcial (IoT) | Parcial | SI | SI |
 | Soporte remoto con intervención directa | **SI** | NO | NO | NO | NO | NO |
 | Carga offline con sincronización automática | **SI** | NO | NO | Parcial | SI | Parcial |
-| Pago local con Mercado Pago | **SI** | SI | NO | NO | NO | NO |
+| Cobro recurrente local por Mercado Pago | **Integración preparada** | SI | NO | NO | NO | NO |
 | Multi-tenant para revendedores | **SI** | NO | NO | SI | NO | NO |
-| Precio de entrada | **USD 20** | ARS $59.000 | Sin publicar | USD 195+ | USD 16/usuario | USD 35/usuario |
+| Precio de entrada | **USD 29** | ARS $59.000 | Sin publicar | USD 195+ | USD 16/usuario | USD 35/usuario |
 
 ### Lo que ninguno tiene
 
@@ -53,9 +53,10 @@ El mercado argentino y latinoamericano tiene soluciones de mantenimiento industr
 
 | | Inicial | Empresa | Industrial |
 |---|:---:|:---:|:---:|
-| **Precio** | **USD 20/mes** | **USD 69/mes** | **USD 179/mes** |
-| Activos | 10 | 100 | Ilimitados |
-| Técnicos | 2 | 10 | Ilimitados |
+| **Precio de referencia** | **USD 29/mes** | **USD 59/mes** | **USD 100/mes** |
+| Activos incluidos | 50 | 200 | 500 |
+| Activos adicionales | — | — | USD 20 cada bloque de 100 |
+| Usuarios/técnicos | 3 | 10 | Ilimitados |
 | Fichas QR públicas | si | si | si |
 | Mediciones y mantenimientos | si | si | si |
 | Alertas automáticas | si | si | si |
@@ -65,7 +66,7 @@ El mercado argentino y latinoamericano tiene soluciones de mantenimiento industr
 | Fichas activas con cuenta suspendida | — | si | si |
 | Soporte prioritario | — | — | si |
 
-Todos con 30 días gratis sin tarjeta y débito automático mensual por Mercado Pago. Se cobra en pesos al tipo de cambio del día, sin costo de instalación ni permanencia mínima.
+Todos incluyen 30 días gratis sin tarjeta. Cuando las credenciales de Mercado Pago y los tres importes en ARS están configurados, el tenant adhiere el cobro recurrente mensual desde la aplicación. Mientras se termina de habilitar esa integración, la contratación se coordina con ActivaQR. Sin costo de instalación ni permanencia mínima.
 
 **Plan Gestionado** (a medida): para plantas que no tienen personal disponible para tomar las mediciones. Incluye todo lo de Industrial más visitas técnicas presenciales periódicas y el informe mensual. Se cotiza por visita según distancia y cantidad de equipos.
 
@@ -244,9 +245,9 @@ Con comisión de Mercado Pago (~8% con IVA) e impuestos provinciales y retencion
 
 | Plan | Cobra | Neto estimado |
 |---|---:|---:|
-| Inicial | USD 20 | ~USD 17 |
-| Empresa | USD 69 | ~USD 59 |
-| Industrial | USD 179 | ~USD 154 |
+| Inicial | USD 29 | a calcular según el importe vigente en ARS |
+| Empresa | USD 59 | a calcular según el importe vigente en ARS |
+| Industrial | USD 100 | a calcular según el importe vigente en ARS |
 
 Costo fijo de infraestructura: **~USD 6/mes** (Railway 5 + dominio 1; Resend y GitHub Pages sin cargo en este volumen). Un solo cliente del plan más chico ya cubre toda la operación.
 

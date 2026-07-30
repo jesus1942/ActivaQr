@@ -74,6 +74,17 @@ function write<T>(key: string, value: T): void {
 // banner, bloquear sync).
 const snapshots = new Map<string, unknown[]>();
 const syncQueues = new Map<string, Promise<void>>();
+type BootstrapData = {
+  activos: any[];
+  mediciones: Medicion[];
+  tareas: TareaMantenimiento[];
+  sectores: Sector[];
+  tipos: TipoActivo[];
+  tecnicos: Tecnico[];
+};
+
+let bootstrapPromise: Promise<BootstrapData> | null = null;
+let bootstrapCache: { data: BootstrapData; venceEn: number } | null = null;
 
 function cloneItems<T>(items: T[]): T[] {
   return typeof structuredClone === 'function'
@@ -81,11 +92,49 @@ function cloneItems<T>(items: T[]): T[] {
     : JSON.parse(JSON.stringify(items));
 }
 
-async function apiGet<T>(path: string): Promise<T[]> {
-  const res = await fetch(`${API_URL}/${path}`, { headers: { ...authHeaders() } });
-  if (!res.ok) throw new Error(`GET ${path} → ${res.status}`);
-  const items = (await res.json()) as T[];
-  snapshots.set(path, cloneItems(items));
+/**
+ * Las seis colecciones base viajan en una única respuesta. La caché dura sólo
+ * dos segundos: alcanza para que los seis hooks compartan la misma llamada,
+ * pero un reintento posterior siempre vuelve a consultar el servidor.
+ */
+async function getBootstrap(): Promise<BootstrapData> {
+  if (bootstrapCache && bootstrapCache.venceEn > Date.now()) {
+    return bootstrapCache.data;
+  }
+  if (bootstrapPromise) return bootstrapPromise;
+
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), 15_000);
+  bootstrapPromise = fetch(`${API_URL}/sync/bootstrap`, {
+    headers: { ...authHeaders() },
+    cache: 'no-store',
+    signal: controller.signal,
+  }).then(async (res) => {
+    if (!res.ok) throw new Error(`GET sync/bootstrap → ${res.status}`);
+    const data = (await res.json()) as BootstrapData;
+    for (const key of Object.keys(KEYS) as Array<keyof typeof KEYS>) {
+      if (!Array.isArray(data[key])) {
+        throw new Error(`Bootstrap incompleto: falta ${key}`);
+      }
+    }
+    bootstrapCache = { data, venceEn: Date.now() + 2_000 };
+    return data;
+  }).finally(() => {
+    window.clearTimeout(timer);
+  });
+
+  const actual = bootstrapPromise;
+  actual.then(
+    () => { if (bootstrapPromise === actual) bootstrapPromise = null; },
+    () => { if (bootstrapPromise === actual) bootstrapPromise = null; },
+  );
+  return actual;
+}
+
+async function getBootstrapItems<T>(key: keyof BootstrapData): Promise<T[]> {
+  const data = await getBootstrap();
+  const items = data[key] as T[];
+  snapshots.set(key, cloneItems(items));
   return items;
 }
 
@@ -152,7 +201,7 @@ export function ensureSeed(): void {
 
 export async function getActivos(): Promise<Activo[]> {
   if (useRemote) {
-    const activos = (await apiGet<any>('activos')).map(flattenActivo);
+    const activos = (await getBootstrapItems<any>('activos')).map(flattenActivo);
     snapshots.set('activos', cloneItems(activos));
     return activos;
   }
@@ -160,27 +209,27 @@ export async function getActivos(): Promise<Activo[]> {
 }
 
 export async function getMediciones(): Promise<Medicion[]> {
-  if (useRemote) return apiGet<Medicion>('mediciones');
+  if (useRemote) return getBootstrapItems<Medicion>('mediciones');
   return read(KEYS.mediciones, seedMediciones);
 }
 
 export async function getTareas(): Promise<TareaMantenimiento[]> {
-  if (useRemote) return apiGet<TareaMantenimiento>('tareas');
+  if (useRemote) return getBootstrapItems<TareaMantenimiento>('tareas');
   return read(KEYS.tareas, seedTareas);
 }
 
 export async function getSectores(): Promise<Sector[]> {
-  if (useRemote) return apiGet<Sector>('sectores');
+  if (useRemote) return getBootstrapItems<Sector>('sectores');
   return read(KEYS.sectores, seedSectores);
 }
 
 export async function getTipos(): Promise<TipoActivo[]> {
-  if (useRemote) return apiGet<TipoActivo>('tipos');
+  if (useRemote) return getBootstrapItems<TipoActivo>('tipos');
   return read(KEYS.tipos, seedTipos);
 }
 
 export async function getTecnicos(): Promise<Tecnico[]> {
-  if (useRemote) return apiGet<Tecnico>('tecnicos');
+  if (useRemote) return getBootstrapItems<Tecnico>('tecnicos');
   return read(KEYS.tecnicos, seedTecnicos);
 }
 

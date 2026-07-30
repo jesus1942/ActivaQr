@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { resolveEmpresaId } from '../tenant';
 import { AuthRequest } from '../auth';
+import { prisma } from '../prisma';
 import {
   calcularEstadoAutomatico,
   calcularEstadoParametrosExtra,
@@ -11,7 +11,6 @@ import { estrategiaValida, unidadMantenimientoValida } from '../mantenimiento';
 import { registrarLecturaMantenimiento, siguienteCicloMantenimiento } from '../mantenimientoService';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 /**
  * Envuelve un handler async para que cualquier error (ej: dato inválido,
@@ -22,6 +21,61 @@ const asyncHandler =
   (fn: (req: Request, res: Response) => Promise<unknown>) =>
   (req: Request, res: Response, next: NextFunction) =>
     fn(req, res).catch(next);
+
+// ───────── Carga inicial ─────────
+// Una sola request reemplaza las seis lecturas completas que el frontend
+// hacía en cada pantalla. Las consultas siguen aisladas por empresa.
+router.get('/bootstrap', asyncHandler(async (req, res) => {
+  const empresaId = await resolveEmpresaId(req);
+  const [activos, mediciones, tareas, sectores, tipos, tecnicos] = await Promise.all([
+    prisma.activo.findMany({
+      where: { empresaId },
+      include: {
+        sector: true,
+        tipo: {
+          include: {
+            categoria: {
+              include: { parametros: { orderBy: { orden: 'asc' } } },
+            },
+          },
+        },
+        responsable: { select: { id: true, nombre: true, cargo: true } },
+        sede: true,
+      },
+      orderBy: { codigo: 'asc' },
+    }),
+    prisma.medicion.findMany({
+      where: { activo: { empresaId } },
+      include: {
+        tecnico: { select: { id: true, nombre: true, cargo: true } },
+      },
+      orderBy: { fecha: 'desc' },
+    }),
+    prisma.tareaMantenimiento.findMany({
+      where: { activo: { empresaId } },
+      include: {
+        responsable: { select: { id: true, nombre: true, cargo: true } },
+        activo: true,
+      },
+      orderBy: { fechaProgramada: 'asc' },
+    }),
+    prisma.sector.findMany({
+      where: { empresaId },
+      orderBy: { nombre: 'asc' },
+    }),
+    prisma.tipoActivo.findMany({
+      where: { empresaId },
+      orderBy: { nombre: 'asc' },
+    }),
+    prisma.usuario.findMany({
+      where: { empresaId },
+      select: { id: true, nombre: true, cargo: true, activo: true },
+      orderBy: { nombre: 'asc' },
+    }),
+  ]);
+
+  res.json({ activos, mediciones, tareas, sectores, tipos, tecnicos });
+}));
 
 // Helpers de coerción.
 const toDate = (v: unknown): Date | null =>

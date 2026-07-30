@@ -41,11 +41,16 @@ import { limpiarEmojisDeCategorias } from './limpiarEmojis';
 import { fallasRouter, fallasPublicRouter } from './routes/fallas';
 import { seedDemo } from './seedDemo';
 import { renderLanding } from './landing';
+import { mpConfigurado } from './mercadopago';
+import { PLAN_IDS, precioBaseArs } from './planCatalog';
 import { renderPoliticaUso, renderPoliticaPrivacidad, POLITICAS_VERSION } from './politicas';
 import { enviarEmailLead } from './email';
 import { prisma } from './prisma';
 
 const app = express();
+
+const contratacionAutomaticaConfigurada = () =>
+  mpConfigurado() && PLAN_IDS.every((plan) => precioBaseArs(plan) !== null);
 
 // Railway pone un proxy delante: sin esto, req.ip es la IP del proxy y los
 // rate limits se comparten entre todos los usuarios en vez de ser por visitante.
@@ -127,7 +132,7 @@ app.get('/', (req, res) => {
     cafecito: process.env.APOYO_CAFECITO_URL,
     mp: process.env.APOYO_MP_URL,
     stripe: process.env.APOYO_STRIPE_URL,
-  }));
+  }, contratacionAutomaticaConfigurada()));
 });
 
 // Paginas legales publicas: requisito para aceptacion previa al pago.
@@ -148,6 +153,12 @@ app.get('/api/health', async (_req, res) => {
     console.error('[health] Base de datos no disponible:', error);
     res.status(503).json({ status: 'starting', database: 'unavailable' });
   }
+});
+
+// Estado público, sin exponer credenciales ni importes internos. La landing
+// estática lo consulta para no prometer un checkout que aún no está habilitado.
+app.get('/api/contratacion/estado', (_req, res) => {
+  res.json({ mercadoPagoHabilitado: contratacionAutomaticaConfigurada() });
 });
 
 app.get('/api/politicas/version', (_req, res) => {
