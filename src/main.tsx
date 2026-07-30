@@ -10,15 +10,33 @@ import { ensureSeed } from './data/store'
 // Vite emite este evento antes de mostrar "Importing a module script failed".
 // Limpiamos sólo el cache de módulos bajo demanda y recargamos una única vez.
 window.addEventListener('vite:preloadError', (event) => {
-  event.preventDefault()
   const recoveryKey = 'aqr_chunk_recovery'
-  if (sessionStorage.getItem(recoveryKey) === '1') return
-  sessionStorage.setItem(recoveryKey, '1')
+  const payload = (event as Event & { payload?: unknown }).payload
+  const fingerprint = payload instanceof Error
+    ? payload.message
+    : String(payload ?? 'modulo-desactualizado')
+
+  // Si el mismo módulo falla después de una recuperación, dejamos que Vite
+  // propague el error real. Evita convertirlo en `undefined.Dashboard`.
+  if (sessionStorage.getItem(recoveryKey) === fingerprint) return
+
+  event.preventDefault()
+  sessionStorage.setItem(recoveryKey, fingerprint)
+
+  // Mientras se renueva el módulo, no mostramos la vista ni un error
+  // transitorio: el usuario ve el mismo fondo oscuro del arranque.
+  document.documentElement.style.backgroundColor = '#020617'
+  const root = document.getElementById('root')
+  if (root) root.style.visibility = 'hidden'
 
   const recover = async () => {
-    if ('caches' in window) {
-      await caches.delete('activaqr-bajo-demanda')
-    }
+    const limpiarCache = 'caches' in window
+      ? caches.delete('activaqr-bajo-demanda')
+      : Promise.resolve(false)
+    const limite = new Promise<boolean>((resolve) => {
+      window.setTimeout(() => resolve(false), 750)
+    })
+    await Promise.race([limpiarCache, limite])
     window.location.reload()
   }
   void recover()
