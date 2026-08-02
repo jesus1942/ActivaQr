@@ -676,6 +676,27 @@ const CATEGORIAS_GLOBALES: CategoriaInput[] = [
   },
 ];
 
+function datosParametro(parametro: ParametroInput) {
+  return {
+    nombre: parametro.nombre,
+    clave: parametro.clave,
+    unidad: parametro.unidad,
+    tipo: parametro.tipo ?? 'numerico',
+    opciones: parametro.opciones,
+    valoresAlerta: parametro.valoresAlerta,
+    valoresCritico: parametro.valoresCritico,
+    valoresUrgente: parametro.valoresUrgente,
+    obligatorio: parametro.obligatorio ?? false,
+    orden: parametro.orden ?? 0,
+    minNormal: parametro.minNormal,
+    maxNormal: parametro.maxNormal,
+    umbralAlerta: parametro.umbralAlerta,
+    umbralCritico: parametro.umbralCritico,
+    umbralUrgente: parametro.umbralUrgente,
+    invertido: parametro.invertido ?? false,
+  };
+}
+
 export async function seedCategorias() {
   console.log('Seeding categorías globales de equipos...');
   let created = 0;
@@ -695,24 +716,9 @@ export async function seedCategorias() {
       const faltantes = cat.parametros.filter((p) => !clavesExistentes.has(p.clave));
       if (faltantes.length > 0) {
         await prisma.parametroCategoria.createMany({
-          data: faltantes.map((p) => ({
+          data: faltantes.map((parametro) => ({
             categoriaId: existing.id,
-            nombre: p.nombre,
-            clave: p.clave,
-            unidad: p.unidad,
-            tipo: p.tipo ?? 'numerico',
-            opciones: p.opciones,
-            valoresAlerta: p.valoresAlerta,
-            valoresCritico: p.valoresCritico,
-            valoresUrgente: p.valoresUrgente,
-            obligatorio: p.obligatorio ?? false,
-            orden: p.orden ?? 0,
-            minNormal: p.minNormal,
-            maxNormal: p.maxNormal,
-            umbralAlerta: p.umbralAlerta,
-            umbralCritico: p.umbralCritico,
-            umbralUrgente: p.umbralUrgente,
-            invertido: p.invertido ?? false,
+            ...datosParametro(parametro),
           })),
         });
         updated++;
@@ -730,24 +736,7 @@ export async function seedCategorias() {
         descripcion: cat.descripcion,
         orden: cat.orden,
         parametros: {
-          create: cat.parametros.map((p) => ({
-            nombre: p.nombre,
-            clave: p.clave,
-            unidad: p.unidad,
-            tipo: p.tipo ?? 'numerico',
-            opciones: p.opciones,
-            valoresAlerta: p.valoresAlerta,
-            valoresCritico: p.valoresCritico,
-            valoresUrgente: p.valoresUrgente,
-            obligatorio: p.obligatorio ?? false,
-            orden: p.orden ?? 0,
-            minNormal: p.minNormal,
-            maxNormal: p.maxNormal,
-            umbralAlerta: p.umbralAlerta,
-            umbralCritico: p.umbralCritico,
-            umbralUrgente: p.umbralUrgente,
-            invertido: p.invertido ?? false,
-          })),
+          create: cat.parametros.map(datosParametro),
         },
       },
     });

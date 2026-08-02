@@ -8,7 +8,7 @@ import { prisma } from './prisma';
 
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:soporte@activaqr.com';
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:avisos@activaqr.net';
 
 let configurado = false;
 if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {

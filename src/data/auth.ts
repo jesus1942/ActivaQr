@@ -121,6 +121,20 @@ export async function login(
   return data.usuario as UsuarioSesion;
 }
 
+/** Abre la demostración pública sin transportar una contraseña al navegador. */
+export async function demoLogin(): Promise<UsuarioSesion> {
+  const res = await fetch(`${API_URL}/auth/demo`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error || 'No se pudo abrir la demostración.');
+  }
+  guardarSesion(data.token, data.usuario);
+  return data.usuario as UsuarioSesion;
+}
+
 export async function registro(payload: {
   empresaNombre: string;
   nombre: string;

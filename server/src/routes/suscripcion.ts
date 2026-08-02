@@ -2,29 +2,63 @@ import { Router, Response, NextFunction } from 'express';
 import { prisma } from '../prisma';
 import { AuthRequest, requireAdmin } from '../auth';
 import { enviarPushASuperadmin } from '../push';
-import { crearPreapproval, mpConfigurado, obtenerPreapproval } from '../mercadopago';
 import {
-  bloquesExtra, esPlanId, multiplicadorPrecio, PLAN_IDS, PLANES,
-  precioBaseArs, precioReferenciaUsd,
+  actualizarMontoPreapproval,
+  crearPreapproval,
+  mpConfigurado,
+  obtenerPreapproval,
+} from '../mercadopago';
+import {
+  bloquesExtra, esPlanId, PLAN_IDS, PLANES,
+  precioReferenciaUsd,
 } from '../planCatalog';
+import { calcularPrecioPlanActual, obtenerCotizacionMep } from '../cotizacion';
+import { POLITICAS_VERSION } from '../politicas';
+import { MP_BACK_URL } from '../urls';
 
 const router = Router();
 
 const ORDEN_PLAN: Record<string, number> = { inicial: 0, empresa: 1, industrial: 2 };
 
-router.get('/planes', (_req, res) => {
-  res.json({
-    mercadoPagoConfigurado: mpConfigurado(),
-    planes: PLAN_IDS.map((plan) => ({
-      plan,
-      nombre: PLANES[plan].nombre,
-      precioArs: precioBaseArs(plan),
-      precioReferenciaUsd: PLANES[plan].precioReferenciaUsd,
-      activosIncluidos: PLANES[plan].activosIncluidos,
-      recargoPorBloqueUsd: PLANES[plan].recargoPorBloqueUsd,
-      tamanoBloqueExtra: PLANES[plan].tamanoBloqueExtra,
-    })),
-  });
+router.get('/planes', async (_req, res) => {
+  try {
+    const cotizacion = await obtenerCotizacionMep();
+    res.json({
+      mercadoPagoConfigurado: mpConfigurado(),
+      cotizacion: {
+        tipo: 'MEP',
+        venta: cotizacion.venta,
+        fuente: cotizacion.fuente,
+        fecha: cotizacion.fechaFuente,
+        desdeCache: cotizacion.desdeCache,
+      },
+      planes: PLAN_IDS.map((plan) => ({
+        plan,
+        nombre: PLANES[plan].nombre,
+        precioArs: Math.ceil(
+          PLANES[plan].precioReferenciaUsd * cotizacion.venta / 100
+        ) * 100,
+        precioReferenciaUsd: PLANES[plan].precioReferenciaUsd,
+        activosIncluidos: PLANES[plan].activosIncluidos,
+        recargoPorBloqueUsd: PLANES[plan].recargoPorBloqueUsd,
+        tamanoBloqueExtra: PLANES[plan].tamanoBloqueExtra,
+      })),
+    });
+  } catch {
+    res.json({
+      mercadoPagoConfigurado: false,
+      cotizacion: null,
+      planes: PLAN_IDS.map((plan) => ({
+        plan,
+        nombre: PLANES[plan].nombre,
+        precioArs: null,
+        precioReferenciaUsd: PLANES[plan].precioReferenciaUsd,
+        activosIncluidos: PLANES[plan].activosIncluidos,
+        recargoPorBloqueUsd: PLANES[plan].recargoPorBloqueUsd,
+        tamanoBloqueExtra: PLANES[plan].tamanoBloqueExtra,
+      })),
+    });
+  }
 });
 
 router.post('/iniciar', requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -36,35 +70,63 @@ router.post('/iniciar', requireAdmin, async (req: AuthRequest, res: Response, ne
     if (!mpConfigurado()) {
       return res.status(503).json({ code: 'pago_no_configurado', error: 'El pago automático todavía no está habilitado.' });
     }
-    const montoBase = precioBaseArs(plan);
-    if (!montoBase) {
-      return res.status(503).json({ code: 'precio_no_configurado', error: 'Este plan todavía no tiene un precio en pesos configurado.' });
-    }
-
     const empresa = await prisma.empresa.findUnique({
       where: { id: empresaId },
       include: { usuarios: { where: { rol: 'admin' }, take: 1 } },
     });
     if (!empresa) return res.status(404).json({ error: 'Empresa no encontrada.' });
-    if (!empresa.politicasAceptadasEn) {
-      return res.status(409).json({ error: 'Primero tenés que aceptar las políticas.' });
+    if (
+      !empresa.politicasAceptadasEn ||
+      empresa.politicasVersion !== POLITICAS_VERSION
+    ) {
+      return res.status(409).json({
+        code: 'politicas_no_aceptadas',
+        error: 'Primero tenés que aceptar la versión vigente de las políticas.',
+      });
     }
     if (empresa.mpEstadoSub === 'authorized') {
       return res.status(409).json({ error: 'Ya existe una suscripción activa.' });
     }
+    const cantidadActivos = await prisma.activo.count({ where: { empresaId } });
+    const precio = await calcularPrecioPlanActual(plan, cantidadActivos, {
+      forzarCotizacion: true,
+    });
     if (empresa.mpEstadoSub === 'pending' && empresa.mpPreapprovalId) {
       const pendiente = await obtenerPreapproval(empresa.mpPreapprovalId);
       if (pendiente.status === 'pending' && pendiente.init_point) {
-        return res.json({ initPoint: pendiente.init_point, preapprovalId: pendiente.id });
+        if (Number(pendiente.auto_recurring?.transaction_amount) !== precio.montoArs) {
+          await actualizarMontoPreapproval(
+            pendiente.id,
+            precio.montoArs,
+            `ActivaQR ${PLANES[plan].nombre} — USD ${precio.montoUsd} al MEP`,
+          );
+          await prisma.empresa.update({
+            where: { id: empresaId },
+            data: {
+              planSolicitado: plan,
+              mpMonto: precio.montoArs,
+              mpMontoUsd: precio.montoUsd,
+              mpCotizacionUsdArs: precio.cotizacion.venta,
+              mpCotizacionFuente: precio.cotizacion.fuente,
+              mpCotizacionActualizadaEn: new Date(),
+            },
+          });
+        }
+        return res.json({
+          initPoint: pendiente.init_point,
+          preapprovalId: pendiente.id,
+          montoArs: precio.montoArs,
+          precioReferenciaUsd: precio.montoUsd,
+          cotizacionMep: precio.cotizacion.venta,
+        });
       }
     }
 
     const payerEmail = empresa.usuarios[0]?.email;
     if (!payerEmail) return res.status(400).json({ error: 'La empresa no tiene un administrador.' });
-    const cantidadActivos = await prisma.activo.count({ where: { empresaId } });
-    const monto = Math.round(montoBase * multiplicadorPrecio(plan, cantidadActivos));
+    const monto = precio.montoArs;
     const extras = bloquesExtra(plan, cantidadActivos);
-    const appUrl = process.env.MP_BACK_URL || process.env.APP_PUBLIC_URL || 'https://activaqr.net/app/';
+    const appUrl = MP_BACK_URL;
     const pre = await crearPreapproval({
       empresaId,
       payerEmail,
@@ -79,6 +141,10 @@ router.post('/iniciar', requireAdmin, async (req: AuthRequest, res: Response, ne
         mpPreapprovalId: pre.id,
         mpEstadoSub: pre.status,
         mpMonto: monto,
+        mpMontoUsd: precio.montoUsd,
+        mpCotizacionUsdArs: precio.cotizacion.venta,
+        mpCotizacionFuente: precio.cotizacion.fuente,
+        mpCotizacionActualizadaEn: new Date(),
       },
     });
     res.json({
@@ -86,6 +152,8 @@ router.post('/iniciar', requireAdmin, async (req: AuthRequest, res: Response, ne
       preapprovalId: pre.id,
       montoArs: monto,
       precioReferenciaUsd: precioReferenciaUsd(plan, cantidadActivos),
+      cotizacionMep: precio.cotizacion.venta,
+      cotizacionFuente: precio.cotizacion.fuente,
       bloquesExtra: extras,
     });
   } catch (err) {

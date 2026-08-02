@@ -10,6 +10,7 @@
 // cliente (activos sin prefijo AUS-) NO se tocan.
 
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 import { prisma } from './prisma';
 
 // ── Catalogo de personal (Usuarios con rol operador) ────────────────────────
@@ -17,15 +18,14 @@ import { prisma } from './prisma';
 // pantallas (editar tarea, asignar tarea, registrar medicion). Si re-corres
 // el seed y ya existen, NO se recrean ni se cambian sus passwords.
 interface PersonalSpec {
-  email: string;
+  key: 'mantenimiento' | 'ti' | 'servicios';
   nombre: string;
   cargo: string;
-  passwordInicial: string;
 }
 const PERSONAL: PersonalSpec[] = [
-  { email: 'mantenimiento.austral@activaqr.com', nombre: 'Carlos Riveros',  cargo: 'Tecnico de Mantenimiento', passwordInicial: 'austral-mant-1234' },
-  { email: 'ti.austral@activaqr.com',            nombre: 'Lucia Mendez',    cargo: 'Soporte TI',               passwordInicial: 'austral-ti-1234'   },
-  { email: 'servicios.austral@activaqr.com',     nombre: 'Hector Quintela', cargo: 'Auxiliar de Servicios',    passwordInicial: 'austral-srv-1234'  },
+  { key: 'mantenimiento', nombre: 'Responsable de Mantenimiento', cargo: 'Tecnico de Mantenimiento' },
+  { key: 'ti',            nombre: 'Responsable de TI',            cargo: 'Soporte TI' },
+  { key: 'servicios',     nombre: 'Responsable de Servicios',     cargo: 'Auxiliar de Servicios' },
 ];
 
 // ── Catalogo de sectores ────────────────────────────────────────────────────
@@ -387,17 +387,21 @@ export async function seedAustral(empresaId: string): Promise<{
   let personalCreado = 0;
   let personalExistente = 0;
   for (const p of PERSONAL) {
-    const existente = await prisma.usuario.findUnique({ where: { email: p.email } });
+    // El dominio .invalid nunca recibe correo. El id de empresa evita que un
+    // seed ejecutado en otro tenant reutilice accidentalmente el mismo usuario.
+    const email = `${p.key}.${empresaId}@personal.activaqr.invalid`;
+    const existente = await prisma.usuario.findUnique({ where: { email } });
     if (existente) {
-      personalIds[p.email] = existente.id;
+      personalIds[p.key] = existente.id;
       personalExistente++;
-      passwordsIniciales.push({ email: p.email, password: null });
+      passwordsIniciales.push({ email, password: null });
     } else {
-      const hash = await bcrypt.hash(p.passwordInicial, 10);
+      const passwordInicial = randomBytes(18).toString('base64url');
+      const hash = await bcrypt.hash(passwordInicial, 10);
       const nuevo = await prisma.usuario.create({
         data: {
           empresaId,
-          email: p.email,
+          email,
           passwordHash: hash,
           nombre: p.nombre,
           rol: 'operador',
@@ -405,15 +409,15 @@ export async function seedAustral(empresaId: string): Promise<{
           activo: true,
         },
       });
-      personalIds[p.email] = nuevo.id;
+      personalIds[p.key] = nuevo.id;
       personalCreado++;
-      passwordsIniciales.push({ email: p.email, password: p.passwordInicial });
+      passwordsIniciales.push({ email, password: passwordInicial });
     }
   }
   const responsables = {
-    mantenimiento: personalIds['mantenimiento.austral@activaqr.com'],
-    ti: personalIds['ti.austral@activaqr.com'],
-    servicios: personalIds['servicios.austral@activaqr.com'],
+    mantenimiento: personalIds.mantenimiento,
+    ti: personalIds.ti,
+    servicios: personalIds.servicios,
   };
 
   // 1. Upsert sectores

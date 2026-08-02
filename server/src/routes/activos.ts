@@ -5,8 +5,9 @@ import { resolveEmpresaId } from '../tenant';
 import { getLimite } from '../planLimits';
 import { auditar } from '../auditoria';
 import { AuthRequest, requireAdmin } from '../auth';
-import { bloquesExtra, multiplicadorPrecio } from '../planCatalog';
+import { bloquesExtra } from '../planCatalog';
 import { actualizarMontoPreapproval } from '../mercadopago';
+import { calcularPrecioPlanActual } from '../cotizacion';
 import {
   enteroPositivo,
   estrategiaValida,
@@ -291,15 +292,25 @@ router.post('/', requireAdmin as any, async (req: Request, res: Response, next: 
               error: 'Activá la suscripción Industrial para agregar el próximo bloque de 100 equipos.',
             });
           }
-          const base = empresa.mpMonto / multiplicadorPrecio('industrial', actuales);
-          const montoNuevo = Math.round(base * multiplicadorPrecio('industrial', actuales + 1));
           try {
+            const precioNuevo = await calcularPrecioPlanActual('industrial', actuales + 1, {
+              forzarCotizacion: true,
+            });
             await actualizarMontoPreapproval(
               empresa.mpPreapprovalId,
-              montoNuevo,
+              precioNuevo.montoArs,
               `ActivaQR Industrial + ${bloqueNuevo} bloque(s) extra`
             );
-            await prisma.empresa.update({ where: { id: empresaId }, data: { mpMonto: montoNuevo } });
+            await prisma.empresa.update({
+              where: { id: empresaId },
+              data: {
+                mpMonto: precioNuevo.montoArs,
+                mpMontoUsd: precioNuevo.montoUsd,
+                mpCotizacionUsdArs: precioNuevo.cotizacion.venta,
+                mpCotizacionFuente: precioNuevo.cotizacion.fuente,
+                mpCotizacionActualizadaEn: new Date(),
+              },
+            });
           } catch (error) {
             console.error('[ACTIVOS] No se pudo habilitar el bloque adicional:', error);
             return res.status(503).json({

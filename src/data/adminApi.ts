@@ -136,6 +136,13 @@ export interface PlanComercial {
 
 export async function getPlanesComerciales(): Promise<{
   mercadoPagoConfigurado: boolean;
+  cotizacion: {
+    tipo: 'MEP';
+    venta: number;
+    fuente: string;
+    fecha: string;
+    desdeCache: boolean;
+  } | null;
   planes: PlanComercial[];
 }> {
   return parse(await apiFetch('suscripcion/planes'));
@@ -207,14 +214,19 @@ export async function getFacturacion(): Promise<Facturacion> {
 
 export async function generarSuscripcion(
   id: string,
-  monto: number,
   payerEmailOverride?: string
-): Promise<{ initPoint: string; preapprovalId: string }> {
+): Promise<{
+  initPoint: string;
+  preapprovalId: string;
+  montoArs: number;
+  montoUsd: number;
+  cotizacionMep: number;
+}> {
   return parse(
     await apiFetch(`admin/empresas/${id}/suscripcion`, {
       method: 'POST',
       headers: JSON_HEADERS,
-      body: JSON.stringify({ monto, payerEmailOverride }),
+      body: JSON.stringify({ payerEmailOverride }),
     })
   );
 }

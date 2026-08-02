@@ -1,4 +1,5 @@
 import { Router, Response, NextFunction } from 'express';
+import { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '../prisma';
@@ -10,11 +11,47 @@ import { enviarPushASuperadmin } from '../push';
 import { registrarAuditoria } from '../auditoria';
 import { faseTrial } from '../trial';
 import { POLITICAS_VERSION } from '../politicas';
+import { APP_PUBLIC_URL } from '../urls';
+import { DEMO_EMAIL } from '../seedDemo';
 
 const router = Router();
 
 const TRIAL_DIAS = 30;
 const TRIAL_LECTURA_DIAS = 0; // sin fase intermedia: al dia 31 se bloquea total
+type UsuarioConEmpresa = Prisma.UsuarioGetPayload<{ include: { empresa: true } }>;
+
+function crearRespuestaSesion(usuario: UsuarioConEmpresa, ttl?: string) {
+  const token = firmarToken({
+    userId: usuario.id,
+    email: usuario.email,
+    rol: usuario.rol,
+    empresaId: usuario.empresaId,
+  }, ttl);
+
+  return {
+    token,
+    usuario: {
+      id: usuario.id,
+      nombre: usuario.nombre,
+      email: usuario.email,
+      rol: usuario.rol,
+      empresaId: usuario.empresaId,
+      empresa: usuario.empresa
+        ? {
+            id: usuario.empresa.id,
+            nombre: usuario.empresa.nombre,
+            logoUrl: usuario.empresa.logoUrl,
+            plan: usuario.empresa.plan,
+            estado: usuario.empresa.estado,
+            esTrial: usuario.empresa.esTrial,
+            trialFin: usuario.empresa.trialFin,
+            trialLecturaFin: usuario.empresa.trialLecturaFin,
+            fase: faseTrial(usuario.empresa),
+          }
+        : null,
+    },
+  };
+}
 
 // POST /api/auth/registro — alta autogestionada con free trial de 30 dias
 router.post('/registro', async (req, res: Response, next: NextFunction) => {
@@ -96,7 +133,7 @@ router.post('/registro', async (req, res: Response, next: NextFunction) => {
 
     // Avisar al dueño de ActivaQR por los tres canales. Nunca demora ni
     // rompe el alta: si un canal falla, queda el error en los logs.
-    const panelUrl = `${process.env.APP_PUBLIC_URL || 'https://activaqr.net/'}#/admin`;
+    const panelUrl = `${APP_PUBLIC_URL}#/admin`;
     enviarEmailAltaTrial({
       empresaNombre: empresa.nombre,
       adminNombre: usuario.nombre,
@@ -151,6 +188,39 @@ router.post('/registro', async (req, res: Response, next: NextFunction) => {
   }
 });
 
+// POST /api/auth/demo — emite una sesión temporal para la demostración pública.
+// No recibe ni revela credenciales y no comparte el flujo de contraseñas.
+router.post('/demo', async (_req, res: Response, next: NextFunction) => {
+  try {
+    const usuario = await prisma.usuario.findUnique({
+      where: { email: DEMO_EMAIL },
+      include: { empresa: true },
+    });
+    if (!usuario?.activo || !usuario.empresa || usuario.empresa.estado === 'suspendida') {
+      return res.status(503).json({ error: 'La demostración no está disponible en este momento.' });
+    }
+
+    await prisma.usuario.update({
+      where: { id: usuario.id },
+      data: { ultimoAcceso: new Date() },
+    });
+    void registrarAuditoria({
+      empresaId: usuario.empresaId,
+      usuarioId: usuario.id,
+      usuarioNombre: 'Demo publica',
+      usuarioRol: usuario.rol,
+      accion: 'login',
+      entidad: 'sesion',
+      entidadId: usuario.id,
+      detalle: 'sesion demo temporal sin credenciales',
+    });
+
+    res.json(crearRespuestaSesion(usuario, DEMO_TOKEN_TTL));
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /api/auth/login
 router.post('/login', async (req, res: Response, next: NextFunction) => {
   try {
@@ -159,8 +229,13 @@ router.post('/login', async (req, res: Response, next: NextFunction) => {
       return res.status(400).json({ error: 'Email y contraseña son obligatorios.' });
     }
 
+    const emailNormalizado = String(email).toLowerCase().trim();
+    if (emailNormalizado === DEMO_EMAIL) {
+      return res.status(401).json({ error: 'Credenciales inválidas.' });
+    }
+
     const usuario = await prisma.usuario.findUnique({
-      where: { email: String(email).toLowerCase().trim() },
+      where: { email: emailNormalizado },
       include: { empresa: true },
     });
     if (!usuario || !usuario.activo) {
@@ -198,37 +273,7 @@ router.post('/login', async (req, res: Response, next: NextFunction) => {
       entidadId: usuario.id,
     });
 
-    const isDemo = usuario.email === 'demo@activaqr.com';
-    const token = firmarToken({
-      userId: usuario.id,
-      email: usuario.email,
-      rol: usuario.rol,
-      empresaId: usuario.empresaId,
-    }, isDemo ? DEMO_TOKEN_TTL : undefined);
-
-    res.json({
-      token,
-      usuario: {
-        id: usuario.id,
-        nombre: usuario.nombre,
-        email: usuario.email,
-        rol: usuario.rol,
-        empresaId: usuario.empresaId,
-        empresa: usuario.empresa
-          ? {
-              id: usuario.empresa.id,
-              nombre: usuario.empresa.nombre,
-              logoUrl: usuario.empresa.logoUrl,
-              plan: usuario.empresa.plan,
-              estado: usuario.empresa.estado,
-              esTrial: usuario.empresa.esTrial,
-              trialFin: usuario.empresa.trialFin,
-              trialLecturaFin: usuario.empresa.trialLecturaFin,
-              fase: faseTrial(usuario.empresa),
-            }
-          : null,
-      },
-    });
+    res.json(crearRespuestaSesion(usuario));
   } catch (err) {
     next(err);
   }
@@ -311,8 +356,7 @@ router.post('/forgot-password', async (req, res: Response, next: NextFunction) =
         where: { id: usuario.id },
         data: { resetToken: tokenHash, resetTokenExpiry: expiry },
       });
-      const appPublicUrl = process.env.APP_PUBLIC_URL || 'https://activaqr.net/';
-      const resetUrl = `${appPublicUrl}#/reset-password?token=${token}`;
+      const resetUrl = `${APP_PUBLIC_URL}#/reset-password?token=${token}`;
 
       if (usuario.telegramChatId) {
         await enviarLinkRecuperacion({

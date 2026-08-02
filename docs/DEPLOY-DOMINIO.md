@@ -62,9 +62,9 @@ ya apuntan al dominio nuevo, pero si estas variables existen deben
 actualizarse:
 
 - `ALLOWED_ORIGINS` = `https://activaqr.net,https://www.activaqr.net`
-- `APP_PUBLIC_URL` = `https://activaqr.net/`
-- `APP_URL` = `https://activaqr.net`
-- `MP_BACK_URL` = `https://activaqr.net/`
+- `SITE_PUBLIC_URL` = `https://activaqr.net`
+- `APP_PUBLIC_URL` = `https://activaqr.net/app/`
+- `MP_BACK_URL` = `https://activaqr.net/app/`
 
 ## 5. Servicios externos
 

@@ -12,24 +12,13 @@
  * rafagas violentas, salinidad costa atlantica, frio + icing invernal, polvo
  * en tormentas. Se incorporan fallas y consideraciones puntuales.
  */
-import { Prisma } from '@prisma/client';
-import { prisma } from './prisma';
+import {
+  ejecutarSeedStandalone,
+  guardarFallasCatalogo,
+  type FallaSeedInput,
+} from './seedFallasCatalogo';
 
-interface CausaProbable {
-  causa: string;
-  probabilidad: 'alta' | 'media' | 'baja';
-}
-
-interface FallaSeed {
-  codigo?: string;
-  sintoma: string;
-  causas: CausaProbable[];
-  solucion: string;
-  severidad: 'info' | 'advertencia' | 'critico';
-  orden: number;
-}
-
-const FALLAS: FallaSeed[] = [
+const FALLAS: FallaSeedInput[] = [
   {
     codigo: 'AG-001',
     sintoma: 'Vibracion alta en gondola (alarma del CMS)',
@@ -371,54 +360,13 @@ const FALLAS: FallaSeed[] = [
 ];
 
 export async function seedFallasAerogenerador() {
-  const categoria = await prisma.categoriaEquipo.findFirst({
-    where: { nombre: 'Aerogenerador', empresaId: null },
+  await guardarFallasCatalogo({
+    categoriaNombre: 'Aerogenerador',
+    etiqueta: 'seedFallasAerogenerador',
+    fallas: FALLAS,
   });
-  if (!categoria) {
-    console.log('seedFallasAerogenerador: categoria "Aerogenerador" no encontrada, saltando');
-    return;
-  }
-
-  let creadas = 0;
-  let actualizadas = 0;
-  for (const falla of FALLAS) {
-    const existente = await prisma.fallaCatalogo.findFirst({
-      where: { categoriaId: categoria.id, empresaId: null, codigo: falla.codigo },
-    });
-    const causas = falla.causas as unknown as Prisma.InputJsonValue;
-    if (existente) {
-      await prisma.fallaCatalogo.update({
-        where: { id: existente.id },
-        data: {
-          sintoma: falla.sintoma,
-          causas,
-          solucion: falla.solucion,
-          severidad: falla.severidad,
-          orden: falla.orden,
-        },
-      });
-      actualizadas++;
-    } else {
-      await prisma.fallaCatalogo.create({
-        data: {
-          categoriaId: categoria.id,
-          empresaId: null,
-          codigo: falla.codigo,
-          sintoma: falla.sintoma,
-          causas,
-          solucion: falla.solucion,
-          severidad: falla.severidad,
-          orden: falla.orden,
-        },
-      });
-      creadas++;
-    }
-  }
-  console.log(`seedFallasAerogenerador: ${creadas} creadas, ${actualizadas} actualizadas`);
 }
 
 if (require.main === module) {
-  seedFallasAerogenerador()
-    .catch((e) => { console.error(e); process.exit(1); })
-    .finally(() => prisma.$disconnect());
+  ejecutarSeedStandalone(seedFallasAerogenerador);
 }

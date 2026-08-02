@@ -147,6 +147,10 @@ model Empresa {
   mpPreapprovalId String?   // id del preapproval (suscripción) en MP
   mpEstadoSub     String?   // estado reportado por MP: authorized, paused, cancelled...
   mpMonto         Float?    // monto mensual acordado
+  mpMontoUsd      Float?    // precio canónico en USD aplicado al plan y bloques
+  mpCotizacionUsdArs Float?  // dólar MEP vendedor usado para calcular mpMonto
+  mpCotizacionFuente String?
+  mpCotizacionActualizadaEn DateTime?
   mpUltimoPago    DateTime? // fecha del último pago aprobado
   fuenteAlta      String?
   campanaAlta     String?
@@ -162,6 +166,16 @@ model Empresa {
   pagos          PagoMP[]
 
   @@index([mpPreapprovalId])
+}
+
+model CotizacionUsdArs {
+  id            String   @id
+  tipo          String
+  compra        Float?
+  venta         Float
+  fuente        String
+  fechaFuente   DateTime
+  consultadaEn  DateTime @default(now()) @updatedAt
 }
 
 model Usuario {

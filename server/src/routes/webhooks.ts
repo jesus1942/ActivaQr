@@ -87,7 +87,8 @@ router.post('/mercadopago', async (req: Request, res: Response) => {
     const empresaId = info.external_reference;
     if (!empresaId) return;
 
-    const monto = info.auto_recurring?.transaction_amount;
+    const montoRaw = Number(info.auto_recurring?.transaction_amount);
+    const monto = Number.isFinite(montoRaw) && montoRaw > 0 ? montoRaw : undefined;
     const empresaActual = await prisma.empresa.findUnique({
       where: { id: empresaId },
       select: { planSolicitado: true },

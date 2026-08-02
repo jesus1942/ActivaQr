@@ -9,7 +9,10 @@
  * para forzar una re-aceptacion en el siguiente login del admin.
  */
 
-export const POLITICAS_VERSION = '2026-06-04';
+export const POLITICAS_VERSION = '2026-07-30';
+
+const CONTACTO_URL = 'https://activaqr.net/#contacto';
+const CONTACTO_HTML = `<a href="${CONTACTO_URL}" target="_blank" rel="noopener">formulario oficial de contacto</a>`;
 
 const ESTILOS = `
   *{margin:0;padding:0;box-sizing:border-box}
@@ -104,7 +107,7 @@ ${navHtml()}
   <div class="wrap">
     <span class="tag">Documento legal</span>
     <h1>Pol&iacute;tica de Uso</h1>
-    <p class="meta">Versi&oacute;n ${POLITICAS_VERSION} &middot; Vigente desde el 4 de junio de 2026</p>
+    <p class="meta">Versi&oacute;n ${POLITICAS_VERSION} &middot; Vigente desde el 30 de julio de 2026</p>
   </div>
 </header>
 
@@ -114,7 +117,7 @@ ${navHtml()}
     <p>Bienvenido a <strong>ActivaQR</strong>. Estas condiciones regulan el uso de la plataforma de gesti&oacute;n de activos industriales operada por el titular del proyecto (en adelante, &laquo;ActivaQR&raquo;, &laquo;nosotros&raquo;). Al crear una cuenta, contratar un plan o utilizar la aplicaci&oacute;n, el usuario (en adelante, &laquo;el Cliente&raquo;) declara haber le&iacute;do, comprendido y aceptado esta Pol&iacute;tica de Uso y la Pol&iacute;tica de Privacidad asociada.</p>
 
     <h2>1. Identificaci&oacute;n del prestador</h2>
-    <p>ActivaQR es un servicio de software como servicio (SaaS) desarrollado y operado desde la Provincia de Neuqu&eacute;n, Rep&uacute;blica Argentina. Para todas las cuestiones legales y de contacto, el correo electr&oacute;nico oficial es <strong>chucky9425@gmail.com</strong>.</p>
+    <p>ActivaQR es un servicio de software como servicio (SaaS) desarrollado y operado desde la Ciudad de Puerto Madryn, Provincia del Chubut, Rep&uacute;blica Argentina. Para cuestiones legales y de contacto se encuentra disponible el ${CONTACTO_HTML}.</p>
 
     <h2>2. Objeto del servicio</h2>
     <p>ActivaQR brinda una plataforma web y m&oacute;vil que permite al Cliente:</p>
@@ -137,7 +140,8 @@ ${navHtml()}
     <p>La aceptaci&oacute;n queda registrada en nuestros sistemas con la fecha, hora, direcci&oacute;n IP de origen y la versi&oacute;n del documento vigente al momento del consentimiento. Esa constancia ser&aacute; v&aacute;lida como prueba en caso de controversia.</p>
 
     <h2>5. Planes, precios y suscripci&oacute;n</h2>
-    <p>ActivaQR ofrece distintos planes (Inicial, Empresa, Industrial) con diferentes l&iacute;mites de activos, t&eacute;cnicos y funcionalidades. Los precios vigentes se comunican durante el proceso de contrataci&oacute;n y pueden actualizarse con notificaci&oacute;n previa por correo electr&oacute;nico al admin de la cuenta.</p>
+    <p>ActivaQR ofrece distintos planes (Inicial, Empresa, Industrial) con diferentes l&iacute;mites de activos, t&eacute;cnicos y funcionalidades. Sus precios se expresan en d&oacute;lares estadounidenses (USD). Cuando el cobro se procesa en pesos argentinos mediante Mercado Pago, el importe se calcula usando la cotizaci&oacute;n vendedora del d&oacute;lar MEP vigente informada durante la contrataci&oacute;n.</p>
+    <p>El equivalente en pesos se actualiza autom&aacute;ticamente cuando cambia esa cotizaci&oacute;n y se aplica a los cobros futuros de la suscripci&oacute;n. La aplicaci&oacute;n informa el precio en USD, el equivalente en ARS, la cotizaci&oacute;n utilizada y su fuente. Si se modifica el precio base expresado en USD, ActivaQR lo comunicar&aacute; previamente al correo del administrador de la cuenta.</p>
     <p>El cobro se realiza mensualmente mediante d&eacute;bito autom&aacute;tico a trav&eacute;s de <strong>Mercado Pago</strong> (en pesos argentinos) o <strong>Stripe</strong> (en d&oacute;lares y otras monedas). ActivaQR no almacena datos de tarjetas ni de cuentas bancarias del Cliente: la informaci&oacute;n financiera se procesa exclusivamente en los sistemas de esos procesadores, sujetos a sus propias pol&iacute;ticas.</p>
 
     <h2>6. Cuentas, roles y responsabilidad del Cliente</h2>
@@ -145,7 +149,7 @@ ${navHtml()}
     <ul>
       <li>Mantener actualizada la informaci&oacute;n de contacto y los datos cargados en la plataforma.</li>
       <li>Asegurar que cada usuario interno utilice credenciales individuales y no las comparta.</li>
-      <li>Notificar de inmediato cualquier sospecha de uso indebido al correo <strong>chucky9425@gmail.com</strong>.</li>
+      <li>Notificar de inmediato cualquier sospecha de uso indebido mediante el ${CONTACTO_HTML}.</li>
       <li>Cumplir con la normativa local aplicable a la operaci&oacute;n industrial donde se utilice la plataforma.</li>
     </ul>
 
@@ -185,10 +189,10 @@ ${navHtml()}
     <p>ActivaQR puede modificar esta Pol&iacute;tica de Uso en cualquier momento. Las modificaciones materiales se comunicar&aacute;n al admin de la cuenta por correo electr&oacute;nico y se publicar&aacute;n en esta misma p&aacute;gina con un n&uacute;mero de versi&oacute;n actualizado. Si la modificaci&oacute;n es material, se solicitar&aacute; una nueva aceptaci&oacute;n al Cliente en el siguiente ingreso a la plataforma.</p>
 
     <h2>14. Ley aplicable y jurisdicci&oacute;n</h2>
-    <p>Esta Pol&iacute;tica de Uso se rige por las leyes de la <strong>Rep&uacute;blica Argentina</strong>. Toda controversia que no pueda resolverse de manera amigable ser&aacute; sometida a la jurisdicci&oacute;n de los tribunales ordinarios con asiento en la Ciudad de Neuqu&eacute;n, Provincia de Neuqu&eacute;n, renunciando las partes a cualquier otro fuero o jurisdicci&oacute;n que pudiera corresponderles.</p>
+    <p>Esta Pol&iacute;tica de Uso se rige por las leyes de la <strong>Rep&uacute;blica Argentina</strong>. Toda controversia que no pueda resolverse de manera amigable ser&aacute; sometida a la jurisdicci&oacute;n de los tribunales ordinarios con asiento en la Ciudad de Puerto Madryn, Provincia del Chubut, renunciando las partes a cualquier otro fuero o jurisdicci&oacute;n que pudiera corresponderles.</p>
 
     <h2>15. Contacto</h2>
-    <p>Para consultas, reclamos o ejercicio de derechos, escribir a <strong>chucky9425@gmail.com</strong>.</p>
+    <p>Para consultas, reclamos o ejercicio de derechos, utilizar el ${CONTACTO_HTML}.</p>
 
   </div>
 </main>
@@ -217,7 +221,7 @@ ${navHtml()}
   <div class="wrap">
     <span class="tag">Documento legal</span>
     <h1>Pol&iacute;tica de Privacidad</h1>
-    <p class="meta">Versi&oacute;n ${POLITICAS_VERSION} &middot; Vigente desde el 4 de junio de 2026</p>
+    <p class="meta">Versi&oacute;n ${POLITICAS_VERSION} &middot; Vigente desde el 30 de julio de 2026</p>
   </div>
 </header>
 
@@ -227,7 +231,7 @@ ${navHtml()}
     <p>Esta Pol&iacute;tica de Privacidad describe c&oacute;mo <strong>ActivaQR</strong> recolecta, utiliza, almacena y protege los datos personales que trata en el marco de la prestaci&oacute;n del servicio. Se ajusta a la <strong>Ley 25.326 de Protecci&oacute;n de los Datos Personales</strong> de la Rep&uacute;blica Argentina y su reglamentaci&oacute;n vigente.</p>
 
     <h2>1. Responsable del tratamiento</h2>
-    <p>El responsable del tratamiento de los datos personales recolectados a trav&eacute;s de la plataforma es el titular del proyecto ActivaQR, con domicilio en la Provincia de Neuqu&eacute;n, Rep&uacute;blica Argentina, contactable al correo <strong>chucky9425@gmail.com</strong>.</p>
+    <p>El responsable del tratamiento de los datos personales recolectados a trav&eacute;s de la plataforma es el titular del proyecto ActivaQR, con domicilio en la Ciudad de Puerto Madryn, Provincia del Chubut, Rep&uacute;blica Argentina, contactable mediante el ${CONTACTO_HTML}.</p>
 
     <h2>2. Datos que recolectamos</h2>
 
@@ -255,7 +259,7 @@ ${navHtml()}
     </ul>
 
     <h3>2.4. Datos de pago</h3>
-    <p>ActivaQR <strong>no almacena</strong> n&uacute;meros de tarjetas, c&oacute;digos de seguridad ni datos de cuentas bancarias. El procesamiento de pagos se realiza ntegramente en <strong>Mercado Pago</strong> y <strong>Stripe</strong>, que act&uacute;an como encargados del tratamiento de esos datos bajo sus propias pol&iacute;ticas. Nuestro sistema solamente almacena el identificador del &laquo;preapproval&raquo; o la suscripci&oacute;n correspondiente, el estado y el monto.</p>
+    <p>ActivaQR <strong>no almacena</strong> n&uacute;meros de tarjetas, c&oacute;digos de seguridad ni datos de cuentas bancarias. El procesamiento de pagos se realiza &iacute;ntegramente en <strong>Mercado Pago</strong> y <strong>Stripe</strong>, que act&uacute;an como encargados del tratamiento de esos datos bajo sus propias pol&iacute;ticas. Nuestro sistema solamente almacena el identificador del &laquo;preapproval&raquo; o la suscripci&oacute;n correspondiente, el estado y el monto.</p>
 
     <h2>3. Finalidades del tratamiento</h2>
     <p>Tratamos los datos personales con las siguientes finalidades:</p>
@@ -303,7 +307,7 @@ ${navHtml()}
       <li>Oponerse al tratamiento de los datos para finalidades no esenciales.</li>
       <li>Revocar el consentimiento prestado, sin efecto retroactivo.</li>
     </ul>
-    <p>Para ejercer estos derechos, enviar una solicitud al correo <strong>chucky9425@gmail.com</strong> indicando la operaci&oacute;n requerida y acompa&ntilde;ando una identificaci&oacute;n razonable. Responderemos dentro de los plazos legales.</p>
+    <p>Para ejercer estos derechos, iniciar la solicitud mediante el ${CONTACTO_HTML} e indicar la operaci&oacute;n requerida. ActivaQR solicitar&aacute; una verificaci&oacute;n razonable de identidad antes de procesarla y responder&aacute; dentro de los plazos legales.</p>
     <p>El titular puede tambi&eacute;n presentar reclamos ante la <strong>Agencia de Acceso a la Informaci&oacute;n P&uacute;blica</strong>, autoridad de aplicaci&oacute;n de la Ley 25.326 en la Rep&uacute;blica Argentina.</p>
 
     <h2>9. Seguridad</h2>
@@ -330,7 +334,7 @@ ${navHtml()}
     <p>ActivaQR puede actualizar esta Pol&iacute;tica de Privacidad. Las modificaciones materiales se comunicar&aacute;n al admin de la cuenta por correo electr&oacute;nico y se publicar&aacute;n en esta p&aacute;gina con una nueva versi&oacute;n. Cuando corresponda, solicitaremos al Cliente una nueva aceptaci&oacute;n antes de continuar utilizando la plataforma.</p>
 
     <h2>13. Contacto</h2>
-    <p>Para consultas relacionadas con esta Pol&iacute;tica de Privacidad o con el tratamiento de datos personales, escribir a <strong>chucky9425@gmail.com</strong>.</p>
+    <p>Para consultas relacionadas con esta Pol&iacute;tica de Privacidad o con el tratamiento de datos personales, utilizar el ${CONTACTO_HTML}.</p>
 
   </div>
 </main>

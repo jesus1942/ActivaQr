@@ -9,9 +9,6 @@ import { useNavigate } from 'react-router-dom';
 const LOGO = `${import.meta.env.BASE_URL}company-logo-hd.png`;      // negro (tema claro)
 const LOGO_DARK_SRC = `${import.meta.env.BASE_URL}company-logo1.png`; // blanco (tema oscuro)
 
-const DEMO_EMAIL = 'demo@activaqr.com';
-const DEMO_PASS = 'demo1234';
-
 function isDemoParam() {
   const hash = window.location.hash; // e.g. #/login?demo=1
   return hash.includes('demo=1');
@@ -37,7 +34,7 @@ function parametrosCampana() {
 }
 
 export const Login: React.FC = () => {
-  const { login, registro } = useAuth();
+  const { login, demoLogin, registro } = useAuth();
   const navigate = useNavigate();
   const isDemo = isDemoParam();
   const [vistaRegistro, setVistaRegistro] = useState(isRegistroParam());
@@ -77,16 +74,29 @@ export const Login: React.FC = () => {
       setRegCargando(false);
     }
   };
-  const [email, setEmail] = useState(isDemo ? DEMO_EMAIL : '');
-  const [password, setPassword] = useState(isDemo ? DEMO_PASS : '');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
   const [vistaForgot, setVistaForgot] = useState(false);
+  const demoIniciada = React.useRef(false);
 
-  // Si llega con ?demo=1 limpiar sesión previa sin recargar la página
+  // La demo obtiene una sesión temporal desde el backend. No hay contraseña
+  // de demostración en el bundle ni en el repositorio.
   React.useEffect(() => {
-    if (isDemo) clearSession();
-  }, []);
+    if (!isDemo || demoIniciada.current) return;
+    demoIniciada.current = true;
+    clearSession();
+    setError(null);
+    setCargando(true);
+    demoLogin()
+      .then(() => navigate('/', { replace: true }))
+      .catch((err) => {
+        demoIniciada.current = false;
+        setError(err instanceof Error ? err.message : 'No se pudo abrir la demostración.');
+      })
+      .finally(() => setCargando(false));
+  }, [demoLogin, isDemo, navigate]);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotExito, setForgotExito] = useState(false);
   const [forgotError, setForgotError] = useState<string | null>(null);
@@ -198,6 +208,27 @@ export const Login: React.FC = () => {
                 </button>
               </div>
             </form>
+          ) : isDemo ? (
+            <div className="space-y-4 text-center">
+              <p className="text-sm text-muted">
+                {cargando ? 'Preparando una sesión temporal segura…' : 'No se pudo abrir la demostración.'}
+              </p>
+              {error && (
+                <div className="bg-danger/10 text-danger-strong dark:text-danger text-sm px-3.5 py-2.5 rounded-md font-medium">
+                  {error}
+                </div>
+              )}
+              {!cargando && (
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="press w-full flex items-center justify-center gap-2 bg-brand-600 text-white h-12 font-display font-bold text-lg rounded-md shadow-soft hover:bg-brand-700 transition-all"
+                >
+                  <LogIn size={20} />
+                  Reintentar demo
+                </button>
+              )}
+            </div>
           ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -263,7 +294,7 @@ export const Login: React.FC = () => {
           </form>
           )}
 
-          {!vistaRegistro && !vistaForgot && (
+          {!isDemo && !vistaRegistro && !vistaForgot && (
             <div className="mt-4 border-t border-line pt-4 text-center">
               <p className="text-xs text-faint mb-3">Técnicos y operadores de campo ingresan con el mismo formulario usando las credenciales que les asignó el administrador.</p>
               <p className="text-xs text-muted mb-2">¿No tenés cuenta todavía?</p>

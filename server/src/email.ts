@@ -4,6 +4,8 @@
  * Si no está configurada, las funciones retornan sin error (modo silencioso).
  */
 
+const DEFAULT_FROM = 'ActivaQR <avisos@activaqr.net>';
+
 export function emailConfigurado(): boolean {
   return !!process.env.RESEND_API_KEY;
 }
@@ -137,7 +139,7 @@ export async function enviarEmailSuscripcion(params: {
   if (!emailConfigurado()) return;
 
   const resend = getResend();
-  const from = process.env.RESEND_FROM || 'ActivaQR <noreply@activaqr.com>';
+  const from = process.env.RESEND_FROM || DEFAULT_FROM;
 
   await resend.emails.send({
     from,
@@ -153,6 +155,7 @@ export interface LeadDatos {
   email: string;
   telefono?: string;
   mensaje?: string;
+  plan?: string;
 }
 
 /**
@@ -166,7 +169,7 @@ export async function enviarEmailLead(lead: LeadDatos): Promise<boolean> {
   if (!destino) return false;
 
   const resend = getResend();
-  const from = process.env.RESEND_FROM || 'ActivaQR <noreply@activaqr.com>';
+  const from = process.env.RESEND_FROM || DEFAULT_FROM;
   const esc = (v: string) => v.replace(/[&<>"']/g, (c) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
   }[c] as string));
@@ -175,6 +178,7 @@ export async function enviarEmailLead(lead: LeadDatos): Promise<boolean> {
   const email = esc(lead.email);
   const telefono = lead.telefono ? esc(lead.telefono) : undefined;
   const mensaje = lead.mensaje ? esc(lead.mensaje) : undefined;
+  const plan = lead.plan ? esc(lead.plan) : undefined;
   const fila = (k: string, v?: string) =>
     v ? `<tr><td style="padding:6px 0;font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;width:130px;vertical-align:top;">${k}</td><td style="padding:6px 0;font-size:14px;color:#0f172a;">${v}</td></tr>` : '';
 
@@ -192,10 +196,11 @@ export async function enviarEmailLead(lead: LeadDatos): Promise<boolean> {
   <span style="float:right;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;">Nuevo lead</span>
 </td></tr>
 <tr><td style="background:#fff;border:3px solid #0f172a;border-top:none;padding:28px;">
-  <h1 style="margin:0 0 18px;font-size:22px;font-weight:900;color:#0f172a;">Solicitud de acceso</h1>
+  <h1 style="margin:0 0 18px;font-size:22px;font-weight:900;color:#0f172a;">${lead.plan === 'gestionado' ? 'Consulta por Plan Gestionado' : 'Solicitud de acceso'}</h1>
   <table width="100%" cellpadding="0" cellspacing="0">
     ${fila('Nombre', nombre)}
     ${fila('Empresa', empresa)}
+    ${fila('Interés', plan)}
     ${fila('Email', `<a href="mailto:${email}" style="color:#f97316;">${email}</a>`)}
     ${fila('Teléfono', telefono)}
     ${fila('Mensaje', mensaje)}
@@ -234,7 +239,7 @@ export async function enviarEmailResetPassword(params: {
 }): Promise<void> {
   if (!emailConfigurado()) return;
   const resend = getResend();
-  const from = process.env.RESEND_FROM || 'ActivaQR <noreply@activaqr.com>';
+  const from = process.env.RESEND_FROM || DEFAULT_FROM;
   const esAdminReset = params.motivo === 'admin-reset';
   const subject = esAdminReset
     ? 'Tu contrasena fue reseteada — ActivaQR'
@@ -287,7 +292,7 @@ export async function enviarEmailAccesoRemoto(params: {
 }): Promise<void> {
   if (!emailConfigurado()) return;
   const resend = getResend();
-  const from = process.env.RESEND_FROM || 'ActivaQR <noreply@activaqr.com>';
+  const from = process.env.RESEND_FROM || DEFAULT_FROM;
   const costoTexto = params.costoMensual
     ? `<p style="margin:0 0 20px;font-size:13px;color:#475569;">Este servicio tiene un costo adicional de <strong style="color:#0f172a;">$${params.costoMensual.toLocaleString('es-AR')} ARS/mes</strong> que se sumará a tu suscripción.</p>`
     : '';
@@ -342,7 +347,7 @@ export async function enviarEmailAltaTrial(params: {
   if (!destino) return false;
 
   const resend = getResend();
-  const from = process.env.RESEND_FROM || 'ActivaQR <noreply@activaqr.com>';
+  const from = process.env.RESEND_FROM || DEFAULT_FROM;
   const vence = params.trialFin.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   const fila = (k: string, v?: string | null) =>
     v ? `<tr><td style="padding:6px 0;font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;width:130px;vertical-align:top;">${k}</td><td style="padding:6px 0;font-size:14px;color:#0f172a;">${v}</td></tr>` : '';

@@ -57,6 +57,7 @@ import { PanelAccesoRemoto } from '../components/PanelAccesoRemoto';
 import { NotificacionesPush } from '../components/NotificacionesPush';
 import { apiFetch } from '../data/auth';
 import { DialogViewport } from '../components/ui/DialogViewport';
+import { CotizadorPlanGestionado } from '../components/CotizadorPlanGestionado';
 
 const PLANES = ['inicial', 'empresa', 'industrial'] as const;
 
@@ -99,7 +100,7 @@ type Moneda = 'ARS' | 'USD' | 'UYU';
 const ModalCobro: React.FC<{
   empresa: EmpresaAdmin;
   onClose: () => void;
-  onSuscripcion: (monto: number, emailOverride?: string) => Promise<void>;
+  onSuscripcion: (emailOverride?: string) => Promise<void>;
   onLinkPago: (monto: number, descripcion: string) => Promise<void>;
   onStripeSuscripcion: (monto: number, moneda: 'usd' | 'uyu') => Promise<void>;
   onStripeLinkPago: (monto: number, moneda: 'usd' | 'uyu', descripcion: string) => Promise<void>;
@@ -114,11 +115,15 @@ const ModalCobro: React.FC<{
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!monto || Number(monto) <= 0) { setErr('Ingresá un monto válido.'); return; }
+    const importeAutomatico = moneda === 'ARS' && modo === 'suscripcion';
+    if (!importeAutomatico && (!monto || Number(monto) <= 0)) {
+      setErr('Ingresá un monto válido.');
+      return;
+    }
     setErr(''); setCargando(true);
     try {
       if (moneda === 'ARS') {
-        if (modo === 'suscripcion') await onSuscripcion(Number(monto), emailOverride || undefined);
+        if (modo === 'suscripcion') await onSuscripcion(emailOverride || undefined);
         else await onLinkPago(Number(monto), descripcion);
       } else {
         const m = moneda.toLowerCase() as 'usd' | 'uyu';
@@ -137,7 +142,7 @@ const ModalCobro: React.FC<{
       ? `Genera un link de suscripcion mensual por Stripe (${moneda}). Acepta tarjetas internacionales.`
       : `Genera un link de pago unico por Stripe (${moneda}). Acepta tarjetas internacionales.`
     : modo === 'suscripcion'
-      ? 'Genera un link de suscripcion recurrente mensual por Mercado Pago. El cliente debe tener cuenta MP.'
+      ? `Genera la suscripción recurrente del plan ${empresa.plan} en USD y Mercado Pago cobra automáticamente su equivalente en ARS al dólar MEP.`
       : 'Genera un link de pago unico. Acepta tarjeta, Prex, transferencia y cualquier medio — sin cuenta MP.';
 
   return (
@@ -179,18 +184,27 @@ const ModalCobro: React.FC<{
           <p className="text-xs text-muted font-semibold">{infoTexto}</p>
         </div>
 
-        <Field label={`Monto (${moneda})`} hint={modo === 'suscripcion' ? 'Se debitará automáticamente cada mes' : 'Pago por única vez'}>
-          <input
-            type="number"
-            min="1"
-            required
-            value={monto}
-            onChange={(e) => setMonto(e.target.value)}
-            placeholder={moneda === 'ARS' ? 'Ej: 15000' : 'Ej: 50'}
-            className={inputCls}
-            autoFocus
-          />
-        </Field>
+        {moneda === 'ARS' && modo === 'suscripcion' ? (
+          <div className="border border-line bg-subtle px-4 py-3">
+            <p className="text-xs font-black uppercase tracking-wider text-muted">Precio automático</p>
+            <p className="text-sm font-semibold text-content mt-1">
+              Plan {empresa.plan.toUpperCase()} · expresado en USD · cobrado en ARS al MEP vendedor vigente
+            </p>
+          </div>
+        ) : (
+          <Field label={`Monto (${moneda})`} hint={modo === 'suscripcion' ? 'Se debitará automáticamente cada mes' : 'Pago por única vez'}>
+            <input
+              type="number"
+              min="1"
+              required
+              value={monto}
+              onChange={(e) => setMonto(e.target.value)}
+              placeholder={moneda === 'ARS' ? 'Ej: 15000' : 'Ej: 50'}
+              className={inputCls}
+              autoFocus
+            />
+          </Field>
+        )}
 
         {moneda === 'ARS' && modo === 'suscripcion' && (
           <Field label="Email MP del cliente (opcional)" hint="Solo necesario si el email registrado no tiene cuenta MP">
@@ -500,9 +514,9 @@ export const Admin: React.FC = () => {
 
   const suscribir = (emp: EmpresaAdmin) => setModalCobro(emp);
 
-  const handleSuscripcion = async (monto: number, emailOverride?: string) => {
+  const handleSuscripcion = async (emailOverride?: string) => {
     if (!modalCobro) return;
-    const res = await generarSuscripcion(modalCobro.id, monto, emailOverride);
+    const res = await generarSuscripcion(modalCobro.id, emailOverride);
     const initPoint = res.initPoint;
     await navigator.clipboard?.writeText(initPoint).catch(() => {});
     const mensajeWa = `Hola! Te enviamos el link para activar tu suscripcion en *ActivaQR*:\n\n${initPoint}\n\nCualquier consulta estamos a disposicion.`;
@@ -709,6 +723,8 @@ export const Admin: React.FC = () => {
       </div>
 
       <NotificacionesPush />
+
+      <CotizadorPlanGestionado empresas={empresas} />
 
       {/* Barra de búsqueda */}
       <div className="relative">

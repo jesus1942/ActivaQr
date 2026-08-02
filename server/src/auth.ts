@@ -1,9 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { randomBytes } from 'crypto';
 import { prisma } from './prisma';
 import { faseTrial } from './trial';
 
-const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? (() => { throw new Error('JWT_SECRET is required in production'); })() : 'activaqr-dev-secret-local');
+function resolverJwtSecret(): string {
+  const configurado = process.env.JWT_SECRET?.trim();
+  if (configurado) return configurado;
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET is required in production');
+  }
+  console.warn('[auth] JWT_SECRET no configurada: se usa una clave efimera solo para desarrollo.');
+  return randomBytes(32).toString('hex');
+}
+
+const JWT_SECRET = resolverJwtSecret();
 export const TOKEN_TTL = '7d';
 export const DEMO_TOKEN_TTL = '2h';
 
@@ -56,20 +67,31 @@ async function validarUsuarioActual(payload: TokenPayload): Promise<TokenPayload
   return payload;
 }
 
-export async function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
+async function autenticarRequest(
+  req: Request,
+  res: Response,
+): Promise<TokenPayload | null> {
   const token = leerToken(req);
   const payload = token ? verificarToken(token) : null;
   if (!payload) {
-    return res.status(401).json({ error: 'No autorizado. Iniciá sesión.' });
+    res.status(401).json({ error: 'No autorizado. Iniciá sesión.' });
+    return null;
   }
+  const actual = await validarUsuarioActual(payload);
+  if (!actual) {
+    res.status(401).json({
+      code: 'sesion_revocada',
+      error: 'La sesión fue revocada o tus permisos cambiaron. Iniciá sesión nuevamente.',
+    });
+    return null;
+  }
+  return actual;
+}
+
+export async function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const actual = await validarUsuarioActual(payload);
-    if (!actual) {
-      return res.status(401).json({
-        code: 'sesion_revocada',
-        error: 'La sesión fue revocada o tus permisos cambiaron. Iniciá sesión nuevamente.',
-      });
-    }
+    const actual = await autenticarRequest(req, res);
+    if (!actual) return;
     req.auth = actual;
     next();
   } catch (error) {
@@ -87,19 +109,9 @@ export async function requireAuthAndActiveEmpresa(
   res: Response,
   next: NextFunction
 ) {
-  const token = leerToken(req);
-  const payload = token ? verificarToken(token) : null;
-  if (!payload) {
-    return res.status(401).json({ error: 'No autorizado. Iniciá sesión.' });
-  }
   try {
-    const actual = await validarUsuarioActual(payload);
-    if (!actual) {
-      return res.status(401).json({
-        code: 'sesion_revocada',
-        error: 'La sesión fue revocada o tus permisos cambiaron. Iniciá sesión nuevamente.',
-      });
-    }
+    const actual = await autenticarRequest(req, res);
+    if (!actual) return;
     req.auth = actual;
 
     // Superadmin: siempre pasa.

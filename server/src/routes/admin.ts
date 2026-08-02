@@ -10,6 +10,10 @@ import { enviarEmailSuscripcion, enviarEmailResetPassword } from '../email';
 import { generarResetToken } from '../resetTokens';
 import { enviarLinkRecuperacion, notificarAdminRecuperacion } from '../telegram';
 import { enviarPushAEmpresa } from '../push';
+import { calcularPrecioPlanActual } from '../cotizacion';
+import type { PlanId } from '../planCatalog';
+import { POLITICAS_VERSION } from '../politicas';
+import { APP_PUBLIC_URL, MP_BACK_URL } from '../urls';
 
 const router = Router();
 
@@ -179,8 +183,7 @@ router.post('/empresas/:id/reset-password', async (req: AuthRequest, res: Respon
     });
 
     // 4. Notificar al cliente con motivo "admin-reset"
-    const appPublicUrl = process.env.APP_PUBLIC_URL || 'https://activaqr.net/';
-    const resetUrl = `${appPublicUrl}#/reset-password?token=${resetToken}`;
+    const resetUrl = `${APP_PUBLIC_URL}#/reset-password?token=${resetToken}`;
     let canalUsado: 'telegram' | 'email' | 'admin-fallback' = 'email';
 
     if (admin.telegramChatId) {
@@ -241,11 +244,7 @@ router.post('/empresas/:id/suscripcion', async (req: AuthRequest, res: Response,
       });
     }
 
-    const { monto, payerEmailOverride } = req.body ?? {};
-    const montoNum = Number(monto);
-    if (!montoNum || montoNum <= 0) {
-      return res.status(400).json({ error: 'Indicá un monto mensual válido.' });
-    }
+    const { payerEmailOverride } = req.body ?? {};
 
     const empresa = await prisma.empresa.findUnique({
       where: { id: req.params.id },
@@ -253,10 +252,13 @@ router.post('/empresas/:id/suscripcion', async (req: AuthRequest, res: Response,
     });
     if (!empresa) return res.status(404).json({ error: 'Empresa no encontrada.' });
 
-    if (!empresa.politicasAceptadasEn) {
+    if (
+      !empresa.politicasAceptadasEn ||
+      empresa.politicasVersion !== POLITICAS_VERSION
+    ) {
       return res.status(409).json({
         code: 'politicas_no_aceptadas',
-        error: 'La empresa todavia no acepto la Politica de Uso y Privacidad. El admin debe aceptarlas desde su panel antes de generar el link de pago.',
+        error: 'La empresa todavía no aceptó la versión vigente de la Política de Uso y Privacidad. El admin debe aceptarla desde su panel antes de generar el link de pago.',
       });
     }
 
@@ -268,19 +270,33 @@ router.post('/empresas/:id/suscripcion', async (req: AuthRequest, res: Response,
       return res.status(400).json({ error: 'La empresa no tiene un administrador con email.' });
     }
 
-    const backUrl = process.env.MP_BACK_URL || 'https://activaqr.net/';
+    const backUrl = MP_BACK_URL;
+    const cantidadActivos = await prisma.activo.count({ where: { empresaId: empresa.id } });
+    const precio = await calcularPrecioPlanActual(
+      empresa.plan as PlanId,
+      cantidadActivos,
+      { forzarCotizacion: true },
+    );
 
     const pre = await crearPreapproval({
       empresaId: empresa.id,
       payerEmail,
-      monto: montoNum,
-      razon: `Suscripción ActivaQR — ${empresa.nombre}`,
+      monto: precio.montoArs,
+      razon: `ActivaQR ${empresa.plan} — USD ${precio.montoUsd} al MEP`,
       backUrl,
     });
 
     await prisma.empresa.update({
       where: { id: empresa.id },
-      data: { mpPreapprovalId: pre.id, mpEstadoSub: pre.status, mpMonto: montoNum },
+      data: {
+        mpPreapprovalId: pre.id,
+        mpEstadoSub: pre.status,
+        mpMonto: precio.montoArs,
+        mpMontoUsd: precio.montoUsd,
+        mpCotizacionUsdArs: precio.cotizacion.venta,
+        mpCotizacionFuente: precio.cotizacion.fuente,
+        mpCotizacionActualizadaEn: new Date(),
+      },
     });
 
     // Enviar email con el link de pago (si Resend está configurado)
@@ -289,10 +305,17 @@ router.post('/empresas/:id/suscripcion', async (req: AuthRequest, res: Response,
       empresaNombre: empresa.nombre,
       adminNombre: empresa.usuarios[0]?.nombre ?? '',
       linkPago: pre.init_point,
-      monto: montoNum,
+      monto: precio.montoArs,
     }).catch(() => {}); // silencioso si falla el email
 
-    res.json({ initPoint: pre.init_point, preapprovalId: pre.id, emailEnviado: true });
+    res.json({
+      initPoint: pre.init_point,
+      preapprovalId: pre.id,
+      emailEnviado: true,
+      montoArs: precio.montoArs,
+      montoUsd: precio.montoUsd,
+      cotizacionMep: precio.cotizacion.venta,
+    });
   } catch (err) {
     next(err);
   }
@@ -317,7 +340,7 @@ router.post('/empresas/:id/link-pago', async (req: AuthRequest, res: Response, n
       return res.status(409).json({ code: 'politicas_no_aceptadas', error: 'La empresa todavia no acepto la Politica de Uso y Privacidad.' });
     }
 
-    const backUrl = process.env.MP_BACK_URL || 'https://activaqr.net/';
+    const backUrl = MP_BACK_URL;
     const desc = descripcion || `Pago ActivaQR — ${empresa.nombre}`;
     const payerEmail = empresa.usuarios[0]?.email;
 
@@ -344,7 +367,7 @@ router.post('/empresas/:id/stripe-suscripcion', async (req: AuthRequest, res: Re
       return res.status(409).json({ code: 'politicas_no_aceptadas', error: 'La empresa todavia no acepto la Politica de Uso y Privacidad.' });
     }
 
-    const backUrl = process.env.APP_PUBLIC_URL || 'https://activaqr.net/';
+    const backUrl = APP_PUBLIC_URL;
     const result = await crearStripeSubscripcion({
       empresaId: empresa.id,
       monto: montoNum,
@@ -375,7 +398,7 @@ router.post('/empresas/:id/stripe-link-pago', async (req: AuthRequest, res: Resp
       return res.status(409).json({ code: 'politicas_no_aceptadas', error: 'La empresa todavia no acepto la Politica de Uso y Privacidad.' });
     }
 
-    const backUrl = process.env.APP_PUBLIC_URL || 'https://activaqr.net/';
+    const backUrl = APP_PUBLIC_URL;
     const desc = descripcion || `Pago ActivaQR — ${empresa.nombre}`;
     const result = await crearStripePagoUnico({ empresaId: empresa.id, monto: montoNum, moneda: moneda as 'usd' | 'uyu', descripcion: desc, backUrl });
 

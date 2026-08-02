@@ -83,7 +83,7 @@ export function renderLanding(
     ? `<section id="apoyo" class="reveal" style="background:#fff;border-top:3px solid var(--negro)">
   <div class="wrap" style="max-width:760px">
     <h2 class="titulo">Apoy&aacute; el proyecto</h2>
-    <p class="bajada">ActivaQR lo construye una persona, Jes&uacute;s, desde Neuqu&eacute;n. Cada aporte ayuda a que pueda seguir mejorando la herramienta y mantenerla accesible para las PYMES que la necesitan.</p>
+    <p class="bajada">ActivaQR lo construye una persona, Jes&uacute;s, desde Puerto Madryn, Chubut. Cada aporte ayuda a que pueda seguir mejorando la herramienta y mantenerla accesible para las PYMES que la necesitan.</p>
     <div class="apoyo-grid">${botonesApoyo}</div>
     <p style="font-size:13px;color:var(--gris-c);margin-top:20px">Si quer&eacute;s apoyar de otra manera (experiencia, contactos, feedback t&eacute;cnico), dej&aacute; tu testimonio aqu&iacute; arriba o escribinos por WhatsApp.</p>
   </div>
@@ -91,7 +91,7 @@ export function renderLanding(
     : '';
   const planes = renderPlanes(appUrl);
   const estadoContratacion = contratacionAutomatica
-    ? 'El tenant adhiere el cobro recurrente mensual desde la app mediante Mercado Pago.'
+    ? 'El tenant adhiere el cobro recurrente desde la app. Mercado Pago procesa en ARS el equivalente al dólar MEP vendedor vigente.'
     : 'Podés iniciar los 30 días de prueba sin tarjeta. La contratación se coordina con ActivaQR mientras se termina de habilitar el cobro recurrente por Mercado Pago.';
 
   return `<!DOCTYPE html>
@@ -144,20 +144,16 @@ export function renderLanding(
     "name": "Jesús Narciso Olguín",
     "address": {
       "@type": "PostalAddress",
-      "addressLocality": "Neuquén",
-      "addressRegion": "Neuquén",
+      "addressLocality": "Puerto Madryn",
+      "addressRegion": "Chubut",
       "addressCountry": "AR"
     }
   },
-  "areaServed": {
-    "@type": "GeoCircle",
-    "geoMidpoint": {
-      "@type": "GeoCoordinates",
-      "latitude": -38.9516,
-      "longitude": -68.0591
-    },
-    "geoRadius": "1000000"
-  }
+  "areaServed": [
+    { "@type": "City", "name": "Puerto Madryn" },
+    { "@type": "AdministrativeArea", "name": "Chubut" },
+    { "@type": "Country", "name": "Argentina" }
+  ]
 }
 </script>
 
@@ -627,25 +623,25 @@ export function renderLanding(
       ${planes}
     </div>
     <p id="estado-contratacion" style="text-align:center;margin-top:22px;font-size:13px;color:var(--gris)">${estadoContratacion}</p>
-    <p style="text-align:center;margin-top:10px;font-size:13px;color:var(--gris)">Los valores en USD son referencias comerciales. El monto de contratación se informa en pesos antes de confirmar. Sin costo de instalación ni permanencia mínima.</p>
+    <p style="text-align:center;margin-top:10px;font-size:13px;color:var(--gris)">Los planes se expresan en USD. Mercado Pago cobra en ARS al dólar MEP vendedor vigente y el equivalente se actualiza automáticamente. Sin costo de instalación ni permanencia mínima.</p>
   </div>
 </section>
 
 <section id="servicio" class="reveal" style="background:#0f172a;border-top:3px solid var(--negro);border-bottom:3px solid var(--negro)">
   <div class="wrap">
-    <h2 class="titulo" style="color:#fff">¿No tenés tiempo de cargar las mediciones?</h2>
-    <p class="bajada" style="color:#94a3b8">Nosotros nos encargamos. Vos recibís el informe.</p>
+    <h2 class="titulo" style="color:#fff">¿Querés que tomemos las mediciones por vos?</h2>
+    <p class="bajada" style="color:#94a3b8">Sumá el Plan Gestionado a tu suscripción. Nosotros relevamos; vos recibís la información.</p>
     <div style="background:#fff;border:3px solid var(--naranja);box-shadow:6px 6px 0 var(--naranja);padding:32px;max-width:760px;margin:0 auto">
-      <p style="font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:14px">Servicio gestionado de mantenimiento</p>
+      <p style="font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--naranja);margin-bottom:14px">Plan Gestionado · Cotización personalizada</p>
       <p style="font-size:17px;color:var(--negro);line-height:1.6;margin-bottom:20px">
-        Combinás el software con nuestra visita técnica mensual. Un especialista va a tu planta,
-        toma las mediciones de cada equipo, el sistema evalúa automáticamente las alertas, y al otro día
-        recibís un <strong>informe profesional en PDF</strong> listo para auditorías o tus propios clientes.
+        Es un servicio adicional a la suscripción de software. Acordamos la frecuencia, relevamos los
+        equipos en planta, cargamos las mediciones en ActivaQR y entregamos un
+        <strong>informe profesional en PDF</strong> listo para auditorías o tus propios clientes.
       </p>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:8px" class="servicio-grid">
         <div style="border:2px solid #e2e8f0;padding:16px">
-          <p style="font-weight:900;font-size:15px;margin-bottom:4px">Visita mensual in situ</p>
-          <p style="font-size:13px;color:var(--gris)">Mediciones tomadas por un técnico, sin que muevas a nadie de tu equipo.</p>
+          <p style="font-weight:900;font-size:15px;margin-bottom:4px">Frecuencia a medida</p>
+          <p style="font-size:13px;color:var(--gris)">Definimos visitas según cantidad de equipos, criticidad y ubicación.</p>
         </div>
         <div style="border:2px solid #e2e8f0;padding:16px">
           <p style="font-weight:900;font-size:15px;margin-bottom:4px">Informe automático</p>
@@ -656,8 +652,8 @@ export function renderLanding(
           <p style="font-size:13px;color:var(--gris)">Si algo se sale de rango antes de la visita, te avisamos por WhatsApp.</p>
         </div>
       </div>
-      <p style="font-size:13px;color:var(--gris-c);margin-top:18px">Ideal para talleres, contratistas y plantas que quieren trazabilidad sin sumar carga administrativa.</p>
-      <a class="btn btn-naranja" href="#contacto" style="margin-top:20px">Quiero que se encarguen</a>
+      <p style="font-size:13px;color:var(--gris-c);margin-top:18px">El abono se cotiza aparte según equipos, horas de campo, frecuencia, distancia y viáticos. La suscripción de ActivaQR se factura por separado.</p>
+      <a class="btn btn-naranja" href="#contacto" data-plan-contacto="gestionado" style="margin-top:20px">Solicitar cotización</a>
     </div>
   </div>
 </section>
@@ -668,6 +664,7 @@ export function renderLanding(
     <p class="bajada">Dejanos tus datos y te contactamos para activar tu cuenta y elegir el plan que mejor te queda.</p>
     <div class="form-box">
       <form id="leadForm">
+        <input id="leadPlan" name="plan" type="hidden" />
         <label for="nombre">Nombre y apellido</label>
         <input id="nombre" name="nombre" required placeholder="Tu nombre" />
         <label for="empresa">Empresa</label>
@@ -712,7 +709,7 @@ ${seccionApoyo}
       email: this.email.value.trim(),
       telefono: this.telefono.value.trim(),
       mensaje: this.mensaje.value.trim(),
-      plan: new URLSearchParams(window.location.search).get('plan'),
+      plan: this.plan.value || new URLSearchParams(window.location.search).get('plan'),
       atribucion: {
         source: new URLSearchParams(window.location.search).get('utm_source'),
         medium: new URLSearchParams(window.location.search).get('utm_medium'),
@@ -747,6 +744,16 @@ ${seccionApoyo}
       btn.disabled = false; btn.textContent = 'Solicitar acceso';
     }
   });
+
+  document.querySelectorAll('[data-plan-contacto]').forEach(function(enlace){
+    enlace.addEventListener('click', function(){
+      var plan = enlace.getAttribute('data-plan-contacto') || '';
+      document.getElementById('leadPlan').value = plan;
+      if(plan === 'gestionado'){
+        document.getElementById('mensaje').value = 'Quiero cotizar la toma y carga de mediciones. Cantidad aproximada de equipos: ';
+      }
+    });
+  });
 </script>
 
 <script>
@@ -760,7 +767,7 @@ ${seccionApoyo}
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(data){
       if(data && data.mercadoPagoHabilitado){
-        estado.textContent = 'El tenant adhiere el cobro recurrente mensual desde la app mediante Mercado Pago.';
+        estado.textContent = 'El tenant adhiere el cobro recurrente desde la app. Mercado Pago procesa en ARS el equivalente al dólar MEP vendedor vigente.';
       }
     })
     .catch(function(){});

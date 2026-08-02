@@ -32,19 +32,8 @@ export const PLANES = {
 
 export const PLAN_IDS = Object.keys(PLANES) as PlanId[];
 
-const PRECIO_ENV: Record<PlanId, string> = {
-  inicial: 'ACTIVAQR_PRECIO_INICIAL_ARS',
-  empresa: 'ACTIVAQR_PRECIO_EMPRESA_ARS',
-  industrial: 'ACTIVAQR_PRECIO_INDUSTRIAL_ARS',
-};
-
 export function esPlanId(value: string): value is PlanId {
   return Object.prototype.hasOwnProperty.call(PLANES, value);
-}
-
-export function precioBaseArs(plan: PlanId): number | null {
-  const value = Number(process.env[PRECIO_ENV[plan]]);
-  return Number.isFinite(value) && value > 0 ? Math.round(value) : null;
 }
 
 export function bloquesExtra(plan: PlanId, cantidadActivos: number): number {
@@ -64,4 +53,25 @@ export function precioReferenciaUsd(plan: PlanId, cantidadActivos: number): numb
   const config = PLANES[plan];
   return config.precioReferenciaUsd +
     bloquesExtra(plan, cantidadActivos) * (config.recargoPorBloqueUsd ?? 0);
+}
+
+/**
+ * Convierte el precio canónico en USD al monto que Mercado Pago recibirá en
+ * pesos. El redondeo hacia arriba evita diferencias de centavos y mantiene
+ * importes legibles sin alterar la referencia comercial en dólares.
+ */
+export function precioArsDesdeCotizacion(
+  plan: PlanId,
+  cantidadActivos: number,
+  usdArs: number,
+  redondeoArs = 100,
+): number {
+  if (!Number.isFinite(usdArs) || usdArs <= 0) {
+    throw new Error('La cotización USD/ARS no es válida.');
+  }
+  if (!Number.isInteger(redondeoArs) || redondeoArs <= 0) {
+    throw new Error('El redondeo en ARS no es válido.');
+  }
+  const importe = precioReferenciaUsd(plan, cantidadActivos) * usdArs;
+  return Math.ceil(importe / redondeoArs) * redondeoArs;
 }

@@ -1,7 +1,14 @@
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 import { prisma } from './prisma';
 import { POLITICAS_VERSION } from './politicas';
+
+export const DEMO_EMAIL = 'demo@activaqr.net';
+
+async function hashDemoNoReutilizable() {
+  return bcrypt.hash(randomBytes(32).toString('base64url'), 10);
+}
 
 async function asegurarEscenarioFrio(empresaId: string) {
   const sede = await prisma.sede.findFirst({ where: { empresaId, nombre: 'Buque factoría Austral I' } })
@@ -111,7 +118,6 @@ async function asegurarEscenarioFrio(empresaId: string) {
 }
 
 export async function seedDemo() {
-  const DEMO_EMAIL = 'demo@activaqr.com';
   const DEMO_EMPRESA = 'Demo ActivaQR';
 
   const existingUser = await prisma.usuario.findUnique({
@@ -119,8 +125,14 @@ export async function seedDemo() {
     include: { empresa: true },
   });
   // Si la empresa demo ya existe, forzar politicas aceptadas para que el modal
-  // legal no interrumpa la experiencia demo.
+  // legal no interrumpa la experiencia demo. La contraseña se rota en cada
+  // arranque: el acceso público se emite desde /api/auth/demo y nunca depende
+  // de una credencial incluida en el repositorio.
   if (existingUser?.empresa) {
+    await prisma.usuario.update({
+      where: { id: existingUser.id },
+      data: { passwordHash: await hashDemoNoReutilizable(), activo: true },
+    });
     if (!existingUser.empresa.politicasAceptadasEn ||
         existingUser.empresa.politicasVersion !== POLITICAS_VERSION) {
       await prisma.empresa.update({
@@ -140,7 +152,7 @@ export async function seedDemo() {
     await prisma.usuario.delete({ where: { id: existingUser.id } });
   }
 
-  const passwordHash = await bcrypt.hash('demo1234', 10);
+  const passwordHash = await hashDemoNoReutilizable();
 
   const empresa = await prisma.empresa.create({
     data: {

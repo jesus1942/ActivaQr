@@ -17,6 +17,11 @@ export const SubscriptionCheckout: React.FC<{
 }> = ({ empresaNombre, planInicial = 'inicial', compact = false }) => {
   const [planes, setPlanes] = useState<PlanComercial[]>([]);
   const [mpConfigurado, setMpConfigurado] = useState(false);
+  const [cotizacion, setCotizacion] = useState<{
+    venta: number;
+    fuente: string;
+    fecha: string;
+  } | null>(null);
   const [seleccion, setSeleccion] = useState(planInicial);
   const [cargando, setCargando] = useState(true);
   const [pagando, setPagando] = useState(false);
@@ -27,6 +32,7 @@ export const SubscriptionCheckout: React.FC<{
       .then((data) => {
         setPlanes(data.planes);
         setMpConfigurado(data.mercadoPagoConfigurado);
+        setCotizacion(data.cotizacion);
       })
       .catch((e) => setError(e instanceof Error ? e.message : 'No pudimos consultar los planes.'))
       .finally(() => setCargando(false));
@@ -60,10 +66,21 @@ export const SubscriptionCheckout: React.FC<{
             className={`text-left border p-3 ${seleccion === plan.plan ? 'border-brand-500 bg-brand-50' : 'border-line bg-surface'}`}>
             <span className="block font-black text-content">{plan.nombre}</span>
             <span className="block text-sm font-bold text-content">USD {plan.precioReferenciaUsd} / mes</span>
+            {plan.precioArs && (
+              <span className="block text-xs font-semibold text-content">
+                Hoy: ARS {plan.precioArs.toLocaleString('es-AR')}
+              </span>
+            )}
             <span className="block text-xs text-muted">{alcance(plan)}</span>
           </button>
         ))}
       </div>
+      {cotizacion && (
+        <p className="text-xs text-muted">
+          El cobro se procesa en ARS al dólar MEP vendedor vigente
+          ({cotizacion.venta.toLocaleString('es-AR')} ARS/USD). El equivalente se actualiza automáticamente.
+        </p>
+      )}
       {puedePagar ? (
         <button type="button" onClick={pagar} disabled={pagando}
           className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-brand-600 text-white font-black uppercase border border-line disabled:opacity-50">

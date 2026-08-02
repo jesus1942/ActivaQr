@@ -42,15 +42,14 @@ import { fallasRouter, fallasPublicRouter } from './routes/fallas';
 import { seedDemo } from './seedDemo';
 import { renderLanding } from './landing';
 import { mpConfigurado } from './mercadopago';
-import { PLAN_IDS, precioBaseArs } from './planCatalog';
 import { renderPoliticaUso, renderPoliticaPrivacidad, POLITICAS_VERSION } from './politicas';
+import { APP_PUBLIC_URL, SITE_PUBLIC_URL } from './urls';
 import { enviarEmailLead } from './email';
 import { prisma } from './prisma';
+import { obtenerCotizacionMep } from './cotizacion';
+import { iniciarSincronizadorPrecios } from './sincronizarPrecios';
 
 const app = express();
-
-const contratacionAutomaticaConfigurada = () =>
-  mpConfigurado() && PLAN_IDS.every((plan) => precioBaseArs(plan) !== null);
 
 // Railway pone un proxy delante: sin esto, req.ip es la IP del proxy y los
 // rate limits se comparten entre todos los usuarios en vez de ser por visitante.
@@ -92,6 +91,7 @@ app.use(cors({
 
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: 'Demasiados intentos. Intentá en 15 minutos.' } });
 app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/demo', authLimiter);
 app.use('/api/auth/forgot-password', authLimiter);
 app.use('/api/auth/reset-password', authLimiter);
 
@@ -123,7 +123,6 @@ const visitasLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, message: { erro
 app.use(express.json({ limit: '10mb' }));
 
 // Landing pública en la raíz.
-const APP_PUBLIC_URL = process.env.APP_PUBLIC_URL || 'https://activaqr.net/';
 app.get('/', (req, res) => {
   // Registrar visita a la landing (fire-and-forget, nunca demora la página).
   registrarVisita(req, 'landing').catch(() => {});
@@ -132,7 +131,7 @@ app.get('/', (req, res) => {
     cafecito: process.env.APOYO_CAFECITO_URL,
     mp: process.env.APOYO_MP_URL,
     stripe: process.env.APOYO_STRIPE_URL,
-  }, contratacionAutomaticaConfigurada()));
+  }, false));
 });
 
 // Paginas legales publicas: requisito para aceptacion previa al pago.
@@ -157,8 +156,24 @@ app.get('/api/health', async (_req, res) => {
 
 // Estado público, sin exponer credenciales ni importes internos. La landing
 // estática lo consulta para no prometer un checkout que aún no está habilitado.
-app.get('/api/contratacion/estado', (_req, res) => {
-  res.json({ mercadoPagoHabilitado: contratacionAutomaticaConfigurada() });
+app.get('/api/contratacion/estado', async (_req, res) => {
+  if (!mpConfigurado()) {
+    return res.json({ mercadoPagoHabilitado: false, cotizacion: null });
+  }
+  try {
+    const cotizacion = await obtenerCotizacionMep();
+    res.json({
+      mercadoPagoHabilitado: true,
+      cotizacion: {
+        tipo: 'MEP',
+        venta: cotizacion.venta,
+        fuente: cotizacion.fuente,
+        fecha: cotizacion.fechaFuente,
+      },
+    });
+  } catch {
+    res.json({ mercadoPagoHabilitado: false, cotizacion: null });
+  }
 });
 
 app.get('/api/politicas/version', (_req, res) => {
@@ -189,7 +204,7 @@ app.post('/api/leads', leadsLimiter, async (req: Request, res: Response) => {
     },
   });
   try {
-    await enviarEmailLead({ nombre, empresa, email, telefono, mensaje });
+    await enviarEmailLead({ nombre, empresa, email, telefono, mensaje, plan });
   } catch (e) {
     console.error('[LEAD] error enviando email:', e);
   }
@@ -235,7 +250,7 @@ app.post('/api/telegram/webhook', express.json(), async (req: Request, res: Resp
 });
 
 // SEO: sitemap y robots
-const SITE_URL = process.env.APP_PUBLIC_URL?.replace(/\/$/, '').replace('github.io/ActivaQr', 'railway.app').replace('jesus1942', 'activaqr-production') || 'https://activaqr-production.up.railway.app';
+const SITE_URL = SITE_PUBLIC_URL;
 app.get('/sitemap.xml', (_req, res) => {
   const ahora = new Date().toISOString().slice(0, 10);
   res.header('Content-Type', 'application/xml');
@@ -312,6 +327,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 const PORT = Number(process.env.PORT) || 3001;
 app.listen(PORT, () => {
   console.log(`ActivaQR API escuchando en http://localhost:${PORT}`);
+  iniciarSincronizadorPrecios();
   // Seed global equipment categories if not already present.
   // Cada paso es independiente: si uno falla, los demas siguen.
   seedCategorias()

@@ -66,7 +66,7 @@ export interface PreapprovalInfo {
   status: string; // pending | authorized | paused | cancelled
   external_reference?: string;
   payer_email?: string;
-  auto_recurring?: { transaction_amount?: number };
+  auto_recurring?: { transaction_amount?: number | string };
 }
 
 export async function actualizarMontoPreapproval(id: string, monto: number, razon: string): Promise<void> {

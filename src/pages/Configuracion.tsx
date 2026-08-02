@@ -1140,7 +1140,18 @@ const PLAN_INFO: { plan: string; label: string; activos: string; tecnicos: strin
 
 const SeccionPlan: React.FC = () => {
   const { usuario } = useAuth();
-  const empresaExt = usuario?.empresa as { plan?: string; planSolicitado?: string | null; esTrial?: boolean; mpEstadoSub?: string | null; nombre?: string } | null;
+  const empresaExt = usuario?.empresa as {
+    plan?: string;
+    planSolicitado?: string | null;
+    esTrial?: boolean;
+    mpEstadoSub?: string | null;
+    mpMonto?: number | null;
+    mpMontoUsd?: number | null;
+    mpCotizacionUsdArs?: number | null;
+    mpCotizacionFuente?: string | null;
+    mpCotizacionActualizadaEn?: string | null;
+    nombre?: string;
+  } | null;
   const plan = empresaExt?.plan ?? 'inicial';
   const planSolicitadoActual = empresaExt?.planSolicitado ?? null;
 
@@ -1182,6 +1193,25 @@ const SeccionPlan: React.FC = () => {
         <div className="mb-5">
           <p className="text-xs font-black uppercase tracking-wider text-muted mb-3">Contratar suscripción</p>
           <SubscriptionCheckout empresaNombre={empresaExt?.nombre ?? 'mi empresa'} planInicial={plan} />
+        </div>
+      )}
+
+      {empresaExt?.mpEstadoSub === 'authorized' && empresaExt.mpMonto && (
+        <div className="mb-5 border border-line bg-subtle px-4 py-3">
+          <p className="text-xs font-black uppercase tracking-wider text-muted">Suscripción recurrente</p>
+          <p className="text-sm font-semibold text-content mt-1">
+            USD {empresaExt.mpMontoUsd?.toLocaleString('es-AR') ?? '—'} / mes ·
+            {' '}equivalente actual ARS {empresaExt.mpMonto.toLocaleString('es-AR')}
+          </p>
+          {empresaExt.mpCotizacionUsdArs && (
+            <p className="text-xs text-muted mt-1">
+              Dólar MEP vendedor {empresaExt.mpCotizacionUsdArs.toLocaleString('es-AR')} ARS/USD
+              {empresaExt.mpCotizacionFuente ? ` · ${empresaExt.mpCotizacionFuente}` : ''}
+              {empresaExt.mpCotizacionActualizadaEn
+                ? ` · actualizado ${new Date(empresaExt.mpCotizacionActualizadaEn).toLocaleString('es-AR')}`
+                : ''}
+            </p>
+          )}
         </div>
       )}
 

@@ -16,7 +16,7 @@ export const Layout: React.FC = () => {
   const errorSync = useErrorSync();
   const location = useLocation();
   const { usuario } = useAuth();
-  const esDemo = usuario?.email === 'demo@activaqr.com';
+  const esDemo = usuario?.email === 'demo@activaqr.net';
 
   return (
     <div className={`flex flex-col md:flex-row h-screen max-w-full bg-transparent overflow-hidden ${esDemo ? 'pt-9' : ''}`}>

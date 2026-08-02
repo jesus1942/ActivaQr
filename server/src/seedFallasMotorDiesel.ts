@@ -11,24 +11,13 @@
  *
  * Severidad: info | advertencia | critico.
  */
-import { Prisma } from '@prisma/client';
-import { prisma } from './prisma';
+import {
+  ejecutarSeedStandalone,
+  guardarFallasCatalogo,
+  type FallaSeedInput,
+} from './seedFallasCatalogo';
 
-interface CausaProbable {
-  causa: string;
-  probabilidad: 'alta' | 'media' | 'baja';
-}
-
-interface FallaSeed {
-  codigo?: string;
-  sintoma: string;
-  causas: CausaProbable[];
-  solucion: string;
-  severidad: 'info' | 'advertencia' | 'critico';
-  orden: number;
-}
-
-const FALLAS_MOTOR_DIESEL: FallaSeed[] = [
+const FALLAS_MOTOR_DIESEL: FallaSeedInput[] = [
   {
     codigo: 'MD-001',
     sintoma: 'Humo NEGRO por el escape',
@@ -285,54 +274,13 @@ const FALLAS_MOTOR_DIESEL: FallaSeed[] = [
 ];
 
 export async function seedFallasMotorDiesel() {
-  const categoria = await prisma.categoriaEquipo.findFirst({
-    where: { nombre: 'Motor Diesel / Generador', empresaId: null },
+  await guardarFallasCatalogo({
+    categoriaNombre: 'Motor Diesel / Generador',
+    etiqueta: 'seedFallasMotorDiesel',
+    fallas: FALLAS_MOTOR_DIESEL,
   });
-  if (!categoria) {
-    console.log('seedFallasMotorDiesel: categoria "Motor Diesel / Generador" no encontrada, saltando');
-    return;
-  }
-
-  let creadas = 0;
-  let actualizadas = 0;
-  for (const falla of FALLAS_MOTOR_DIESEL) {
-    const existente = await prisma.fallaCatalogo.findFirst({
-      where: { categoriaId: categoria.id, empresaId: null, codigo: falla.codigo },
-    });
-    const causas = falla.causas as unknown as Prisma.InputJsonValue;
-    if (existente) {
-      await prisma.fallaCatalogo.update({
-        where: { id: existente.id },
-        data: {
-          sintoma: falla.sintoma,
-          causas,
-          solucion: falla.solucion,
-          severidad: falla.severidad,
-          orden: falla.orden,
-        },
-      });
-      actualizadas++;
-    } else {
-      await prisma.fallaCatalogo.create({
-        data: {
-          categoriaId: categoria.id,
-          empresaId: null,
-          codigo: falla.codigo,
-          sintoma: falla.sintoma,
-          causas,
-          solucion: falla.solucion,
-          severidad: falla.severidad,
-          orden: falla.orden,
-        },
-      });
-      creadas++;
-    }
-  }
-  console.log(`seedFallasMotorDiesel: ${creadas} creadas, ${actualizadas} actualizadas`);
 }
 
 if (require.main === module) {
-  seedFallasMotorDiesel()
-    .catch((e) => { console.error(e); process.exit(1); })
-    .finally(() => prisma.$disconnect());
+  ejecutarSeedStandalone(seedFallasMotorDiesel);
 }

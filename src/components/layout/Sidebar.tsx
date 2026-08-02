@@ -170,7 +170,7 @@ export const Sidebar: React.FC = () => {
           rel="noopener noreferrer"
           className="block text-faint hover:text-brand-600 text-[11px] font-mono transition-colors"
         >
-          v1.1.0 · dev Jesús Olguín
+          v1.2.0 · dev Jesús Olguín
         </a>
       </div>
     </aside>

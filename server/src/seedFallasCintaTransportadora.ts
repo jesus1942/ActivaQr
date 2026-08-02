@@ -9,24 +9,13 @@
  * Cuando la falla aplica solo a un caso (mono o dual), se aclara en el
  * sintoma o en las causas.
  */
-import { Prisma } from '@prisma/client';
-import { prisma } from './prisma';
+import {
+  ejecutarSeedStandalone,
+  guardarFallasCatalogo,
+  type FallaSeedInput,
+} from './seedFallasCatalogo';
 
-interface CausaProbable {
-  causa: string;
-  probabilidad: 'alta' | 'media' | 'baja';
-}
-
-interface FallaSeed {
-  codigo?: string;
-  sintoma: string;
-  causas: CausaProbable[];
-  solucion: string;
-  severidad: 'info' | 'advertencia' | 'critico';
-  orden: number;
-}
-
-const FALLAS_CINTA: FallaSeed[] = [
+const FALLAS_CINTA: FallaSeedInput[] = [
   {
     codigo: 'CT-001',
     sintoma: 'La banda se corre hacia un costado (desalineacion)',
@@ -337,54 +326,13 @@ const FALLAS_CINTA: FallaSeed[] = [
 ];
 
 export async function seedFallasCintaTransportadora() {
-  const categoria = await prisma.categoriaEquipo.findFirst({
-    where: { nombre: 'Cinta Transportadora', empresaId: null },
+  await guardarFallasCatalogo({
+    categoriaNombre: 'Cinta Transportadora',
+    etiqueta: 'seedFallasCintaTransportadora',
+    fallas: FALLAS_CINTA,
   });
-  if (!categoria) {
-    console.log('seedFallasCintaTransportadora: categoria "Cinta Transportadora" no encontrada, saltando');
-    return;
-  }
-
-  let creadas = 0;
-  let actualizadas = 0;
-  for (const falla of FALLAS_CINTA) {
-    const existente = await prisma.fallaCatalogo.findFirst({
-      where: { categoriaId: categoria.id, empresaId: null, codigo: falla.codigo },
-    });
-    const causas = falla.causas as unknown as Prisma.InputJsonValue;
-    if (existente) {
-      await prisma.fallaCatalogo.update({
-        where: { id: existente.id },
-        data: {
-          sintoma: falla.sintoma,
-          causas,
-          solucion: falla.solucion,
-          severidad: falla.severidad,
-          orden: falla.orden,
-        },
-      });
-      actualizadas++;
-    } else {
-      await prisma.fallaCatalogo.create({
-        data: {
-          categoriaId: categoria.id,
-          empresaId: null,
-          codigo: falla.codigo,
-          sintoma: falla.sintoma,
-          causas,
-          solucion: falla.solucion,
-          severidad: falla.severidad,
-          orden: falla.orden,
-        },
-      });
-      creadas++;
-    }
-  }
-  console.log(`seedFallasCintaTransportadora: ${creadas} creadas, ${actualizadas} actualizadas`);
 }
 
 if (require.main === module) {
-  seedFallasCintaTransportadora()
-    .catch((e) => { console.error(e); process.exit(1); })
-    .finally(() => prisma.$disconnect());
+  ejecutarSeedStandalone(seedFallasCintaTransportadora);
 }

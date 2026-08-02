@@ -12,6 +12,8 @@
 
 [activaqr.net](https://activaqr.net) · API en [api.activaqr.net](https://api.activaqr.net) · 30 días gratis, sin tarjeta
 
+Base operativa: **Puerto Madryn, Chubut, Argentina**. Cobertura comercial: Patagonia y resto del país.
+
 ---
 
 ## Qué es ActivaQR
@@ -66,9 +68,9 @@ El mercado argentino y latinoamericano tiene soluciones de mantenimiento industr
 | Fichas activas con cuenta suspendida | — | si | si |
 | Soporte prioritario | — | — | si |
 
-Todos incluyen 30 días gratis sin tarjeta. Cuando las credenciales de Mercado Pago y los tres importes en ARS están configurados, el tenant adhiere el cobro recurrente mensual desde la aplicación. Mientras se termina de habilitar esa integración, la contratación se coordina con ActivaQR. Sin costo de instalación ni permanencia mínima.
+Todos incluyen 30 días gratis sin tarjeta. Los precios canónicos se expresan en USD. Cuando Mercado Pago está configurado, el backend consulta automáticamente el dólar MEP vendedor, calcula el equivalente en ARS y mantiene actualizadas las suscripciones nuevas y existentes. Mientras se termina de habilitar esa integración, la contratación se coordina con ActivaQR. Sin costo de instalación ni permanencia mínima.
 
-**Plan Gestionado** (a medida): para plantas que no tienen personal disponible para tomar las mediciones. Incluye todo lo de Industrial más visitas técnicas presenciales periódicas y el informe mensual. Se cotiza por visita según distancia y cantidad de equipos.
+**Plan Gestionado** (a medida): servicio adicional para plantas que no tienen personal disponible para tomar las mediciones. Puede sumarse al plan de software que corresponda e incluye relevamiento presencial, carga de datos e informes. Se cotiza aparte según equipos, frecuencia, horas de campo, distancia y viáticos.
 
 ---
 
@@ -94,42 +96,18 @@ Todos incluyen 30 días gratis sin tarjeta. Cuando las credenciales de Mercado P
 
 ## Arquitectura
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                            CLIENTES                              │
-│                                                                  │
-│   activaqr.net                        Celular en planta          │
-│   PWA React (GitHub Pages)            Escaneo QR → ficha         │
-│   Login · offline · push              pública (sin login)        │
-└──────────────────┬───────────────────────────────────────────────┘
-                   │  HTTPS / REST
-┌──────────────────▼───────────────────────────────────────────────┐
-│                   api.activaqr.net  (Railway)                    │
-│                                                                  │
-│   Express + TypeScript                                           │
-│     /api/auth         login · registro trial · recuperación      │
-│     /api/activos      activos, QR y visibilidad pública          │
-│     /api/mediciones   registro + motor de alertas                │
-│     /api/tareas       mantenimientos y vencimientos              │
-│     /api/fallas       catálogo de fallas por categoría           │
-│     /api/acceso-remoto  soporte con permiso del cliente          │
-│     /api/webhooks     Mercado Pago (firma HMAC verificada)       │
-│     /api/public       ficha pública — solo lectura, sin auth     │
-│     /                 landing comercial                          │
-└──────────────────┬───────────────────────────────────────────────┘
-                   │  Prisma ORM
-┌──────────────────▼───────────────────────────────────────────────┐
-│                     PostgreSQL (Railway)                         │
-│   Empresa → Usuarios → Activos → Mediciones · Tareas · Fotos     │
-│           → Sedes · Sectores · Categorías · Auditoría            │
-└──────────────────────────────────────────────────────────────────┘
-          │                    │                    │
-          ▼                    ▼                    ▼
-    Mercado Pago           Resend             Web Push · Telegram
-    suscripciones          emails             avisos al superadmin
+```mermaid
+flowchart TD
+    usuarios["Administradores y técnicos"] --> pwa["PWA React<br/>GitHub Pages"]
+    qr["Escaneo de QR<br/>ficha pública"] --> pwa
+    pwa -->|"HTTPS · REST · sincronización"| api["API Express<br/>Railway"]
+    api -->|"Prisma ORM"| db[("PostgreSQL<br/>multi-tenant")]
+    api --> pagos["Mercado Pago<br/>suscripciones"]
+    api --> correo["Resend<br/>emails"]
+    api --> avisos["Web Push y Telegram<br/>alertas"]
 ```
 
-Cada empresa ve únicamente sus datos: el `empresaId` se resuelve desde el token en cada request, nunca desde el cliente.
+La PWA conserva las mediciones sin conexión y las sincroniza cuando vuelve la señal. La API concentra autenticación, reglas de negocio, acceso público de solo lectura, cotización en USD/ARS y webhooks. Cada empresa ve únicamente sus datos: el `empresaId` se resuelve desde el token en cada request, nunca desde el cliente.
 
 ---
 
@@ -152,7 +130,6 @@ cd server
 cp .env.example .env    # editar con los valores propios
 npx prisma migrate deploy
 npx prisma generate
-npm run seed
 ```
 
 Levantar en desarrollo:
@@ -187,13 +164,15 @@ SUPERADMIN_EMAIL="tu@email.com"
 SUPERADMIN_PASSWORD="..."
 
 # Dominios propios
-APP_PUBLIC_URL="https://activaqr.net/"
+SITE_PUBLIC_URL="https://activaqr.net"
+APP_PUBLIC_URL="https://activaqr.net/app/"
 ALLOWED_ORIGINS="https://activaqr.net,https://www.activaqr.net"
 
 # Mercado Pago
 MP_ACCESS_TOKEN="APP_USR-..."
 MP_WEBHOOK_SECRET="..."          # activa la verificación de firma
-MP_BACK_URL="https://activaqr.net/"
+MP_BACK_URL="https://activaqr.net/app/"
+# No se cargan precios fijos en ARS: se convierten desde USD al MEP automáticamente.
 
 # Email y avisos
 RESEND_API_KEY="re_..."
@@ -203,7 +182,7 @@ TELEGRAM_BOT_TOKEN="..."
 TELEGRAM_ADMIN_CHAT_ID="..."
 VAPID_PUBLIC_KEY="..."
 VAPID_PRIVATE_KEY="..."
-VAPID_SUBJECT="mailto:tu@email.com"
+VAPID_SUBJECT="mailto:avisos@activaqr.net"
 ```
 
 ### Frontend (`.env` o secrets de GitHub Actions)
@@ -228,6 +207,10 @@ La guía completa de DNS, dominios y servicios externos está en [`docs/DEPLOY-D
 ## Seguridad
 
 - Contraseñas con bcrypt; sin credenciales por defecto en el repositorio.
+- La demo pública usa una sesión temporal de 2 horas emitida por el backend:
+  no transporta ni publica una contraseña reutilizable.
+- Los datasets de ejemplo generan accesos aleatorios en tiempo de ejecución y
+  usan direcciones reservadas `.invalid`, sin identidades de empleados reales.
 - Tokens de recuperación guardados hasheados: una copia de la base no sirve para tomar cuentas.
 - CORS por lista blanca con comparación exacta de origen.
 - Límites de uso por IP en login, registro, alta de leads y analítica.
@@ -299,6 +282,8 @@ ActivaQr/
 
 ## Versiones
 
+**v1.2.0** — Precios canónicos en USD · conversión automática a ARS por dólar MEP vendedor · actualización de suscripciones nuevas y existentes · cotización y ajustes auditables · cotizador interno para Plan Gestionado.
+
 **v1.1.0** — Alertas con umbrales en tiempo real · plantillas de parámetros por categoría de equipo · catálogo de fallas · acceso remoto de soporte con intervención directa · chat con fotos y audio · mejora de plan desde la app · carga offline con sincronización · dominio propio y notificaciones de alta.
 
 **v1.0.0** — Gestión de activos con QR · ficha pública sin login · mediciones y mantenimientos · multi-tenant con suscripciones de Mercado Pago.
@@ -319,4 +304,4 @@ El mercado para GPS en Vaca Muerta lo piden las operadoras por contrato a sus co
 
 ## Licencia
 
-MIT License — Copyright (c) 2026 ActivaQR
+Licencia propietaria — Copyright (c) 2026 Jesús Narciso Olguín. Consultá el archivo [`LICENSE`](LICENSE).

@@ -11,24 +11,13 @@
  * frigorificos (electricos en camara fria), Vaca Muerta (movimiento de
  * casing y herramienta), almacenes y plantas industriales medianas.
  */
-import { Prisma } from '@prisma/client';
-import { prisma } from './prisma';
+import {
+  ejecutarSeedStandalone,
+  guardarFallasCatalogo,
+  type FallaSeedInput,
+} from './seedFallasCatalogo';
 
-interface CausaProbable {
-  causa: string;
-  probabilidad: 'alta' | 'media' | 'baja';
-}
-
-interface FallaSeed {
-  codigo?: string;
-  sintoma: string;
-  causas: CausaProbable[];
-  solucion: string;
-  severidad: 'info' | 'advertencia' | 'critico';
-  orden: number;
-}
-
-const FALLAS: FallaSeed[] = [
+const FALLAS: FallaSeedInput[] = [
   {
     codigo: 'AE-001',
     sintoma: 'Perdida de fuerza de elevacion (no levanta la carga nominal o lo hace muy lento)',
@@ -352,54 +341,13 @@ const FALLAS: FallaSeed[] = [
 ];
 
 export async function seedFallasAutoelevador() {
-  const categoria = await prisma.categoriaEquipo.findFirst({
-    where: { nombre: 'Autoelevador / Equipo de Izaje', empresaId: null },
+  await guardarFallasCatalogo({
+    categoriaNombre: 'Autoelevador / Equipo de Izaje',
+    etiqueta: 'seedFallasAutoelevador',
+    fallas: FALLAS,
   });
-  if (!categoria) {
-    console.log('seedFallasAutoelevador: categoria "Autoelevador / Equipo de Izaje" no encontrada, saltando');
-    return;
-  }
-
-  let creadas = 0;
-  let actualizadas = 0;
-  for (const falla of FALLAS) {
-    const existente = await prisma.fallaCatalogo.findFirst({
-      where: { categoriaId: categoria.id, empresaId: null, codigo: falla.codigo },
-    });
-    const causas = falla.causas as unknown as Prisma.InputJsonValue;
-    if (existente) {
-      await prisma.fallaCatalogo.update({
-        where: { id: existente.id },
-        data: {
-          sintoma: falla.sintoma,
-          causas,
-          solucion: falla.solucion,
-          severidad: falla.severidad,
-          orden: falla.orden,
-        },
-      });
-      actualizadas++;
-    } else {
-      await prisma.fallaCatalogo.create({
-        data: {
-          categoriaId: categoria.id,
-          empresaId: null,
-          codigo: falla.codigo,
-          sintoma: falla.sintoma,
-          causas,
-          solucion: falla.solucion,
-          severidad: falla.severidad,
-          orden: falla.orden,
-        },
-      });
-      creadas++;
-    }
-  }
-  console.log(`seedFallasAutoelevador: ${creadas} creadas, ${actualizadas} actualizadas`);
 }
 
 if (require.main === module) {
-  seedFallasAutoelevador()
-    .catch((e) => { console.error(e); process.exit(1); })
-    .finally(() => prisma.$disconnect());
+  ejecutarSeedStandalone(seedFallasAutoelevador);
 }

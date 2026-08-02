@@ -16,9 +16,9 @@ export const DemoBanner: React.FC = () => {
   const [expirado, setExpirado] = useState(false);
 
   useEffect(() => {
-    if (!usuario || usuario.email !== 'demo@activaqr.com') return;
+    if (!usuario || usuario.email !== 'demo@activaqr.net') return;
 
-    const token = sessionStorage.getItem('activaqr_token');
+    const token = localStorage.getItem('activaqr_token');
     if (!token) return;
 
     const exp = getExpFromToken(token);
@@ -41,7 +41,7 @@ export const DemoBanner: React.FC = () => {
     return () => clearInterval(intervalo);
   }, [usuario]);
 
-  if (!usuario || usuario.email !== 'demo@activaqr.com') return null;
+  if (!usuario || usuario.email !== 'demo@activaqr.net') return null;
 
   return (
     <div className="fixed inset-x-0 top-0 z-[70] min-h-9 border-b border-brand-500/40 bg-slate-950/95 text-white backdrop-blur flex items-center justify-between gap-3 px-3 md:px-4 py-2 text-xs md:text-sm font-medium">

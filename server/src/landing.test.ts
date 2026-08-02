@@ -18,7 +18,7 @@ test('la landing usa el mismo catálogo comercial que el backend', () => {
   assert.doesNotMatch(html, /USD 20<\/span>|USD 69<\/span>|USD 179<\/span>|Hasta 10 activos|Hasta 100 activos/);
   assert.match(html, /https:\/\/api\.activaqr\.net\/politica-uso/);
   assert.match(html, /https:\/\/api\.activaqr\.net\/politica-privacidad/);
-  assert.doesNotMatch(html, /demo@activaqr\.com|demo1234|Contraseña/);
+  assert.doesNotMatch(html, /contraseña|password/i);
 });
 
 test('la landing no promete checkout automático cuando falta configuración', () => {
@@ -31,8 +31,20 @@ test('la landing no promete checkout automático cuando falta configuración', (
   );
   assert.match(
     automatico,
-    /id="estado-contratacion"[^>]*>El tenant adhiere el cobro recurrente mensual desde la app mediante Mercado Pago\.<\/p>/,
+    /id="estado-contratacion"[^>]*>El tenant adhiere el cobro recurrente desde la app\. Mercado Pago procesa en ARS el equivalente al dólar MEP vendedor vigente\.<\/p>/,
   );
+  assert.match(automatico, /Los planes se expresan en USD/);
+  assert.match(automatico, /el equivalente se actualiza automáticamente/);
+});
+
+test('el Plan Gestionado se cotiza aparte y llega identificado por el formulario', () => {
+  const html = renderLanding('https://activaqr.net/app/');
+
+  assert.match(html, /Plan Gestionado · Cotización personalizada/);
+  assert.match(html, /La suscripción de ActivaQR se factura por separado/);
+  assert.match(html, /data-plan-contacto="gestionado"/);
+  assert.match(html, /id="leadPlan" name="plan" type="hidden"/);
+  assert.doesNotMatch(html, /tu-correo-privado@ejemplo\.com|LEAD_EMAIL/);
 });
 
 test('las fuentes estáticas no vuelven a publicar el catálogo anterior', () => {

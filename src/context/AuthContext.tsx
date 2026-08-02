@@ -4,6 +4,7 @@ import {
   UsuarioSesion,
   getUsuario,
   login as apiLogin,
+  demoLogin as apiDemoLogin,
   registro as apiRegistro,
   logout as apiLogout,
   EmpresaSuspendidaError,
@@ -24,6 +25,7 @@ interface AuthState {
   estadoPoliticas: EstadoPoliticas | null;
   refrescarEstadoPoliticas: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
+  demoLogin: () => Promise<void>;
   registro: (payload: { empresaNombre: string; nombre: string; email: string; password: string; telefono?: string; aceptaPoliticas: boolean }) => Promise<void>;
   logout: () => void;
 }
@@ -75,6 +77,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUsuario(u);
   }, []);
 
+  const demoLogin = useCallback(async () => {
+    const u = await apiDemoLogin();
+    setEmpresaSuspendida(false);
+    setTrialVencido(false);
+    setUsuario(u);
+  }, []);
+
   const registro = useCallback(async (payload: { empresaNombre: string; nombre: string; email: string; password: string; telefono?: string; aceptaPoliticas: boolean }) => {
     const u = await apiRegistro(payload);
     setEmpresaSuspendida(false);
@@ -104,6 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         estadoPoliticas,
         refrescarEstadoPoliticas,
         login,
+        demoLogin,
         registro,
         logout,
       }}

@@ -12,6 +12,7 @@ import { enviarEmailAccesoRemoto } from '../email';
 import { calcularEstadoAutomatico, estadoMedicionAActivo } from '../alertas';
 import { enviarPushASuperadmin, enviarPushAEmpresa } from '../push';
 import { registrarAuditoria } from '../auditoria';
+import { APP_URL } from '../urls';
 
 const MAX_ADJUNTO = 8_000_000; // ~6MB en base64
 
@@ -26,8 +27,6 @@ const aprobacionLimiter = rateLimit({
 const router = Router();
 
 const PLANES_ACCESO_REMOTO = ['empresa', 'industrial'];
-const APP_URL = process.env.APP_URL || 'https://activaqr.net';
-
 // ── Superadmin: solicitar acceso a una empresa ────────────────────────────────
 
 // POST /api/admin/empresas/:id/acceso-remoto

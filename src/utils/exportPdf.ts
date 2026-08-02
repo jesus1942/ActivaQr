@@ -13,6 +13,7 @@ const GREEN:    [number, number, number] = [22, 163, 74];
 const AMBER:    [number, number, number] = [217, 119, 6];
 const WHITE:    [number, number, number] = [255, 255, 255];
 const BLACK:    [number, number, number] = [0, 0, 0];
+const PDF_BRAND = 'Generado por ActivaQR — activaqr.net';
 
 function colorEstado(estado: string): [number, number, number] {
   if (estado === 'critico' || estado === 'urgente') return RED;
@@ -348,7 +349,7 @@ export function exportarFichaActivoPdf(p: FichaActivoPdfParams) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(100, 116, 139);
-  doc.text('Generado por ActivaQR — activaqr.com', MAR, H - 3.5);
+  doc.text(PDF_BRAND, MAR, H - 3.5);
   doc.text(`${p.activo.codigo} — ${p.activo.nombre}`, W - MAR, H - 3.5, { align: 'right' });
 
   doc.save(`ActivaQR-Ficha-${p.activo.codigo}.pdf`);
@@ -434,7 +435,7 @@ export function exportarResumenActivosPdf(p: ResumenActivosPdfParams) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(100, 116, 139);
-  doc.text('Generado por ActivaQR — activaqr.com', MAR, H - 3.5);
+  doc.text(PDF_BRAND, MAR, H - 3.5);
   doc.text(`Total: ${p.activos.length} activos`, W - MAR, H - 3.5, { align: 'right' });
 
   doc.save(`ActivaQR-Activos-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
