@@ -5,12 +5,13 @@
  * y chatear con un cliente que otorgó permiso.
  */
 import React, { useEffect, useState } from 'react';
-import { Plus, X, ArrowLeft, Activity, CheckCircle, Download, Users, ScrollText } from 'lucide-react';
+import { X, ArrowLeft, Activity, CheckCircle, Download, Users, ScrollText, AlertOctagon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
   PermisoAcceso, MensajeRemoto, PersonalRemoto, ActividadRemoto,
   getActivosRemoto, getMedicionesRemoto, getMensajesAdmin, enviarMensajeAdmin,
-  crearTareaRemota, crearMedicionRemota, getPersonalRemoto, getActividadRemoto,
+  crearMedicionRemota, getPersonalRemoto, getActividadRemoto,
 } from '../data/accesoRemotoApi';
 import { ChatRemoto } from './ChatRemoto';
 import { exportarCsv } from '../utils/exportCsv';
@@ -43,6 +44,7 @@ const FORM_INICIAL = {
 };
 
 export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, permiso, onClose }) => {
+  const navigate = useNavigate();
   const [tab, setTab] = useState<'activos' | 'personal' | 'actividad' | 'chat'>('activos');
   const [activos, setActivos] = useState<any[]>([]);
   const [mensajes, setMensajes] = useState<MensajeRemoto[]>([]);
@@ -58,11 +60,7 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
   const [guardandoMed, setGuardandoMed] = useState(false);
   const [exito, setExito] = useState<string | null>(null);
   const [errorMed, setErrorMed] = useState<string | null>(null);
-
-  // Tarea
-  const [activoTarea, setActivoTarea] = useState<string | null>(null);
-  const [formTarea, setFormTarea] = useState({ tipo: '', fechaProgramada: format(new Date(), 'yyyy-MM-dd'), observaciones: '' });
-  const [guardandoTarea, setGuardandoTarea] = useState(false);
+  const [alertaCreada, setAlertaCreada] = useState<{ id: string; numero: string } | null>(null);
 
   const cargarActivos = () => getActivosRemoto(empresaId).then(setActivos);
 
@@ -98,6 +96,7 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
     setForm({ ...FORM_INICIAL });
     setExito(null);
     setErrorMed(null);
+    setAlertaCreada(null);
     cargarMediciones(a.id);
   };
 
@@ -115,7 +114,7 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
     setExito(null);
     setErrorMed(null);
     try {
-      await crearMedicionRemota(empresaId, {
+      const resultado = await crearMedicionRemota(empresaId, {
         activoId: activoSel.id,
         temperatura: num(form.temperatura),
         amperaje: num(form.amperaje),
@@ -127,7 +126,10 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
         observaciones: form.observaciones.trim() || undefined,
       });
       setForm({ ...FORM_INICIAL });
-      setExito('Medición registrada correctamente.');
+      setAlertaCreada(resultado.alerta ? { id: resultado.alerta.id, numero: resultado.alerta.numero } : null);
+      setExito(resultado.alerta
+        ? `Medición registrada. Se generó la alerta técnica ${resultado.alerta.numero}.`
+        : 'Medición registrada correctamente.');
       cargarMediciones(activoSel.id);
       const nuevos = await getActivosRemoto(empresaId);
       setActivos(nuevos);
@@ -137,19 +139,6 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
       setErrorMed(err?.message || 'No se pudo registrar la medición.');
     } finally {
       setGuardandoMed(false);
-    }
-  };
-
-  const handleCrearTarea = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activoTarea || !formTarea.tipo) return;
-    setGuardandoTarea(true);
-    try {
-      await crearTareaRemota(empresaId, { activoId: activoTarea, ...formTarea });
-      setActivoTarea(null);
-      setFormTarea({ tipo: '', fechaProgramada: format(new Date(), 'yyyy-MM-dd'), observaciones: '' });
-    } finally {
-      setGuardandoTarea(false);
     }
   };
 
@@ -272,13 +261,7 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
                       </p>
                     )}
                   </div>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setActivoTarea(a.id); }}
-                    title="Crear tarea de mantenimiento"
-                    className="flex items-center gap-1 text-xs font-bold border border-line px-2 py-1.5 hover:border-brand-600 hover:text-brand-600 transition-colors whitespace-nowrap flex-shrink-0"
-                  >
-                    <Plus size={12} /> Tarea
-                  </button>
+                  <span className="text-xs font-bold text-brand-600 flex-shrink-0">Ver mediciones</span>
                 </div>
               ))}
             </div>
@@ -294,12 +277,7 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
                 >
                   <ArrowLeft size={14} /> Volver
                 </button>
-                <button
-                  onClick={() => setActivoTarea(activoSel.id)}
-                  className="flex items-center gap-1 text-sm font-bold border border-line px-3 py-1.5 hover:border-brand-600 hover:text-brand-600 transition-colors"
-                >
-                  <Plus size={14} /> Crear tarea
-                </button>
+                <span className="text-xs text-muted text-right">Los correctivos requieren cotización y autorización.</span>
               </div>
 
               {/* Info del activo */}
@@ -388,6 +366,18 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
                 </div>
                 {errorMed && <p className="text-xs font-bold text-danger-strong dark:text-danger">{errorMed}</p>}
                 {exito && <p className="flex items-center gap-1 text-xs font-bold text-ok-strong dark:text-ok"><CheckCircle size={14} /> {exito}</p>}
+                {alertaCreada && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      navigate(`/correctivos?empresaId=${encodeURIComponent(empresaId)}&alerta=${encodeURIComponent(alertaCreada.id)}`);
+                    }}
+                    className="w-full min-h-11 flex items-center justify-center gap-2 border border-danger bg-danger/10 text-danger-strong dark:text-danger text-xs font-black uppercase"
+                  >
+                    <AlertOctagon size={16} /> Abrir alerta y preparar propuesta
+                  </button>
+                )}
                 <div className="flex justify-end">
                   <button type="submit" disabled={guardandoMed} className="px-4 py-2 bg-brand-600 text-white border border-line font-bold text-sm disabled:opacity-50 shadow-soft">
                     {guardandoMed ? 'Registrando...' : 'Registrar medición'}
@@ -509,54 +499,6 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
           )}
         </div>
 
-        {/* Modal crear tarea */}
-        {activoTarea && (
-          <DialogViewport className="z-[60] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4" onEscape={() => setActivoTarea(null)}>
-            <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft w-full max-w-sm">
-              <div className="flex items-center justify-between px-4 py-3 bg-slate-900 text-white">
-                <h3 className="font-black uppercase text-sm">Nueva tarea de mantenimiento</h3>
-                <button onClick={() => setActivoTarea(null)}><X size={18} /></button>
-              </div>
-              <form onSubmit={handleCrearTarea} className="p-4 space-y-3">
-                <div>
-                  <label className={labelCls}>Tipo de tarea</label>
-                  <input
-                    required
-                    value={formTarea.tipo}
-                    onChange={(e) => setFormTarea((p) => ({ ...p, tipo: e.target.value }))}
-                    placeholder="Ej: Lubricación, Revisión eléctrica..."
-                    className={inputCls}
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Fecha programada</label>
-                  <input
-                    type="date"
-                    required
-                    value={formTarea.fechaProgramada}
-                    onChange={(e) => setFormTarea((p) => ({ ...p, fechaProgramada: e.target.value }))}
-                    className={inputCls}
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Observaciones</label>
-                  <textarea
-                    value={formTarea.observaciones}
-                    onChange={(e) => setFormTarea((p) => ({ ...p, observaciones: e.target.value }))}
-                    rows={2}
-                    className="w-full border border-line px-3 py-2 text-sm outline-none focus:border-brand-600"
-                  />
-                </div>
-                <div className="flex justify-end gap-2 pt-1">
-                  <button type="button" onClick={() => setActivoTarea(null)} className="px-4 py-2 border border-line-strong font-bold text-sm text-muted">Cancelar</button>
-                  <button type="submit" disabled={guardandoTarea} className="px-4 py-2 bg-brand-600 text-white border border-line font-bold text-sm disabled:opacity-50">
-                    {guardandoTarea ? 'Guardando...' : 'Crear tarea'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </DialogViewport>
-        )}
       </div>
     </DialogViewport>
   );

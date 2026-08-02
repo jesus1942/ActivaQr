@@ -138,6 +138,8 @@ export function armarTextoCotizacion(params: {
     `Válida hasta: ${params.vigenciaHasta.toLocaleDateString('es-AR')}${notas}`,
     '',
     'Incluye toma de mediciones en campo, carga en ActivaQR, control de alertas e informe PDF.',
+    'No incluye mantenimiento correctivo, repuestos, materiales ni mano de obra adicional.',
+    'Si se detecta una anomalía, cualquier correctivo se cotiza por separado y sólo puede ejecutarse con aprobación expresa del administrador de la empresa y orden de trabajo autorizada.',
     'La suscripción de software se factura aparte según el plan elegido.',
   ].join('\n');
 }

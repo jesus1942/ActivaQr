@@ -29,6 +29,7 @@ import {
   Tablet,
   Sparkles,
   FileSignature,
+  Wrench,
 } from 'lucide-react';
 import { exportarCsv } from '../utils/exportCsv';
 import {
@@ -921,6 +922,13 @@ export const Admin: React.FC = () => {
                     className="w-full flex items-center gap-2 border border-brand-600 bg-brand-50 dark:bg-brand-600/15 px-3 py-2 text-sm font-bold text-brand-700 dark:text-brand-300 hover:bg-brand-100 transition-colors"
                   >
                     <FileSignature size={15} /> Crear o ver cotizaciones
+                  </button>
+
+                  <button
+                    onClick={() => navigate(`/correctivos?empresaId=${encodeURIComponent(emp.id)}`)}
+                    className="w-full flex items-center gap-2 border border-line bg-surface px-3 py-2 text-sm font-bold hover:border-brand-600 hover:text-brand-600 transition-colors"
+                  >
+                    <Wrench size={15} /> Ver alertas y órdenes
                   </button>
 
                   <button

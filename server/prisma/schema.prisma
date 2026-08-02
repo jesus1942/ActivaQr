@@ -80,12 +80,43 @@ enum TipoParametro {
   seleccion
 }
 
+enum NivelAlertaTecnica {
+  desmejorado
+  riesgo
+  critico
+}
+
+enum EstadoAlertaTecnica {
+  abierta
+  propuesta_emitida
+  autorizada
+  rechazada
+  riesgo_aceptado
+  cerrada
+}
+
+enum EstadoOrdenCorrectiva {
+  autorizada
+  programada
+  en_progreso
+  completada
+  cancelada
+}
+
+enum EstadoPermisoTrabajo {
+  no_requerido
+  pendiente
+  aprobado
+  rechazado
+  vencido
+}
+
 // ---------- Modelos ----------
 
 model PermisoAccesoRemoto {
   id           String        @id @default(uuid())
-  empresaId    String        @unique   // una empresa, un permiso activo a la vez
-  token        String        @unique   // token del link de aprobación
+  empresaId    String        @unique // una empresa, un permiso activo a la vez
+  token        String        @unique // token del link de aprobación
   estado       EstadoPermiso @default(pendiente)
   solicitadoEn DateTime      @default(now())
   otorgadoEn   DateTime?
@@ -93,22 +124,22 @@ model PermisoAccesoRemoto {
   // Costo adicional facturado por este servicio
   costoMensual Float?
 
-  empresa   Empresa          @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  mensajes  MensajeRemoto[]
+  empresa  Empresa         @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  mensajes MensajeRemoto[]
 
   @@index([token])
 }
 
 model MensajeRemoto {
-  id        String   @id @default(uuid())
-  permisoId String
-  autorRol  String   // 'superadmin' | 'cliente'
+  id          String   @id @default(uuid())
+  permisoId   String
+  autorRol    String // 'superadmin' | 'cliente'
   autorNombre String
-  contenido String?
-  tipo      String   @default("texto") // 'texto' | 'imagen' | 'audio'
-  adjunto   String?  @db.Text          // data URL base64 de imagen/audio
-  creadoEn  DateTime @default(now())
-  leido     Boolean  @default(false)
+  contenido   String?
+  tipo        String   @default("texto") // 'texto' | 'imagen' | 'audio'
+  adjunto     String?  @db.Text // data URL base64 de imagen/audio
+  creadoEn    DateTime @default(now())
+  leido       Boolean  @default(false)
 
   // Evidencia forense para mensajes con foto (ver Foto.capturedAt para detalle).
   capturedLat     Float?
@@ -123,14 +154,14 @@ model MensajeRemoto {
 }
 
 model Empresa {
-  id        String        @id @default(uuid())
-  nombre    String
-  cuit      String?
-  logoUrl   String?
+  id             String        @id @default(uuid())
+  nombre         String
+  cuit           String?
+  logoUrl        String?
   plan           Plan          @default(inicial)
-  planSolicitado Plan?         // upgrade request from client
-  estado    EstadoEmpresa @default(activa)
-  creadaEn  DateTime      @default(now())
+  planSolicitado Plan? // upgrade request from client
+  estado         EstadoEmpresa @default(activa)
+  creadaEn       DateTime      @default(now())
 
   // Free trial autogestionado de 30 dias.
   esTrial         Boolean   @default(false)
@@ -139,32 +170,34 @@ model Empresa {
 
   // Aceptacion de Politicas de Uso y Privacidad.
   // Requisito previo a la generacion del link de suscripcion.
-  politicasAceptadasEn  DateTime?
-  politicasAceptadasIp  String?
-  politicasVersion      String?
+  politicasAceptadasEn DateTime?
+  politicasAceptadasIp String?
+  politicasVersion     String?
 
   // Suscripción Mercado Pago.
-  mpPreapprovalId String?   // id del preapproval (suscripción) en MP
-  mpEstadoSub     String?   // estado reportado por MP: authorized, paused, cancelled...
-  mpMonto         Float?    // monto mensual acordado
-  mpMontoUsd      Float?    // precio canónico en USD aplicado al plan y bloques
-  mpCotizacionUsdArs Float?  // dólar MEP vendedor usado para calcular mpMonto
-  mpCotizacionFuente String?
+  mpPreapprovalId           String? // id del preapproval (suscripción) en MP
+  mpEstadoSub               String? // estado reportado por MP: authorized, paused, cancelled...
+  mpMonto                   Float? // monto mensual acordado
+  mpMontoUsd                Float? // precio canónico en USD aplicado al plan y bloques
+  mpCotizacionUsdArs        Float? // dólar MEP vendedor usado para calcular mpMonto
+  mpCotizacionFuente        String?
   mpCotizacionActualizadaEn DateTime?
-  mpUltimoPago    DateTime? // fecha del último pago aprobado
-  fuenteAlta      String?
-  campanaAlta     String?
-  contenidoAlta   String?
+  mpUltimoPago              DateTime? // fecha del último pago aprobado
+  fuenteAlta                String?
+  campanaAlta               String?
+  contenidoAlta             String?
 
-  usuarios       Usuario[]
-  sedes          Sede[]
-  sectores       Sector[]
-  tipos          TipoActivo[]
-  activos        Activo[]
-  permisoAcceso  PermisoAccesoRemoto?
-  categorias     CategoriaEquipo[]
-  pagos          PagoMP[]
-  cotizaciones   Cotizacion[]
+  usuarios           Usuario[]
+  sedes              Sede[]
+  sectores           Sector[]
+  tipos              TipoActivo[]
+  activos            Activo[]
+  permisoAcceso      PermisoAccesoRemoto?
+  categorias         CategoriaEquipo[]
+  pagos              PagoMP[]
+  cotizaciones       Cotizacion[]
+  alertasTecnicas    AlertaTecnica[]
+  ordenesCorrectivas OrdenTrabajoCorrectiva[]
 
   @@index([mpPreapprovalId])
 }
@@ -172,33 +205,37 @@ model Empresa {
 // Propuestas comerciales emitidas por ActivaQR para empresas registradas.
 // El detalle conserva la composición del precio aplicada en ese momento.
 model Cotizacion {
-  id                String   @id @default(uuid())
-  numero            String   @unique
-  empresaId         String
-  clienteNombre     String
-  contactoNombre    String?
-  contactoEmail     String?
-  contactoTelefono  String?
-  concepto          String
-  planSoftware      String
-  detalle           Json
-  moneda            String   @default("ARS")
-  subtotal          Float
-  descuento         Float    @default(0)
-  total             Float
-  vigenciaHasta     DateTime
-  estado            String   @default("borrador") // borrador | enviada | vista | aceptada | rechazada | vencida
-  creadaPorId       String?
-  creadaPorNombre   String
-  enviadaEn         DateTime?
-  vistaEn           DateTime?
-  respondidaEn      DateTime?
-  creadaEn          DateTime @default(now())
-  actualizadaEn     DateTime @updatedAt
+  id               String    @id @default(uuid())
+  numero           String    @unique
+  empresaId        String
+  clienteNombre    String
+  contactoNombre   String?
+  contactoEmail    String?
+  contactoTelefono String?
+  concepto         String
+  planSoftware     String
+  tipo             String    @default("gestionado") // gestionado | correctivo
+  alertaTecnicaId  String?   @unique
+  detalle          Json
+  moneda           String    @default("ARS")
+  subtotal         Float
+  descuento        Float     @default(0)
+  total            Float
+  vigenciaHasta    DateTime
+  estado           String    @default("borrador") // borrador | enviada | vista | aceptada | rechazada | vencida
+  creadaPorId      String?
+  creadaPorNombre  String
+  enviadaEn        DateTime?
+  vistaEn          DateTime?
+  respondidaEn     DateTime?
+  creadaEn         DateTime  @default(now())
+  actualizadaEn    DateTime  @updatedAt
 
-  empresa  Empresa              @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  envios   CotizacionEnvio[]
-  mensajes CotizacionMensaje[]
+  empresa         Empresa                 @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  alertaTecnica   AlertaTecnica?          @relation(fields: [alertaTecnicaId], references: [id], onDelete: SetNull)
+  ordenCorrectiva OrdenTrabajoCorrectiva?
+  envios          CotizacionEnvio[]
+  mensajes        CotizacionMensaje[]
 
   @@index([empresaId, creadaEn])
   @@index([estado, creadaEn])
@@ -207,8 +244,8 @@ model Cotizacion {
 model CotizacionEnvio {
   id           String   @id @default(uuid())
   cotizacionId String
-  canal        String   // plataforma | email | whatsapp | telegram
-  estado       String   // enviado | preparado | error
+  canal        String // plataforma | email | whatsapp | telegram
+  estado       String // enviado | preparado | error
   detalle      String?
   creadoEn     DateTime @default(now())
 
@@ -221,7 +258,7 @@ model CotizacionMensaje {
   id           String   @id @default(uuid())
   cotizacionId String
   autorId      String?
-  autorRol     String   // superadmin | cliente
+  autorRol     String // superadmin | cliente
   autorNombre  String
   contenido    String   @db.Text
   creadoEn     DateTime @default(now())
@@ -231,25 +268,112 @@ model CotizacionMensaje {
   @@index([cotizacionId, creadoEn])
 }
 
+// Hallazgo técnico originado en una medición de ActivaQR. Una alerta no
+// autoriza trabajo ni costo: la autorización ocurre mediante Cotizacion.
+model AlertaTecnica {
+  id                  String              @id @default(uuid())
+  numero              String              @unique
+  empresaId           String
+  activoId            String
+  medicionId          String?             @unique
+  nivel               NivelAlertaTecnica
+  estado              EstadoAlertaTecnica @default(abierta)
+  hallazgo            String              @db.Text
+  riesgo              String              @db.Text
+  recomendacion       String              @db.Text
+  recomiendaDetencion Boolean             @default(false)
+  decisionCliente     String? // detener_aislar | continuar_operando
+  decisionDetalle     String?             @db.Text
+  decisionPorId       String?
+  decisionPorNombre   String?
+  decisionEn          DateTime?
+  creadaPorId         String?
+  creadaPorNombre     String
+  creadaEn            DateTime            @default(now())
+  actualizadaEn       DateTime            @updatedAt
+
+  empresa    Empresa                 @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  activo     Activo                  @relation(fields: [activoId], references: [id], onDelete: Cascade)
+  medicion   Medicion?               @relation(fields: [medicionId], references: [id], onDelete: SetNull)
+  cotizacion Cotizacion?
+  orden      OrdenTrabajoCorrectiva?
+
+  @@index([empresaId, creadaEn])
+  @@index([activoId, estado])
+}
+
+// Se crea únicamente cuando el administrador del cliente acepta la
+// cotización correctiva. La ejecución puede quedar condicionada a permiso.
+model OrdenTrabajoCorrectiva {
+  id                       String                @id @default(uuid())
+  numero                   String                @unique
+  empresaId                String
+  activoId                 String
+  alertaId                 String                @unique
+  cotizacionId             String                @unique
+  estado                   EstadoOrdenCorrectiva @default(autorizada)
+  alcance                  String                @db.Text
+  materialesPrevistos      String?               @db.Text
+  plazoEstimadoDias        Int
+  costoAprobado            Float
+  moneda                   String                @default("ARS")
+  requierePermiso          Boolean               @default(false)
+  estadoPermiso            EstadoPermisoTrabajo  @default(no_requerido)
+  permisoCondiciones       String?               @db.Text
+  permisoValidoDesde       DateTime?
+  permisoValidoHasta       DateTime?
+  permisoAprobadoPorId     String?
+  permisoAprobadoPorNombre String?
+  permisoAprobadoEn        DateTime?
+  autorizadaPorId          String?
+  autorizadaPorNombre      String
+  autorizadaEn             DateTime              @default(now())
+  programadaPara           DateTime?
+  responsableNombre        String?
+  iniciadaEn               DateTime?
+  finalizadaEn             DateTime?
+  cierreTrabajo            String?               @db.Text
+  repuestosUtilizados      String?               @db.Text
+  horasTrabajo             Float?
+  evidencias               Json?
+  medicionCierreId         String?
+  conformidadCliente       String                @default("pendiente") // pendiente | conforme | observada
+  conformidadDetalle       String?               @db.Text
+  conformidadPorId         String?
+  conformidadPorNombre     String?
+  conformidadEn            DateTime?
+  creadaEn                 DateTime              @default(now())
+  actualizadaEn            DateTime              @updatedAt
+
+  empresa        Empresa       @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  activo         Activo        @relation(fields: [activoId], references: [id], onDelete: Cascade)
+  alerta         AlertaTecnica @relation(fields: [alertaId], references: [id], onDelete: Restrict)
+  cotizacion     Cotizacion    @relation(fields: [cotizacionId], references: [id], onDelete: Restrict)
+  medicionCierre Medicion?     @relation("MedicionCierreCorrectivo", fields: [medicionCierreId], references: [id], onDelete: SetNull)
+
+  @@index([empresaId, estado])
+  @@index([activoId, creadaEn])
+}
+
 model CotizacionUsdArs {
-  id            String   @id
-  tipo          String
-  compra        Float?
-  venta         Float
-  fuente        String
-  fechaFuente   DateTime
-  consultadaEn  DateTime @default(now()) @updatedAt
+  id           String   @id
+  tipo         String
+  compra       Float?
+  venta        Float
+  fuente       String
+  fechaFuente  DateTime
+  consultadaEn DateTime @default(now()) @updatedAt
 }
 
 model Usuario {
-  id           String     @id @default(uuid())
-  empresaId    String?    // null para el superadmin (no pertenece a una empresa)
-  email        String     @unique
-  passwordHash String
-  nombre       String
-  telefono     String?
-  cargo        String?
-  rol          RolUsuario @default(admin)
+  id               String     @id @default(uuid())
+  empresaId        String? // null para el superadmin (no pertenece a una empresa)
+  email            String     @unique
+  passwordHash     String
+  nombre           String
+  telefono         String?
+  cargo            String?
+  rol              RolUsuario @default(admin)
   activo           Boolean    @default(true)
   creadoEn         DateTime   @default(now())
   ultimoAcceso     DateTime?
@@ -257,7 +381,7 @@ model Usuario {
   resetTokenExpiry DateTime?
   telegramChatId   String?
 
-  empresa Empresa? @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  empresa              Empresa?             @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   pushSubscriptions    PushSubscription[]
   activosResponsable   Activo[]             @relation("ActivoResponsable")
   tareasResponsable    TareaMantenimiento[] @relation("TareaResponsable")
@@ -274,6 +398,7 @@ model PushSubscription {
   auth      String   @db.Text
   creadoEn  DateTime @default(now())
   usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
   @@index([usuarioId])
 }
 
@@ -324,16 +449,16 @@ model CategoriaEquipo {
 // el tecnico en campo busca el sintoma y ve causas probables + solucion paso a paso.
 // Severidad: info | advertencia | critico.
 model FallaCatalogo {
-  id           String   @id @default(uuid())
-  categoriaId  String
-  empresaId    String?  // null = falla global (provista por ActivaQR), no-null = privada del tenant
-  codigo       String?  // opcional, p.ej. "E04" o "P0301"
-  sintoma      String   // texto observable: "Temperatura del refrigerante supera 95°C"
-  causas       Json     // [{ causa: string, probabilidad: 'alta'|'media'|'baja' }]
-  solucion     String   // pasos a seguir (markdown simple)
-  severidad    String   @default("advertencia") // info | advertencia | critico
-  orden        Int      @default(0)
-  creadoEn     DateTime @default(now())
+  id            String   @id @default(uuid())
+  categoriaId   String
+  empresaId     String? // null = falla global (provista por ActivaQR), no-null = privada del tenant
+  codigo        String? // opcional, p.ej. "E04" o "P0301"
+  sintoma       String // texto observable: "Temperatura del refrigerante supera 95°C"
+  causas        Json // [{ causa: string, probabilidad: 'alta'|'media'|'baja' }]
+  solucion      String // pasos a seguir (markdown simple)
+  severidad     String   @default("advertencia") // info | advertencia | critico
+  orden         Int      @default(0)
+  creadoEn      DateTime @default(now())
   actualizadoEn DateTime @updatedAt
 
   categoria CategoriaEquipo @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
@@ -343,24 +468,24 @@ model FallaCatalogo {
 }
 
 model ParametroCategoria {
-  id            String        @id @default(uuid())
-  categoriaId   String
-  nombre        String
-  clave         String
-  unidad        String?
-  tipo          TipoParametro @default(numerico)
-  opciones      Json?
-  valoresAlerta Json?
+  id             String        @id @default(uuid())
+  categoriaId    String
+  nombre         String
+  clave          String
+  unidad         String?
+  tipo           TipoParametro @default(numerico)
+  opciones       Json?
+  valoresAlerta  Json?
   valoresCritico Json?
   valoresUrgente Json?
-  obligatorio   Boolean       @default(false)
-  orden         Int           @default(0)
-  minNormal     Float?
-  maxNormal     Float?
-  umbralAlerta  Float?
-  umbralCritico Float?
-  umbralUrgente Float?
-  invertido     Boolean       @default(false)
+  obligatorio    Boolean       @default(false)
+  orden          Int           @default(0)
+  minNormal      Float?
+  maxNormal      Float?
+  umbralAlerta   Float?
+  umbralCritico  Float?
+  umbralUrgente  Float?
+  invertido      Boolean       @default(false)
 
   categoria CategoriaEquipo @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
 
@@ -368,21 +493,21 @@ model ParametroCategoria {
 }
 
 model TipoActivo {
-  id               String  @id @default(uuid())
-  empresaId        String
-  nombre           String
-  icono            String?
-  categoriaId      String?
-  mideTemperatura  Boolean @default(true)
-  mideAmperaje     Boolean @default(false)
-  midePresion      Boolean @default(false)
-  mideVibracion    Boolean @default(true)
-  mideBateria      Boolean @default(false)
-  mideToner        Boolean @default(false)
-  mideContador     Boolean @default(false)
-  mideVoltaje      Boolean @default(false)
-  mideHoras        Boolean @default(true)
-  activo           Boolean @default(true)
+  id              String  @id @default(uuid())
+  empresaId       String
+  nombre          String
+  icono           String?
+  categoriaId     String?
+  mideTemperatura Boolean @default(true)
+  mideAmperaje    Boolean @default(false)
+  midePresion     Boolean @default(false)
+  mideVibracion   Boolean @default(true)
+  mideBateria     Boolean @default(false)
+  mideToner       Boolean @default(false)
+  mideContador    Boolean @default(false)
+  mideVoltaje     Boolean @default(false)
+  mideHoras       Boolean @default(true)
+  activo          Boolean @default(true)
 
   empresa   Empresa          @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   categoria CategoriaEquipo? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
@@ -393,71 +518,73 @@ model TipoActivo {
 }
 
 model Activo {
-  id                        String       @id @default(uuid())
-  empresaId                 String
-  sedeId                    String?
-  sectorId                  String
-  tipoId                    String
-  responsableId             String?
-  codigo                    String
-  nombre                    String
-  marca                     String?
-  modelo                    String?
-  fechaIngreso              DateTime
-  ubicacion                 String?
-  horasActuales             Int          @default(0)
-  kilometrosActuales        Int          @default(0)
-  estrategiaMantenimiento   String       @default("fecha")
-  intervaloMantenimiento    Int?
-  unidadMantenimiento       String?
+  id                          String          @id @default(uuid())
+  empresaId                   String
+  sedeId                      String?
+  sectorId                    String
+  tipoId                      String
+  responsableId               String?
+  codigo                      String
+  nombre                      String
+  marca                       String?
+  modelo                      String?
+  fechaIngreso                DateTime
+  ubicacion                   String?
+  horasActuales               Int             @default(0)
+  kilometrosActuales          Int             @default(0)
+  estrategiaMantenimiento     String          @default("fecha")
+  intervaloMantenimiento      Int?
+  unidadMantenimiento         String?
   proximoMantenimientoLectura Int?
-  ultimaFechaMantenimiento  DateTime?
-  estado                    EstadoActivo @default(normal)
-  estadoOperativo           EstadoOperativo @default(operativo)
-  temperaturaMin            Float?
-  temperaturaMax            Float?
-  temperaturaAlerta         Float?
-  temperaturaCritica        Float?
-  amperajeNormal            Float?
-  amperajeAlerta            Float?
-  amperajeCritico           Float?
-  presionNormal             Float?
-  presionAlerta             Float?
-  presionCritica            Float?
-  voltajeMin                Float?
-  voltajeMax                Float?
-  voltajeAlerta             Float?
-  bateriaAlerta             Int?
-  bateriaCritica            Int?
-  tonerAlerta               Int?
-  tonerCritico              Int?
-  intervaloMedicionHoras    Int?
-  intervaloLubricacionHoras Int?
-  intervaloRodamientoHoras  Int?
-  proximoMantenimiento      DateTime?
-  notas                     String?
+  ultimaFechaMantenimiento    DateTime?
+  estado                      EstadoActivo    @default(normal)
+  estadoOperativo             EstadoOperativo @default(operativo)
+  temperaturaMin              Float?
+  temperaturaMax              Float?
+  temperaturaAlerta           Float?
+  temperaturaCritica          Float?
+  amperajeNormal              Float?
+  amperajeAlerta              Float?
+  amperajeCritico             Float?
+  presionNormal               Float?
+  presionAlerta               Float?
+  presionCritica              Float?
+  voltajeMin                  Float?
+  voltajeMax                  Float?
+  voltajeAlerta               Float?
+  bateriaAlerta               Int?
+  bateriaCritica              Int?
+  tonerAlerta                 Int?
+  tonerCritico                Int?
+  intervaloMedicionHoras      Int?
+  intervaloLubricacionHoras   Int?
+  intervaloRodamientoHoras    Int?
+  proximoMantenimiento        DateTime?
+  notas                       String?
   // Foto principal del activo: data URL JPEG comprimida client-side
   // (max ~640px). Se gestiona SOLO via POST/DELETE /api/activos/:id/foto;
   // el sync masivo no la toca para no inflar el array que viaja en cada save.
-  fotoUrl                   String?      @db.Text
-  visibilidadPublica        Json?
-  esItinerante              Boolean      @default(false)
-  locacionBase              String?
-  locacionActual            String?
-  fechaSalida               DateTime?
-  fechaRetorno              DateTime?
-  creadoEn                  DateTime     @default(now())
-  actualizadoEn             DateTime     @updatedAt
+  fotoUrl                     String?         @db.Text
+  visibilidadPublica          Json?
+  esItinerante                Boolean         @default(false)
+  locacionBase                String?
+  locacionActual              String?
+  fechaSalida                 DateTime?
+  fechaRetorno                DateTime?
+  creadoEn                    DateTime        @default(now())
+  actualizadoEn               DateTime        @updatedAt
 
-  empresa     Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  sede        Sede?    @relation(fields: [sedeId], references: [id], onDelete: SetNull)
-  sector      Sector   @relation(fields: [sectorId], references: [id], onDelete: Restrict)
+  empresa     Empresa    @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  sede        Sede?      @relation(fields: [sedeId], references: [id], onDelete: SetNull)
+  sector      Sector     @relation(fields: [sectorId], references: [id], onDelete: Restrict)
   tipo        TipoActivo @relation(fields: [tipoId], references: [id], onDelete: Restrict)
   responsable Usuario?   @relation("ActivoResponsable", fields: [responsableId], references: [id], onDelete: SetNull)
 
-  mediciones Medicion[]
-  tareas     TareaMantenimiento[]
-  documentos Documento[]
+  mediciones         Medicion[]
+  tareas             TareaMantenimiento[]
+  documentos         Documento[]
+  alertasTecnicas    AlertaTecnica[]
+  ordenesCorrectivas OrdenTrabajoCorrectiva[]
 
   @@unique([empresaId, codigo])
   @@index([empresaId])
@@ -466,28 +593,30 @@ model Activo {
 }
 
 model Medicion {
-  id            String         @id @default(uuid())
-  activoId      String
-  tecnicoId     String?
-  fecha         DateTime       @default(now())
-  temperatura   Float?
-  amperaje      Float?
-  presion       Float?
-  vibracion     Vibracion      @default(ninguna)
+  id                String         @id @default(uuid())
+  activoId          String
+  tecnicoId         String?
+  fecha             DateTime       @default(now())
+  temperatura       Float?
+  amperaje          Float?
+  presion           Float?
+  vibracion         Vibracion      @default(ninguna)
   horasMarcha       Int?
   kilometraje       Int?
   voltaje           Float?
   porcentajeBateria Int?
   nivelToner        Int?
   contador          Int?
-  estado          EstadoMedicion @default(normal)
-  observaciones   String?
-  origen          OrigenMedicion @default(manual)
-  parametrosExtra Json?
+  estado            EstadoMedicion @default(normal)
+  observaciones     String?
+  origen            OrigenMedicion @default(manual)
+  parametrosExtra   Json?
 
-  activo  Activo   @relation(fields: [activoId], references: [id], onDelete: Cascade)
-  tecnico Usuario? @relation("MedicionTecnico", fields: [tecnicoId], references: [id], onDelete: SetNull)
-  fotos   Foto[]
+  activo             Activo                   @relation(fields: [activoId], references: [id], onDelete: Cascade)
+  tecnico            Usuario?                 @relation("MedicionTecnico", fields: [tecnicoId], references: [id], onDelete: SetNull)
+  fotos              Foto[]
+  alertaTecnica      AlertaTecnica?
+  cierresCorrectivos OrdenTrabajoCorrectiva[] @relation("MedicionCierreCorrectivo")
 
   @@index([activoId])
 }
@@ -501,12 +630,12 @@ model Foto {
   // Cuando el celular saca la foto, la imagen trae metadatos EXIF: GPS, fecha
   // y modelo de dispositivo. Eso se extrae al subirla y se guarda aca para
   // probar despues 'donde y cuando se hizo realmente la medicion'.
-  capturedLat       Float?
-  capturedLng       Float?
-  capturedAt        DateTime?  // timestamp REAL del EXIF, no el del upload
-  deviceModel       String?    // ej: 'iPhone 13', 'Samsung SM-A536E'
-  fuenteUbicacion   String?    // 'exif' (mas confiable) | 'browser' | null
-  subidoEn          DateTime   @default(now())
+  capturedLat     Float?
+  capturedLng     Float?
+  capturedAt      DateTime? // timestamp REAL del EXIF, no el del upload
+  deviceModel     String? // ej: 'iPhone 13', 'Samsung SM-A536E'
+  fuenteUbicacion String? // 'exif' (mas confiable) | 'browser' | null
+  subidoEn        DateTime  @default(now())
 
   medicion Medicion @relation(fields: [medicionId], references: [id], onDelete: Cascade)
 
@@ -515,15 +644,15 @@ model Foto {
 
 model Visita {
   id        String   @id @default(uuid())
-  tipo      String   // 'landing' | 'ficha'
-  activoId  String?  // solo para tipo 'ficha'
+  tipo      String // 'landing' | 'ficha'
+  activoId  String? // solo para tipo 'ficha'
   referer   String?
   userAgent String?  @db.Text
   pais      String?
   ciudad    String?
   ip        String?
-  seccion   String?  // solo para tipo 'seccion': nombre de la pantalla
-  empresaId String?  // empresa del usuario logueado (tracking interno)
+  seccion   String? // solo para tipo 'seccion': nombre de la pantalla
+  empresaId String? // empresa del usuario logueado (tracking interno)
   creadoEn  DateTime @default(now())
 
   @@index([tipo])
@@ -584,16 +713,16 @@ model Documento {
 }
 
 model PagoMP {
-  id             String   @id @default(uuid())
-  empresaId      String
-  mpPagoId       String?  @unique  // ID del pago en MP (para no duplicar)
-  monto          Float
-  moneda         String   @default("ARS")
-  estado         String   // approved, pending, rejected, cancelled
-  concepto       String?
-  fecha          DateTime @default(now())
-  preapprovalId  String?  // ID de la suscripción
-  creadoEn       DateTime @default(now())
+  id            String   @id @default(uuid())
+  empresaId     String
+  mpPagoId      String?  @unique // ID del pago en MP (para no duplicar)
+  monto         Float
+  moneda        String   @default("ARS")
+  estado        String // approved, pending, rejected, cancelled
+  concepto      String?
+  fecha         DateTime @default(now())
+  preapprovalId String? // ID de la suscripción
+  creadoEn      DateTime @default(now())
 
   empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
 
@@ -612,7 +741,7 @@ model Testimonio {
   rol        String?
   email      String?
   mensaje    String    @db.Text
-  estado     String    @default("pendiente")  // pendiente | aprobado | rechazado
+  estado     String    @default("pendiente") // pendiente | aprobado | rechazado
   destacado  Boolean   @default(false)
   ip         String?
   userAgent  String?   @db.Text
@@ -623,19 +752,19 @@ model Testimonio {
 }
 
 model Lead {
-  id        String   @id @default(uuid())
-  nombre    String
-  empresa   String?
-  email     String
-  telefono  String?
-  mensaje   String?  @db.Text
-  plan      String?
-  source    String?
-  medium    String?
-  campaign  String?
-  content   String?
-  term      String?
-  creadoEn  DateTime @default(now())
+  id       String   @id @default(uuid())
+  nombre   String
+  empresa  String?
+  email    String
+  telefono String?
+  mensaje  String?  @db.Text
+  plan     String?
+  source   String?
+  medium   String?
+  campaign String?
+  content  String?
+  term     String?
+  creadoEn DateTime @default(now())
 
   @@index([creadoEn])
   @@index([source, campaign])

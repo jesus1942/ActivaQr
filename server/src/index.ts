@@ -30,6 +30,7 @@ import documentosRouter from './routes/documentos';
 import cuentaRouter from './routes/cuenta';
 import testimoniosRouter, { adminTestimoniosRouter } from './routes/testimonios';
 import { adminCotizacionesRouter, clienteCotizacionesRouter } from './routes/cotizaciones';
+import { adminCorrectivosRouter, clienteCorrectivosRouter } from './routes/correctivos';
 import { enviarPushASuperadmin } from './push';
 import { requireAdmin, requireAuth, requireAuthAndActiveEmpresa, requireSuperadmin } from './auth';
 import { createOriginValidator } from './corsPolicy';
@@ -128,7 +129,7 @@ app.get('/', (req, res) => {
   // Registrar visita a la landing (fire-and-forget, nunca demora la página).
   registrarVisita(req, 'landing').catch(() => {});
   res.set('Content-Type', 'text/html; charset=utf-8');
-  res.send(renderLanding(APP_PUBLIC_URL, process.env.WHATSAPP_NUMERO || '5492804018359', {
+  res.send(renderLanding(APP_PUBLIC_URL, process.env.WHATSAPP_NUMERO, {
     cafecito: process.env.APOYO_CAFECITO_URL,
     mp: process.env.APOYO_MP_URL,
     stripe: process.env.APOYO_STRIPE_URL,
@@ -285,6 +286,7 @@ app.use('/api/acceso-remoto', accesoRemotoRouter);
 // Autenticación y administración.
 app.use('/api/auth', authRouter);
 app.use('/api/admin/cotizaciones', adminCotizacionesRouter);
+app.use('/api/admin/correctivos', adminCorrectivosRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/admin', accesoRemotoRouter);
 
@@ -307,6 +309,7 @@ app.use('/api/categorias', requireAuthAndActiveEmpresa, categoriasRouter);
 // Suscripción queda accesible aun con el trial vencido para permitir contratar.
 app.use('/api/suscripcion', requireAuth, suscripcionRouter);
 app.use('/api/cotizaciones', clienteCotizacionesRouter);
+app.use('/api/correctivos', clienteCorrectivosRouter);
 app.use('/api/operadores', requireAuthAndActiveEmpresa, operadoresRouter);
 app.use('/api/tecnicos', requireAuthAndActiveEmpresa, tecnicosRouter);
 app.use('/api/fallas', requireAuthAndActiveEmpresa, fallasRouter);

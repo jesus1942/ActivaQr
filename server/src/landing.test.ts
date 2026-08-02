@@ -58,3 +58,10 @@ test('las fuentes estáticas no vuelven a publicar el catálogo anterior', () =>
   assert.match(readme, /\| Precio de entrada \| \*\*USD 29\*\*/);
   assert.doesNotMatch(readme, /\| Precio de entrada \| \*\*USD 20\*\*/);
 });
+
+test('el contacto de WhatsApp se configura por entorno y no queda publicado en el servidor', () => {
+  const servidor = readFileSync(resolve(process.cwd(), 'src/index.ts'), 'utf8');
+
+  assert.match(servidor, /process\.env\.WHATSAPP_NUMERO/);
+  assert.doesNotMatch(servidor, /WHATSAPP_NUMERO\s*\|\|\s*['"]\d{8,}['"]/);
+});

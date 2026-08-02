@@ -282,6 +282,8 @@ ActivaQr/
 
 ## Versiones
 
+**v1.3.1** — Alertas técnicas originadas en mediciones gestionadas · propuestas correctivas separadas del abono · cotización y aprobación expresa del administrador · órdenes de trabajo trazables · permisos con vigencia · decisión operativa ante riesgo crítico · cierre con evidencias y conformidad del cliente.
+
 **v1.3.0** — Módulo propio de Cotizaciones en el menú · propuestas vinculadas a empresas existentes · cálculo y vigencia persistentes · envío por plataforma, email, WhatsApp y Telegram · historial de canales · aceptación, rechazo y conversación dentro de ActivaQR.
 
 **v1.2.0** — Precios canónicos en USD · conversión automática a ARS por dólar MEP vendedor · actualización de suscripciones nuevas y existentes · cotización y ajustes auditables · cotizador interno para Plan Gestionado.

@@ -48,4 +48,6 @@ test('el texto identifica número, cliente, total y vigencia', () => {
   assert.match(texto, /Cliente Industrial/);
   assert.match(texto, /TOTAL MENSUAL/);
   assert.match(texto, /17\/8\/2026/);
+  assert.match(texto, /No incluye mantenimiento correctivo/);
+  assert.match(texto, /aprobación expresa del administrador/);
 });

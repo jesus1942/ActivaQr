@@ -108,7 +108,7 @@ export async function crearMedicionRemota(
     nivelToner?: number;
     observaciones?: string;
   }
-): Promise<any> {
+): Promise<{ medicion: any; alerta: { id: string; numero: string } | null }> {
   return parse(await apiFetch(`admin/empresas/${empresaId}/mediciones-remoto`, {
     method: 'POST',
     body: JSON.stringify(payload),

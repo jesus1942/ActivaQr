@@ -18,6 +18,8 @@ import {
   calcularCotizacionGestionada,
   type DetalleCotizacionGestionada,
 } from '../cotizacionesCore';
+import { armarTextoCorrectivo, type PropuestaCorrectiva } from '../correctivosCore';
+import { numeroDocumento } from '../correctivosService';
 
 const incluirCotizacion = {
   empresa: {
@@ -38,9 +40,37 @@ const incluirCotizacion = {
   },
   envios: { orderBy: { creadoEn: 'desc' as const } },
   mensajes: { orderBy: { creadoEn: 'asc' as const } },
+  alertaTecnica: {
+    include: { activo: { select: { codigo: true, nombre: true } } },
+  },
 };
 
 function textoDe(cotizacion: any): string {
+  if (cotizacion.tipo === 'correctivo') {
+    const detalle = cotizacion.detalle as PropuestaCorrectiva & {
+      alertaNumero: string;
+      activoCodigo: string;
+      activoNombre: string;
+      nivel: 'desmejorado' | 'riesgo' | 'critico';
+      hallazgo: string;
+      riesgo: string;
+      recomendacion: string;
+    };
+    const alerta = cotizacion.alertaTecnica;
+    return armarTextoCorrectivo({
+      numero: cotizacion.numero,
+      clienteNombre: cotizacion.clienteNombre,
+      activoCodigo: alerta?.activo?.codigo ?? detalle.activoCodigo,
+      activoNombre: alerta?.activo?.nombre ?? detalle.activoNombre,
+      alertaNumero: alerta?.numero ?? detalle.alertaNumero,
+      nivel: alerta?.nivel ?? detalle.nivel,
+      hallazgo: alerta?.hallazgo ?? detalle.hallazgo,
+      riesgo: alerta?.riesgo ?? detalle.riesgo,
+      recomendacion: alerta?.recomendacion ?? detalle.recomendacion,
+      detalle,
+      vigenciaHasta: cotizacion.vigenciaHasta,
+    });
+  }
   return armarTextoCotizacion({
     numero: cotizacion.numero,
     clienteNombre: cotizacion.clienteNombre,
@@ -352,10 +382,14 @@ clienteCotizacionesRouter.post('/:id/responder', async (req: AuthRequest, res: R
     }
     const cotizacion = await prisma.cotizacion.findFirst({
       where: { id: req.params.id, empresaId, estado: { not: 'borrador' } },
+      include: { alertaTecnica: { include: { orden: true } } },
     });
     if (!cotizacion) return res.status(404).json({ error: 'Cotización no encontrada.' });
     if (cotizacion.estado === 'vencida' && accion === 'aceptar') {
       return res.status(409).json({ error: 'La cotización venció. Pedí una actualización desde el mensaje.' });
+    }
+    if (['aceptada', 'rechazada'].includes(cotizacion.estado) && accion !== 'consultar') {
+      return res.status(409).json({ error: 'Esta cotización ya tiene una decisión registrada.' });
     }
 
     const estado = accion === 'aceptar'
@@ -374,12 +408,12 @@ clienteCotizacionesRouter.post('/:id/responder', async (req: AuthRequest, res: R
       select: { nombre: true },
     });
 
-    const [, mensaje] = await prisma.$transaction([
-      prisma.cotizacion.update({
+    const mensaje = await prisma.$transaction(async (tx) => {
+      await tx.cotizacion.update({
         where: { id: cotizacion.id },
         data: { estado, respondidaEn: new Date(), vistaEn: cotizacion.vistaEn ?? new Date() },
-      }),
-      prisma.cotizacionMensaje.create({
+      });
+      const creado = await tx.cotizacionMensaje.create({
         data: {
           cotizacionId: cotizacion.id,
           autorId: req.auth!.userId,
@@ -387,8 +421,44 @@ clienteCotizacionesRouter.post('/:id/responder', async (req: AuthRequest, res: R
           autorNombre: usuario?.nombre ?? 'Cliente',
           contenido,
         },
-      }),
-    ]);
+      });
+      if (cotizacion.tipo === 'correctivo' && cotizacion.alertaTecnica) {
+        if (accion === 'aceptar') {
+          const detalle = cotizacion.detalle as unknown as PropuestaCorrectiva;
+          await tx.alertaTecnica.update({
+            where: { id: cotizacion.alertaTecnica.id }, data: { estado: 'autorizada' },
+          });
+          if (!cotizacion.alertaTecnica.orden) {
+            const ordenId = randomUUID();
+            await tx.ordenTrabajoCorrectiva.create({
+              data: {
+                id: ordenId,
+                numero: numeroDocumento('OT', ordenId),
+                empresaId,
+                activoId: cotizacion.alertaTecnica.activoId,
+                alertaId: cotizacion.alertaTecnica.id,
+                cotizacionId: cotizacion.id,
+                alcance: detalle.alcance,
+                materialesPrevistos: detalle.materialesPrevistos,
+                plazoEstimadoDias: detalle.plazoEstimadoDias,
+                costoAprobado: cotizacion.total,
+                moneda: cotizacion.moneda,
+                requierePermiso: detalle.requierePermiso,
+                estadoPermiso: detalle.requierePermiso ? 'pendiente' : 'no_requerido',
+                permisoCondiciones: detalle.condicionesSeguridad,
+                autorizadaPorId: req.auth!.userId,
+                autorizadaPorNombre: usuario?.nombre ?? 'Administrador de la empresa',
+              },
+            });
+          }
+        } else if (accion === 'rechazar') {
+          await tx.alertaTecnica.update({
+            where: { id: cotizacion.alertaTecnica.id }, data: { estado: 'rechazada' },
+          });
+        }
+      }
+      return creado;
+    });
 
     enviarPushASuperadmin({
       title: `${cotizacion.clienteNombre} · ${accion}`,

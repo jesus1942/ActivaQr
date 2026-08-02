@@ -13,6 +13,7 @@ import { calcularEstadoAutomatico, estadoMedicionAActivo } from '../alertas';
 import { enviarPushASuperadmin, enviarPushAEmpresa } from '../push';
 import { registrarAuditoria } from '../auditoria';
 import { APP_URL } from '../urls';
+import { registrarAlertaDesdeMedicion } from '../correctivosService';
 
 const MAX_ADJUNTO = 8_000_000; // ~6MB en base64
 
@@ -206,12 +207,12 @@ router.post(
 
       // Estado automático según umbrales del activo.
       const estadoCalculado = calcularEstadoAutomatico(
-        { temperatura, amperaje, presion, voltaje, porcentajeBateria, nivelToner },
+        { temperatura, amperaje, presion, vibracion, voltaje, porcentajeBateria, nivelToner },
         activo,
       );
       // Mapear el nivel calculado al enum EstadoMedicion (normal | revision | urgente).
       const estadoMedicion: 'normal' | 'revision' | 'urgente' =
-        estadoCalculado === 'urgente' ? 'urgente'
+        estadoCalculado === 'urgente' || estadoCalculado === 'critico' ? 'urgente'
         : estadoCalculado === 'normal' ? 'normal'
         : 'revision';
 
@@ -222,30 +223,43 @@ router.post(
         tecnicoId = operador?.id ?? null;
       }
 
-      const medicion = await prisma.medicion.create({
-        data: {
-          activoId,
-          tecnicoId,
-          fecha: new Date(),
-          temperatura: temperatura ?? null,
-          amperaje: amperaje ?? null,
-          presion: presion ?? null,
-          vibracion: vibracion ?? undefined,
-          voltaje: voltaje ?? null,
-          porcentajeBateria: porcentajeBateria ?? null,
-          nivelToner: nivelToner ?? null,
-          estado: estadoMedicion as any,
-          observaciones: observaciones ?? null,
-          origen: 'manual',
-        },
-      });
-
       // Escalar el estado del activo al peor entre el calculado y el actual.
       const nuevoEstadoActivo = estadoMedicionAActivo(estadoCalculado);
       const nivelActivo: Record<string, number> = { normal: 0, alerta: 1, mantenimiento: 1, critico: 2 };
-      if ((nivelActivo[nuevoEstadoActivo] ?? 0) > (nivelActivo[activo.estado] ?? 0)) {
-        await prisma.activo.update({ where: { id: activoId }, data: { estado: nuevoEstadoActivo } });
-      }
+      const { medicion, alerta } = await prisma.$transaction(async (tx) => {
+        const nuevaMedicion = await tx.medicion.create({
+          data: {
+            activoId,
+            tecnicoId,
+            fecha: new Date(),
+            temperatura: temperatura ?? null,
+            amperaje: amperaje ?? null,
+            presion: presion ?? null,
+            vibracion: vibracion ?? undefined,
+            voltaje: voltaje ?? null,
+            porcentajeBateria: porcentajeBateria ?? null,
+            nivelToner: nivelToner ?? null,
+            estado: estadoMedicion as any,
+            observaciones: observaciones ?? null,
+            origen: 'manual',
+          },
+        });
+        const nuevaAlerta = await registrarAlertaDesdeMedicion({
+          empresaId: req.params.id,
+          activo,
+          medicionId: nuevaMedicion.id,
+          estadoMedicion,
+          nivelSolicitado: req.body?.nivelRiesgo,
+          observaciones,
+          creadaPorId: req.auth?.userId,
+          creadaPorNombre: req.auth?.email ?? 'ActivaQR',
+          db: tx,
+        });
+        if ((nivelActivo[nuevoEstadoActivo] ?? 0) > (nivelActivo[activo.estado] ?? 0)) {
+          await tx.activo.update({ where: { id: activoId }, data: { estado: nuevoEstadoActivo } });
+        }
+        return { medicion: nuevaMedicion, alerta: nuevaAlerta };
+      });
 
       void registrarAuditoria({
         empresaId: req.params.id,
@@ -264,7 +278,7 @@ router.post(
         ['admin', 'operador'],
       ).catch(() => {});
 
-      res.status(201).json(medicion);
+      res.status(201).json({ medicion, alerta });
     } catch (err) { next(err); }
   }
 );
@@ -273,41 +287,10 @@ router.post(
 router.post(
   '/empresas/:id/tareas-remoto',
   requireAuth, requireSuperadmin,
-  async (req: AuthRequest, res: Response, next: NextFunction) => {
-    try {
-      const p = await prisma.permisoAccesoRemoto.findUnique({ where: { empresaId: req.params.id } });
-      if (!p || p.estado !== 'activo') return res.status(403).json({ error: 'Sin permiso activo.' });
-
-      const { activoId, tipo, fechaProgramada, observaciones } = req.body ?? {};
-      if (!activoId || !tipo || !fechaProgramada) {
-        return res.status(400).json({ error: 'activoId, tipo y fechaProgramada son obligatorios.' });
-      }
-      const activo = await prisma.activo.findFirst({
-        where: { id: activoId, empresaId: req.params.id },
-        select: { id: true },
-      });
-      if (!activo) return res.status(404).json({ error: 'Activo no encontrado en la empresa autorizada.' });
-      const tarea = await prisma.tareaMantenimiento.create({
-        data: { activoId: activo.id, tipo, fechaProgramada: new Date(fechaProgramada), observaciones, estado: 'pendiente' },
-      });
-      void registrarAuditoria({
-        empresaId: req.params.id,
-        usuarioId: req.auth?.userId ?? null,
-        usuarioNombre: req.auth?.email ?? 'soporte',
-        usuarioRol: 'soporte_remoto',
-        accion: 'acceso_remoto',
-        entidad: 'orden_trabajo',
-        entidadId: tarea.id,
-        detalle: `Soporte creó tarea remota: ${tipo}`,
-      });
-      enviarPushAEmpresa(
-        req.params.id,
-        { title: 'Intervención de soporte', body: `Se creó una tarea: ${tipo}`, url: '#/mantenimiento' },
-        ['admin', 'operador'],
-      ).catch(() => {});
-      res.status(201).json(tarea);
-    } catch (err) { next(err); }
-  }
+  async (_req: AuthRequest, res: Response) => res.status(409).json({
+    code: 'requiere_autorizacion_correctiva',
+    error: 'Una tarea correctiva requiere alerta, cotización aceptada y orden de trabajo autorizada.',
+  })
 );
 
 // ── Chat ─────────────────────────────────────────────────────────────────────
