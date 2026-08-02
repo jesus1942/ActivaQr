@@ -283,8 +283,31 @@ export function renderLanding(
   .form-msg.err{display:block;background:#fef2f2;border:2px solid #f87171;color:#b91c1c}
 
   /* FOOTER */
-  footer{background:var(--negro);color:var(--gris-c);padding:32px 0;text-align:center;font-size:13px}
-  footer .brand{font-size:18px;display:block;margin-bottom:8px}
+  .site-footer{position:relative;background:radial-gradient(circle at 68% 54%,rgba(45,212,191,.16),transparent 36%),linear-gradient(180deg,rgba(20,24,34,.88),var(--negro));color:var(--gris-c);padding:48px 0 18px;text-align:left;font-size:13px;overflow:hidden}
+  .site-footer::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0,transparent 79px,rgba(38,48,63,.38) 80px);pointer-events:none}
+  .site-footer .footer-contenido{position:relative}
+  .site-footer .footer-superior{display:grid;grid-template-columns:minmax(0,1.4fr) auto;align-items:end;gap:28px;padding-bottom:36px}
+  .site-footer .footer-kicker{margin:0 0 10px;color:var(--tealbr);font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+  .site-footer .footer-frase{max-width:530px;margin:0;color:var(--text);font-size:clamp(24px,4vw,42px);line-height:1.08;letter-spacing:-.04em;font-weight:700}
+  .site-footer .footer-acciones{display:flex;align-items:center;justify-content:flex-end;gap:18px;flex-wrap:wrap}
+  .site-footer .footer-enlace{color:var(--gris);text-decoration:none;font-weight:700;transition:color .15s}
+  .site-footer .footer-enlace:hover{color:var(--text)}
+  .site-footer .footer-app{color:var(--tealbr);text-decoration:none;font-weight:800;padding:11px 16px;border:1px solid rgba(45,212,191,.45);border-radius:10px;transition:color .15s,border-color .15s,box-shadow .15s}
+  .site-footer .footer-app:hover{color:#fff;border-color:var(--tealbr);box-shadow:0 0 18px rgba(45,212,191,.2)}
+  .site-footer .marca-gigante{display:flex;align-items:baseline;justify-content:center;gap:.14em;width:100%;padding:8px 0 20px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-size:clamp(58px,15.7vw,176px);line-height:.9;letter-spacing:-.085em;font-weight:900;text-transform:uppercase;white-space:nowrap}
+  .site-footer .marca-activa{color:var(--text)}
+  .site-footer .marca-qr{color:var(--tealbr);text-shadow:0 0 32px rgba(45,212,191,.4)}
+  .site-footer .footer-inferior{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;padding-top:16px;color:var(--gris)}
+  .site-footer .footer-legales{display:flex;gap:18px;flex-wrap:wrap}
+  .site-footer .footer-legales a{color:inherit;text-decoration:none;font-weight:600;transition:color .15s}
+  .site-footer .footer-legales a:hover{color:var(--text)}
+  @media(max-width:620px){
+    .site-footer{padding:36px 0 16px}
+    .site-footer .footer-superior{grid-template-columns:1fr;align-items:start;padding-bottom:28px}
+    .site-footer .footer-acciones{justify-content:flex-start}
+    .site-footer .marca-gigante{justify-content:flex-start;gap:.12em}
+    .site-footer .footer-inferior{align-items:flex-start;flex-direction:column}
+  }
 
   /* FADE-IN SCROLL */
   .reveal{opacity:0;transform:translateY(32px);transition:opacity .6s ease,transform .6s ease}
@@ -685,15 +708,28 @@ export function renderLanding(
 
 ${seccionApoyo}
 
-<footer>
-  <div class="wrap">
-    <span class="brand">ActivaQR</span>
-    Gestión de activos industriales con QR. Hecho en Argentina.
-    <div style="margin-top:8px"><a href="${appUrl}" target="_blank" rel="noopener" style="color:var(--naranja);text-decoration:none;font-weight:700">Ingresar a la app</a></div>
-    <div style="margin-top:10px;font-size:12px;color:var(--gris-c)">
-      <a href="https://api.activaqr.net/politica-uso" style="color:var(--gris-c);text-decoration:none;font-weight:600">Pol&iacute;tica de Uso</a>
-      <span style="margin:0 8px;color:#475569">&middot;</span>
-      <a href="https://api.activaqr.net/politica-privacidad" style="color:var(--gris-c);text-decoration:none;font-weight:600">Pol&iacute;tica de Privacidad</a>
+<footer class="site-footer">
+  <div class="wrap footer-contenido">
+    <div class="footer-superior">
+      <div>
+        <p class="footer-kicker">Gesti&oacute;n de activos industriales con QR</p>
+        <p class="footer-frase">De la medici&oacute;n en campo a una decisi&oacute;n clara.</p>
+      </div>
+      <div class="footer-acciones">
+        <a class="footer-enlace" href="#planes">Ver planes</a>
+        <a class="footer-app" href="${appUrl}" target="_blank" rel="noopener">Ingresar a la app</a>
+      </div>
+    </div>
+    <div class="marca-gigante" aria-label="Activa QR">
+      <span class="marca-activa">Activa</span>
+      <span class="marca-qr">QR</span>
+    </div>
+    <div class="footer-inferior">
+      <span>Hecho en Argentina &middot; &copy; 2026 ActivaQR</span>
+      <div class="footer-legales" aria-label="Informaci&oacute;n legal">
+        <a href="https://api.activaqr.net/politica-uso">Pol&iacute;tica de Uso</a>
+        <a href="https://api.activaqr.net/politica-privacidad">Pol&iacute;tica de Privacidad</a>
+      </div>
     </div>
   </div>
 </footer>

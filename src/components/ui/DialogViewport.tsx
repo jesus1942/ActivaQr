@@ -20,6 +20,13 @@ export const DialogViewport: React.FC<DialogViewportProps> = ({
   onEscape,
 }) => {
   const rootRef = useRef<HTMLDivElement>(null);
+  const onEscapeRef = useRef(onEscape);
+
+  // El callback suele declararse en linea desde el formulario y, por lo tanto,
+  // cambia de identidad en cada pulsacion. Conservamos la version mas reciente
+  // sin reiniciar el ciclo del dialogo: desmontar y montar este efecto durante
+  // la escritura restauraba el foco anterior y expulsaba el cursor del campo.
+  onEscapeRef.current = onEscape;
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -34,7 +41,7 @@ export const DialogViewport: React.FC<DialogViewportProps> = ({
     });
 
     const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onEscape?.();
+      if (event.key === 'Escape') onEscapeRef.current?.();
     };
     document.addEventListener('keydown', handleKey);
 
@@ -44,7 +51,7 @@ export const DialogViewport: React.FC<DialogViewportProps> = ({
       document.body.style.overflow = previousOverflow;
       previousActive?.focus?.({ preventScroll: true });
     };
-  }, [onEscape]);
+  }, []);
 
   return createPortal(
     <div
