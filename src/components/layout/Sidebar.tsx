@@ -24,6 +24,7 @@ import {
   MoreHorizontal,
   User,
   ScanLine,
+  FileSignature,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getNotificacionesCliente } from '../../data/accesoRemotoApi';
@@ -44,6 +45,7 @@ interface NavItem {
 
 const navEmpresa: NavItem[] = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', sub: 'Resumen del día' },
+  { to: '/cotizaciones', icon: FileSignature, label: 'Cotizaciones', sub: 'Propuestas de ActivaQR' },
   { to: '/indicadores', icon: BarChart3, label: 'Indicadores', sub: 'KPIs y gráficos', feature: 'indicadores' },
   { to: '/activos', icon: Package, label: 'Activos', sub: 'Tus equipos' },
   { to: '/medicion', icon: ClipboardList, label: 'Mediciones', sub: 'Cargar lectura' },
@@ -58,8 +60,9 @@ const navEmpresa: NavItem[] = [
 
 const navSuperadmin: NavItem[] = [
   { to: '/', icon: Building2, label: 'Empresas' },
-  { to: '/analitica', icon: LineChart, label: 'Analítica' },
+  { to: '/cotizaciones', icon: FileSignature, label: 'Cotizaciones', sub: 'Crear, enviar y responder' },
   { to: '/mensajes', icon: MessageSquare, label: 'Mensajes' },
+  { to: '/analitica', icon: LineChart, label: 'Analítica' },
   { to: '/testimonios', icon: Star, label: 'Testimonios', sub: 'Moderar landing' },
 ];
 
@@ -170,7 +173,7 @@ export const Sidebar: React.FC = () => {
           rel="noopener noreferrer"
           className="block text-faint hover:text-brand-600 text-[11px] font-mono transition-colors"
         >
-          v1.2.0 · dev Jesús Olguín
+          v1.3.0 · dev Jesús Olguín
         </a>
       </div>
     </aside>

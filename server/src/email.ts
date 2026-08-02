@@ -397,3 +397,60 @@ export async function enviarEmailAltaTrial(params: {
   });
   return true;
 }
+
+export async function enviarEmailCotizacion(params: {
+  destinatario: string;
+  contactoNombre?: string | null;
+  empresaNombre: string;
+  numero: string;
+  concepto: string;
+  total: number;
+  vigenciaHasta: Date;
+  texto: string;
+  plataformaUrl: string;
+}): Promise<boolean> {
+  if (!emailConfigurado()) return false;
+
+  const escapeHtml = (valor: string) => valor.replace(/[&<>"']/g, (caracter) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[caracter] as string));
+  const resend = getResend();
+  const from = process.env.RESEND_FROM || DEFAULT_FROM;
+  const replyTo = process.env.LEAD_EMAIL || process.env.RESEND_FROM_EMAIL;
+  const nombre = params.contactoNombre ? `, ${escapeHtml(params.contactoNombre)}` : '';
+  const detalle = escapeHtml(params.texto).replace(/\n/g, '<br />');
+
+  const resultado = await resend.emails.send({
+    from,
+    to: params.destinatario,
+    ...(replyTo ? { replyTo } : {}),
+    subject: `Cotización ${params.numero} — ${params.empresaNombre}`.replace(/[\r\n]/g, ' '),
+    html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;"><tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+<tr><td style="background:#0f172a;padding:22px 30px;border:3px solid #0f172a;border-bottom:none;">
+  <span style="font-size:22px;font-weight:900;color:#f97316;text-transform:uppercase;letter-spacing:2px;">ActivaQR</span>
+  <span style="float:right;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;">${escapeHtml(params.numero)}</span>
+</td></tr>
+<tr><td style="background:#fff;border:3px solid #0f172a;border-top:none;padding:30px;">
+  <p style="margin:0 0 8px;font-size:12px;font-weight:800;color:#f97316;text-transform:uppercase;letter-spacing:1px;">Cotización comercial</p>
+  <h1 style="margin:0 0 18px;font-size:24px;font-weight:900;color:#0f172a;">Hola${nombre}</h1>
+  <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">Preparamos la propuesta de <strong>${escapeHtml(params.concepto)}</strong> para <strong>${escapeHtml(params.empresaNombre)}</strong>.</p>
+  <div style="background:#fff7ed;border:2px solid #f97316;padding:16px 20px;margin-bottom:20px;">
+    <span style="font-size:11px;font-weight:800;color:#ea580c;text-transform:uppercase;letter-spacing:1px;">Total mensual</span><br />
+    <span style="font-size:28px;font-weight:900;color:#0f172a;">$${params.total.toLocaleString('es-AR')} ARS</span><br />
+    <span style="font-size:12px;color:#64748b;">Válida hasta el ${params.vigenciaHasta.toLocaleDateString('es-AR')}</span>
+  </div>
+  <p style="margin:0 0 22px;font-size:13px;color:#475569;line-height:1.6;">${detalle}</p>
+  <a href="${params.plataformaUrl}" style="display:inline-block;background:#f97316;color:#fff;font-size:14px;font-weight:900;text-decoration:none;text-transform:uppercase;letter-spacing:1px;padding:13px 24px;border:3px solid #0f172a;box-shadow:4px 4px 0 #0f172a;">Ver y responder en ActivaQR →</a>
+  <p style="margin:22px 0 0;font-size:12px;color:#94a3b8;line-height:1.5;">También podés responder este email. Para aceptar, rechazar o dejar una consulta registrada, ingresá a la plataforma.</p>
+</td></tr>
+<tr><td style="background:#0f172a;padding:15px 30px;border:3px solid #0f172a;border-top:none;">
+  <p style="margin:0;font-size:11px;color:#64748b;text-align:center;">© ${new Date().getFullYear()} ActivaQR — Puerto Madryn, Chubut</p>
+</td></tr>
+</table></td></tr></table></body></html>`,
+  });
+  if (resultado.error) throw new Error('Resend no pudo entregar la cotización.');
+  return true;
+}

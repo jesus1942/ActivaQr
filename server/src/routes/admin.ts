@@ -29,11 +29,17 @@ router.get('/empresas', async (_req: AuthRequest, res: Response, next: NextFunct
         _count: { select: { activos: true, usuarios: true } },
         usuarios: {
           where: { rol: 'admin' },
-          select: { id: true, nombre: true, email: true, telefono: true, activo: true, ultimoAcceso: true },
+          select: { id: true, nombre: true, email: true, telefono: true, activo: true, ultimoAcceso: true, telegramChatId: true },
         },
       },
     });
-    res.json(empresas);
+    res.json(empresas.map((empresa) => ({
+      ...empresa,
+      usuarios: empresa.usuarios.map(({ telegramChatId, ...usuario }) => ({
+        ...usuario,
+        telegramDisponible: Boolean(telegramChatId),
+      })),
+    })));
   } catch (err) {
     next(err);
   }

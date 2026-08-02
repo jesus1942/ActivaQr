@@ -1,5 +1,6 @@
 // v1.1.0
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Building2,
   Plus,
@@ -27,6 +28,7 @@ import {
   Monitor,
   Tablet,
   Sparkles,
+  FileSignature,
 } from 'lucide-react';
 import { exportarCsv } from '../utils/exportCsv';
 import {
@@ -57,7 +59,6 @@ import { PanelAccesoRemoto } from '../components/PanelAccesoRemoto';
 import { NotificacionesPush } from '../components/NotificacionesPush';
 import { apiFetch } from '../data/auth';
 import { DialogViewport } from '../components/ui/DialogViewport';
-import { CotizadorPlanGestionado } from '../components/CotizadorPlanGestionado';
 
 const PLANES = ['inicial', 'empresa', 'industrial'] as const;
 
@@ -393,6 +394,7 @@ const ModalWhatsapp: React.FC<{
 };
 
 export const Admin: React.FC = () => {
+  const navigate = useNavigate();
   const [empresas, setEmpresas] = useState<EmpresaAdmin[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [solicitudes, setSolicitudes] = useState<SolicitudUpgrade[]>([]);
@@ -724,8 +726,6 @@ export const Admin: React.FC = () => {
 
       <NotificacionesPush />
 
-      <CotizadorPlanGestionado empresas={empresas} />
-
       {/* Barra de búsqueda */}
       <div className="relative">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-faint pointer-events-none" />
@@ -914,6 +914,13 @@ export const Admin: React.FC = () => {
                   >
                     <Power size={15} className={toggling.has(emp.id) ? 'animate-spin' : ''} />
                     {toggling.has(emp.id) ? 'Procesando...' : emp.estado === 'activa' ? 'Suspender empresa' : 'Activar empresa'}
+                  </button>
+
+                  <button
+                    onClick={() => navigate(`/cotizaciones?empresaId=${encodeURIComponent(emp.id)}`)}
+                    className="w-full flex items-center gap-2 border border-brand-600 bg-brand-50 dark:bg-brand-600/15 px-3 py-2 text-sm font-bold text-brand-700 dark:text-brand-300 hover:bg-brand-100 transition-colors"
+                  >
+                    <FileSignature size={15} /> Crear o ver cotizaciones
                   </button>
 
                   <button

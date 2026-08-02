@@ -1,9 +1,9 @@
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN ?? '';
 
-async function sendMessage(chatId: string, text: string): Promise<void> {
+async function sendMessage(chatId: string, text: string): Promise<boolean> {
   if (!TELEGRAM_BOT_TOKEN) {
     console.warn('[telegram] TELEGRAM_BOT_TOKEN no configurado');
-    return;
+    return false;
   }
   const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
     method: 'POST',
@@ -13,7 +13,17 @@ async function sendMessage(chatId: string, text: string): Promise<void> {
   if (!res.ok) {
     const body = await res.text();
     console.error('[telegram] Error al enviar mensaje:', body);
+    throw new Error('Telegram no pudo entregar el mensaje.');
   }
+  return true;
+}
+
+/** Envía texto comercial sin interpretar contenido del usuario como HTML. */
+export async function enviarMensajeTelegram(chatId: string, text: string): Promise<boolean> {
+  const seguro = text.replace(/[&<>]/g, (caracter) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;',
+  }[caracter] as string));
+  return sendMessage(chatId, seguro);
 }
 
 export async function enviarLinkRecuperacion(opts: {

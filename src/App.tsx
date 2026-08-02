@@ -36,6 +36,8 @@ const MensajesAdmin = lazy(() => import('./pages/MensajesAdmin').then((m) => ({ 
 const AdminTestimonios = lazy(() => import('./pages/AdminTestimonios').then((m) => ({ default: m.AdminTestimonios })));
 const Admin = lazy(() => import('./pages/Admin').then((m) => ({ default: m.Admin })));
 const Analitica = lazy(() => import('./pages/Analitica').then((m) => ({ default: m.Analitica })));
+const CotizacionesAdmin = lazy(() => import('./pages/CotizacionesAdmin').then((m) => ({ default: m.CotizacionesAdmin })));
+const CotizacionesCliente = lazy(() => import('./pages/CotizacionesCliente').then((m) => ({ default: m.CotizacionesCliente })));
 const FichaPublica = lazy(() => import('./pages/FichaPublica').then((m) => ({ default: m.FichaPublica })));
 const AprobarAccesoRemoto = lazy(() => import('./pages/AprobarAccesoRemoto').then((m) => ({ default: m.AprobarAccesoRemoto })));
 const ResetPassword = lazy(() => import('./pages/ResetPassword').then((m) => ({ default: m.ResetPassword })));
@@ -124,6 +126,7 @@ function AuthedApp() {
             <Route index element={<RutaProtegida scope="Administracion"><Admin /></RutaProtegida>} />
             <Route path="admin" element={<RutaProtegida scope="Administracion"><Admin /></RutaProtegida>} />
             <Route path="analitica" element={<RutaProtegida scope="Analitica"><Analitica /></RutaProtegida>} />
+            <Route path="cotizaciones" element={<RutaProtegida scope="Cotizaciones"><CotizacionesAdmin /></RutaProtegida>} />
             <Route path="mensajes" element={<RutaProtegida scope="Mensajes"><MensajesAdmin /></RutaProtegida>} />
             <Route path="testimonios" element={<RutaProtegida scope="Testimonios"><AdminTestimonios /></RutaProtegida>} />
             <Route path="*" element={<Navigate to="/" replace />} />
@@ -143,6 +146,7 @@ function AuthedApp() {
             <Route path="qr" element={<RutaProtegida scope="Gestion QR"><GestionQR /></RutaProtegida>} />
             <Route path="configuracion" element={<RutaProtegida scope="Configuracion"><Configuracion /></RutaProtegida>} />
             <Route path="mensajes" element={<RutaProtegida scope="Mensajes"><Mensajes /></RutaProtegida>} />
+            <Route path="cotizaciones" element={<RutaProtegida scope="Cotizaciones"><CotizacionesCliente /></RutaProtegida>} />
           </>
         )}
       </Route>

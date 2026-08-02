@@ -1,16 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Calculator, Copy, Mail } from 'lucide-react';
-
-interface TenantCotizable {
-  id: string;
-  nombre: string;
-  plan: string;
-  _count: { activos: number };
-}
+import { Calculator, Mail, MessageCircle, Save, Send } from 'lucide-react';
+import type { EmpresaAdmin } from '../data/adminApi';
+import { crearCotizacion, type Cotizacion } from '../data/cotizacionesApi';
+import { useToast } from './ui/Toast';
 
 interface DatosCotizador {
   empresaId: string;
-  cliente: string;
+  contactoId: string;
+  concepto: string;
   planSoftware: string;
   activos: number;
   visitasMes: number;
@@ -22,13 +19,16 @@ interface DatosCotizador {
   viaticosVisita: number;
   extrasMensuales: number;
   descuento: number;
+  vigenciaDias: number;
+  notas: string;
 }
 
-const STORAGE_KEY = 'activaqr_cotizador_gestionado_v1';
+const STORAGE_KEY = 'activaqr_cotizador_gestionado_v2';
 
 const INICIAL: DatosCotizador = {
   empresaId: '',
-  cliente: '',
+  contactoId: '',
+  concepto: 'Plan Gestionado ActivaQR',
   planSoftware: 'empresa',
   activos: 10,
   visitasMes: 1,
@@ -40,13 +40,15 @@ const INICIAL: DatosCotizador = {
   viaticosVisita: 0,
   extrasMensuales: 0,
   descuento: 0,
+  vigenciaDias: 15,
+  notas: '',
 };
 
 function cargarInicial(): DatosCotizador {
   if (typeof window === 'undefined') return INICIAL;
   try {
     const guardado = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
-    return { ...INICIAL, ...guardado, empresaId: '', cliente: '' };
+    return { ...INICIAL, ...guardado, empresaId: '', contactoId: '' };
   } catch {
     return INICIAL;
   }
@@ -58,16 +60,40 @@ const moneda = new Intl.NumberFormat('es-AR', {
   maximumFractionDigits: 0,
 });
 
-export const CotizadorPlanGestionado: React.FC<{ empresas: TenantCotizable[] }> = ({
-  empresas,
-}) => {
+export const CotizadorPlanGestionado: React.FC<{
+  empresas: EmpresaAdmin[];
+  empresaInicialId?: string;
+  onCreada: (cotizacion: Cotizacion) => void;
+}> = ({ empresas, empresaInicialId, onCreada }) => {
+  const { toast } = useToast();
   const [datos, setDatos] = useState<DatosCotizador>(cargarInicial);
-  const [copiado, setCopiado] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+
+  const seleccionarEmpresa = (empresaId: string) => {
+    const empresa = empresas.find((item) => item.id === empresaId);
+    setDatos((actual) => ({
+      ...actual,
+      empresaId,
+      contactoId: empresa?.usuarios[0]?.id ?? '',
+      planSoftware: empresa?.plan ?? actual.planSoftware,
+      activos: empresa?._count.activos || actual.activos,
+    }));
+  };
 
   useEffect(() => {
-    const preferencias = { ...datos, empresaId: '', cliente: '' };
+    if (empresaInicialId && empresas.some((empresa) => empresa.id === empresaInicialId)) {
+      seleccionarEmpresa(empresaInicialId);
+    }
+  }, [empresaInicialId, empresas.length]);
+
+  useEffect(() => {
+    const preferencias = { ...datos, empresaId: '', contactoId: '' };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(preferencias));
   }, [datos]);
+
+  const empresa = empresas.find((item) => item.id === datos.empresaId);
+  const contacto = empresa?.usuarios.find((item) => item.id === datos.contactoId)
+    ?? empresa?.usuarios[0];
 
   const totales = useMemo(() => {
     const trabajo = datos.horasVisita * datos.valorHora;
@@ -77,9 +103,6 @@ export const CotizadorPlanGestionado: React.FC<{ empresas: TenantCotizable[] }> 
     const subtotalMensual = porVisita * datos.visitasMes + datos.extrasMensuales;
     const descuento = subtotalMensual * Math.min(Math.max(datos.descuento, 0), 100) / 100;
     return {
-      trabajo,
-      mediciones,
-      traslado,
       porVisita,
       subtotalMensual,
       descuento,
@@ -87,39 +110,25 @@ export const CotizadorPlanGestionado: React.FC<{ empresas: TenantCotizable[] }> 
     };
   }, [datos]);
 
-  const textoCotizacion = useMemo(() => [
-    `COTIZACIÓN PLAN GESTIONADO — ACTIVAQR`,
-    datos.cliente ? `Cliente: ${datos.cliente}` : 'Cliente: a definir',
-    `Plataforma: Plan ${datos.planSoftware.toUpperCase()} (suscripción de software por separado)`,
-    `Equipos relevados: ${datos.activos}`,
-    `Frecuencia: ${datos.visitasMes} visita(s) por mes`,
-    `Duración estimada: ${datos.horasVisita} hora(s) por visita`,
-    `Servicio por visita: ${moneda.format(totales.porVisita)}`,
-    `Abono mensual del servicio: ${moneda.format(totales.mensual)}`,
-    '',
-    'Incluye toma de mediciones en campo, carga en ActivaQR, control de alertas e informe PDF.',
-    'La suscripción de software se factura aparte según el plan elegido. Cotización sujeta a relevamiento final, distancia y condiciones de acceso.',
-  ].join('\n'), [datos, totales]);
-
   const setNumero = (campo: keyof DatosCotizador, value: string) => {
     setDatos((actual) => ({ ...actual, [campo]: Math.max(0, Number(value) || 0) }));
   };
 
-  const seleccionarTenant = (empresaId: string) => {
-    const empresa = empresas.find((item) => item.id === empresaId);
-    setDatos((actual) => ({
-      ...actual,
-      empresaId,
-      cliente: empresa?.nombre ?? '',
-      planSoftware: empresa?.plan ?? actual.planSoftware,
-      activos: empresa?._count.activos || actual.activos,
-    }));
-  };
-
-  const copiar = async () => {
-    await navigator.clipboard.writeText(textoCotizacion);
-    setCopiado(true);
-    window.setTimeout(() => setCopiado(false), 1800);
+  const guardar = async () => {
+    if (!datos.empresaId) {
+      toast('Elegí una empresa de tu nómina.', 'warning');
+      return;
+    }
+    setGuardando(true);
+    try {
+      const cotizacion = await crearCotizacion(datos);
+      onCreada(cotizacion);
+      toast(`Cotización ${cotizacion.numero} guardada.`, 'success');
+    } catch (error) {
+      toast(error instanceof Error ? error.message : 'No se pudo guardar la cotización.', 'error');
+    } finally {
+      setGuardando(false);
+    }
   };
 
   const campoNumero = (
@@ -150,54 +159,55 @@ export const CotizadorPlanGestionado: React.FC<{ empresas: TenantCotizable[] }> 
   );
 
   return (
-    <details className="border border-line bg-surface/85 shadow-soft">
-      <summary className="cursor-pointer list-none flex items-center justify-between gap-3 p-4">
-        <span className="flex items-center gap-2 font-display font-black text-lg text-content">
-          <Calculator size={20} className="text-brand-600" />
-          Cotizador Plan Gestionado
-        </span>
-        <span className="text-xs font-black uppercase tracking-wider text-brand-600">
-          Servicio en campo
-        </span>
-      </summary>
+    <section className="border border-line bg-surface/85 shadow-soft">
+      <div className="flex items-start justify-between gap-3 p-4 border-b border-line">
+        <div>
+          <h2 className="flex items-center gap-2 font-display font-black text-lg text-content">
+            <Calculator size={20} className="text-brand-600" /> Nueva cotización
+          </h2>
+          <p className="text-sm text-muted mt-1">Elegí un cliente existente; sus datos de contacto se completan desde la nómina.</p>
+        </div>
+        <span className="hidden sm:block text-xs font-black uppercase tracking-wider text-brand-600">Plan Gestionado</span>
+      </div>
 
-      <div className="border-t border-line p-4 space-y-5">
-        <p className="text-sm text-muted">
-          Calculá la toma de mediciones como un servicio separado de la suscripción ActivaQR.
-          Los valores que cargues quedan guardados sólo en este dispositivo.
-        </p>
-
+      <div className="p-4 space-y-5">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="block sm:col-span-2">
-            <span className="block text-[11px] font-black uppercase tracking-wider text-muted mb-1">
-              Tenant o prospecto
-            </span>
+            <span className="block text-[11px] font-black uppercase tracking-wider text-muted mb-1">Empresa de tu nómina</span>
             <select
               value={datos.empresaId}
-              onChange={(event) => seleccionarTenant(event.target.value)}
+              onChange={(event) => seleccionarEmpresa(event.target.value)}
               className="w-full h-10 border border-line bg-surface px-3 text-sm font-semibold outline-none focus:border-brand-600"
             >
-              <option value="">Prospecto nuevo</option>
-              {empresas.map((empresa) => (
-                <option key={empresa.id} value={empresa.id}>{empresa.nombre}</option>
-              ))}
+              <option value="">Seleccionar empresa</option>
+              {empresas.map((item) => <option key={item.id} value={item.id}>{item.nombre}</option>)}
             </select>
           </label>
           <label className="block sm:col-span-2">
-            <span className="block text-[11px] font-black uppercase tracking-wider text-muted mb-1">
-              Nombre para la cotización
-            </span>
+            <span className="block text-[11px] font-black uppercase tracking-wider text-muted mb-1">Contacto</span>
+            <select
+              value={datos.contactoId}
+              onChange={(event) => setDatos((actual) => ({ ...actual, contactoId: event.target.value }))}
+              disabled={!empresa?.usuarios.length}
+              className="w-full h-10 border border-line bg-surface px-3 text-sm font-semibold outline-none focus:border-brand-600 disabled:opacity-50"
+            >
+              {!empresa?.usuarios.length && <option value="">La empresa no tiene administrador activo</option>}
+              {empresa?.usuarios.map((usuario) => (
+                <option key={usuario.id} value={usuario.id}>{usuario.nombre} · {usuario.email}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block sm:col-span-2">
+            <span className="block text-[11px] font-black uppercase tracking-wider text-muted mb-1">Concepto</span>
             <input
-              value={datos.cliente}
-              onChange={(event) => setDatos((actual) => ({ ...actual, cliente: event.target.value }))}
-              placeholder="Empresa o persona de contacto"
+              value={datos.concepto}
+              onChange={(event) => setDatos((actual) => ({ ...actual, concepto: event.target.value }))}
               className="w-full h-10 border border-line bg-surface px-3 text-sm font-semibold outline-none focus:border-brand-600"
             />
           </label>
           <label className="block">
-            <span className="block text-[11px] font-black uppercase tracking-wider text-muted mb-1">
-              Plan de software
-            </span>
+            <span className="block text-[11px] font-black uppercase tracking-wider text-muted mb-1">Plan de software</span>
             <select
               value={datos.planSoftware}
               onChange={(event) => setDatos((actual) => ({ ...actual, planSoftware: event.target.value }))}
@@ -208,6 +218,7 @@ export const CotizadorPlanGestionado: React.FC<{ empresas: TenantCotizable[] }> 
               <option value="industrial">Industrial</option>
             </select>
           </label>
+          {campoNumero('Vigencia', 'vigenciaDias', 'días')}
           {campoNumero('Equipos a medir', 'activos')}
           {campoNumero('Visitas por mes', 'visitasMes')}
           {campoNumero('Horas por visita', 'horasVisita', 'h')}
@@ -218,43 +229,55 @@ export const CotizadorPlanGestionado: React.FC<{ empresas: TenantCotizable[] }> 
           {campoNumero('Viáticos por visita', 'viaticosVisita', 'ARS')}
           {campoNumero('Extras mensuales', 'extrasMensuales', 'ARS')}
           {campoNumero('Descuento', 'descuento', '%')}
+          <label className="block sm:col-span-2 lg:col-span-4">
+            <span className="block text-[11px] font-black uppercase tracking-wider text-muted mb-1">Observaciones</span>
+            <textarea
+              value={datos.notas}
+              onChange={(event) => setDatos((actual) => ({ ...actual, notas: event.target.value }))}
+              rows={3}
+              placeholder="Alcance, condiciones de acceso o aclaraciones particulares."
+              className="w-full border border-line bg-surface px-3 py-2 text-sm font-semibold outline-none focus:border-brand-600 resize-y"
+            />
+          </label>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        {empresa && (
+          <div className="flex flex-wrap gap-2 text-xs text-muted">
+            <span className="border border-line bg-subtle px-2 py-1 font-semibold">Cliente: {empresa.nombre}</span>
+            <span className="border border-line bg-subtle px-2 py-1 flex items-center gap-1"><Mail size={12} /> {contacto?.email ?? 'Sin email'}</span>
+            <span className="border border-line bg-subtle px-2 py-1 flex items-center gap-1"><MessageCircle size={12} /> {contacto?.telefono ?? 'Sin WhatsApp'}</span>
+            <span className="border border-line bg-subtle px-2 py-1 flex items-center gap-1"><Send size={12} /> {contacto?.telegramDisponible ? 'Telegram vinculado' : 'Telegram no vinculado'}</span>
+          </div>
+        )}
+
+        <div className="grid gap-3 sm:grid-cols-4">
           <div className="border border-line bg-subtle p-3">
             <p className="text-[11px] font-black uppercase tracking-wider text-muted">Por visita</p>
             <p className="font-display font-black text-xl text-content">{moneda.format(totales.porVisita)}</p>
           </div>
           <div className="border border-line bg-subtle p-3">
-            <p className="text-[11px] font-black uppercase tracking-wider text-muted">Subtotal mensual</p>
+            <p className="text-[11px] font-black uppercase tracking-wider text-muted">Subtotal</p>
             <p className="font-display font-black text-xl text-content">{moneda.format(totales.subtotalMensual)}</p>
           </div>
+          <div className="border border-line bg-subtle p-3">
+            <p className="text-[11px] font-black uppercase tracking-wider text-muted">Descuento</p>
+            <p className="font-display font-black text-xl text-content">-{moneda.format(totales.descuento)}</p>
+          </div>
           <div className="border border-brand-600 bg-brand-50 dark:bg-brand-600/15 p-3">
-            <p className="text-[11px] font-black uppercase tracking-wider text-brand-700 dark:text-brand-300">Abono gestionado</p>
+            <p className="text-[11px] font-black uppercase tracking-wider text-brand-700 dark:text-brand-300">Total mensual</p>
             <p className="font-display font-black text-xl text-content">{moneda.format(totales.mensual)}</p>
           </div>
         </div>
 
-        <div className="border border-line bg-subtle p-3">
-          <pre className="whitespace-pre-wrap font-sans text-sm text-content">{textoCotizacion}</pre>
-        </div>
-
-        <div className="grid gap-2 sm:grid-cols-2">
-          <button
-            type="button"
-            onClick={copiar}
-            className="h-11 flex items-center justify-center gap-2 bg-brand-600 text-white border border-line font-black uppercase text-xs"
-          >
-            <Copy size={16} /> {copiado ? 'Cotización copiada' : 'Copiar cotización'}
-          </button>
-          <a
-            href={`mailto:?subject=${encodeURIComponent(`Cotización ActivaQR Plan Gestionado — ${datos.cliente || 'Cliente'}`)}&body=${encodeURIComponent(textoCotizacion)}`}
-            className="h-11 flex items-center justify-center gap-2 bg-surface text-content border border-line font-black uppercase text-xs"
-          >
-            <Mail size={16} /> Preparar email
-          </a>
-        </div>
+        <button
+          type="button"
+          onClick={guardar}
+          disabled={guardando || !datos.empresaId}
+          className="w-full sm:w-auto min-h-11 flex items-center justify-center gap-2 bg-brand-600 text-white border border-line px-5 font-black uppercase text-xs disabled:opacity-50"
+        >
+          <Save size={16} /> {guardando ? 'Guardando…' : 'Guardar y preparar envío'}
+        </button>
       </div>
-    </details>
+    </section>
   );
 };

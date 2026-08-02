@@ -29,6 +29,7 @@ import kpisRouter from './routes/kpis';
 import documentosRouter from './routes/documentos';
 import cuentaRouter from './routes/cuenta';
 import testimoniosRouter, { adminTestimoniosRouter } from './routes/testimonios';
+import { adminCotizacionesRouter, clienteCotizacionesRouter } from './routes/cotizaciones';
 import { enviarPushASuperadmin } from './push';
 import { requireAdmin, requireAuth, requireAuthAndActiveEmpresa, requireSuperadmin } from './auth';
 import { createOriginValidator } from './corsPolicy';
@@ -283,6 +284,7 @@ app.use('/api/acceso-remoto', accesoRemotoRouter);
 
 // Autenticación y administración.
 app.use('/api/auth', authRouter);
+app.use('/api/admin/cotizaciones', adminCotizacionesRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/admin', accesoRemotoRouter);
 
@@ -304,6 +306,7 @@ app.use('/api/sync', requireAuthAndActiveEmpresa, requireAdmin, syncRouter);
 app.use('/api/categorias', requireAuthAndActiveEmpresa, categoriasRouter);
 // Suscripción queda accesible aun con el trial vencido para permitir contratar.
 app.use('/api/suscripcion', requireAuth, suscripcionRouter);
+app.use('/api/cotizaciones', clienteCotizacionesRouter);
 app.use('/api/operadores', requireAuthAndActiveEmpresa, operadoresRouter);
 app.use('/api/tecnicos', requireAuthAndActiveEmpresa, tecnicosRouter);
 app.use('/api/fallas', requireAuthAndActiveEmpresa, fallasRouter);

@@ -164,8 +164,71 @@ model Empresa {
   permisoAcceso  PermisoAccesoRemoto?
   categorias     CategoriaEquipo[]
   pagos          PagoMP[]
+  cotizaciones   Cotizacion[]
 
   @@index([mpPreapprovalId])
+}
+
+// Propuestas comerciales emitidas por ActivaQR para empresas registradas.
+// El detalle conserva la composición del precio aplicada en ese momento.
+model Cotizacion {
+  id                String   @id @default(uuid())
+  numero            String   @unique
+  empresaId         String
+  clienteNombre     String
+  contactoNombre    String?
+  contactoEmail     String?
+  contactoTelefono  String?
+  concepto          String
+  planSoftware      String
+  detalle           Json
+  moneda            String   @default("ARS")
+  subtotal          Float
+  descuento         Float    @default(0)
+  total             Float
+  vigenciaHasta     DateTime
+  estado            String   @default("borrador") // borrador | enviada | vista | aceptada | rechazada | vencida
+  creadaPorId       String?
+  creadaPorNombre   String
+  enviadaEn         DateTime?
+  vistaEn           DateTime?
+  respondidaEn      DateTime?
+  creadaEn          DateTime @default(now())
+  actualizadaEn     DateTime @updatedAt
+
+  empresa  Empresa              @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  envios   CotizacionEnvio[]
+  mensajes CotizacionMensaje[]
+
+  @@index([empresaId, creadaEn])
+  @@index([estado, creadaEn])
+}
+
+model CotizacionEnvio {
+  id           String   @id @default(uuid())
+  cotizacionId String
+  canal        String   // plataforma | email | whatsapp | telegram
+  estado       String   // enviado | preparado | error
+  detalle      String?
+  creadoEn     DateTime @default(now())
+
+  cotizacion Cotizacion @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+
+  @@index([cotizacionId, creadoEn])
+}
+
+model CotizacionMensaje {
+  id           String   @id @default(uuid())
+  cotizacionId String
+  autorId      String?
+  autorRol     String   // superadmin | cliente
+  autorNombre  String
+  contenido    String   @db.Text
+  creadoEn     DateTime @default(now())
+
+  cotizacion Cotizacion @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+
+  @@index([cotizacionId, creadoEn])
 }
 
 model CotizacionUsdArs {

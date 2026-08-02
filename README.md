@@ -107,7 +107,7 @@ flowchart TD
     api --> avisos["Web Push y Telegram<br/>alertas"]
 ```
 
-La PWA conserva las mediciones sin conexión y las sincroniza cuando vuelve la señal. La API concentra autenticación, reglas de negocio, acceso público de solo lectura, cotización en USD/ARS y webhooks. Cada empresa ve únicamente sus datos: el `empresaId` se resuelve desde el token en cada request, nunca desde el cliente.
+La PWA conserva las mediciones sin conexión y las sincroniza cuando vuelve la señal. La API concentra autenticación, reglas de negocio, acceso público de solo lectura, cotización en USD/ARS y webhooks. El módulo comercial vincula cada cotización con una empresa registrada, conserva el historial de email, WhatsApp, Telegram y plataforma, y habilita respuestas dentro de ActivaQR. Cada empresa ve únicamente sus datos: el `empresaId` se resuelve desde el token en cada request, nunca desde el cliente.
 
 ---
 
@@ -281,6 +281,8 @@ ActivaQr/
 ---
 
 ## Versiones
+
+**v1.3.0** — Módulo propio de Cotizaciones en el menú · propuestas vinculadas a empresas existentes · cálculo y vigencia persistentes · envío por plataforma, email, WhatsApp y Telegram · historial de canales · aceptación, rechazo y conversación dentro de ActivaQR.
 
 **v1.2.0** — Precios canónicos en USD · conversión automática a ARS por dólar MEP vendedor · actualización de suscripciones nuevas y existentes · cotización y ajustes auditables · cotizador interno para Plan Gestionado.
 

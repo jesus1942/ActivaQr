@@ -16,7 +16,15 @@ export interface EmpresaAdmin {
   trialFin?: string | null;
   trialLecturaFin?: string | null;
   _count: { activos: number; usuarios: number };
-  usuarios: { id: string; nombre: string; email: string; telefono: string | null; activo: boolean; ultimoAcceso: string | null }[];
+  usuarios: {
+    id: string;
+    nombre: string;
+    email: string;
+    telefono: string | null;
+    activo: boolean;
+    ultimoAcceso: string | null;
+    telegramDisponible: boolean;
+  }[];
 }
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
