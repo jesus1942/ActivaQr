@@ -133,7 +133,7 @@ app.get('/', (req, res) => {
     cafecito: process.env.APOYO_CAFECITO_URL,
     mp: process.env.APOYO_MP_URL,
     stripe: process.env.APOYO_STRIPE_URL,
-  }, false));
+  }));
 });
 
 // Paginas legales publicas: requisito para aceptacion previa al pago.

@@ -21,20 +21,14 @@ test('la landing usa el mismo catálogo comercial que el backend', () => {
   assert.doesNotMatch(html, /contraseña|password/i);
 });
 
-test('la landing no promete checkout automático cuando falta configuración', () => {
-  const manual = renderLanding('https://activaqr.net/app/', undefined, undefined, false);
-  const automatico = renderLanding('https://activaqr.net/app/', undefined, undefined, true);
+test('la landing muestra solo la información comercial necesaria sobre el cobro', () => {
+  const html = renderLanding('https://activaqr.net/app/');
 
-  assert.match(
-    manual,
-    /id="estado-contratacion"[^>]*>Podés iniciar los 30 días de prueba sin tarjeta\. La contratación se coordina con ActivaQR mientras se termina de habilitar el cobro recurrente por Mercado Pago\.<\/p>/,
-  );
-  assert.match(
-    automatico,
-    /id="estado-contratacion"[^>]*>El tenant adhiere el cobro recurrente desde la app\. Mercado Pago procesa en ARS el equivalente al dólar MEP vendedor vigente\.<\/p>/,
-  );
-  assert.match(automatico, /Los planes se expresan en USD/);
-  assert.match(automatico, /el equivalente se actualiza automáticamente/);
+  assert.doesNotMatch(html, /El tenant adhiere el cobro recurrente desde la app/);
+  assert.doesNotMatch(html, /id="estado-contratacion"|actualizarEstadoContratacion/);
+  assert.match(html, /Los planes se expresan en USD/);
+  assert.match(html, /Mercado Pago cobra en ARS al dólar MEP vendedor vigente/);
+  assert.match(html, /el equivalente se actualiza automáticamente/);
 });
 
 test('el Plan Gestionado se cotiza aparte y llega identificado por el formulario', () => {

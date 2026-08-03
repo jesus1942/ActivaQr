@@ -57,7 +57,6 @@ export function renderLanding(
   appUrl: string,
   whatsapp?: string,
   apoyo?: { cafecito?: string; mp?: string; stripe?: string },
-  contratacionAutomatica = false,
 ): string {
   // whatsapp: numero en formato internacional sin signos (ej: 5491112345678)
   const wa = (whatsapp || '').replace(/\D/g, '');
@@ -90,9 +89,6 @@ export function renderLanding(
 </section>`
     : '';
   const planes = renderPlanes(appUrl);
-  const estadoContratacion = contratacionAutomatica
-    ? 'El tenant adhiere el cobro recurrente desde la app. Mercado Pago procesa en ARS el equivalente al dólar MEP vendedor vigente.'
-    : 'Podés iniciar los 30 días de prueba sin tarjeta. La contratación se coordina con ActivaQR mientras se termina de habilitar el cobro recurrente por Mercado Pago.';
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -645,8 +641,7 @@ export function renderLanding(
     <div class="planes">
       ${planes}
     </div>
-    <p id="estado-contratacion" style="text-align:center;margin-top:22px;font-size:13px;color:var(--gris)">${estadoContratacion}</p>
-    <p style="text-align:center;margin-top:10px;font-size:13px;color:var(--gris)">Los planes se expresan en USD. Mercado Pago cobra en ARS al dólar MEP vendedor vigente y el equivalente se actualiza automáticamente. Sin costo de instalación ni permanencia mínima.</p>
+    <p style="text-align:center;margin-top:22px;font-size:13px;color:var(--gris)">Los planes se expresan en USD. Mercado Pago cobra en ARS al dólar MEP vendedor vigente y el equivalente se actualiza automáticamente. Sin costo de instalación ni permanencia mínima.</p>
   </div>
 </section>
 
@@ -793,22 +788,6 @@ ${seccionApoyo}
 </script>
 
 <script>
-// La landing de GitHub Pages no conoce las variables protegidas de Railway.
-// Consulta únicamente un booleano público para reflejar el estado real del
-// cobro recurrente sin exponer credenciales ni importes internos.
-(function actualizarEstadoContratacion(){
-  var estado = document.getElementById('estado-contratacion');
-  if(!estado) return;
-  fetch('https://api.activaqr.net/api/contratacion/estado', {cache:'no-store'})
-    .then(function(r){ return r.ok ? r.json() : null; })
-    .then(function(data){
-      if(data && data.mercadoPagoHabilitado){
-        estado.textContent = 'El tenant adhiere el cobro recurrente desde la app. Mercado Pago procesa en ARS el equivalente al dólar MEP vendedor vigente.';
-      }
-    })
-    .catch(function(){});
-})();
-
 // Scroll hint: desaparece al bajar
 const hint = document.getElementById('scrollHint');
 if(hint){
