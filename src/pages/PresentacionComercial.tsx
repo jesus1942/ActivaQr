@@ -28,18 +28,22 @@ import {
   Network,
   PackageCheck,
   PanelRightOpen,
+  Pause,
   Play,
   QrCode,
   RefreshCw,
   ScanLine,
   ShieldCheck,
   Smartphone,
+  Square,
   Target,
   Users,
+  Volume2,
   Wrench,
   X,
   Zap,
 } from 'lucide-react';
+import { CONFIGURACION_NARRACION, NARRACIONES_PRESENTACION } from '../data/presentacionNarraciones';
 
 type Slide = {
   section: string;
@@ -49,8 +53,35 @@ type Slide = {
   render: () => React.ReactNode;
 };
 
+type EstadoNarracion = 'idle' | 'preparing' | 'speaking' | 'paused' | 'between' | 'finished' | 'unsupported' | 'error';
+
 const surface = 'border border-line bg-surface/80 backdrop-blur-sm';
 const subtle = 'border border-line bg-subtle/80';
+
+function elegirVozRioplatense(voces: SpeechSynthesisVoice[]) {
+  return [...voces]
+    .filter((voz) => voz.lang.toLowerCase().startsWith('es'))
+    .sort((a, b) => {
+      const puntuar = (voz: SpeechSynthesisVoice) => {
+        const idioma = voz.lang.toLowerCase();
+        const nombre = voz.name.toLowerCase();
+        let puntaje = 0;
+        if (idioma === 'es-ar') puntaje += 120;
+        else if (idioma === 'es-uy') puntaje += 100;
+        else if (idioma === 'es-419') puntaje += 70;
+        else puntaje += 40;
+        if (/argentin|rioplat|elena/.test(nombre)) puntaje += 40;
+        if (voz.localService) puntaje += 4;
+        if (voz.default) puntaje += 2;
+        return puntaje;
+      };
+      return puntuar(b) - puntuar(a);
+    })[0];
+}
+
+function dividirNarracion(texto: string) {
+  return texto.match(/[^.!?]+(?:[.!?]+|$)/g)?.map((parte) => parte.trim()).filter(Boolean) ?? [texto];
+}
 
 function LogoMark() {
   return (
@@ -279,10 +310,17 @@ const slideImageFallback = (
 
 export const PresentacionComercial: React.FC = () => {
   const presentationRef = useRef<HTMLDivElement>(null);
+  const narracionAutomaticaRef = useRef(false);
+  const narracionTokenRef = useRef(0);
+  const narracionTimerRef = useRef<number | null>(null);
   const [current, setCurrent] = useState(0);
   const [notesOpen, setNotesOpen] = useState(false);
   const [indexOpen, setIndexOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [narracionAutomatica, setNarracionAutomatica] = useState(false);
+  const [estadoNarracion, setEstadoNarracion] = useState<EstadoNarracion>('idle');
+  const [nombreVoz, setNombreVoz] = useState('Voz sintética del dispositivo · español rioplatense');
+  const [errorNarracion, setErrorNarracion] = useState('');
 
   const slides = useMemo<Slide[]>(() => [
     {
@@ -882,6 +920,138 @@ export const PresentacionComercial: React.FC = () => {
     document.getElementById('app-scroll')?.scrollTo({ top: 0, behavior: 'smooth' });
   }, [slides.length]);
 
+  const limpiarTemporizadorNarracion = useCallback(() => {
+    if (narracionTimerRef.current !== null) {
+      window.clearTimeout(narracionTimerRef.current);
+      narracionTimerRef.current = null;
+    }
+  }, []);
+
+  const detenerNarracion = useCallback(() => {
+    narracionAutomaticaRef.current = false;
+    narracionTokenRef.current += 1;
+    limpiarTemporizadorNarracion();
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    setNarracionAutomatica(false);
+    setEstadoNarracion('idle');
+    setErrorNarracion('');
+  }, [limpiarTemporizadorNarracion]);
+
+  const reproducirNarracion = useCallback((indice: number) => {
+    if (!('speechSynthesis' in window) || typeof window.SpeechSynthesisUtterance === 'undefined') {
+      narracionAutomaticaRef.current = false;
+      setNarracionAutomatica(false);
+      setEstadoNarracion('unsupported');
+      setErrorNarracion('Este navegador no ofrece narración de voz. La presentación manual sigue disponible.');
+      return;
+    }
+
+    const motor = window.speechSynthesis;
+    const texto = NARRACIONES_PRESENTACION[indice];
+    if (!texto) {
+      narracionAutomaticaRef.current = false;
+      setNarracionAutomatica(false);
+      setEstadoNarracion('error');
+      setErrorNarracion('No se encontró el guion de esta lámina.');
+      return;
+    }
+
+    limpiarTemporizadorNarracion();
+    const token = narracionTokenRef.current + 1;
+    narracionTokenRef.current = token;
+    motor.cancel();
+    setEstadoNarracion('preparing');
+    setErrorNarracion('');
+
+    const voz = elegirVozRioplatense(motor.getVoices());
+    setNombreVoz(voz ? `Voz sintética ${voz.name} · ${voz.lang}` : 'Voz sintética del dispositivo · es-AR');
+    const partes = dividirNarracion(texto);
+
+    const pronunciarParte = (parteActual: number) => {
+      if (!narracionAutomaticaRef.current || narracionTokenRef.current !== token) return;
+
+      const locucion = new SpeechSynthesisUtterance(partes[parteActual]);
+      locucion.lang = CONFIGURACION_NARRACION.idioma;
+      locucion.rate = CONFIGURACION_NARRACION.velocidad;
+      locucion.pitch = CONFIGURACION_NARRACION.tono;
+      if (voz) locucion.voice = voz;
+
+      locucion.onstart = () => {
+        if (narracionTokenRef.current === token && motor.paused === false) setEstadoNarracion('speaking');
+      };
+
+      locucion.onend = () => {
+        if (!narracionAutomaticaRef.current || narracionTokenRef.current !== token) return;
+
+        if (parteActual < partes.length - 1) {
+          narracionTimerRef.current = window.setTimeout(() => pronunciarParte(parteActual + 1), 170);
+          return;
+        }
+
+        if (indice < slides.length - 1) {
+          setEstadoNarracion('between');
+          narracionTimerRef.current = window.setTimeout(() => {
+            if (narracionAutomaticaRef.current && narracionTokenRef.current === token) go(indice + 1);
+          }, CONFIGURACION_NARRACION.pausaEntreLaminasMs);
+          return;
+        }
+
+        narracionAutomaticaRef.current = false;
+        setNarracionAutomatica(false);
+        setEstadoNarracion('finished');
+      };
+
+      locucion.onerror = (event) => {
+        if (narracionTokenRef.current !== token || event.error === 'canceled' || event.error === 'interrupted') return;
+        narracionAutomaticaRef.current = false;
+        setNarracionAutomatica(false);
+        setEstadoNarracion('error');
+        setErrorNarracion(event.error === 'not-allowed'
+          ? 'El navegador bloqueó el audio. Tocá Automatizar nuevamente para habilitarlo.'
+          : 'La voz del dispositivo no pudo completar esta lámina.');
+      };
+
+      motor.speak(locucion);
+    };
+
+    narracionTimerRef.current = window.setTimeout(() => pronunciarParte(0), 80);
+  }, [go, limpiarTemporizadorNarracion, slides.length]);
+
+  const iniciarNarracionAutomatica = () => {
+    if (!('speechSynthesis' in window) || typeof window.SpeechSynthesisUtterance === 'undefined') {
+      setEstadoNarracion('unsupported');
+      setErrorNarracion('Este navegador no ofrece narración de voz. La presentación manual sigue disponible.');
+      return;
+    }
+    narracionAutomaticaRef.current = true;
+    setNarracionAutomatica(true);
+    setEstadoNarracion('preparing');
+    setErrorNarracion('');
+    if (current === slides.length - 1) go(0);
+  };
+
+  const alternarPausaNarracion = () => {
+    if (!('speechSynthesis' in window)) return;
+    if (estadoNarracion === 'paused') {
+      window.speechSynthesis.resume();
+      setEstadoNarracion('speaking');
+      return;
+    }
+    window.speechSynthesis.pause();
+    setEstadoNarracion('paused');
+  };
+
+  useEffect(() => {
+    if (narracionAutomatica) reproducirNarracion(current);
+  }, [current, narracionAutomatica, reproducirNarracion]);
+
+  useEffect(() => () => {
+    narracionAutomaticaRef.current = false;
+    narracionTokenRef.current += 1;
+    limpiarTemporizadorNarracion();
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  }, [limpiarTemporizadorNarracion]);
+
   useEffect(() => {
     const syncFullscreenState = () => {
       setIsFullscreen(document.fullscreenElement === presentationRef.current);
@@ -913,7 +1083,19 @@ export const PresentacionComercial: React.FC = () => {
   };
 
   const slide = slides[current];
+  const textoNarrado = NARRACIONES_PRESENTACION[current];
   const progress = ((current + 1) / slides.length) * 100;
+  const puedeAlternarPausa = estadoNarracion === 'speaking' || estadoNarracion === 'paused';
+  const estadoNarracionTexto: Record<EstadoNarracion, string> = {
+    idle: 'Narración lista',
+    preparing: 'Preparando la voz…',
+    speaking: `Narrando la lámina ${current + 1}`,
+    paused: 'Narración en pausa',
+    between: 'Comentario terminado · pasando a la siguiente lámina…',
+    finished: 'Presentación automática finalizada',
+    unsupported: 'Narración no disponible en este navegador',
+    error: 'La narración se interrumpió',
+  };
 
   return (
     <div
@@ -929,6 +1111,35 @@ export const PresentacionComercial: React.FC = () => {
           <button onClick={() => setIndexOpen((value) => !value)} className="press flex min-h-[44px] items-center gap-2 rounded-md border border-line bg-surface px-4 text-sm font-bold text-content">
             Lámina {current + 1} de {slides.length} <ChevronDown size={16} />
           </button>
+          {!narracionAutomatica ? (
+            <button
+              onClick={iniciarNarracionAutomatica}
+              className="press flex min-h-[44px] items-center gap-2 rounded-md border border-brand-600 bg-brand-600/10 px-4 text-sm font-bold text-brand-600"
+            >
+              <Volume2 size={17} aria-hidden="true" />
+              {estadoNarracion === 'finished' ? 'Repetir automático' : 'Automatizar'}
+            </button>
+          ) : (
+            <div className="flex items-center overflow-hidden rounded-md border border-brand-600 bg-brand-600/10">
+              <button
+                onClick={alternarPausaNarracion}
+                disabled={!puedeAlternarPausa}
+                aria-label={estadoNarracion === 'paused' ? 'Reanudar narración' : 'Pausar narración'}
+                title={estadoNarracion === 'paused' ? 'Reanudar narración' : 'Pausar narración'}
+                className="press grid min-h-[44px] min-w-[44px] place-items-center text-brand-600 hover:bg-brand-600/10 disabled:cursor-wait disabled:opacity-40"
+              >
+                {estadoNarracion === 'paused' ? <Play size={18} aria-hidden="true" /> : <Pause size={18} aria-hidden="true" />}
+              </button>
+              <button
+                onClick={detenerNarracion}
+                aria-label="Detener presentación automática"
+                title="Detener presentación automática"
+                className="press grid min-h-[44px] min-w-[44px] place-items-center border-l border-brand-600/30 text-brand-600 hover:bg-brand-600/10"
+              >
+                <Square size={16} aria-hidden="true" />
+              </button>
+            </div>
+          )}
           <button
             onClick={() => setNotesOpen((value) => !value)}
             aria-label={notesOpen ? 'Ocultar notas del expositor' : 'Abrir notas del expositor'}
@@ -944,6 +1155,25 @@ export const PresentacionComercial: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {(narracionAutomatica || estadoNarracion === 'finished' || estadoNarracion === 'unsupported' || estadoNarracion === 'error') && (
+        <div className={`${surface} no-print flex items-center gap-4 px-4 py-3`} role="status" aria-live="polite">
+          <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${estadoNarracion === 'error' || estadoNarracion === 'unsupported' ? 'bg-red-500/10 text-red-500' : 'bg-brand-600/10 text-brand-600'}`}>
+            <Volume2 size={19} aria-hidden="true" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-black text-content">{estadoNarracionTexto[estadoNarracion]}</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-muted">
+              {errorNarracion || `${nombreVoz} · ritmo pausado · la lámina avanza cuando termina el comentario.`}
+            </p>
+          </div>
+          {estadoNarracion === 'finished' && (
+            <button onClick={iniciarNarracionAutomatica} className="press shrink-0 rounded-md border border-line bg-surface px-3 py-2 text-xs font-bold text-content">
+              Repetir
+            </button>
+          )}
+        </div>
+      )}
 
       {indexOpen && (
         <div className={`${surface} no-print max-h-[420px] overflow-y-auto p-4`}>
@@ -975,16 +1205,24 @@ export const PresentacionComercial: React.FC = () => {
 
       {notesOpen && (
         <aside className={`${surface} no-print p-5`}>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-600">Guion sugerido para esta lámina</p>
-          <ul className="mt-4 grid gap-3 lg:grid-cols-2">
-            {slide.notes.map((note) => <li key={note} className="flex gap-3 text-sm leading-relaxed text-muted"><Play size={15} className="mt-1 shrink-0 text-brand-600" />{note}</li>)}
-          </ul>
+          <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-600">Texto de la narración automática</p>
+              <p className="mt-4 text-sm leading-7 text-muted">{textoNarrado}</p>
+            </div>
+            <div className="border-t border-line pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-600">Claves para el expositor</p>
+              <ul className="mt-4 grid gap-3">
+                {slide.notes.map((note) => <li key={note} className="flex gap-3 text-sm leading-relaxed text-muted"><Play size={15} className="mt-1 shrink-0 text-brand-600" />{note}</li>)}
+              </ul>
+            </div>
+          </div>
         </aside>
       )}
 
       <div className="no-print flex items-center justify-between gap-3">
         <button disabled={current === 0} onClick={() => go(current - 1)} className="press flex min-h-[46px] items-center gap-2 rounded-md border border-line bg-surface px-5 text-sm font-bold text-content disabled:opacity-30"><ArrowLeft size={18} /> Anterior</button>
-        <p className="hidden text-center text-xs text-muted sm:block">Usá ← → para avanzar durante la reunión</p>
+        <p className="hidden text-center text-xs text-muted sm:block">{narracionAutomatica ? 'Modo automático: la voz marca el cambio de lámina' : 'Usá ← → para avanzar durante la reunión'}</p>
         <button disabled={current === slides.length - 1} onClick={() => go(current + 1)} className="press flex min-h-[46px] items-center gap-2 rounded-md bg-brand-600 px-5 text-sm font-bold text-white shadow-soft disabled:opacity-30">Siguiente <ArrowRight size={18} /></button>
       </div>
     </div>

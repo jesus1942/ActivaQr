@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 
 const RAIZ = resolve(process.cwd(), '..');
 const presentacion = readFileSync(resolve(RAIZ, 'src/pages/PresentacionComercial.tsx'), 'utf8');
+const narraciones = readFileSync(resolve(RAIZ, 'src/data/presentacionNarraciones.ts'), 'utf8');
 const app = readFileSync(resolve(RAIZ, 'src/App.tsx'), 'utf8');
 const sidebar = readFileSync(resolve(RAIZ, 'src/components/layout/Sidebar.tsx'), 'utf8');
 
@@ -32,6 +33,23 @@ test('la demostración conserva las 26 láminas y sus controles de exposición',
   assert.match(presentacion, /ERP, SCADA y ActivaQR resuelven capas distintas/);
   assert.match(presentacion, /Plan de 30 días/);
   assert.doesNotMatch(presentacion, /<Badge|StatusBadge|EstadoOperativoBadge/);
+});
+
+test('la narración automática tiene un guion hablado por lámina y avanza al terminar el audio', () => {
+  assert.equal((narraciones.match(/^\s{2}`/gm) ?? []).length, 26);
+  assert.match(narraciones, /idioma: 'es-AR'/);
+  assert.match(narraciones, /velocidad: 0\.84/);
+  assert.match(narraciones, /pausaEntreLaminasMs: 1100/);
+  assert.doesNotMatch(narraciones, /`Abrí |`Pedí |`Mostrá |`Preguntá /);
+
+  assert.match(presentacion, /elegirVozRioplatense/);
+  assert.match(presentacion, /new SpeechSynthesisUtterance/);
+  assert.match(presentacion, /locucion\.onend/);
+  assert.match(presentacion, /go\(indice \+ 1\)/);
+  assert.match(presentacion, /aria-label=\{estadoNarracion === 'paused' \? 'Reanudar narración' : 'Pausar narración'\}/);
+  assert.match(presentacion, /aria-label="Detener presentación automática"/);
+  assert.match(presentacion, /Texto de la narración automática/);
+  assert.match(presentacion, /la lámina avanza cuando termina el comentario/);
 });
 
 test('las pantallas reales de la cuenta demo están incluidas y correctivos se rotula como flujo', () => {
