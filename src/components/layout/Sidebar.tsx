@@ -26,6 +26,7 @@ import {
   ScanLine,
   FileSignature,
   AlertOctagon,
+  Presentation,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getNotificacionesCliente } from '../../data/accesoRemotoApi';
@@ -62,6 +63,7 @@ const navEmpresa: NavItem[] = [
 
 const navSuperadmin: NavItem[] = [
   { to: '/', icon: Building2, label: 'Empresas' },
+  { to: '/presentacion', icon: Presentation, label: 'Presentación', sub: 'Demo para potenciales clientes' },
   { to: '/cotizaciones', icon: FileSignature, label: 'Cotizaciones', sub: 'Crear, enviar y responder' },
   { to: '/correctivos', icon: AlertOctagon, label: 'Alertas y órdenes', sub: 'Riesgo, permisos y trabajos' },
   { to: '/mensajes', icon: MessageSquare, label: 'Mensajes' },
@@ -71,6 +73,7 @@ const navSuperadmin: NavItem[] = [
 
 // Destinos de la bottom nav (mobile, empresa). El último abre la hoja "Más".
 const bottomPrimary = ['/', '/activos', '/medicion'];
+const bottomPrimarySuperadmin = ['/', '/presentacion', '/mensajes'];
 
 export const Sidebar: React.FC = () => {
   const [moreOpen, setMoreOpen] = useState(false);
@@ -176,7 +179,7 @@ export const Sidebar: React.FC = () => {
           rel="noopener noreferrer"
           className="block text-faint hover:text-brand-600 text-[11px] font-mono transition-colors"
         >
-          v1.3.3 · dev Jesús Olguín
+          v1.3.4 · dev Jesús Olguín
         </a>
       </div>
     </aside>
@@ -216,9 +219,10 @@ export const Sidebar: React.FC = () => {
 
   // ── Bottom navigation (mobile) ────────────────────────────
   const bottomItems = esSuperadmin
-    ? navSuperadmin
+    ? navSuperadmin.filter((i) => bottomPrimarySuperadmin.includes(i.to))
     : navItems.filter((i) => bottomPrimary.includes(i.to));
-  const isMoreActive = !esSuperadmin && !bottomPrimary.includes(location.pathname);
+  const mobilePrimary = esSuperadmin ? bottomPrimarySuperadmin : bottomPrimary;
+  const isMoreActive = !mobilePrimary.includes(location.pathname);
 
   const bottomNav = (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 glass border-t border-line safe-bottom">
@@ -239,7 +243,7 @@ export const Sidebar: React.FC = () => {
             <span className="text-[11px] font-medium">{label}</span>
           </NavLink>
         ))}
-        {!esSuperadmin && (
+        {navItems.length > bottomItems.length && (
           <button
             onClick={() => setMoreOpen(true)}
             className={[
@@ -260,7 +264,7 @@ export const Sidebar: React.FC = () => {
     <Sheet open={moreOpen} onClose={() => setMoreOpen(false)} title="Menú" side="bottom">
       <div className="grid grid-cols-3 gap-3 pb-2">
         {navItems
-          .filter((i) => !bottomPrimary.includes(i.to))
+          .filter((i) => !mobilePrimary.includes(i.to))
           .map((item) => {
             const { to, icon: Icon, label } = item;
             const notification = notificationFor(to);

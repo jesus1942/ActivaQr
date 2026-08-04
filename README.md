@@ -721,6 +721,8 @@ ActivaQr/
 
 ## Versiones
 
+**v1.3.4** — Presentación comercial interactiva exclusiva para Superadmin · 26 láminas con guion de exposición, capturas reales, grafos operativos, comparación ERP/SCADA, objeciones empresariales, simulador de retorno y piloto de 30 días · navegación responsive y modo pantalla completa.
+
 **v1.3.3** — Landing sin información administrativa interna sobre adhesión al cobro recurrente · README técnico reestructurado con grafos de arquitectura, multi-tenancy, dominio, flujos operativos y despliegue.
 
 **v1.3.2** — Corrección global del foco en formularios y modales · escritura continua sin desmontar el diálogo · footer público con marca Activa QR protagonista y adaptación móvil.

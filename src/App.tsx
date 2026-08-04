@@ -43,6 +43,7 @@ const FichaPublica = lazy(() => import('./pages/FichaPublica').then((m) => ({ de
 const AprobarAccesoRemoto = lazy(() => import('./pages/AprobarAccesoRemoto').then((m) => ({ default: m.AprobarAccesoRemoto })));
 const ResetPassword = lazy(() => import('./pages/ResetPassword').then((m) => ({ default: m.ResetPassword })));
 const DashboardOperador = lazy(() => import('./pages/DashboardOperador').then((m) => ({ default: m.DashboardOperador })));
+const PresentacionComercial = lazy(() => import('./pages/PresentacionComercial').then((m) => ({ default: m.PresentacionComercial })));
 
 function AppConSplash() {
   const [inicioListo, setInicioListo] = useState(false);
@@ -131,6 +132,7 @@ function AuthedApp() {
             <Route path="correctivos" element={<RutaProtegida scope="Alertas y ordenes"><Correctivos /></RutaProtegida>} />
             <Route path="mensajes" element={<RutaProtegida scope="Mensajes"><MensajesAdmin /></RutaProtegida>} />
             <Route path="testimonios" element={<RutaProtegida scope="Testimonios"><AdminTestimonios /></RutaProtegida>} />
+            <Route path="presentacion" element={<RutaProtegida scope="Presentacion comercial"><PresentacionComercial /></RutaProtegida>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </>
         ) : (
