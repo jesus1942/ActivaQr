@@ -721,6 +721,8 @@ ActivaQr/
 
 ## Versiones
 
+**v1.3.5** — Pantalla completa enfocada exclusivamente en el reproductor, sin menú lateral ni cabecera de la aplicación · acceso visual mediante ícono a las notas del expositor · salida explícita y restauración automática de la interfaz.
+
 **v1.3.4** — Presentación comercial interactiva exclusiva para Superadmin · 26 láminas con guion de exposición, capturas reales, grafos operativos, comparación ERP/SCADA, objeciones empresariales, simulador de retorno y piloto de 30 días · navegación responsive y modo pantalla completa.
 
 **v1.3.3** — Landing sin información administrativa interna sobre adhesión al cobro recurrente · README técnico reestructurado con grafos de arquitectura, multi-tenancy, dominio, flujos operativos y despliegue.

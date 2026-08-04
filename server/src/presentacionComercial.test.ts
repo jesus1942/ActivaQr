@@ -21,8 +21,13 @@ test('la presentación comercial queda disponible solo en el árbol de rutas Sup
 test('la demostración conserva las 26 láminas y sus controles de exposición', () => {
   assert.equal((presentacion.match(/^\s{6}section:/gm) ?? []).length, 26);
   assert.match(presentacion, /Lámina \{current \+ 1\} de \{slides\.length\}/);
-  assert.match(presentacion, /Mostrar guion/);
+  assert.doesNotMatch(presentacion, />Mostrar guion</);
+  assert.match(presentacion, /aria-label=\{notesOpen \? 'Ocultar notas del expositor' : 'Abrir notas del expositor'\}/);
+  assert.match(presentacion, /<PanelRightOpen size=\{19\}/);
   assert.match(presentacion, /Pantalla completa/);
+  assert.match(presentacion, /presentationRef\.current\?\.requestFullscreen\(\)/);
+  assert.doesNotMatch(presentacion, /document\.documentElement\.requestFullscreen/);
+  assert.match(presentacion, /document\.fullscreenElement === presentationRef\.current/);
   assert.match(presentacion, /RoiSimulator/);
   assert.match(presentacion, /ERP, SCADA y ActivaQR resuelven capas distintas/);
   assert.match(presentacion, /Plan de 30 días/);

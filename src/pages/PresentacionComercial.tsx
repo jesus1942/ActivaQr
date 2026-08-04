@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity,
   AlertTriangle,
@@ -23,9 +23,11 @@ import {
   Layers3,
   LineChart,
   LockKeyhole,
+  Minimize2,
   Monitor,
   Network,
   PackageCheck,
+  PanelRightOpen,
   Play,
   QrCode,
   RefreshCw,
@@ -276,9 +278,11 @@ const slideImageFallback = (
 );
 
 export const PresentacionComercial: React.FC = () => {
+  const presentationRef = useRef<HTMLDivElement>(null);
   const [current, setCurrent] = useState(0);
   const [notesOpen, setNotesOpen] = useState(false);
   const [indexOpen, setIndexOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const slides = useMemo<Slide[]>(() => [
     {
@@ -874,8 +878,18 @@ export const PresentacionComercial: React.FC = () => {
   const go = useCallback((index: number) => {
     setCurrent(Math.max(0, Math.min(slides.length - 1, index)));
     setIndexOpen(false);
+    presentationRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     document.getElementById('app-scroll')?.scrollTo({ top: 0, behavior: 'smooth' });
   }, [slides.length]);
+
+  useEffect(() => {
+    const syncFullscreenState = () => {
+      setIsFullscreen(document.fullscreenElement === presentationRef.current);
+    };
+
+    document.addEventListener('fullscreenchange', syncFullscreenState);
+    return () => document.removeEventListener('fullscreenchange', syncFullscreenState);
+  }, []);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -891,7 +905,7 @@ export const PresentacionComercial: React.FC = () => {
 
   const toggleFullscreen = async () => {
     try {
-      if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+      if (!document.fullscreenElement) await presentationRef.current?.requestFullscreen();
       else await document.exitFullscreen();
     } catch {
       // Algunos navegadores PWA no permiten fullscreen. La presentación sigue navegable.
@@ -902,7 +916,10 @@ export const PresentacionComercial: React.FC = () => {
   const progress = ((current + 1) / slides.length) * 100;
 
   return (
-    <div className="mx-auto max-w-[1500px] space-y-4">
+    <div
+      ref={presentationRef}
+      className={`mx-auto max-w-[1500px] space-y-4 ${isFullscreen ? 'h-screen max-w-none overflow-y-auto bg-canvas p-4 sm:p-6' : ''}`}
+    >
       <div className="no-print flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-600">Demo para clientes potenciales</p>
@@ -912,11 +929,18 @@ export const PresentacionComercial: React.FC = () => {
           <button onClick={() => setIndexOpen((value) => !value)} className="press flex min-h-[44px] items-center gap-2 rounded-md border border-line bg-surface px-4 text-sm font-bold text-content">
             Lámina {current + 1} de {slides.length} <ChevronDown size={16} />
           </button>
-          <button onClick={() => setNotesOpen((value) => !value)} className="press min-h-[44px] rounded-md border border-line bg-surface px-4 text-sm font-bold text-content">
-            {notesOpen ? 'Ocultar guion' : 'Mostrar guion'}
+          <button
+            onClick={() => setNotesOpen((value) => !value)}
+            aria-label={notesOpen ? 'Ocultar notas del expositor' : 'Abrir notas del expositor'}
+            aria-pressed={notesOpen}
+            title={notesOpen ? 'Ocultar notas del expositor' : 'Abrir notas del expositor'}
+            className={`press grid min-h-[44px] min-w-[44px] place-items-center rounded-md border text-content transition-colors ${notesOpen ? 'border-brand-600 bg-brand-600/10 text-brand-600' : 'border-line bg-surface hover:border-line-strong'}`}
+          >
+            <PanelRightOpen size={19} aria-hidden="true" />
           </button>
           <button onClick={toggleFullscreen} className="press flex min-h-[44px] items-center gap-2 rounded-md bg-brand-600 px-4 text-sm font-bold text-white shadow-soft">
-            <Expand size={16} /> Pantalla completa
+            {isFullscreen ? <Minimize2 size={16} /> : <Expand size={16} />}
+            {isFullscreen ? 'Salir' : 'Pantalla completa'}
           </button>
         </div>
       </div>
