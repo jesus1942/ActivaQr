@@ -42,9 +42,18 @@ test('la narración automática tiene un guion hablado por lámina y avanza al t
   assert.match(narraciones, /pausaEntreLaminasMs: 1100/);
   assert.doesNotMatch(narraciones, /`Abrí |`Pedí |`Mostrá |`Preguntá /);
 
-  assert.match(presentacion, /elegirVozRioplatense/);
+  assert.match(presentacion, /crearOpcionesVoz/);
   assert.match(presentacion, /new SpeechSynthesisUtterance/);
+  assert.match(presentacion, /const idioma = opcion\.voz\?\.lang \?\? opcion\.idioma/);
+  assert.doesNotMatch(presentacion, /locucion\.lang = CONFIGURACION_NARRACION\.idioma/);
+  assert.match(presentacion, /Voz predeterminada del dispositivo/);
+  assert.match(presentacion, /opcionVozPreferidaRef/);
+  assert.match(presentacion, /claveOpcionVoz/);
   assert.match(presentacion, /locucion\.onend/);
+  assert.match(presentacion, /locucion\.onerror/);
+  assert.match(presentacion, /Probando una alternativa…/);
+  assert.match(presentacion, /Código: \$\{error\}/);
+  assert.match(presentacion, /reproducirNarracion\(indiceInicial\)/);
   assert.match(presentacion, /go\(indice \+ 1\)/);
   assert.match(presentacion, /aria-label=\{estadoNarracion === 'paused' \? 'Reanudar narración' : 'Pausar narración'\}/);
   assert.match(presentacion, /aria-label="Detener presentación automática"/);

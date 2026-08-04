@@ -55,32 +55,80 @@ type Slide = {
 
 type EstadoNarracion = 'idle' | 'preparing' | 'speaking' | 'paused' | 'between' | 'finished' | 'unsupported' | 'error';
 
+type OpcionVoz = {
+  voz?: SpeechSynthesisVoice;
+  idioma?: string;
+  etiqueta: string;
+};
+
 const surface = 'border border-line bg-surface/80 backdrop-blur-sm';
 const subtle = 'border border-line bg-subtle/80';
 
-function elegirVozRioplatense(voces: SpeechSynthesisVoice[]) {
-  return [...voces]
+function puntuarVoz(voz: SpeechSynthesisVoice) {
+  const idioma = voz.lang.toLowerCase();
+  const nombre = voz.name.toLowerCase();
+  let puntaje = 0;
+  if (idioma === 'es-ar') puntaje += 120;
+  else if (idioma === 'es-uy') puntaje += 100;
+  else if (idioma === 'es-419') puntaje += 70;
+  else if (idioma.startsWith('es')) puntaje += 40;
+  if (/argentin|rioplat|elena/.test(nombre)) puntaje += 40;
+  if (voz.localService) puntaje += 80;
+  if (voz.default) puntaje += 8;
+  return puntaje;
+}
+
+function crearOpcionesVoz(voces: SpeechSynthesisVoice[]): OpcionVoz[] {
+  const vocesEspanol = [...voces]
     .filter((voz) => voz.lang.toLowerCase().startsWith('es'))
-    .sort((a, b) => {
-      const puntuar = (voz: SpeechSynthesisVoice) => {
-        const idioma = voz.lang.toLowerCase();
-        const nombre = voz.name.toLowerCase();
-        let puntaje = 0;
-        if (idioma === 'es-ar') puntaje += 120;
-        else if (idioma === 'es-uy') puntaje += 100;
-        else if (idioma === 'es-419') puntaje += 70;
-        else puntaje += 40;
-        if (/argentin|rioplat|elena/.test(nombre)) puntaje += 40;
-        if (voz.localService) puntaje += 4;
-        if (voz.default) puntaje += 2;
-        return puntaje;
-      };
-      return puntuar(b) - puntuar(a);
-    })[0];
+    .sort((a, b) => puntuarVoz(b) - puntuarVoz(a));
+  const opciones: OpcionVoz[] = [];
+  const vocesAgregadas = new Set<string>();
+
+  const agregarVoz = (voz: SpeechSynthesisVoice | undefined) => {
+    if (!voz) return;
+    const clave = `${voz.voiceURI}|${voz.name}|${voz.lang}`;
+    if (vocesAgregadas.has(clave)) return;
+    vocesAgregadas.add(clave);
+    opciones.push({ voz, idioma: voz.lang, etiqueta: `Voz sintética ${voz.name} · ${voz.lang}` });
+  };
+
+  agregarVoz(vocesEspanol.find((voz) => voz.localService && /^(es-ar|es-uy)$/i.test(voz.lang)));
+  agregarVoz(vocesEspanol.find((voz) => voz.localService));
+  agregarVoz(vocesEspanol.find((voz) => /^(es-ar|es-uy)$/i.test(voz.lang)));
+  vocesEspanol.slice(0, 4).forEach(agregarVoz);
+
+  const idiomaDisponible = vocesEspanol[0]?.lang;
+  if (idiomaDisponible) opciones.push({ idioma: idiomaDisponible, etiqueta: `Voz automática del navegador · ${idiomaDisponible}` });
+  opciones.push({ idioma: 'es-ES', etiqueta: 'Voz automática del navegador · español' });
+  opciones.push({ etiqueta: 'Voz predeterminada del dispositivo' });
+  return opciones;
+}
+
+function claveOpcionVoz(opcion: OpcionVoz) {
+  return opcion.voz
+    ? `${opcion.voz.voiceURI}|${opcion.voz.name}|${opcion.voz.lang}`
+    : `auto|${opcion.idioma ?? 'default'}`;
 }
 
 function dividirNarracion(texto: string) {
   return texto.match(/[^.!?]+(?:[.!?]+|$)/g)?.map((parte) => parte.trim()).filter(Boolean) ?? [texto];
+}
+
+function explicarErrorVoz(error: string) {
+  const mensajes: Record<string, string> = {
+    'not-allowed': 'El navegador bloqueó el inicio del audio',
+    'audio-busy': 'El dispositivo de audio está ocupado',
+    'audio-hardware': 'El navegador no encontró una salida de audio',
+    network: 'La voz elegida necesitaba conexión y no pudo descargar el audio',
+    'synthesis-unavailable': 'El dispositivo no tiene un motor de voz disponible',
+    'synthesis-failed': 'El motor de voz del dispositivo produjo un error',
+    'language-unavailable': 'El idioma solicitado no está instalado en el dispositivo',
+    'voice-unavailable': 'La voz seleccionada dejó de estar disponible',
+    'text-too-long': 'El motor rechazó el largo del texto',
+    'invalid-argument': 'El motor rechazó la configuración de voz',
+  };
+  return mensajes[error] ?? 'La voz del dispositivo no pudo completar esta lámina';
 }
 
 function LogoMark() {
@@ -313,6 +361,8 @@ export const PresentacionComercial: React.FC = () => {
   const narracionAutomaticaRef = useRef(false);
   const narracionTokenRef = useRef(0);
   const narracionTimerRef = useRef<number | null>(null);
+  const indiceNarracionRef = useRef<number | null>(null);
+  const opcionVozPreferidaRef = useRef<OpcionVoz | null>(null);
   const [current, setCurrent] = useState(0);
   const [notesOpen, setNotesOpen] = useState(false);
   const [indexOpen, setIndexOpen] = useState(false);
@@ -930,6 +980,7 @@ export const PresentacionComercial: React.FC = () => {
   const detenerNarracion = useCallback(() => {
     narracionAutomaticaRef.current = false;
     narracionTokenRef.current += 1;
+    indiceNarracionRef.current = null;
     limpiarTemporizadorNarracion();
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     setNarracionAutomatica(false);
@@ -959,32 +1010,59 @@ export const PresentacionComercial: React.FC = () => {
     limpiarTemporizadorNarracion();
     const token = narracionTokenRef.current + 1;
     narracionTokenRef.current = token;
+    indiceNarracionRef.current = indice;
     motor.cancel();
     setEstadoNarracion('preparing');
     setErrorNarracion('');
 
-    const voz = elegirVozRioplatense(motor.getVoices());
-    setNombreVoz(voz ? `Voz sintética ${voz.name} · ${voz.lang}` : 'Voz sintética del dispositivo · es-AR');
+    const opcionesDisponibles = crearOpcionesVoz(motor.getVoices());
+    const opcionPreferida = opcionVozPreferidaRef.current;
+    const opcionesVoz = opcionPreferida
+      ? [opcionPreferida, ...opcionesDisponibles.filter((opcion) => claveOpcionVoz(opcion) !== claveOpcionVoz(opcionPreferida))]
+      : opcionesDisponibles;
     const partes = dividirNarracion(texto);
+    const erroresConAlternativa = new Set([
+      'network',
+      'synthesis-unavailable',
+      'synthesis-failed',
+      'language-unavailable',
+      'voice-unavailable',
+      'invalid-argument',
+    ]);
 
-    const pronunciarParte = (parteActual: number) => {
+    const fallarNarracion = (error: string) => {
+      narracionAutomaticaRef.current = false;
+      indiceNarracionRef.current = null;
+      setNarracionAutomatica(false);
+      setEstadoNarracion(error === 'synthesis-unavailable' ? 'unsupported' : 'error');
+      setErrorNarracion(`${explicarErrorVoz(error)} · Código: ${error}.`);
+    };
+
+    const pronunciarParte = (parteActual: number, opcionActual = 0, reintentoAudio = 0) => {
       if (!narracionAutomaticaRef.current || narracionTokenRef.current !== token) return;
 
+      const opcion = opcionesVoz[Math.min(opcionActual, opcionesVoz.length - 1)];
       const locucion = new SpeechSynthesisUtterance(partes[parteActual]);
-      locucion.lang = CONFIGURACION_NARRACION.idioma;
+      const idioma = opcion.voz?.lang ?? opcion.idioma;
+      if (idioma) locucion.lang = idioma;
       locucion.rate = CONFIGURACION_NARRACION.velocidad;
       locucion.pitch = CONFIGURACION_NARRACION.tono;
-      if (voz) locucion.voice = voz;
+      if (opcion.voz) locucion.voice = opcion.voz;
+      setNombreVoz(opcion.etiqueta);
 
       locucion.onstart = () => {
-        if (narracionTokenRef.current === token && motor.paused === false) setEstadoNarracion('speaking');
+        if (narracionTokenRef.current === token && motor.paused === false) {
+          opcionVozPreferidaRef.current = opcion;
+          setEstadoNarracion('speaking');
+          setErrorNarracion('');
+        }
       };
 
       locucion.onend = () => {
         if (!narracionAutomaticaRef.current || narracionTokenRef.current !== token) return;
 
         if (parteActual < partes.length - 1) {
-          narracionTimerRef.current = window.setTimeout(() => pronunciarParte(parteActual + 1), 170);
+          narracionTimerRef.current = window.setTimeout(() => pronunciarParte(parteActual + 1, opcionActual), 170);
           return;
         }
 
@@ -997,24 +1075,38 @@ export const PresentacionComercial: React.FC = () => {
         }
 
         narracionAutomaticaRef.current = false;
+        indiceNarracionRef.current = null;
         setNarracionAutomatica(false);
         setEstadoNarracion('finished');
       };
 
       locucion.onerror = (event) => {
         if (narracionTokenRef.current !== token || event.error === 'canceled' || event.error === 'interrupted') return;
-        narracionAutomaticaRef.current = false;
-        setNarracionAutomatica(false);
-        setEstadoNarracion('error');
-        setErrorNarracion(event.error === 'not-allowed'
-          ? 'El navegador bloqueó el audio. Tocá Automatizar nuevamente para habilitarlo.'
-          : 'La voz del dispositivo no pudo completar esta lámina.');
+
+        const reintentarAudioOcupado = event.error === 'audio-busy' && reintentoAudio < 2;
+        const probarOtraVoz = erroresConAlternativa.has(event.error) && opcionActual < opcionesVoz.length - 1;
+        if (reintentarAudioOcupado || probarOtraVoz) {
+          motor.cancel();
+          setEstadoNarracion('preparing');
+          setErrorNarracion(`${explicarErrorVoz(event.error)}. Probando una alternativa…`);
+          narracionTimerRef.current = window.setTimeout(
+            () => pronunciarParte(
+              parteActual,
+              probarOtraVoz ? opcionActual + 1 : opcionActual,
+              reintentarAudioOcupado ? reintentoAudio + 1 : 0,
+            ),
+            reintentarAudioOcupado ? 700 : 260,
+          );
+          return;
+        }
+
+        fallarNarracion(event.error);
       };
 
       motor.speak(locucion);
     };
 
-    narracionTimerRef.current = window.setTimeout(() => pronunciarParte(0), 80);
+    pronunciarParte(0);
   }, [go, limpiarTemporizadorNarracion, slides.length]);
 
   const iniciarNarracionAutomatica = () => {
@@ -1027,7 +1119,9 @@ export const PresentacionComercial: React.FC = () => {
     setNarracionAutomatica(true);
     setEstadoNarracion('preparing');
     setErrorNarracion('');
-    if (current === slides.length - 1) go(0);
+    const indiceInicial = current === slides.length - 1 ? 0 : current;
+    if (indiceInicial !== current) go(indiceInicial);
+    reproducirNarracion(indiceInicial);
   };
 
   const alternarPausaNarracion = () => {
@@ -1042,12 +1136,13 @@ export const PresentacionComercial: React.FC = () => {
   };
 
   useEffect(() => {
-    if (narracionAutomatica) reproducirNarracion(current);
+    if (narracionAutomatica && indiceNarracionRef.current !== current) reproducirNarracion(current);
   }, [current, narracionAutomatica, reproducirNarracion]);
 
   useEffect(() => () => {
     narracionAutomaticaRef.current = false;
     narracionTokenRef.current += 1;
+    indiceNarracionRef.current = null;
     limpiarTemporizadorNarracion();
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   }, [limpiarTemporizadorNarracion]);
