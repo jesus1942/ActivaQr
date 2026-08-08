@@ -11,7 +11,7 @@
 import { Router, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../prisma';
-import { AuthRequest, requireAuth, requireAdmin } from '../auth';
+import { AuthRequest, requireAuth, requireJefatura } from '../auth';
 
 export const fallasRouter = Router();
 
@@ -34,7 +34,7 @@ fallasRouter.get('/', requireAuth, async (req: AuthRequest, res: Response, next:
 });
 
 // POST /api/fallas — el admin del tenant agrega una falla propia
-fallasRouter.post('/', requireAuth, requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
+fallasRouter.post('/', requireAuth, requireJefatura, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     if (!req.auth?.empresaId) return res.status(403).json({ error: 'No tenes empresa asociada.' });
     const { categoriaId, codigo, sintoma, causas, solucion, severidad, orden } = req.body ?? {};
@@ -58,7 +58,7 @@ fallasRouter.post('/', requireAuth, requireAdmin, async (req: AuthRequest, res: 
 });
 
 // PUT /api/fallas/:id — actualiza una falla propia (no se pueden editar las globales)
-fallasRouter.put('/:id', requireAuth, requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
+fallasRouter.put('/:id', requireAuth, requireJefatura, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const existente = await prisma.fallaCatalogo.findUnique({ where: { id: req.params.id } });
     if (!existente) return res.status(404).json({ error: 'Falla no encontrada.' });
@@ -87,7 +87,7 @@ fallasRouter.put('/:id', requireAuth, requireAdmin, async (req: AuthRequest, res
 });
 
 // DELETE /api/fallas/:id — borra una falla propia (no se pueden borrar globales)
-fallasRouter.delete('/:id', requireAuth, requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
+fallasRouter.delete('/:id', requireAuth, requireJefatura, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const existente = await prisma.fallaCatalogo.findUnique({ where: { id: req.params.id } });
     if (!existente) return res.status(404).json({ error: 'Falla no encontrada.' });

@@ -32,7 +32,7 @@ import testimoniosRouter, { adminTestimoniosRouter } from './routes/testimonios'
 import { adminCotizacionesRouter, clienteCotizacionesRouter } from './routes/cotizaciones';
 import { adminCorrectivosRouter, clienteCorrectivosRouter } from './routes/correctivos';
 import { enviarPushASuperadmin } from './push';
-import { requireAdmin, requireAuth, requireAuthAndActiveEmpresa, requireSuperadmin } from './auth';
+import { requireAuth, requireAuthAndActiveEmpresa, requireConsultaGestion, requireJefatura, requireSuperadmin } from './auth';
 import { createOriginValidator } from './corsPolicy';
 import { seedCategorias } from './seedCategorias';
 import { seedFallasMotorDiesel } from './seedFallasMotorDiesel';
@@ -304,7 +304,7 @@ app.use('/api/activos', requireAuthAndActiveEmpresa, activosRouter);
 app.use('/api/activos', requireAuthAndActiveEmpresa, ubicacionesRouter);
 app.use('/api/mediciones', requireAuthAndActiveEmpresa, medicionesRouter);
 app.use('/api/tareas', requireAuthAndActiveEmpresa, tareasRouter);
-app.use('/api/sync', requireAuthAndActiveEmpresa, requireAdmin, syncRouter);
+app.use('/api/sync', requireAuthAndActiveEmpresa, requireJefatura, syncRouter);
 app.use('/api/categorias', requireAuthAndActiveEmpresa, categoriasRouter);
 // Suscripción queda accesible aun con el trial vencido para permitir contratar.
 app.use('/api/suscripcion', requireAuth, suscripcionRouter);
@@ -313,8 +313,8 @@ app.use('/api/correctivos', clienteCorrectivosRouter);
 app.use('/api/operadores', requireAuthAndActiveEmpresa, operadoresRouter);
 app.use('/api/tecnicos', requireAuthAndActiveEmpresa, tecnicosRouter);
 app.use('/api/fallas', requireAuthAndActiveEmpresa, fallasRouter);
-app.use('/api/auditoria', requireAuthAndActiveEmpresa, auditoriaRouter);
-app.use('/api/kpis', requireAuthAndActiveEmpresa, kpisRouter);
+app.use('/api/auditoria', requireAuthAndActiveEmpresa, requireConsultaGestion, auditoriaRouter);
+app.use('/api/kpis', requireAuthAndActiveEmpresa, requireConsultaGestion, kpisRouter);
 app.use('/api/documentos', requireAuthAndActiveEmpresa, documentosRouter);
 // Push: la ruta public-key no requiere auth, las demás aplican requireAuth por-ruta.
 app.use('/api/push', pushRouter);

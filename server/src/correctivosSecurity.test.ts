@@ -7,9 +7,13 @@ const rutas = readFileSync(resolve(process.cwd(), 'src/routes/correctivos.ts'), 
 const acceso = readFileSync(resolve(process.cwd(), 'src/routes/accesoRemoto.ts'), 'utf8');
 const cotizaciones = readFileSync(resolve(process.cwd(), 'src/routes/cotizaciones.ts'), 'utf8');
 
-test('superadmin y cliente usan routers separados con roles explícitos', () => {
+test('superadmin y cliente separan lectura de decisiones autorizadas', () => {
   assert.match(rutas, /adminCorrectivosRouter\.use\(requireAuth, requireSuperadmin\)/);
-  assert.match(rutas, /clienteCorrectivosRouter\.use\(requireAuthAndActiveEmpresa, requireAdmin\)/);
+  assert.match(rutas, /clienteCorrectivosRouter\.use\(requireAuthAndActiveEmpresa\)/);
+  assert.match(rutas, /get\('\/', requireConsultaGestion/);
+  assert.match(rutas, /post\('\/:id\/decision-operativa', requireAdmin/);
+  assert.match(rutas, /post\('\/ordenes\/:id\/permiso', requireAdmin/);
+  assert.match(rutas, /post\('\/ordenes\/:id\/conformidad', requireAdmin/);
 });
 
 test('todas las decisiones del cliente quedan limitadas a su empresa', () => {

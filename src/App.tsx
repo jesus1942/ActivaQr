@@ -19,6 +19,7 @@ import { ErrorBoundary, RutaProtegida } from './components/ErrorBoundary';
 import { useState, useCallback } from 'react';
 import { prepararInicio } from './data/startup';
 import { ActivosProvider } from './hooks/useActivos';
+import { esTecnico, puedeVerModulo, type ModuloEmpresa } from './data/permisos';
 
 const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })));
 const Indicadores = lazy(() => import('./pages/Indicadores').then((m) => ({ default: m.Indicadores })));
@@ -116,9 +117,14 @@ function AuthedApp() {
     return <PantallaAceptarPoliticas onAceptada={refrescarEstadoPoliticas} />;
   }
 
-  if (usuario?.rol === 'operador') return <RutaProtegida scope="Dashboard del operador"><DashboardOperador /></RutaProtegida>;
+  if (esTecnico(usuario?.rol)) return <RutaProtegida scope="Dashboard del técnico"><DashboardOperador /></RutaProtegida>;
 
   const esSuperadmin = usuario?.rol === 'superadmin';
+  const esDireccion = usuario?.rol === 'direccion';
+  const conAcceso = (modulo: ModuloEmpresa, scope: string, pagina: JSX.Element) =>
+    puedeVerModulo(usuario?.rol, modulo)
+      ? <RutaProtegida scope={scope}>{pagina}</RutaProtegida>
+      : <Navigate to="/" replace />;
 
   const rutas = (
     <Routes>
@@ -137,21 +143,21 @@ function AuthedApp() {
           </>
         ) : (
           <>
-            <Route index element={<RutaProtegida scope="Dashboard"><Dashboard /></RutaProtegida>} />
-            <Route path="indicadores" element={<RutaProtegida scope="Indicadores"><Indicadores /></RutaProtegida>} />
-            <Route path="auditoria" element={<RutaProtegida scope="Auditoria"><Auditoria /></RutaProtegida>} />
-            <Route path="activos" element={<RutaProtegida scope="Activos"><Activos /></RutaProtegida>} />
-            <Route path="activos/:id" element={<RutaProtegida scope="Detalle del activo"><ActivoDetalle /></RutaProtegida>} />
-            <Route path="medicion" element={<RutaProtegida scope="Medicion"><Medicion /></RutaProtegida>} />
-            <Route path="medicion/:activoId" element={<RutaProtegida scope="Medicion"><Medicion /></RutaProtegida>} />
-            <Route path="mantenimiento" element={<RutaProtegida scope="Mantenimiento"><Mantenimiento /></RutaProtegida>} />
-            <Route path="reportes" element={<RutaProtegida scope="Reportes"><Reportes /></RutaProtegida>} />
-            <Route path="importar" element={<RutaProtegida scope="Importar datos"><ImportarDatos /></RutaProtegida>} />
-            <Route path="qr" element={<RutaProtegida scope="Gestion QR"><GestionQR /></RutaProtegida>} />
-            <Route path="configuracion" element={<RutaProtegida scope="Configuracion"><Configuracion /></RutaProtegida>} />
-            <Route path="mensajes" element={<RutaProtegida scope="Mensajes"><Mensajes /></RutaProtegida>} />
-            <Route path="cotizaciones" element={<RutaProtegida scope="Cotizaciones"><CotizacionesCliente /></RutaProtegida>} />
-            <Route path="correctivos" element={<RutaProtegida scope="Alertas y ordenes"><Correctivos /></RutaProtegida>} />
+            <Route index element={esDireccion ? conAcceso('indicadores', 'Indicadores', <Indicadores />) : conAcceso('dashboard', 'Dashboard', <Dashboard />)} />
+            <Route path="indicadores" element={conAcceso('indicadores', 'Indicadores', <Indicadores />)} />
+            <Route path="auditoria" element={conAcceso('auditoria', 'Auditoria', <Auditoria />)} />
+            <Route path="activos" element={conAcceso('activos', 'Activos', <Activos />)} />
+            <Route path="activos/:id" element={conAcceso('activos', 'Detalle del activo', <ActivoDetalle />)} />
+            <Route path="medicion" element={conAcceso('medicion', 'Medicion', <Medicion />)} />
+            <Route path="medicion/:activoId" element={conAcceso('medicion', 'Medicion', <Medicion />)} />
+            <Route path="mantenimiento" element={conAcceso('mantenimiento', 'Mantenimiento', <Mantenimiento />)} />
+            <Route path="reportes" element={conAcceso('reportes', 'Reportes', <Reportes />)} />
+            <Route path="importar" element={conAcceso('importar', 'Importar datos', <ImportarDatos />)} />
+            <Route path="qr" element={conAcceso('qr', 'Gestion QR', <GestionQR />)} />
+            <Route path="configuracion" element={conAcceso('configuracion', 'Configuracion', <Configuracion />)} />
+            <Route path="mensajes" element={conAcceso('mensajes', 'Mensajes', <Mensajes />)} />
+            <Route path="cotizaciones" element={conAcceso('cotizaciones', 'Cotizaciones', <CotizacionesCliente />)} />
+            <Route path="correctivos" element={conAcceso('correctivos', 'Alertas y ordenes', <Correctivos />)} />
           </>
         )}
       </Route>
@@ -159,7 +165,7 @@ function AuthedApp() {
     </Routes>
   );
 
-  const rutasConDatos = !usuario || usuario.rol === 'admin'
+  const rutasConDatos = !usuario || (!esSuperadmin && !esTecnico(usuario.rol))
     ? <ActivosProvider>{rutas}</ActivosProvider>
     : rutas;
 

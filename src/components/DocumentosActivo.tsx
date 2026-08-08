@@ -5,7 +5,7 @@ import { getDocumentos, crearDocumento, eliminarDocumento, Documento } from '../
 const TIPOS = ['manual', 'plano', 'ficha', 'certificado', 'protocolo', 'otro'];
 const MAX_BYTES = 5_000_000; // 5MB de archivo real
 
-export const DocumentosActivo: React.FC<{ activoId: string }> = ({ activoId }) => {
+export const DocumentosActivo: React.FC<{ activoId: string; soloLectura?: boolean }> = ({ activoId, soloLectura = false }) => {
   const [docs, setDocs] = useState<Documento[]>([]);
   const [tipo, setTipo] = useState('manual');
   const [error, setError] = useState('');
@@ -48,7 +48,7 @@ export const DocumentosActivo: React.FC<{ activoId: string }> = ({ activoId }) =
     <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4">
       <h2 className="text-sm font-black uppercase tracking-wider text-content mb-3">Documentación</h2>
 
-      <div className="flex gap-2 mb-3">
+      {!soloLectura && <div className="flex gap-2 mb-3">
         <select
           value={tipo}
           onChange={(e) => setTipo(e.target.value)}
@@ -66,7 +66,7 @@ export const DocumentosActivo: React.FC<{ activoId: string }> = ({ activoId }) =
         </button>
         <input ref={inputRef} type="file" className="hidden" onChange={onFile}
           accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx" />
-      </div>
+      </div>}
       {error && <p className="text-xs font-bold text-danger mb-2">{error}</p>}
 
       {docs.length === 0 ? (
@@ -84,9 +84,11 @@ export const DocumentosActivo: React.FC<{ activoId: string }> = ({ activoId }) =
                 className="p-1.5 border border-line text-muted hover:border-content" title="Abrir">
                 <ExternalLink size={13} />
               </a>
-              <button onClick={() => borrar(d.id)} className="p-1.5 border border-line text-danger hover:border-danger" title="Eliminar">
-                <Trash2 size={13} />
-              </button>
+              {!soloLectura && (
+                <button onClick={() => borrar(d.id)} className="p-1.5 border border-line text-danger hover:border-danger" title="Eliminar">
+                  <Trash2 size={13} />
+                </button>
+              )}
             </div>
           ))}
         </div>

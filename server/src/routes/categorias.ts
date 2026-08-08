@@ -1,7 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../prisma';
 import { resolveEmpresaId } from '../tenant';
-import { AuthRequest, requireAdmin } from '../auth';
+import { AuthRequest, requireJefatura } from '../auth';
+import { puedeGestionarConfiguracionTecnica } from '../rolePolicy';
 
 const router = Router();
 
@@ -62,10 +63,10 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // ─── POST /api/categorias ── crear categoría propia de la empresa ────────────
-router.post('/', requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/', requireJefatura, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     // Only admin/superadmin can create
-    if (!req.auth || (req.auth.rol !== 'admin' && req.auth.rol !== 'superadmin')) {
+    if (!req.auth || !puedeGestionarConfiguracionTecnica(req.auth.rol)) {
       return res.status(403).json({ error: 'Solo administradores pueden crear categorías.' });
     }
     const empresaId = await resolveEmpresaId(req);
@@ -82,9 +83,9 @@ router.post('/', requireAdmin, async (req: AuthRequest, res: Response, next: Nex
 });
 
 // ─── POST /api/categorias/:id/parametros ── agregar parámetro ────────────────
-router.post('/:id/parametros', requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/:id/parametros', requireJefatura, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    if (!req.auth || (req.auth.rol !== 'admin' && req.auth.rol !== 'superadmin')) {
+    if (!req.auth || !puedeGestionarConfiguracionTecnica(req.auth.rol)) {
       return res.status(403).json({ error: 'Solo administradores pueden agregar parámetros.' });
     }
     const empresaId = await resolveEmpresaId(req);
@@ -120,9 +121,9 @@ router.post('/:id/parametros', requireAdmin, async (req: AuthRequest, res: Respo
 });
 
 // ─── PUT /api/categorias/:id ── editar categoría propia ─────────────────────
-router.put('/:id', requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.put('/:id', requireJefatura, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    if (!req.auth || (req.auth.rol !== 'admin' && req.auth.rol !== 'superadmin')) {
+    if (!req.auth || !puedeGestionarConfiguracionTecnica(req.auth.rol)) {
       return res.status(403).json({ error: 'Solo administradores pueden editar categorías.' });
     }
     const empresaId = await resolveEmpresaId(req);
@@ -143,9 +144,9 @@ router.put('/:id', requireAdmin, async (req: AuthRequest, res: Response, next: N
 });
 
 // ─── PUT /api/categorias/:id/parametros/:paramId ── editar parámetro ─────────
-router.put('/:id/parametros/:paramId', requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.put('/:id/parametros/:paramId', requireJefatura, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    if (!req.auth || (req.auth.rol !== 'admin' && req.auth.rol !== 'superadmin')) {
+    if (!req.auth || !puedeGestionarConfiguracionTecnica(req.auth.rol)) {
       return res.status(403).json({ error: 'Solo administradores pueden editar parámetros.' });
     }
     const empresaId = await resolveEmpresaId(req);
@@ -181,9 +182,9 @@ router.put('/:id/parametros/:paramId', requireAdmin, async (req: AuthRequest, re
 });
 
 // ─── DELETE /api/categorias/:id/parametros/:paramId ──────────────────────────
-router.delete('/:id/parametros/:paramId', requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.delete('/:id/parametros/:paramId', requireJefatura, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    if (!req.auth || (req.auth.rol !== 'admin' && req.auth.rol !== 'superadmin')) {
+    if (!req.auth || !puedeGestionarConfiguracionTecnica(req.auth.rol)) {
       return res.status(403).json({ error: 'Solo administradores pueden eliminar parámetros.' });
     }
     const empresaId = await resolveEmpresaId(req);
@@ -203,9 +204,9 @@ router.delete('/:id/parametros/:paramId', requireAdmin, async (req: AuthRequest,
 });
 
 // ─── DELETE /api/categorias/:id ── solo categorías propias ───────────────────
-router.delete('/:id', requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.delete('/:id', requireJefatura, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    if (!req.auth || (req.auth.rol !== 'admin' && req.auth.rol !== 'superadmin')) {
+    if (!req.auth || !puedeGestionarConfiguracionTecnica(req.auth.rol)) {
       return res.status(403).json({ error: 'Solo administradores pueden eliminar categorías.' });
     }
     const empresaId = await resolveEmpresaId(req);

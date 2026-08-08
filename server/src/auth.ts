@@ -3,6 +3,15 @@ import jwt from 'jsonwebtoken';
 import { randomBytes } from 'crypto';
 import { prisma } from './prisma';
 import { faseTrial } from './trial';
+import {
+  RolAplicacion,
+  puedeAdministrarTenant,
+  puedeCargarTrabajoCampo,
+  puedeConsultarDireccion,
+  puedeConsultarGestion,
+  puedeGestionarConfiguracionTecnica,
+  puedeGestionarOperacion,
+} from './rolePolicy';
 
 function resolverJwtSecret(): string {
   const configurado = process.env.JWT_SECRET?.trim();
@@ -21,7 +30,7 @@ export const DEMO_TOKEN_TTL = '2h';
 export interface TokenPayload {
   userId: string;
   email: string;
-  rol: 'superadmin' | 'admin' | 'operador';
+  rol: RolAplicacion;
   empresaId: string | null;
 }
 
@@ -145,6 +154,16 @@ export async function requireAuthAndActiveEmpresa(
       });
     }
 
+    // Dirección trabaja sobre información consolidada y evidencia, pero no
+    // altera la operación. Esta guarda transversal evita que un endpoint
+    // nuevo quede escribible por omisión aunque la interfaz no lo muestre.
+    if (actual.rol === 'direccion' && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+      return res.status(403).json({
+        code: 'perfil_solo_lectura',
+        error: 'El perfil Dirección es de consulta y no puede modificar datos operativos.',
+      });
+    }
+
     next();
   } catch (error) {
     next(error);
@@ -166,8 +185,48 @@ export function requireSuperadmin(req: AuthRequest, res: Response, next: NextFun
  * Las operaciones destructivas o de configuración quedan fuera del alcance del operador.
  */
 export function requireAdmin(req: AuthRequest, res: Response, next: NextFunction) {
-  if (req.auth?.rol !== 'admin' && req.auth?.rol !== 'superadmin') {
+  if (!req.auth || !puedeAdministrarTenant(req.auth.rol)) {
     return res.status(403).json({ error: 'Acción reservada al administrador de la empresa.' });
+  }
+  next();
+}
+
+/** Permite operar activos, planes y órdenes sin administrar la cuenta. */
+export function requireGestionOperacion(req: AuthRequest, res: Response, next: NextFunction) {
+  if (!req.auth || !puedeGestionarOperacion(req.auth.rol)) {
+    return res.status(403).json({ error: 'Tu perfil no puede modificar la operación de mantenimiento.' });
+  }
+  next();
+}
+
+/** Permite configurar la estructura técnica y borrar historial. */
+export function requireJefatura(req: AuthRequest, res: Response, next: NextFunction) {
+  if (!req.auth || !puedeGestionarConfiguracionTecnica(req.auth.rol)) {
+    return res.status(403).json({ error: 'Acción reservada a Jefatura o al administrador de la empresa.' });
+  }
+  next();
+}
+
+/** Permite registrar mediciones y cerrar trabajo asignado en campo. */
+export function requireTrabajoCampo(req: AuthRequest, res: Response, next: NextFunction) {
+  if (!req.auth || !puedeCargarTrabajoCampo(req.auth.rol)) {
+    return res.status(403).json({ error: 'Tu perfil es de consulta y no puede registrar cambios.' });
+  }
+  next();
+}
+
+/** Información de cumplimiento, riesgo y trazabilidad para mandos. */
+export function requireConsultaGestion(req: AuthRequest, res: Response, next: NextFunction) {
+  if (!req.auth || !puedeConsultarGestion(req.auth.rol)) {
+    return res.status(403).json({ error: 'Tu perfil no tiene acceso a esta vista de gestión.' });
+  }
+  next();
+}
+
+/** Información comercial y de costos para Dirección y dueños de cuenta. */
+export function requireConsultaDireccion(req: AuthRequest, res: Response, next: NextFunction) {
+  if (!req.auth || !puedeConsultarDireccion(req.auth.rol)) {
+    return res.status(403).json({ error: 'Esta información está reservada a Dirección y al administrador.' });
   }
   next();
 }

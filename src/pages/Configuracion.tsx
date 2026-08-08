@@ -19,6 +19,7 @@ import {
   CategoriaEquipo, ParametroCategoria,
   getCategorias, crearCategoria, eliminarCategoria, agregarParametro,
 } from '../data/categoriasApi';
+import { esAdminTenant, etiquetaRol, PERFILES_TENANT, type RolPerfil } from '../data/permisos';
 
 type Tab = 'sectores' | 'tipos' | 'categorias' | 'personal';
 
@@ -39,11 +40,13 @@ export const Configuracion: React.FC = () => {
     tipos, addTipo, updateTipo, deleteTipo,
   } = useActivos();
   const { usuario } = useAuth();
+  const administraCuenta = esAdminTenant(usuario?.rol);
 
   const [tab, setTab] = useState<Tab>('sectores');
 
   const mpEstadoSub = usuario?.empresa?.mpEstadoSub ?? null;
   const tieneSubActiva = mpEstadoSub === 'authorized' || mpEstadoSub === 'pending';
+  const tabsVisibles = administraCuenta ? TABS : TABS.filter((item) => item.id !== 'personal');
 
   return (
     <div>
@@ -51,19 +54,21 @@ export const Configuracion: React.FC = () => {
         <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight">
           Configuración
         </h1>
-        <p className="text-muted text-sm mt-1">Gestioná sectores, tipos de activo y personal</p>
+        <p className="text-muted text-sm mt-1">
+          {administraCuenta ? 'Gestioná sectores, tipos de activo y perfiles de usuario' : 'Gestioná la estructura técnica del tenant'}
+        </p>
       </div>
 
       <NotificacionesPush />
 
-      <SeccionTelegram />
+      {administraCuenta && <SeccionTelegram />}
 
       {/* Plan actual */}
-      {usuario && <SeccionPlan />}
+      {usuario && administraCuenta && <SeccionPlan />}
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-2 mb-6">
-        {TABS.map((t) => (
+        {tabsVisibles.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
@@ -90,10 +95,10 @@ export const Configuracion: React.FC = () => {
         <TiposSection tipos={tipos} addTipo={addTipo} updateTipo={updateTipo} deleteTipo={deleteTipo} />
       )}
       {tab === 'categorias' && <CategoriasSection />}
-      {tab === 'personal' && <PersonalSection />}
+      {tab === 'personal' && administraCuenta && <PersonalSection />}
 
-      {tieneSubActiva && <SeccionSuscripcion />}
-      <SeccionAccesoRemoto />
+      {administraCuenta && tieneSubActiva && <SeccionSuscripcion />}
+      {administraCuenta && <SeccionAccesoRemoto />}
     </div>
   );
 };
@@ -814,9 +819,11 @@ const PersonalSection: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [guardando, setGuardando] = useState(false);
-  const [form, setForm] = useState({ nombre: '', email: '', password: '', cargo: '' });
+  const [form, setForm] = useState<{ nombre: string; email: string; password: string; cargo: string; rol: RolPerfil }>({
+    nombre: '', email: '', password: '', cargo: '', rol: 'tecnico',
+  });
   const [editId, setEditId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ nombre: '', cargo: '' });
+  const [editForm, setEditForm] = useState<{ nombre: string; cargo: string; rol: RolPerfil }>({ nombre: '', cargo: '', rol: 'tecnico' });
 
   const [resetId, setResetId] = useState<string | null>(null);
   const [resetPwd, setResetPwd] = useState('');
@@ -839,7 +846,7 @@ const PersonalSection: React.FC = () => {
     try {
       const nuevo = await crearOperador({ ...form, cargo: form.cargo || undefined });
       setOperadores((p) => [...p, nuevo]);
-      setForm({ nombre: '', email: '', password: '', cargo: '' });
+      setForm({ nombre: '', email: '', password: '', cargo: '', rol: 'tecnico' });
       setAdding(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al crear operador');
@@ -853,7 +860,7 @@ const PersonalSection: React.FC = () => {
     if (!editId) return;
     setError(null);
     try {
-      const actualizado = await actualizarOperador(editId, { nombre: editForm.nombre, cargo: editForm.cargo || null });
+      const actualizado = await actualizarOperador(editId, { nombre: editForm.nombre, cargo: editForm.cargo || null, rol: editForm.rol });
       setOperadores((p) => p.map((o) => o.id === editId ? { ...o, ...actualizado } : o));
       setEditId(null);
     } catch (err) {
@@ -862,7 +869,7 @@ const PersonalSection: React.FC = () => {
   };
 
   const handleDesactivar = async (id: string, nombre: string) => {
-    if (!window.confirm(`¿Desactivar al operador "${nombre}"?`)) return;
+    if (!window.confirm(`¿Desactivar al usuario "${nombre}"?`)) return;
     setError(null);
     try {
       await desactivarOperador(id);
@@ -895,8 +902,17 @@ const PersonalSection: React.FC = () => {
       )}
 
       <p className="text-sm text-muted">
-        El personal puede iniciar sesion con email y contrasena para registrar mediciones. Asignales un cargo libre como "Tecnico", "Supervisor" u "Operador de campo".
+        Creá usuarios con un perfil real de acceso. El cargo sigue siendo libre; el perfil define qué información ven y qué acciones pueden realizar.
       </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+        {PERFILES_TENANT.map((perfil) => (
+          <div key={perfil.value} className="border border-line bg-subtle px-3 py-2">
+            <p className="text-xs font-black uppercase tracking-wider text-content">{perfil.label}</p>
+            <p className="text-[11px] text-muted mt-1 leading-snug">{perfil.descripcion}</p>
+          </div>
+        ))}
+      </div>
 
       {!adding && (
         <AddButton onClick={() => setAdding(true)} label="Nuevo personal" />
@@ -913,6 +929,16 @@ const PersonalSection: React.FC = () => {
               className={inputCls}
               placeholder="Juan Perez"
             />
+          </div>
+          <div>
+            <label className={labelCls}>Perfil de acceso</label>
+            <select
+              value={form.rol}
+              onChange={(e) => setForm((p) => ({ ...p, rol: e.target.value as RolPerfil }))}
+              className={inputCls}
+            >
+              {PERFILES_TENANT.map((perfil) => <option key={perfil.value} value={perfil.value}>{perfil.label}</option>)}
+            </select>
           </div>
           <div>
             <label className={labelCls}>Cargo</label>
@@ -948,7 +974,7 @@ const PersonalSection: React.FC = () => {
           <div className="sm:col-span-2 flex justify-end gap-3">
             <button
               type="button"
-              onClick={() => { setAdding(false); setForm({ nombre: '', email: '', password: '', cargo: '' }); }}
+              onClick={() => { setAdding(false); setForm({ nombre: '', email: '', password: '', cargo: '', rol: 'tecnico' }); }}
               className="px-4 min-h-[44px] border border-line-strong font-bold text-muted"
             >
               Cancelar
@@ -969,6 +995,12 @@ const PersonalSection: React.FC = () => {
           <div>
             <label className={labelCls}>Nombre</label>
             <input required value={editForm.nombre} onChange={(e) => setEditForm((p) => ({ ...p, nombre: e.target.value }))} className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Perfil de acceso</label>
+            <select value={editForm.rol} onChange={(e) => setEditForm((p) => ({ ...p, rol: e.target.value as RolPerfil }))} className={inputCls}>
+              {PERFILES_TENANT.map((perfil) => <option key={perfil.value} value={perfil.value}>{perfil.label}</option>)}
+            </select>
           </div>
           <div>
             <label className={labelCls}>Cargo</label>
@@ -1029,6 +1061,7 @@ const PersonalSection: React.FC = () => {
                   {o.cargo && (
                     <div className="text-xs font-semibold uppercase text-brand-600 tracking-wider">{o.cargo}</div>
                   )}
+                  <div className="text-[11px] font-black uppercase tracking-wider text-content mt-1">{etiquetaRol(o.rol)}</div>
                   <div className="text-xs text-muted truncate mt-1">{o.email}</div>
                   {!o.activo && (
                     <span className="mt-1 inline-block text-xs font-black uppercase bg-danger/10 border border-danger text-danger px-1.5 py-0.5">
@@ -1039,7 +1072,7 @@ const PersonalSection: React.FC = () => {
                 {o.activo && (
                   <div className="flex gap-1.5 flex-shrink-0">
                     <IconBtn
-                      onClick={() => { setEditId(o.id); setEditForm({ nombre: o.nombre, cargo: o.cargo ?? '' }); }}
+                      onClick={() => { setEditId(o.id); setEditForm({ nombre: o.nombre, cargo: o.cargo ?? '', rol: o.rol }); }}
                       title="Editar"
                     >
                       <Pencil size={15} />

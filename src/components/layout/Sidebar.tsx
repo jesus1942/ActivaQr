@@ -33,6 +33,7 @@ import { getNotificacionesCliente } from '../../data/accesoRemotoApi';
 import { hasFeature, type Feature } from '../../data/planes';
 import { Sheet } from '../ui/Sheet';
 import { ThemeToggle } from '../ui/ThemeToggle';
+import { etiquetaRol, puedeVerModulo, type ModuloEmpresa } from '../../data/permisos';
 
 const LOGO_LIGHT = `${import.meta.env.BASE_URL}company-logo-hd.png`;   // negro, fondo claro
 const LOGO_DARK  = `${import.meta.env.BASE_URL}company-logo1.png`;      // claro, fondo oscuro
@@ -43,22 +44,23 @@ interface NavItem {
   label: string;
   sub?: string;
   feature?: Feature;
+  modulo?: ModuloEmpresa;
 }
 
 const navEmpresa: NavItem[] = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard', sub: 'Resumen del día' },
-  { to: '/cotizaciones', icon: FileSignature, label: 'Cotizaciones', sub: 'Propuestas de ActivaQR' },
-  { to: '/correctivos', icon: AlertOctagon, label: 'Alertas y órdenes', sub: 'Correctivos autorizados' },
-  { to: '/indicadores', icon: BarChart3, label: 'Indicadores', sub: 'KPIs y gráficos', feature: 'indicadores' },
-  { to: '/activos', icon: Package, label: 'Activos', sub: 'Tus equipos' },
-  { to: '/medicion', icon: ClipboardList, label: 'Mediciones', sub: 'Cargar lectura' },
-  { to: '/mantenimiento', icon: Wrench, label: 'Mantenimiento', sub: 'Tareas y planes' },
-  { to: '/reportes', icon: FileText, label: 'Reportes', sub: 'Exportar PDF/CSV' },
-  { to: '/auditoria', icon: ScrollText, label: 'Auditoría', sub: 'Quién hizo qué', feature: 'auditoria' },
-  { to: '/importar', icon: Upload, label: 'Importar Datos', sub: 'Carga masiva' },
-  { to: '/qr', icon: QrCode, label: 'QR / Etiquetas', sub: 'Imprimir códigos' },
-  { to: '/mensajes', icon: MessageSquare, label: 'Mensajes' },
-  { to: '/configuracion', icon: Settings, label: 'Configuración', sub: 'Sectores, tipos, usuarios' },
+  { to: '/', icon: LayoutDashboard, label: 'Dashboard', sub: 'Resumen del día', modulo: 'dashboard' },
+  { to: '/cotizaciones', icon: FileSignature, label: 'Cotizaciones', sub: 'Propuestas de ActivaQR', modulo: 'cotizaciones' },
+  { to: '/correctivos', icon: AlertOctagon, label: 'Alertas y órdenes', sub: 'Correctivos autorizados', modulo: 'correctivos' },
+  { to: '/indicadores', icon: BarChart3, label: 'Indicadores', sub: 'KPIs y gráficos', feature: 'indicadores', modulo: 'indicadores' },
+  { to: '/activos', icon: Package, label: 'Activos', sub: 'Tus equipos', modulo: 'activos' },
+  { to: '/medicion', icon: ClipboardList, label: 'Mediciones', sub: 'Cargar lectura', modulo: 'medicion' },
+  { to: '/mantenimiento', icon: Wrench, label: 'Mantenimiento', sub: 'Tareas y planes', modulo: 'mantenimiento' },
+  { to: '/reportes', icon: FileText, label: 'Reportes', sub: 'Exportar PDF/CSV', modulo: 'reportes' },
+  { to: '/auditoria', icon: ScrollText, label: 'Auditoría', sub: 'Quién hizo qué', feature: 'auditoria', modulo: 'auditoria' },
+  { to: '/importar', icon: Upload, label: 'Importar Datos', sub: 'Carga masiva', modulo: 'importar' },
+  { to: '/qr', icon: QrCode, label: 'QR / Etiquetas', sub: 'Imprimir códigos', modulo: 'qr' },
+  { to: '/mensajes', icon: MessageSquare, label: 'Mensajes', modulo: 'mensajes' },
+  { to: '/configuracion', icon: Settings, label: 'Configuración', sub: 'Sectores, tipos y perfiles', modulo: 'configuracion' },
 ];
 
 const navSuperadmin: NavItem[] = [
@@ -72,7 +74,6 @@ const navSuperadmin: NavItem[] = [
 ];
 
 // Destinos de la bottom nav (mobile, empresa). El último abre la hoja "Más".
-const bottomPrimary = ['/', '/activos', '/medicion'];
 const bottomPrimarySuperadmin = ['/', '/presentacion', '/mensajes'];
 
 export const Sidebar: React.FC = () => {
@@ -83,8 +84,20 @@ export const Sidebar: React.FC = () => {
   const { usuario, logout } = useAuth();
 
   const esSuperadmin = usuario?.rol === 'superadmin';
-  const navItems = esSuperadmin ? navSuperadmin : navEmpresa;
+  const navItems = esSuperadmin
+    ? navSuperadmin
+    : usuario?.rol === 'direccion'
+      ? [
+          { to: '/', icon: BarChart3, label: 'Dirección', sub: 'Riesgo y decisiones', modulo: 'indicadores' as const },
+          ...navEmpresa.filter((item) => item.to !== '/' && item.to !== '/indicadores' && (!item.modulo || puedeVerModulo(usuario.rol, item.modulo))),
+        ]
+      : navEmpresa.filter((item) => !item.modulo || puedeVerModulo(usuario?.rol, item.modulo));
   const planActual = usuario?.empresa?.plan ?? 'inicial';
+  const bottomPrimary = esSuperadmin
+    ? bottomPrimarySuperadmin
+    : usuario?.rol === 'direccion'
+      ? ['/', '/activos', '/reportes']
+      : ['/', '/activos', '/medicion'];
 
   // Polling de notificaciones (empresa/industrial).
   useEffect(() => {
@@ -156,6 +169,11 @@ export const Sidebar: React.FC = () => {
                 {usuario.empresa?.nombre ?? (esSuperadmin ? 'ActivaQR · Admin' : usuario.nombre)}
               </div>
               <div className="text-faint text-xs font-mono truncate">{usuario.email}</div>
+              {!esSuperadmin && (
+                <div className="text-[10px] font-bold uppercase tracking-wider text-brand-600 truncate">
+                  {etiquetaRol(usuario.rol)}
+                </div>
+              )}
             </div>
             <ThemeToggle />
           </div>
@@ -179,7 +197,7 @@ export const Sidebar: React.FC = () => {
           rel="noopener noreferrer"
           className="block text-faint hover:text-brand-600 text-[11px] font-mono transition-colors"
         >
-          v1.3.7 · dev Jesús Olguín
+          v1.3.8 · dev Jesús Olguín
         </a>
       </div>
     </aside>
@@ -192,7 +210,7 @@ export const Sidebar: React.FC = () => {
       <img src={LOGO_DARK} alt="ActivaQR" className="h-10 w-auto object-contain drop-shadow-[0_0_10px_rgba(45,212,191,0.55)] hidden dark:block" />
       <div className="flex items-center gap-2">
         <ThemeToggle />
-        {!esSuperadmin && (
+        {!esSuperadmin && puedeVerModulo(usuario?.rol, 'medicion') && (
           <button
             onClick={() => navigate('/medicion')}
             className="press grid place-items-center w-10 h-10 rounded-full bg-brand-600 text-white shadow-soft"
@@ -221,7 +239,7 @@ export const Sidebar: React.FC = () => {
   const bottomItems = esSuperadmin
     ? navSuperadmin.filter((i) => bottomPrimarySuperadmin.includes(i.to))
     : navItems.filter((i) => bottomPrimary.includes(i.to));
-  const mobilePrimary = esSuperadmin ? bottomPrimarySuperadmin : bottomPrimary;
+  const mobilePrimary = bottomPrimary;
   const isMoreActive = !mobilePrimary.includes(location.pathname);
 
   const bottomNav = (

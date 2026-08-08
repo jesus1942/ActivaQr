@@ -219,7 +219,9 @@ router.post(
       // El tecnico asignado: responsable del activo o primer operador de la empresa.
       let tecnicoId: string | null = activo.responsableId;
       if (!tecnicoId) {
-        const operador = await prisma.usuario.findFirst({ where: { empresaId: req.params.id, rol: 'operador' } });
+        const operador = await prisma.usuario.findFirst({
+          where: { empresaId: req.params.id, rol: { in: ['tecnico', 'operador', 'mantenimiento'] } },
+        });
         tecnicoId = operador?.id ?? null;
       }
 

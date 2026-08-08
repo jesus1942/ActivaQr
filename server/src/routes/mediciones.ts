@@ -9,7 +9,7 @@ import {
 } from '../alertas';
 import { enviarPushAEmpresa } from '../push';
 import { auditar } from '../auditoria';
-import { AuthRequest, requireAdmin } from '../auth';
+import { AuthRequest, requireJefatura, requireTrabajoCampo } from '../auth';
 import { registrarLecturaMantenimiento } from '../mantenimientoService';
 
 const router = Router();
@@ -85,7 +85,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 // Al crear, escala el estado del activo:
 //   medición urgente  -> activo critico
 //   medición revision -> activo alerta (solo si estaba normal)
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', requireTrabajoCampo as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
     const {
@@ -129,8 +129,11 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       activo.tipo.categoria?.parametros ?? [],
     );
     if (errorParametros) return res.status(400).json({ error: errorParametros });
-    const tecnicoValido = typeof tecnicoId === 'string' && tecnicoId
-      ? await prisma.usuario.findFirst({ where: { id: tecnicoId, empresaId, activo: true }, select: { id: true } })
+    const tecnicoSolicitado = typeof tecnicoId === 'string' && tecnicoId
+      ? tecnicoId
+      : (req as AuthRequest).auth?.userId;
+    const tecnicoValido = tecnicoSolicitado
+      ? await prisma.usuario.findFirst({ where: { id: tecnicoSolicitado, empresaId, activo: true }, select: { id: true } })
       : null;
 
     // Calcular estado automático a partir de umbrales del activo.
@@ -277,7 +280,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
           body: 'Estado: ' + nuevoEstado + '. Codigo ' + activo.codigo,
           url: '#/activos/' + activo.id,
         },
-        ['admin', 'operador'],
+        ['admin', 'operador', 'tecnico', 'mantenimiento', 'jefatura', 'direccion'],
       ).catch((e) => console.error('[medicion] error push:', e));
     }
 
@@ -289,7 +292,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // DELETE /api/mediciones/:id — solo admin (operador no puede borrar historial)
-router.delete('/:id', requireAdmin as any, async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', requireJefatura as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
     const existing = await prisma.medicion.findFirst({

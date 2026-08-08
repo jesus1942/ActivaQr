@@ -5,6 +5,7 @@ import { prisma } from '../prisma';
 import {
   AuthRequest,
   requireAdmin,
+  requireConsultaGestion,
   requireAuth,
   requireAuthAndActiveEmpresa,
   requireSuperadmin,
@@ -282,9 +283,9 @@ adminCorrectivosRouter.post('/ordenes/:id/estado', async (req: AuthRequest, res:
 });
 
 export const clienteCorrectivosRouter = Router();
-clienteCorrectivosRouter.use(requireAuthAndActiveEmpresa, requireAdmin);
+clienteCorrectivosRouter.use(requireAuthAndActiveEmpresa);
 
-clienteCorrectivosRouter.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
+clienteCorrectivosRouter.get('/', requireConsultaGestion, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const empresaId = req.auth!.empresaId!;
     const alertas = await prisma.alertaTecnica.findMany({
@@ -296,7 +297,7 @@ clienteCorrectivosRouter.get('/', async (req: AuthRequest, res: Response, next: 
   } catch (error) { next(error); }
 });
 
-clienteCorrectivosRouter.post('/:id/decision-operativa', async (req: AuthRequest, res: Response, next: NextFunction) => {
+clienteCorrectivosRouter.post('/:id/decision-operativa', requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const empresaId = req.auth!.empresaId!;
     const decision = texto(req.body?.decision, 40);
@@ -337,7 +338,7 @@ clienteCorrectivosRouter.post('/:id/decision-operativa', async (req: AuthRequest
   } catch (error) { next(error); }
 });
 
-clienteCorrectivosRouter.post('/ordenes/:id/permiso', async (req: AuthRequest, res: Response, next: NextFunction) => {
+clienteCorrectivosRouter.post('/ordenes/:id/permiso', requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const empresaId = req.auth!.empresaId!;
     const decision = texto(req.body?.decision, 16);
@@ -385,7 +386,7 @@ clienteCorrectivosRouter.post('/ordenes/:id/permiso', async (req: AuthRequest, r
   } catch (error) { next(error); }
 });
 
-clienteCorrectivosRouter.post('/ordenes/:id/conformidad', async (req: AuthRequest, res: Response, next: NextFunction) => {
+clienteCorrectivosRouter.post('/ordenes/:id/conformidad', requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const empresaId = req.auth!.empresaId!;
     const decision = texto(req.body?.decision, 16);

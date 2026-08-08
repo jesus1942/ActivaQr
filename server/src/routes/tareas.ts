@@ -2,7 +2,8 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../prisma';
 import { resolveEmpresaId } from '../tenant';
 import { auditar } from '../auditoria';
-import { AuthRequest, requireAdmin } from '../auth';
+import { AuthRequest, requireGestionOperacion, requireJefatura, requireTrabajoCampo } from '../auth';
+import { esTecnicoCampo } from '../rolePolicy';
 import { siguienteCicloMantenimiento } from '../mantenimientoService';
 
 const router = Router();
@@ -21,6 +22,7 @@ async function proximoNumeroOT(empresaId: string): Promise<number> {
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
+    const auth = (req as AuthRequest).auth!;
     const activoId =
       typeof req.query.activoId === 'string' ? req.query.activoId : undefined;
     const estado =
@@ -30,6 +32,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
       where: {
         ...(activoId ? { activoId } : {}),
         ...(estado ? { estado: estado as any } : {}),
+        ...(esTecnicoCampo(auth.rol) ? { responsableId: auth.userId } : {}),
         activo: { empresaId },
       },
       include: { responsable: { select: { id: true, nombre: true, cargo: true } }, activo: true },
@@ -42,7 +45,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // POST /api/tareas
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', requireGestionOperacion as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
     const {
@@ -99,7 +102,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // PUT /api/tareas/:id  — actualizar / completar
-router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.put('/:id', requireTrabajoCampo as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
     const existing = await prisma.tareaMantenimiento.findFirst({
@@ -107,6 +110,12 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
       include: { activo: true },
     });
     if (!existing) return res.status(404).json({ error: 'Tarea no encontrada' });
+
+    const auth = (req as AuthRequest).auth!;
+    const esTecnico = esTecnicoCampo(auth.rol);
+    if (esTecnico && existing.responsableId !== auth.userId) {
+      return res.status(403).json({ error: 'Solo podés actualizar órdenes asignadas a tu usuario.' });
+    }
 
     const {
       responsableId,
@@ -121,17 +130,19 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
       fotos,
     } = req.body ?? {};
 
-    const data: any = { responsableId, tipo, estado, observaciones, materiales };
-    if (responsableId !== undefined) {
+    const data: any = esTecnico
+      ? { estado, observaciones, materiales }
+      : { responsableId, tipo, estado, observaciones, materiales };
+    if (!esTecnico && responsableId !== undefined) {
       const responsableValido = typeof responsableId === 'string' && responsableId
         ? await prisma.usuario.findFirst({ where: { id: responsableId, empresaId, activo: true }, select: { id: true } })
         : null;
       data.responsableId = responsableValido?.id ?? null;
     }
-    if (['baja', 'media', 'alta'].includes(prioridad)) data.prioridad = prioridad;
+    if (!esTecnico && ['baja', 'media', 'alta'].includes(prioridad)) data.prioridad = prioridad;
     if (typeof horasTrabajo === 'number') data.horasTrabajo = horasTrabajo;
     if (Array.isArray(fotos)) data.fotos = fotos;
-    if (fechaProgramada !== undefined) data.fechaProgramada = new Date(fechaProgramada);
+    if (!esTecnico && fechaProgramada !== undefined) data.fechaProgramada = new Date(fechaProgramada);
     if (fechaRealizada !== undefined) {
       data.fechaRealizada = fechaRealizada ? new Date(fechaRealizada) : null;
     }
@@ -166,7 +177,7 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // DELETE /api/tareas/:id — solo admin (operador no puede borrar OTs)
-router.delete('/:id', requireAdmin as any, async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', requireJefatura as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
     const existing = await prisma.tareaMantenimiento.findFirst({

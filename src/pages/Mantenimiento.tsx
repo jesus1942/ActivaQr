@@ -19,6 +19,8 @@ import { useActivos } from '../hooks/useActivos';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { TareaMantenimiento } from '../data/types';
 import { DialogViewport } from '../components/ui/DialogViewport';
+import { useAuth } from '../context/AuthContext';
+import { puedeGestionarEstructuraTecnica } from '../data/permisos';
 
 const emptyTarea = {
   activoId: '',
@@ -32,6 +34,8 @@ const emptyTarea = {
 };
 
 export const Mantenimiento: React.FC = () => {
+  const { usuario } = useAuth();
+  const puedeEliminar = puedeGestionarEstructuraTecnica(usuario?.rol);
   const {
     activos, tareas, tecnicos, completarTarea, addTarea, updateTarea, deleteTarea,
     getSectorNombre, getTecnicoNombre,
@@ -143,9 +147,11 @@ export const Mantenimiento: React.FC = () => {
               <button onClick={() => openEdit(tarea)} title="Editar" className="p-1.5 border border-line text-muted hover:border-content">
                 <Pencil size={13} />
               </button>
-              <button onClick={() => handleDeleteTarea(tarea)} title="Eliminar" className="p-1.5 border border-line text-danger hover:border-danger hover:bg-danger/10">
-                <Trash2 size={13} />
-              </button>
+              {puedeEliminar && (
+                <button onClick={() => handleDeleteTarea(tarea)} title="Eliminar" className="p-1.5 border border-line text-danger hover:border-danger hover:bg-danger/10">
+                  <Trash2 size={13} />
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../prisma';
 import { resolveEmpresaId } from '../tenant';
-import { requireAdmin } from '../auth';
+import { requireJefatura } from '../auth';
 
 const router = Router();
 
@@ -34,7 +34,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // POST /api/sectores
-router.post('/', requireAdmin as any, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', requireJefatura as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
     const { nombre, color, activo } = req.body ?? {};
@@ -51,7 +51,7 @@ router.post('/', requireAdmin as any, async (req: Request, res: Response, next: 
 });
 
 // PUT /api/sectores/:id
-router.put('/:id', requireAdmin as any, async (req: Request, res: Response, next: NextFunction) => {
+router.put('/:id', requireJefatura as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
     const existing = await prisma.sector.findFirst({
@@ -72,7 +72,7 @@ router.put('/:id', requireAdmin as any, async (req: Request, res: Response, next
 
 // DELETE /api/sectores/:id
 // Soft-delete (activo=false) si tiene activos asociados; sino borra de verdad.
-router.delete('/:id', requireAdmin as any, async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', requireJefatura as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
     const existing = await prisma.sector.findFirst({

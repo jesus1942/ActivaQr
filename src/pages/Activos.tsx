@@ -17,6 +17,7 @@ import { Activo, EstadoActivo, EstadoOperativo, TipoActivo, ClaveVisibilidad, Es
 import { DialogViewport } from '../components/ui/DialogViewport';
 import { resumenMantenimiento } from '../utils/mantenimiento';
 import { LIMITE_ACTIVOS_POR_PLAN, Plan } from '../data/planes';
+import { puedeGestionarOperacion } from '../data/permisos';
 
 const ESTADOS: { value: string; label: string }[] = [
   { value: 'todos', label: 'Todos los estados' },
@@ -33,6 +34,7 @@ export const Activos: React.FC = () => {
     getSectorNombre, getTipoNombre, getTecnicoNombre,
   } = useActivos();
   const { usuario } = useAuth();
+  const puedeEditar = puedeGestionarOperacion(usuario?.rol);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -169,7 +171,7 @@ export const Activos: React.FC = () => {
   // Abrir modal en modo edición cuando se navega desde el detalle del activo
   useEffect(() => {
     const editIdFromState = (location.state as { editId?: string } | null)?.editId;
-    if (editIdFromState) {
+    if (editIdFromState && puedeEditar) {
       const target = activos.find((a) => a.id === editIdFromState);
       if (target) openEdit(target);
       navigate(location.pathname, { replace: true, state: null });
@@ -283,14 +285,16 @@ export const Activos: React.FC = () => {
             <Download size={15} />
             <span className="hidden sm:inline">CSV</span>
           </button>
-          <button
-            onClick={openNew}
-            className="flex items-center gap-2 bg-brand-600 text-white px-4 min-h-[44px] font-bold border border-line shadow-soft hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-soft transition-all"
-          >
-            <Plus size={16} />
-            <span className="hidden sm:inline">Nuevo Activo</span>
-            <span className="sm:hidden">Nuevo</span>
-          </button>
+          {puedeEditar && (
+            <button
+              onClick={openNew}
+              className="flex items-center gap-2 bg-brand-600 text-white px-4 min-h-[44px] font-bold border border-line shadow-soft hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-soft transition-all"
+            >
+              <Plus size={16} />
+              <span className="hidden sm:inline">Nuevo Activo</span>
+              <span className="sm:hidden">Nuevo</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -359,7 +363,7 @@ export const Activos: React.FC = () => {
                 lastMedicion={lastMed}
                 sectorNombre={getSectorNombre(activo.sectorId)}
                 responsableNombre={getTecnicoNombre(activo.responsableId)}
-                onEdit={() => openEdit(activo)}
+                onEdit={puedeEditar ? () => openEdit(activo) : undefined}
               />
             );
           })}
@@ -398,7 +402,7 @@ export const Activos: React.FC = () => {
       )}
 
       {/* Modal */}
-      {showModal && (
+      {showModal && puedeEditar && (
         <DialogViewport
           className="bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4"
           onEscape={() => setShowModal(false)}

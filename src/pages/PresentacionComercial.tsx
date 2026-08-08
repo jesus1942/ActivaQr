@@ -546,7 +546,7 @@ export const PresentacionComercial: React.FC = () => {
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {[
             { icon: <HardHat size={28} />, role: 'Técnico', need: 'Saber qué medir y registrar sin perder tiempo.', result: 'QR, formularios adaptados, fotos y cola offline.' },
-            { icon: <Wrench size={28} />, role: 'Mantenimiento', need: 'Priorizar y dar seguimiento a tareas reales.', result: 'Alertas, preventivos, correctivos e historial.' },
+            { icon: <Wrench size={28} />, role: 'Mantenimiento', need: 'Priorizar y dar seguimiento a tareas reales.', result: 'Alertas, planes preventivos, órdenes e historial.' },
             { icon: <Building2 size={28} />, role: 'Jefatura', need: 'Entender riesgo, cumplimiento y responsables.', result: 'Indicadores, auditoría y evidencia verificable.' },
             { icon: <CircleDollarSign size={28} />, role: 'Dirección', need: 'Decidir dónde invertir y qué riesgo aceptar.', result: 'Tendencias, costos y trazabilidad para decidir.' },
           ].map((item) => (

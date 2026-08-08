@@ -2,6 +2,7 @@ import { Router, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../prisma';
 import { AuthRequest } from '../auth';
+import { esRolPerfil, ROLES_PERFIL } from '../rolePolicy';
 
 const router = Router();
 
@@ -18,10 +19,13 @@ const selectOperador = {
   email: true,
   cargo: true,
   telefono: true,
+  rol: true,
   activo: true,
   creadoEn: true,
   ultimoAcceso: true,
 } as const;
+
+const rolesPersonal = ['operador', ...ROLES_PERFIL] as const;
 
 // GET /api/operadores
 router.get('/', requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -30,11 +34,16 @@ router.get('/', requireAdmin, async (req: AuthRequest, res: Response, next: Next
     if (!empresaId) return res.status(400).json({ error: 'Sin empresa asignada.' });
 
     const operadores = await prisma.usuario.findMany({
-      where: { empresaId, rol: 'operador' },
+      where: { empresaId, rol: { in: [...rolesPersonal] } },
       select: selectOperador,
       orderBy: { nombre: 'asc' },
     });
-    res.json(operadores);
+    res.json(operadores.map((usuario) => ({
+      ...usuario,
+      // El rol legado se presenta como Tecnico, sin forzar una migracion que
+      // cierre sesiones existentes en medio del despliegue.
+      rol: usuario.rol === 'operador' ? 'tecnico' : usuario.rol,
+    })));
   } catch (err) {
     next(err);
   }
@@ -46,12 +55,15 @@ router.post('/', requireAdmin, async (req: AuthRequest, res: Response, next: Nex
     const empresaId = req.auth!.empresaId;
     if (!empresaId) return res.status(400).json({ error: 'Sin empresa asignada.' });
 
-    const { nombre, email, password, cargo } = req.body ?? {};
+    const { nombre, email, password, cargo, rol } = req.body ?? {};
     if (!nombre || !email || !password) {
       return res.status(400).json({ error: 'Nombre, email y contraseña son obligatorios.' });
     }
     if (String(password).length < 8) {
       return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres.' });
+    }
+    if (!esRolPerfil(rol)) {
+      return res.status(400).json({ error: 'Elegí un perfil válido: Técnico, Mantenimiento, Jefatura o Dirección.' });
     }
 
     const emailNorm = String(email).toLowerCase().trim();
@@ -68,7 +80,7 @@ router.post('/', requireAdmin, async (req: AuthRequest, res: Response, next: Nex
         passwordHash,
         nombre: String(nombre).trim(),
         cargo: cargo ? String(cargo).trim() : null,
-        rol: 'operador',
+        rol,
       },
       select: selectOperador,
     });
@@ -79,21 +91,27 @@ router.post('/', requireAdmin, async (req: AuthRequest, res: Response, next: Nex
   }
 });
 
-// PUT /api/operadores/:id — actualizar nombre y cargo
+// PUT /api/operadores/:id — actualizar identidad y perfil
 router.put('/:id', requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const empresaId = req.auth!.empresaId;
     if (!empresaId) return res.status(400).json({ error: 'Sin empresa asignada.' });
 
     const operador = await prisma.usuario.findFirst({
-      where: { id: req.params.id, empresaId, rol: 'operador' },
+      where: { id: req.params.id, empresaId, rol: { in: [...rolesPersonal] } },
     });
     if (!operador) return res.status(404).json({ error: 'Operador no encontrado.' });
 
-    const { nombre, cargo } = req.body ?? {};
+    const { nombre, cargo, rol } = req.body ?? {};
     const data: any = {};
     if (nombre !== undefined) data.nombre = String(nombre).trim();
     if (cargo !== undefined) data.cargo = cargo ? String(cargo).trim() : null;
+    if (rol !== undefined) {
+      if (!esRolPerfil(rol)) {
+        return res.status(400).json({ error: 'El perfil seleccionado no es válido.' });
+      }
+      data.rol = rol;
+    }
 
     const updated = await prisma.usuario.update({
       where: { id: operador.id },
@@ -113,7 +131,7 @@ router.delete('/:id', requireAdmin, async (req: AuthRequest, res: Response, next
     if (!empresaId) return res.status(400).json({ error: 'Sin empresa asignada.' });
 
     const operador = await prisma.usuario.findFirst({
-      where: { id: req.params.id, empresaId, rol: 'operador' },
+      where: { id: req.params.id, empresaId, rol: { in: [...rolesPersonal] } },
     });
     if (!operador) return res.status(404).json({ error: 'Operador no encontrado.' });
 
@@ -140,7 +158,7 @@ router.patch('/:id/password', requireAdmin, async (req: AuthRequest, res: Respon
     }
 
     const operador = await prisma.usuario.findFirst({
-      where: { id: req.params.id, empresaId, rol: 'operador' },
+      where: { id: req.params.id, empresaId, rol: { in: [...rolesPersonal] } },
     });
     if (!operador) return res.status(404).json({ error: 'Operador no encontrado.' });
 

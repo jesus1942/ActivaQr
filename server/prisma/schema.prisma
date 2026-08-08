@@ -24,6 +24,10 @@ enum RolUsuario {
   superadmin
   admin
   operador
+  tecnico
+  mantenimiento
+  jefatura
+  direccion
 }
 
 enum EstadoActivo {

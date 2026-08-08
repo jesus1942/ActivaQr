@@ -36,13 +36,16 @@ import { EstadoOperativo, TareaMantenimiento } from '../data/types';
 import { CategoriaEquipo, getCategoria } from '../data/categoriasApi';
 import { API_URL } from '../data/auth';
 import { useAuth } from '../context/AuthContext';
-import { puedeEliminarActivos } from '../data/permisos';
+import { puedeCargarMediciones, puedeEliminarActivos, puedeGestionarEstructuraTecnica, puedeGestionarOperacion } from '../data/permisos';
 import { resumenMantenimiento } from '../utils/mantenimiento';
 
 export const ActivoDetalle: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { usuario } = useAuth();
+  const puedeEditar = puedeGestionarOperacion(usuario?.rol);
+  const puedeMedir = puedeCargarMediciones(usuario?.rol);
+  const puedeBorrarHistorial = puedeGestionarEstructuraTecnica(usuario?.rol);
   const {
     activos, mediciones, tareas, tipos,
     deleteActivo, deleteMedicion, updateActivo, addTarea,
@@ -189,7 +192,7 @@ export const ActivoDetalle: React.FC = () => {
             <EstadoOperativoBadge estado={activo.estadoOperativo ?? 'operativo'} size="lg" />
           </div>
           <h1 className="text-lg font-bold text-content mt-0.5">{activo.nombre}</h1>
-          <div className="flex items-center gap-2 mt-2">
+          {puedeEditar ? <div className="flex items-center gap-2 mt-2">
             <label className="text-xs font-black uppercase tracking-wider text-muted">Estado operativo:</label>
             <select
               value={activo.estadoOperativo ?? 'operativo'}
@@ -198,16 +201,22 @@ export const ActivoDetalle: React.FC = () => {
             >
               {ESTADOS_OPERATIVOS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
-          </div>
+          </div> : (
+            <p className="text-xs font-bold uppercase tracking-wider text-muted mt-2">
+              Vista de consulta · {ESTADOS_OPERATIVOS.find((item) => item.value === (activo.estadoOperativo ?? 'operativo'))?.label}
+            </p>
+          )}
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          <button
-            onClick={() => navigate('/activos', { state: { editId: activo.id } })}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border border-line px-3 min-h-[44px] font-bold text-content hover:bg-subtle transition-colors"
-          >
-            <Pencil size={15} />
-            Editar
-          </button>
+          {puedeEditar && (
+            <button
+              onClick={() => navigate('/activos', { state: { editId: activo.id } })}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border border-line px-3 min-h-[44px] font-bold text-content hover:bg-subtle transition-colors"
+            >
+              <Pencil size={15} />
+              Editar
+            </button>
+          )}
           {puedeEliminarActivos(usuario?.rol) && (
             <button
               onClick={handleDelete}
@@ -229,6 +238,7 @@ export const ActivoDetalle: React.FC = () => {
               fotoUrl={activo.fotoUrl}
               nombre={activo.nombre}
               onChange={(fotoUrl) => updateActivo(activo.id, { fotoUrl })}
+              soloLectura={!puedeEditar}
             />
           )}
           <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4">
@@ -354,17 +364,17 @@ export const ActivoDetalle: React.FC = () => {
               <FileDown size={16} />
               Descargar Ficha PDF
             </button>
-            <button
+            {puedeMedir && <button
               onClick={() => navigate(`/medicion/${activo.id}`)}
               className="w-full flex items-center justify-center gap-2 bg-brand-600 text-white px-4 py-2.5 font-bold border border-line shadow-soft hover:bg-warn transition-colors"
             >
               <ClipboardList size={16} />
               {esOperativo ? 'Tomar Medición' : 'Registrar Inspección'}
-            </button>
+            </button>}
           </div>
 
           {/* Documentación (solo en modo remoto/backend) */}
-          {API_URL && <DocumentosActivo activoId={activo.id} />}
+          {API_URL && <DocumentosActivo activoId={activo.id} soloLectura={!puedeEditar} />}
 
           {/* Catalogo de fallas tipicas para la categoria de este equipo */}
           {API_URL && <FallasActivo activoId={activo.id} publico />}
@@ -408,7 +418,7 @@ export const ActivoDetalle: React.FC = () => {
           tipo={tipoActual}
           mediciones={activoMediciones}
           tareas={activoTareas}
-          onCrearTareaPredictiva={handleCrearTareaPredictiva}
+          onCrearTareaPredictiva={puedeEditar ? handleCrearTareaPredictiva : undefined}
         />
       )}
 
@@ -438,7 +448,7 @@ export const ActivoDetalle: React.FC = () => {
                   <td className="px-3 py-2 text-xs text-muted whitespace-nowrap">{getTecnicoNombre(m.tecnicoId)}</td>
                   <td className="px-3 py-2 text-xs text-muted max-w-48 truncate">{m.observaciones || '-'}</td>
                   <td className="px-3 py-2">
-                    <button
+                    {puedeBorrarHistorial && <button
                       onClick={() => {
                         if (window.confirm('¿Eliminar esta medición?')) deleteMedicion(m.id);
                       }}
@@ -446,7 +456,7 @@ export const ActivoDetalle: React.FC = () => {
                       className="text-danger hover:bg-danger/10 p-1.5 border border-transparent hover:border-danger"
                     >
                       <Trash2 size={14} />
-                    </button>
+                    </button>}
                   </td>
                 </tr>
               ))}
@@ -472,13 +482,13 @@ export const ActivoDetalle: React.FC = () => {
                   <p className="text-sm text-content leading-snug">{m.observaciones || 'Sin observaciones.'}</p>
                   <p className="text-[11px] text-muted mt-1">{getTecnicoNombre(m.tecnicoId)}</p>
                 </div>
-                <button
+                {puedeBorrarHistorial && <button
                   onClick={() => { if (window.confirm('¿Eliminar esta inspección?')) deleteMedicion(m.id); }}
                   title="Eliminar inspeccion"
                   className="text-danger hover:bg-danger/10 p-1 border border-transparent hover:border-danger flex-shrink-0"
                 >
                   <Trash2 size={13} />
-                </button>
+                </button>}
               </div>
             ))}
           </div>

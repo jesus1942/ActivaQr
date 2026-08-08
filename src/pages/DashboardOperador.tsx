@@ -632,7 +632,7 @@ export const DashboardOperador: React.FC = () => {
       {/* Header */}
       <div className="bg-slate-900 text-white px-5 py-4 border border-line flex items-center justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-wider text-brand-400">ActivaQR · Operador</p>
+          <p className="text-xs font-black uppercase tracking-wider text-brand-400">ActivaQR · Técnico</p>
           <p className="font-black text-lg leading-tight">{usuario?.nombre}</p>
           <p className="text-xs text-faint">{usuario?.empresa?.nombre}</p>
         </div>

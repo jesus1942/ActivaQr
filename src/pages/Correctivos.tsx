@@ -59,6 +59,7 @@ export const Correctivos: React.FC = () => {
   const { toast } = useToast();
   const [params] = useSearchParams();
   const esSuperadmin = usuario?.rol === 'superadmin';
+  const puedeDecidirCliente = usuario?.rol === 'admin';
   const empresaInicial = params.get('empresaId') ?? '';
   const alertaInicial = params.get('alerta');
   const [alertas, setAlertas] = useState<AlertaTecnica[]>([]);
@@ -207,6 +208,12 @@ export const Correctivos: React.FC = () => {
         <div className="border border-warn bg-warn/10 p-3"><p className="text-[10px] font-black uppercase text-warn-strong dark:text-warn">Permisos</p><p className="text-2xl font-black">{permisosPendientes}</p></div>
       </div>
 
+      {!esSuperadmin && !puedeDecidirCliente && (
+        <p className="border border-line bg-subtle px-3 py-2 text-xs font-bold uppercase tracking-wider text-muted">
+          Vista de consulta · las decisiones operativas y autorizaciones corresponden al administrador de la cuenta.
+        </p>
+      )}
+
       {esSuperadmin && (
         <select value={empresaId} onChange={(e) => setEmpresaId(e.target.value)} className={`${input} max-w-md`}>
           <option value="">Todas las empresas</option>
@@ -264,7 +271,7 @@ export const Correctivos: React.FC = () => {
                 </div>
               )}
 
-              {!esSuperadmin && alerta.estado !== 'cerrada' && (
+              {puedeDecidirCliente && alerta.estado !== 'cerrada' && (
                 <div className="border border-line p-3 space-y-3">
                   <p className="font-black uppercase text-sm">Decisión operativa del administrador</p>
                   <textarea value={detalleDecision[alerta.id] ?? ''} onChange={(e) => setDetalleDecision((a) => ({ ...a, [alerta.id]: e.target.value }))} rows={2} className={input} placeholder="Motivo, controles temporales y condiciones de operación…" />
@@ -322,7 +329,7 @@ export const Correctivos: React.FC = () => {
                   <div className="flex items-start justify-between gap-3 flex-wrap"><div><p className="text-[11px] font-black uppercase text-brand-600">Orden de trabajo</p><h3 className="font-display font-black text-xl">{orden.numero}</h3><p className="text-sm text-muted">Autorizada por {orden.autorizadaPorNombre} · <Fecha valor={orden.autorizadaEn} /></p></div><div className="text-right"><p className="font-black uppercase">{ESTADO_LABEL[orden.estado]}</p><p className="text-sm">{ARS.format(orden.costoAprobado)}</p></div></div>
                   <div className="grid sm:grid-cols-2 gap-3 text-sm"><div className="border border-line bg-subtle p-3"><p className={label}>Alcance autorizado</p><p className="whitespace-pre-wrap">{orden.alcance}</p></div><div className="border border-line bg-subtle p-3"><p className={label}>Permiso de trabajo</p><p className="font-black uppercase">{ESTADO_LABEL[orden.estadoPermiso]}</p>{orden.permisoCondiciones && <p className="mt-1 whitespace-pre-wrap">{orden.permisoCondiciones}</p>}</div></div>
 
-                  {!esSuperadmin && orden.requierePermiso && !['completada', 'cancelada'].includes(orden.estado) && (
+                  {puedeDecidirCliente && orden.requierePermiso && !['completada', 'cancelada'].includes(orden.estado) && (
                     <div className="border border-warn bg-warn/10 p-3 space-y-3">
                       <h4 className="font-black uppercase text-sm flex items-center gap-2"><ShieldCheck size={17} /> Permiso de trabajo</h4>
                       <textarea rows={2} value={permisoDatos!.condiciones} onChange={(e) => setPermisos((a) => ({ ...a, [orden.id]: { ...permisoDatos!, condiciones: e.target.value } }))} className={input} placeholder="Condiciones de ingreso, EPP, bloqueo, consignación, acompañamiento…" />
@@ -347,7 +354,7 @@ export const Correctivos: React.FC = () => {
                     <div className="border border-ok bg-ok/10 p-3 space-y-2"><p className={label}>Trabajo cerrado · <Fecha valor={orden.finalizadaEn} /></p><p className="whitespace-pre-wrap text-sm">{orden.cierreTrabajo}</p>{orden.evidencias && orden.evidencias.length > 0 && <div className="grid grid-cols-3 gap-2">{orden.evidencias.map((foto, i) => <img key={i} src={foto} alt={`Evidencia ${i + 1}`} className="w-full aspect-square object-cover border border-line" />)}</div>}</div>
                   )}
 
-                  {!esSuperadmin && orden.estado === 'completada' && orden.conformidadCliente === 'pendiente' && (
+                  {puedeDecidirCliente && orden.estado === 'completada' && orden.conformidadCliente === 'pendiente' && (
                     <div className="border border-line p-3 space-y-3"><textarea rows={2} value={conformidades[orden.id] ?? ''} onChange={(e) => setConformidades((a) => ({ ...a, [orden.id]: e.target.value }))} className={input} placeholder="Observaciones de recepción (obligatorias si no queda conforme)…" /><div className="grid grid-cols-2 gap-2"><button onClick={() => conformidad(alerta, 'observada')} className="min-h-11 border border-warn text-warn-strong dark:text-warn font-black uppercase text-xs">Observar cierre</button><button onClick={() => conformidad(alerta, 'conforme')} className="min-h-11 border border-ok bg-ok/10 text-ok-strong dark:text-ok font-black uppercase text-xs">Dar conformidad</button></div></div>
                   )}
                   {orden.conformidadCliente !== 'pendiente' && <p className="text-sm font-black uppercase flex items-center gap-2"><CheckCircle2 size={16} /> Cliente: {ESTADO_LABEL[orden.conformidadCliente]}</p>}

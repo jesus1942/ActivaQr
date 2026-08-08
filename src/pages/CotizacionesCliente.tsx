@@ -7,6 +7,8 @@ import {
   type EstadoCotizacion,
 } from '../data/cotizacionesApi';
 import { useToast } from '../components/ui/Toast';
+import { useAuth } from '../context/AuthContext';
+import { esSoloLectura } from '../data/permisos';
 
 const ARS = new Intl.NumberFormat('es-AR', {
   style: 'currency', currency: 'ARS', maximumFractionDigits: 0,
@@ -19,6 +21,8 @@ const ESTADO_LABEL: Record<EstadoCotizacion, string> = {
 
 export const CotizacionesCliente: React.FC = () => {
   const { toast } = useToast();
+  const { usuario } = useAuth();
+  const soloLectura = esSoloLectura(usuario?.rol);
   const [cotizaciones, setCotizaciones] = useState<Cotizacion[]>([]);
   const [cargando, setCargando] = useState(true);
   const [respondiendo, setRespondiendo] = useState('');
@@ -99,7 +103,7 @@ export const CotizacionesCliente: React.FC = () => {
               <pre className="whitespace-pre-wrap font-sans text-sm text-content">{cotizacion.texto}</pre>
             </div>
 
-            {!['aceptada', 'rechazada', 'vencida'].includes(cotizacion.estado) && (
+            {!soloLectura && !['aceptada', 'rechazada', 'vencida'].includes(cotizacion.estado) && (
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => responder(cotizacion, 'aceptar')}
@@ -114,7 +118,7 @@ export const CotizacionesCliente: React.FC = () => {
               </div>
             )}
 
-            <div>
+            {!soloLectura && <div>
               <h3 className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-muted mb-2"><MessageSquare size={15} /> Conversación</h3>
               <div className="space-y-2 mb-3">
                 {cotizacion.mensajes.length === 0 && <p className="text-sm text-faint">Todavía no hay mensajes.</p>}
@@ -140,7 +144,12 @@ export const CotizacionesCliente: React.FC = () => {
                   title="Enviar consulta"
                 ><Send size={17} /></button>
               </div>
-            </div>
+            </div>}
+            {soloLectura && (
+              <p className="border border-line bg-subtle px-3 py-2 text-xs font-bold uppercase tracking-wider text-muted">
+                Vista de Dirección · las decisiones comerciales corresponden al administrador de la cuenta.
+              </p>
+            )}
           </div>
         </section>
       ))}

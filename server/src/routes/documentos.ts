@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../prisma';
 import { resolveEmpresaId } from '../tenant';
 import { auditar } from '../auditoria';
-import { AuthRequest } from '../auth';
+import { AuthRequest, requireGestionOperacion } from '../auth';
 
 const router = Router();
 
@@ -49,7 +49,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // POST /api/documentos
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', requireGestionOperacion as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
     const { activoId, nombre, tipo, url } = req.body ?? {};
@@ -82,7 +82,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // DELETE /api/documentos/:id
-router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', requireGestionOperacion as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
     const existing = await prisma.documento.findFirst({

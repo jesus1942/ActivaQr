@@ -29,7 +29,7 @@ export interface UsuarioSesion {
   id: string;
   nombre: string;
   email: string;
-  rol: 'superadmin' | 'admin' | 'operador';
+  rol: RolUsuario;
   empresaId: string | null;
   empresa: {
     id: string;
@@ -44,6 +44,15 @@ export interface UsuarioSesion {
     fase?: 'activo' | 'lectura' | 'vencido' | null;
   } | null;
 }
+
+export type RolUsuario =
+  | 'superadmin'
+  | 'admin'
+  | 'operador'
+  | 'tecnico'
+  | 'mantenimiento'
+  | 'jefatura'
+  | 'direccion';
 
 export function getToken(): string | null {
   const token = authStore.getItem(TOKEN_KEY);

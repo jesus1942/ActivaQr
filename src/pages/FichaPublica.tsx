@@ -76,7 +76,7 @@ export const FichaPublica: React.FC = () => {
   const puedeRegistrar = !!(
     usuarioLogueado &&
     activo &&
-    (usuarioLogueado.rol === 'operador' || usuarioLogueado.rol === 'admin') &&
+    ['operador', 'tecnico', 'mantenimiento', 'jefatura', 'admin'].includes(usuarioLogueado.rol) &&
     usuarioLogueado.empresaId === activo.empresa.id
   );
 

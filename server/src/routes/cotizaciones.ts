@@ -5,6 +5,7 @@ import { prisma } from '../prisma';
 import {
   AuthRequest,
   requireAdmin,
+  requireConsultaDireccion,
   requireAuth,
   requireAuthAndActiveEmpresa,
   requireSuperadmin,
@@ -345,9 +346,9 @@ adminCotizacionesRouter.post('/:id/mensajes', async (req: AuthRequest, res: Resp
 });
 
 export const clienteCotizacionesRouter = Router();
-clienteCotizacionesRouter.use(requireAuthAndActiveEmpresa, requireAdmin);
+clienteCotizacionesRouter.use(requireAuthAndActiveEmpresa);
 
-clienteCotizacionesRouter.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
+clienteCotizacionesRouter.get('/', requireConsultaDireccion, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const empresaId = req.auth?.empresaId;
     if (!empresaId) return res.status(403).json({ error: 'No tenés una empresa asociada.' });
@@ -368,7 +369,7 @@ clienteCotizacionesRouter.get('/', async (req: AuthRequest, res: Response, next:
   }
 });
 
-clienteCotizacionesRouter.post('/:id/responder', async (req: AuthRequest, res: Response, next: NextFunction) => {
+clienteCotizacionesRouter.post('/:id/responder', requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const empresaId = req.auth?.empresaId;
     const accion = typeof req.body?.accion === 'string' ? req.body.accion : 'consultar';

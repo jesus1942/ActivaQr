@@ -21,7 +21,10 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
       return res.status(400).json({ error: 'Sin empresa asignada.' });
     }
     const usuarios = await prisma.usuario.findMany({
-      where: { empresaId },
+      where: {
+        empresaId,
+        rol: { in: ['admin', 'operador', 'tecnico', 'mantenimiento', 'jefatura'] },
+      },
       select: { id: true, nombre: true, cargo: true, activo: true },
       orderBy: { nombre: 'asc' },
     });

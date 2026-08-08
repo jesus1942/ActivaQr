@@ -5,9 +5,11 @@ import { resolve } from 'node:path';
 
 const ruta = readFileSync(resolve(process.cwd(), 'src/routes/cotizaciones.ts'), 'utf8');
 
-test('las cotizaciones separan superadmin y administradores de empresa', () => {
+test('las cotizaciones separan lectura del tenant y decisiones del administrador', () => {
   assert.match(ruta, /adminCotizacionesRouter\.use\(requireAuth, requireSuperadmin\)/);
-  assert.match(ruta, /clienteCotizacionesRouter\.use\(requireAuthAndActiveEmpresa, requireAdmin\)/);
+  assert.match(ruta, /clienteCotizacionesRouter\.use\(requireAuthAndActiveEmpresa\)/);
+  assert.match(ruta, /get\('\/', requireConsultaDireccion/);
+  assert.match(ruta, /post\('\/:id\/responder', requireAdmin/);
 });
 
 test('una respuesta sólo puede modificar cotizaciones de la empresa autenticada', () => {

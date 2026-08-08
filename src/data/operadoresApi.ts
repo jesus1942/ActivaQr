@@ -1,4 +1,5 @@
 import { apiFetch } from './auth';
+import type { RolPerfil } from './permisos';
 
 export interface Operador {
   id: string;
@@ -6,6 +7,7 @@ export interface Operador {
   email: string;
   cargo?: string | null;
   telefono?: string | null;
+  rol: RolPerfil;
   activo: boolean;
   creadoEn?: string;
   ultimoAcceso?: string | null;
@@ -17,7 +19,7 @@ export async function getOperadores(): Promise<Operador[]> {
   return res.json();
 }
 
-export async function actualizarOperador(id: string, data: { nombre?: string; cargo?: string | null }): Promise<Operador> {
+export async function actualizarOperador(id: string, data: { nombre?: string; cargo?: string | null; rol?: RolPerfil }): Promise<Operador> {
   const res = await apiFetch(`operadores/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -28,7 +30,7 @@ export async function actualizarOperador(id: string, data: { nombre?: string; ca
   return body;
 }
 
-export async function crearOperador(data: { nombre: string; email: string; password: string; cargo?: string }): Promise<Operador> {
+export async function crearOperador(data: { nombre: string; email: string; password: string; cargo?: string; rol: RolPerfil }): Promise<Operador> {
   const res = await apiFetch('operadores', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

@@ -404,7 +404,7 @@ export async function seedAustral(empresaId: string): Promise<{
           email,
           passwordHash: hash,
           nombre: p.nombre,
-          rol: 'operador',
+          rol: 'tecnico',
           cargo: p.cargo,
           activo: true,
         },

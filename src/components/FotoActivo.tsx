@@ -10,9 +10,10 @@ interface FotoActivoProps {
   // Actualiza el store local para que la card y la ficha reflejen el cambio
   // sin esperar un reload.
   onChange: (fotoUrl: string | null) => void;
+  soloLectura?: boolean;
 }
 
-export const FotoActivo: React.FC<FotoActivoProps> = ({ activoId, fotoUrl, nombre, onChange }) => {
+export const FotoActivo: React.FC<FotoActivoProps> = ({ activoId, fotoUrl, nombre, onChange, soloLectura = false }) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [subiendo, setSubiendo] = useState(false);
   const [err, setErr] = useState('');
@@ -63,7 +64,7 @@ export const FotoActivo: React.FC<FotoActivoProps> = ({ activoId, fotoUrl, nombr
             alt={nombre}
             className="w-full aspect-video object-cover block"
           />
-          <div className="absolute bottom-2 right-2 flex gap-2">
+          {!soloLectura && <div className="absolute bottom-2 right-2 flex gap-2">
             <button
               onClick={() => inputRef.current?.click()}
               disabled={subiendo}
@@ -77,10 +78,15 @@ export const FotoActivo: React.FC<FotoActivoProps> = ({ activoId, fotoUrl, nombr
             >
               <Trash2 size={13} />
             </button>
-          </div>
+          </div>}
         </div>
       ) : (
-        <button
+        soloLectura ? (
+          <div className="w-full aspect-video flex flex-col items-center justify-center gap-2 bg-subtle text-faint">
+            <ImageOff size={28} />
+            <span className="text-xs font-black uppercase tracking-wider">Sin foto del activo</span>
+          </div>
+        ) : <button
           onClick={() => inputRef.current?.click()}
           disabled={subiendo}
           className="w-full aspect-video flex flex-col items-center justify-center gap-2 bg-subtle hover:bg-subtle transition-colors text-faint disabled:opacity-60"
@@ -100,13 +106,13 @@ export const FotoActivo: React.FC<FotoActivoProps> = ({ activoId, fotoUrl, nombr
       )}
       {err && <p className="text-xs font-bold text-danger bg-danger/10 border-t border-danger px-3 py-2">{err}</p>}
       {/* Sin atributo capture: deja elegir camara O galeria en mobile */}
-      <input
+      {!soloLectura && <input
         ref={inputRef}
         type="file"
         accept="image/*"
         className="hidden"
         onChange={handleFile}
-      />
+      />}
     </div>
   );
 };
