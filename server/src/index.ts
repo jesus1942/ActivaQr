@@ -29,6 +29,7 @@ import kpisRouter from './routes/kpis';
 import documentosRouter from './routes/documentos';
 import cuentaRouter from './routes/cuenta';
 import testimoniosRouter, { adminTestimoniosRouter } from './routes/testimonios';
+import presentacionRouter from './routes/presentacion';
 import { adminCotizacionesRouter, clienteCotizacionesRouter } from './routes/cotizaciones';
 import { adminCorrectivosRouter, clienteCorrectivosRouter } from './routes/correctivos';
 import { enviarPushASuperadmin } from './push';
@@ -289,6 +290,7 @@ app.use('/api/admin/cotizaciones', adminCotizacionesRouter);
 app.use('/api/admin/correctivos', adminCorrectivosRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/admin', accesoRemotoRouter);
+app.use('/api/presentacion', presentacionRouter);
 
 // Cuenta del propio tenant: solo requireAuth — accesible incluso con trial vencido.
 app.use('/api/cuenta', cuentaRouter);

@@ -61,7 +61,6 @@ export const NARRACIONES_PRESENTACION = [
 
 export const CONFIGURACION_NARRACION = {
   idioma: 'es-AR',
-  velocidad: 0.84,
-  tono: 1,
+  perfil: 'rioplatense-natural-v1',
   pausaEntreLaminasMs: 1100,
 } as const;

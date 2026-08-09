@@ -44,6 +44,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { CONFIGURACION_NARRACION, NARRACIONES_PRESENTACION } from '../data/presentacionNarraciones';
+import { API_URL, authHeaders } from '../data/auth';
 
 type Slide = {
   section: string;
@@ -55,80 +56,82 @@ type Slide = {
 
 type EstadoNarracion = 'idle' | 'preparing' | 'speaking' | 'paused' | 'between' | 'finished' | 'unsupported' | 'error';
 
-type OpcionVoz = {
-  voz?: SpeechSynthesisVoice;
-  idioma?: string;
-  etiqueta: string;
-};
-
 const surface = 'border border-line bg-surface/80 backdrop-blur-sm';
 const subtle = 'border border-line bg-subtle/80';
+const CACHE_VOZ = 'activaqr-presentacion-voz-rioplatense-v1';
 
-function puntuarVoz(voz: SpeechSynthesisVoice) {
-  const idioma = voz.lang.toLowerCase();
-  const nombre = voz.name.toLowerCase();
-  let puntaje = 0;
-  if (idioma === 'es-ar') puntaje += 120;
-  else if (idioma === 'es-uy') puntaje += 100;
-  else if (idioma === 'es-419') puntaje += 70;
-  else if (idioma.startsWith('es')) puntaje += 40;
-  if (/argentin|rioplat|elena/.test(nombre)) puntaje += 40;
-  if (voz.localService) puntaje += 80;
-  if (voz.default) puntaje += 8;
-  return puntaje;
+class NarracionNaturalError extends Error {
+  constructor(message: string, readonly code = 'voz_no_disponible') {
+    super(message);
+    this.name = 'NarracionNaturalError';
+  }
 }
 
-function crearOpcionesVoz(voces: SpeechSynthesisVoice[]): OpcionVoz[] {
-  const vocesEspanol = [...voces]
-    .filter((voz) => voz.lang.toLowerCase().startsWith('es'))
-    .sort((a, b) => puntuarVoz(b) - puntuarVoz(a));
-  const opciones: OpcionVoz[] = [];
-  const vocesAgregadas = new Set<string>();
-
-  const agregarVoz = (voz: SpeechSynthesisVoice | undefined) => {
-    if (!voz) return;
-    const clave = `${voz.voiceURI}|${voz.name}|${voz.lang}`;
-    if (vocesAgregadas.has(clave)) return;
-    vocesAgregadas.add(clave);
-    opciones.push({ voz, idioma: voz.lang, etiqueta: `Voz sintética ${voz.name} · ${voz.lang}` });
-  };
-
-  agregarVoz(vocesEspanol.find((voz) => voz.localService && /^(es-ar|es-uy)$/i.test(voz.lang)));
-  agregarVoz(vocesEspanol.find((voz) => voz.localService));
-  agregarVoz(vocesEspanol.find((voz) => /^(es-ar|es-uy)$/i.test(voz.lang)));
-  vocesEspanol.slice(0, 4).forEach(agregarVoz);
-
-  const idiomaDisponible = vocesEspanol[0]?.lang;
-  if (idiomaDisponible) opciones.push({ idioma: idiomaDisponible, etiqueta: `Voz automática del navegador · ${idiomaDisponible}` });
-  opciones.push({ idioma: 'es-ES', etiqueta: 'Voz automática del navegador · español' });
-  opciones.push({ etiqueta: 'Voz predeterminada del dispositivo' });
-  return opciones;
+function claveCacheAudio(lamina: number): Request {
+  const base = `${window.location.origin}${import.meta.env.BASE_URL}`.replace(/\/+$/, '');
+  return new Request(`${base}/audio-cache/${CACHE_VOZ}/lamina-${lamina + 1}.mp3`);
 }
 
-function claveOpcionVoz(opcion: OpcionVoz) {
-  return opcion.voz
-    ? `${opcion.voz.voiceURI}|${opcion.voz.name}|${opcion.voz.lang}`
-    : `auto|${opcion.idioma ?? 'default'}`;
-}
+async function descargarNarracionNatural(lamina: number, texto: string): Promise<Blob> {
+  if (!API_URL) {
+    throw new NarracionNaturalError('La narración natural necesita conexión con el servidor.', 'servidor_no_configurado');
+  }
 
-function dividirNarracion(texto: string) {
-  return texto.match(/[^.!?]+(?:[.!?]+|$)/g)?.map((parte) => parte.trim()).filter(Boolean) ?? [texto];
-}
+  let cache: Cache | null = null;
+  if ('caches' in window) {
+    try {
+      cache = await window.caches.open(CACHE_VOZ);
+    } catch {
+      // La caché persistente es una optimización; la narración sigue sin ella.
+    }
+  }
+  const cacheKey = claveCacheAudio(lamina);
+  const guardado = await cache?.match(cacheKey);
+  if (guardado) return guardado.blob();
 
-function explicarErrorVoz(error: string) {
-  const mensajes: Record<string, string> = {
-    'not-allowed': 'El navegador bloqueó el inicio del audio',
-    'audio-busy': 'El dispositivo de audio está ocupado',
-    'audio-hardware': 'El navegador no encontró una salida de audio',
-    network: 'La voz elegida necesitaba conexión y no pudo descargar el audio',
-    'synthesis-unavailable': 'El dispositivo no tiene un motor de voz disponible',
-    'synthesis-failed': 'El motor de voz del dispositivo produjo un error',
-    'language-unavailable': 'El idioma solicitado no está instalado en el dispositivo',
-    'voice-unavailable': 'La voz seleccionada dejó de estar disponible',
-    'text-too-long': 'El motor rechazó el largo del texto',
-    'invalid-argument': 'El motor rechazó la configuración de voz',
-  };
-  return mensajes[error] ?? 'La voz del dispositivo no pudo completar esta lámina';
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 60_000);
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}/presentacion/narracion`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ lamina, texto }),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if ((error as Error).name === 'AbortError') {
+      throw new NarracionNaturalError('La preparación del audio demoró demasiado. Intentá nuevamente.', 'voz_timeout');
+    }
+    throw new NarracionNaturalError('No se pudo conectar con el servicio de narración natural.', 'voz_sin_conexion');
+  } finally {
+    window.clearTimeout(timeout);
+  }
+
+  if (!response.ok) {
+    const detalle = await response.json().catch(() => ({}));
+    throw new NarracionNaturalError(
+      detalle?.error || 'No se pudo preparar la narración natural.',
+      detalle?.code || 'voz_no_disponible',
+    );
+  }
+
+  const blob = await response.blob();
+  if (!blob.type.startsWith('audio/') || blob.size < 1_000) {
+    throw new NarracionNaturalError('El servidor devolvió un audio incompleto.', 'audio_incompleto');
+  }
+
+  try {
+    await cache?.put(cacheKey, new Response(blob, {
+      headers: {
+        'Content-Type': blob.type,
+        'Cache-Control': 'private, max-age=31536000, immutable',
+      },
+    }));
+  } catch {
+    // Algunos modos privados no permiten Cache Storage.
+  }
+  return blob;
 }
 
 function LogoMark() {
@@ -362,14 +365,15 @@ export const PresentacionComercial: React.FC = () => {
   const narracionTokenRef = useRef(0);
   const narracionTimerRef = useRef<number | null>(null);
   const indiceNarracionRef = useRef<number | null>(null);
-  const opcionVozPreferidaRef = useRef<OpcionVoz | null>(null);
+  const audioNarracionRef = useRef<HTMLAudioElement | null>(null);
+  const urlsAudioRef = useRef(new Map<number, string>());
   const [current, setCurrent] = useState(0);
   const [notesOpen, setNotesOpen] = useState(false);
   const [indexOpen, setIndexOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [narracionAutomatica, setNarracionAutomatica] = useState(false);
   const [estadoNarracion, setEstadoNarracion] = useState<EstadoNarracion>('idle');
-  const [nombreVoz, setNombreVoz] = useState('Voz sintética del dispositivo · español rioplatense');
+  const [nombreVoz] = useState('Voz de IA · español argentino rioplatense natural');
   const [errorNarracion, setErrorNarracion] = useState('');
 
   const slides = useMemo<Slide[]>(() => [
@@ -977,27 +981,42 @@ export const PresentacionComercial: React.FC = () => {
     }
   }, []);
 
+  const detenerAudioActual = useCallback(() => {
+    const audio = audioNarracionRef.current;
+    if (!audio) return;
+    audio.onplay = null;
+    audio.onended = null;
+    audio.onerror = null;
+    audio.pause();
+    try {
+      audio.currentTime = 0;
+    } catch {
+      // El elemento puede haberse detenido antes de cargar metadatos.
+    }
+    audioNarracionRef.current = null;
+  }, []);
+
+  const obtenerUrlAudio = useCallback(async (indice: number, texto: string) => {
+    const existente = urlsAudioRef.current.get(indice);
+    if (existente) return existente;
+    const blob = await descargarNarracionNatural(indice, texto);
+    const url = URL.createObjectURL(blob);
+    urlsAudioRef.current.set(indice, url);
+    return url;
+  }, []);
+
   const detenerNarracion = useCallback(() => {
     narracionAutomaticaRef.current = false;
     narracionTokenRef.current += 1;
     indiceNarracionRef.current = null;
     limpiarTemporizadorNarracion();
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    detenerAudioActual();
     setNarracionAutomatica(false);
     setEstadoNarracion('idle');
     setErrorNarracion('');
-  }, [limpiarTemporizadorNarracion]);
+  }, [detenerAudioActual, limpiarTemporizadorNarracion]);
 
-  const reproducirNarracion = useCallback((indice: number) => {
-    if (!('speechSynthesis' in window) || typeof window.SpeechSynthesisUtterance === 'undefined') {
-      narracionAutomaticaRef.current = false;
-      setNarracionAutomatica(false);
-      setEstadoNarracion('unsupported');
-      setErrorNarracion('Este navegador no ofrece narración de voz. La presentación manual sigue disponible.');
-      return;
-    }
-
-    const motor = window.speechSynthesis;
+  const reproducirNarracion = useCallback(async (indice: number) => {
     const texto = NARRACIONES_PRESENTACION[indice];
     if (!texto) {
       narracionAutomaticaRef.current = false;
@@ -1011,60 +1030,36 @@ export const PresentacionComercial: React.FC = () => {
     const token = narracionTokenRef.current + 1;
     narracionTokenRef.current = token;
     indiceNarracionRef.current = indice;
-    motor.cancel();
+    detenerAudioActual();
     setEstadoNarracion('preparing');
     setErrorNarracion('');
 
-    const opcionesDisponibles = crearOpcionesVoz(motor.getVoices());
-    const opcionPreferida = opcionVozPreferidaRef.current;
-    const opcionesVoz = opcionPreferida
-      ? [opcionPreferida, ...opcionesDisponibles.filter((opcion) => claveOpcionVoz(opcion) !== claveOpcionVoz(opcionPreferida))]
-      : opcionesDisponibles;
-    const partes = dividirNarracion(texto);
-    const erroresConAlternativa = new Set([
-      'network',
-      'synthesis-unavailable',
-      'synthesis-failed',
-      'language-unavailable',
-      'voice-unavailable',
-      'invalid-argument',
-    ]);
-
-    const fallarNarracion = (error: string) => {
+    const fallarNarracion = (mensaje: string, estado: EstadoNarracion = 'error') => {
+      if (narracionTokenRef.current !== token) return;
       narracionAutomaticaRef.current = false;
       indiceNarracionRef.current = null;
       setNarracionAutomatica(false);
-      setEstadoNarracion(error === 'synthesis-unavailable' ? 'unsupported' : 'error');
-      setErrorNarracion(`${explicarErrorVoz(error)} · Código: ${error}.`);
+      setEstadoNarracion(estado);
+      setErrorNarracion(mensaje);
     };
 
-    const pronunciarParte = (parteActual: number, opcionActual = 0, reintentoAudio = 0) => {
+    try {
+      const url = await obtenerUrlAudio(indice, texto);
       if (!narracionAutomaticaRef.current || narracionTokenRef.current !== token) return;
 
-      const opcion = opcionesVoz[Math.min(opcionActual, opcionesVoz.length - 1)];
-      const locucion = new SpeechSynthesisUtterance(partes[parteActual]);
-      const idioma = opcion.voz?.lang ?? opcion.idioma;
-      if (idioma) locucion.lang = idioma;
-      locucion.rate = CONFIGURACION_NARRACION.velocidad;
-      locucion.pitch = CONFIGURACION_NARRACION.tono;
-      if (opcion.voz) locucion.voice = opcion.voz;
-      setNombreVoz(opcion.etiqueta);
-
-      locucion.onstart = () => {
-        if (narracionTokenRef.current === token && motor.paused === false) {
-          opcionVozPreferidaRef.current = opcion;
+      const audio = new Audio(url);
+      audio.preload = 'auto';
+      audioNarracionRef.current = audio;
+      audio.onplay = () => {
+        if (narracionTokenRef.current === token) {
           setEstadoNarracion('speaking');
           setErrorNarracion('');
         }
       };
-
-      locucion.onend = () => {
+      audio.onended = () => {
         if (!narracionAutomaticaRef.current || narracionTokenRef.current !== token) return;
-
-        if (parteActual < partes.length - 1) {
-          narracionTimerRef.current = window.setTimeout(() => pronunciarParte(parteActual + 1, opcionActual), 170);
-          return;
-        }
+        audioNarracionRef.current = null;
+        indiceNarracionRef.current = null;
 
         if (indice < slides.length - 1) {
           setEstadoNarracion('between');
@@ -1079,42 +1074,27 @@ export const PresentacionComercial: React.FC = () => {
         setNarracionAutomatica(false);
         setEstadoNarracion('finished');
       };
-
-      locucion.onerror = (event) => {
-        if (narracionTokenRef.current !== token || event.error === 'canceled' || event.error === 'interrupted') return;
-
-        const reintentarAudioOcupado = event.error === 'audio-busy' && reintentoAudio < 2;
-        const probarOtraVoz = erroresConAlternativa.has(event.error) && opcionActual < opcionesVoz.length - 1;
-        if (reintentarAudioOcupado || probarOtraVoz) {
-          motor.cancel();
-          setEstadoNarracion('preparing');
-          setErrorNarracion(`${explicarErrorVoz(event.error)}. Probando una alternativa…`);
-          narracionTimerRef.current = window.setTimeout(
-            () => pronunciarParte(
-              parteActual,
-              probarOtraVoz ? opcionActual + 1 : opcionActual,
-              reintentarAudioOcupado ? reintentoAudio + 1 : 0,
-            ),
-            reintentarAudioOcupado ? 700 : 260,
-          );
-          return;
-        }
-
-        fallarNarracion(event.error);
+      audio.onerror = () => {
+        fallarNarracion('El navegador no pudo reproducir el audio natural de esta lámina.');
       };
 
-      motor.speak(locucion);
-    };
-
-    pronunciarParte(0);
-  }, [go, limpiarTemporizadorNarracion, slides.length]);
+      await audio.play();
+    } catch (error) {
+      const fallo = error as NarracionNaturalError;
+      const noConfigurada = fallo.code === 'voz_no_configurada' || fallo.code === 'servidor_no_configurado';
+      const reproduccionBloqueada = fallo.name === 'NotAllowedError';
+      fallarNarracion(
+        noConfigurada
+          ? `${fallo.message} No se usará la voz robótica del dispositivo.`
+          : reproduccionBloqueada
+            ? 'El navegador bloqueó el inicio del audio. Volvé a tocar Automatizar.'
+            : fallo.message || 'No se pudo iniciar la narración natural.',
+        noConfigurada ? 'unsupported' : 'error',
+      );
+    }
+  }, [detenerAudioActual, go, limpiarTemporizadorNarracion, obtenerUrlAudio, slides.length]);
 
   const iniciarNarracionAutomatica = () => {
-    if (!('speechSynthesis' in window) || typeof window.SpeechSynthesisUtterance === 'undefined') {
-      setEstadoNarracion('unsupported');
-      setErrorNarracion('Este navegador no ofrece narración de voz. La presentación manual sigue disponible.');
-      return;
-    }
     narracionAutomaticaRef.current = true;
     setNarracionAutomatica(true);
     setEstadoNarracion('preparing');
@@ -1125,13 +1105,18 @@ export const PresentacionComercial: React.FC = () => {
   };
 
   const alternarPausaNarracion = () => {
-    if (!('speechSynthesis' in window)) return;
+    const audio = audioNarracionRef.current;
+    if (!audio) return;
     if (estadoNarracion === 'paused') {
-      window.speechSynthesis.resume();
-      setEstadoNarracion('speaking');
+      audio.play()
+        .then(() => setEstadoNarracion('speaking'))
+        .catch(() => {
+          setEstadoNarracion('error');
+          setErrorNarracion('El navegador bloqueó la reanudación del audio. Volvé a tocar Reanudar.');
+        });
       return;
     }
-    window.speechSynthesis.pause();
+    audio.pause();
     setEstadoNarracion('paused');
   };
 
@@ -1144,8 +1129,10 @@ export const PresentacionComercial: React.FC = () => {
     narracionTokenRef.current += 1;
     indiceNarracionRef.current = null;
     limpiarTemporizadorNarracion();
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-  }, [limpiarTemporizadorNarracion]);
+    detenerAudioActual();
+    for (const url of urlsAudioRef.current.values()) URL.revokeObjectURL(url);
+    urlsAudioRef.current.clear();
+  }, [detenerAudioActual, limpiarTemporizadorNarracion]);
 
   useEffect(() => {
     const syncFullscreenState = () => {
@@ -1188,8 +1175,8 @@ export const PresentacionComercial: React.FC = () => {
     paused: 'Narración en pausa',
     between: 'Comentario terminado · pasando a la siguiente lámina…',
     finished: 'Presentación automática finalizada',
-    unsupported: 'Narración no disponible en este navegador',
-    error: 'La narración se interrumpió',
+    unsupported: 'Narración natural todavía no configurada',
+    error: 'No se pudo preparar la narración natural',
   };
 
   return (
