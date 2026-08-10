@@ -202,6 +202,13 @@ model Empresa {
   cotizaciones       Cotizacion[]
   alertasTecnicas    AlertaTecnica[]
   ordenesCorrectivas OrdenTrabajoCorrectiva[]
+  moduloControl      ModuloControlEmpresa?
+  integracionesIoT   IntegracionIoT[]
+  dispositivosIoT    DispositivoIoT[]
+  variablesIoT       VariableIoT[]
+  reglasAlarmaIoT    ReglaAlarmaIoT[]
+  alarmasIoT         AlarmaIoT[]
+  comandosIoT        ComandoIoT[]
 
   @@index([mpPreapprovalId])
 }
@@ -589,11 +596,209 @@ model Activo {
   documentos         Documento[]
   alertasTecnicas    AlertaTecnica[]
   ordenesCorrectivas OrdenTrabajoCorrectiva[]
+  dispositivosIoT    DispositivoIoT[]
 
   @@unique([empresaId, codigo])
   @@index([empresaId])
   @@index([sectorId])
   @@index([tipoId])
+}
+
+// Servicio premium ActivaQR Control. Se licencia por tenant de manera
+// independiente del plan base y solo el Superadmin puede habilitarlo.
+model ModuloControlEmpresa {
+  id                       String   @id @default(uuid())
+  empresaId                String   @unique
+  estado                   String   @default("configuracion") // configuracion | activo | suspendido
+  nombreServicio           String   @default("ActivaQR Control")
+  cargoImplementacionUsd   Float?
+  abonoMensualUsd          Float?
+  monedaFacturacion        String   @default("USD")
+  limiteDispositivos       Int      @default(25)
+  limiteGateways           Int      @default(2)
+  retencionDias            Int      @default(365)
+  umbralSinConexionMinutos Int      @default(10)
+  controlRemotoHabilitado  Boolean  @default(false)
+  tableroConfig            Json?
+  notasComerciales         String?  @db.Text
+  habilitadoEn             DateTime @default(now())
+  habilitadoPorId          String?
+  actualizadoEn            DateTime @updatedAt
+
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@index([estado])
+}
+
+// Conector desacoplado del fabricante. Las credenciales se cifran en el
+// servidor con IOT_CREDENTIALS_KEY y nunca se exponen al navegador.
+model IntegracionIoT {
+  id                   String    @id @default(uuid())
+  empresaId            String
+  nombre               String
+  proveedor            String // sonoff_ewelink | milesight_ug65 | webhook_generico
+  estado               String    @default("pendiente") // pendiente | configurada | conectada | error | pausada
+  credencialesCifradas String?   @db.Text
+  configuracion        Json?
+  webhookTokenHash     String?   @unique
+  webhookTokenHint     String?
+  ultimoEventoEn       DateTime?
+  ultimoError          String?   @db.Text
+  creadaEn             DateTime  @default(now())
+  actualizadaEn        DateTime  @updatedAt
+
+  empresa      Empresa          @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  dispositivos DispositivoIoT[]
+
+  @@index([empresaId, proveedor])
+  @@index([empresaId, estado])
+}
+
+model DispositivoIoT {
+  id                   String    @id @default(uuid())
+  empresaId            String
+  integracionId        String
+  activoId             String?
+  identificadorExterno String
+  nombre               String
+  modelo               String?
+  tipo                 String    @default("sensor")
+  estado               String    @default("sin_datos") // normal | advertencia | critico | sin_datos | desconectado
+  habilitado           Boolean   @default(true)
+  permiteControl       Boolean   @default(false)
+  ubicacion            String?
+  ultimoContactoEn     DateTime?
+  bateria              Float?
+  rssi                 Float?
+  metadatos            Json?
+  creadaEn             DateTime  @default(now())
+  actualizadaEn        DateTime  @updatedAt
+
+  empresa     Empresa        @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  integracion IntegracionIoT @relation(fields: [integracionId], references: [id], onDelete: Cascade)
+  activo      Activo?        @relation(fields: [activoId], references: [id], onDelete: SetNull)
+  variables   VariableIoT[]
+  alarmas     AlarmaIoT[]
+  comandos    ComandoIoT[]
+
+  @@unique([integracionId, identificadorExterno])
+  @@index([empresaId, estado])
+  @@index([activoId])
+}
+
+model VariableIoT {
+  id            String    @id @default(uuid())
+  empresaId     String
+  dispositivoId String
+  clave         String
+  nombre        String
+  tipo          String    @default("numero") // numero | booleano | texto
+  unidad        String?
+  valorNumero   Float?
+  valorBooleano Boolean?
+  valorTexto    String?
+  calidad       String    @default("buena")
+  medidaEn      DateTime?
+  actualizadaEn DateTime  @updatedAt
+
+  empresa     Empresa          @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  dispositivo DispositivoIoT   @relation(fields: [dispositivoId], references: [id], onDelete: Cascade)
+  lecturas    LecturaIoT[]
+  reglas      ReglaAlarmaIoT[]
+  alarmas     AlarmaIoT[]
+
+  @@unique([dispositivoId, clave])
+  @@index([empresaId, medidaEn])
+}
+
+model LecturaIoT {
+  id            String   @id @default(uuid())
+  variableId    String
+  valorNumero   Float?
+  valorBooleano Boolean?
+  valorTexto    String?
+  calidad       String   @default("buena")
+  medidaEn      DateTime
+  recibidaEn    DateTime @default(now())
+
+  variable VariableIoT @relation(fields: [variableId], references: [id], onDelete: Cascade)
+
+  @@index([variableId, medidaEn])
+}
+
+model ReglaAlarmaIoT {
+  id             String   @id @default(uuid())
+  empresaId      String
+  variableId     String
+  nombre         String
+  operador       String // gt | gte | lt | lte | eq | neq
+  umbralNumero   Float?
+  umbralBooleano Boolean?
+  umbralTexto    String?
+  demoraSegundos Int      @default(0)
+  severidad      String   @default("advertencia") // informacion | advertencia | critica
+  activa         Boolean  @default(true)
+  notificarPush  Boolean  @default(true)
+  creadaEn       DateTime @default(now())
+  actualizadaEn  DateTime @updatedAt
+
+  empresa  Empresa     @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  variable VariableIoT @relation(fields: [variableId], references: [id], onDelete: Cascade)
+  alarmas  AlarmaIoT[]
+
+  @@index([empresaId, activa])
+  @@index([variableId])
+}
+
+model AlarmaIoT {
+  id                  String    @id @default(uuid())
+  empresaId           String
+  dispositivoId       String
+  variableId          String?
+  reglaId             String?
+  titulo              String
+  detalle             String?   @db.Text
+  severidad           String
+  estado              String    @default("activa") // activa | reconocida | resuelta
+  valorDisparador     String?
+  iniciadaEn          DateTime  @default(now())
+  reconocidaEn        DateTime?
+  reconocidaPorId     String?
+  reconocidaPorNombre String?
+  resolucion          String?   @db.Text
+  resueltaEn          DateTime?
+
+  empresa     Empresa         @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  dispositivo DispositivoIoT  @relation(fields: [dispositivoId], references: [id], onDelete: Cascade)
+  variable    VariableIoT?    @relation(fields: [variableId], references: [id], onDelete: SetNull)
+  regla       ReglaAlarmaIoT? @relation(fields: [reglaId], references: [id], onDelete: SetNull)
+
+  @@index([empresaId, estado, iniciadaEn])
+  @@index([dispositivoId, estado])
+}
+
+model ComandoIoT {
+  id                  String    @id @default(uuid())
+  empresaId           String
+  dispositivoId       String
+  tipo                String // rele | setpoint | salida | personalizado
+  payload             Json
+  motivo              String    @db.Text
+  estado              String    @default("pendiente") // pendiente | enviado | ejecutado | rechazado | error
+  solicitadoPorId     String
+  solicitadoPorNombre String
+  solicitadoEn        DateTime  @default(now())
+  aprobadoPorId       String?
+  aprobadoPorNombre   String?
+  aprobadoEn          DateTime?
+  ejecutadoEn         DateTime?
+  resultado           String?   @db.Text
+
+  empresa     Empresa        @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  dispositivo DispositivoIoT @relation(fields: [dispositivoId], references: [id], onDelete: Cascade)
+
+  @@index([empresaId, estado, solicitadoEn])
+  @@index([dispositivoId, solicitadoEn])
 }
 
 model Medicion {

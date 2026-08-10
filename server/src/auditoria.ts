@@ -14,7 +14,10 @@ export type AccionAuditoria =
   | 'cerrar'
   | 'medicion'
   | 'login'
-  | 'acceso_remoto';
+  | 'acceso_remoto'
+  | 'habilitar_modulo'
+  | 'alarma'
+  | 'comando';
 
 export async function registrarAuditoria(params: {
   empresaId?: string | null;

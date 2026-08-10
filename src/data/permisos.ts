@@ -20,7 +20,8 @@ export type ModuloEmpresa =
   | 'configuracion'
   | 'mensajes'
   | 'cotizaciones'
-  | 'correctivos';
+  | 'correctivos'
+  | 'control_industrial';
 
 export const PERFILES_TENANT: { value: RolPerfil; label: string; descripcion: string }[] = [
   { value: 'tecnico', label: 'Técnico', descripcion: 'QR, mediciones, fotos y órdenes asignadas.' },
@@ -63,9 +64,9 @@ export function etiquetaRol(rol?: string | null): string {
 }
 
 const MODULOS_POR_ROL: Record<string, readonly ModuloEmpresa[]> = {
-  mantenimiento: ['dashboard', 'activos', 'medicion', 'mantenimiento'],
-  jefatura: ['dashboard', 'indicadores', 'auditoria', 'activos', 'medicion', 'mantenimiento', 'reportes', 'importar', 'qr', 'configuracion', 'correctivos'],
-  direccion: ['indicadores', 'auditoria', 'activos', 'reportes', 'cotizaciones', 'correctivos'],
+  mantenimiento: ['dashboard', 'activos', 'medicion', 'mantenimiento', 'control_industrial'],
+  jefatura: ['dashboard', 'indicadores', 'auditoria', 'activos', 'medicion', 'mantenimiento', 'reportes', 'importar', 'qr', 'configuracion', 'correctivos', 'control_industrial'],
+  direccion: ['indicadores', 'auditoria', 'activos', 'reportes', 'cotizaciones', 'correctivos', 'control_industrial'],
 };
 
 export function puedeVerModulo(rol: string | null | undefined, modulo: ModuloEmpresa): boolean {

@@ -14,6 +14,12 @@
 
 Base operativa: **Puerto Madryn, Chubut, Argentina**. Cobertura comercial: Patagonia y resto del país.
 
+> ## Próximamente: ActivaQR Control
+>
+> Monitoreo industrial conectado dentro de ActivaQR: temperaturas, puertas, estados, históricos, alarmas y trazabilidad operativa en un tablero adaptado a cada planta. El servicio se habilitará por empresa como módulo premium, con implementación y abono independientes.
+>
+> La primera etapa incorpora **SONOFF TH Elite/eWeLink** para pilotos rápidos y **Milesight TS30x + UG65** para instalaciones profesionales. Cada tenant habilitado operará desde su propio tablero, mientras el Superadmin conservará el control comercial, técnico y de seguridad. [Ver alcance técnico](docs/ACTIVAQR-CONTROL.md).
+
 ---
 
 ## Índice
@@ -720,6 +726,8 @@ ActivaQr/
 ---
 
 ## Versiones
+
+**v1.4.0 — Próximamente: ActivaQR Control.** Servicio industrial premium habilitable por tenant · consola comercial y técnica para Superadmin · tableros personalizados · telemetría, históricos, reglas, alarmas y auditoría · integración inicial con SONOFF TH Elite/eWeLink y Milesight TS30x + UG65 · credenciales cifradas y operación remota gobernada por permisos.
 
 **v1.3.5** — Pantalla completa enfocada exclusivamente en el reproductor, sin menú lateral ni cabecera de la aplicación · acceso visual mediante ícono a las notas del expositor · salida explícita y restauración automática de la interfaz.
 

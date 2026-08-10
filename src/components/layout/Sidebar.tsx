@@ -27,6 +27,7 @@ import {
   FileSignature,
   AlertOctagon,
   Presentation,
+  RadioTower,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getNotificacionesCliente } from '../../data/accesoRemotoApi';
@@ -34,6 +35,7 @@ import { hasFeature, type Feature } from '../../data/planes';
 import { Sheet } from '../ui/Sheet';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { etiquetaRol, puedeVerModulo, type ModuloEmpresa } from '../../data/permisos';
+import { estadoControl } from '../../data/controlIndustrialApi';
 
 const LOGO_LIGHT = `${import.meta.env.BASE_URL}company-logo-hd.png`;   // negro, fondo claro
 const LOGO_DARK  = `${import.meta.env.BASE_URL}company-logo1.png`;      // claro, fondo oscuro
@@ -45,12 +47,14 @@ interface NavItem {
   sub?: string;
   feature?: Feature;
   modulo?: ModuloEmpresa;
+  requiresControl?: boolean;
 }
 
 const navEmpresa: NavItem[] = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', sub: 'Resumen del día', modulo: 'dashboard' },
   { to: '/cotizaciones', icon: FileSignature, label: 'Cotizaciones', sub: 'Propuestas de ActivaQR', modulo: 'cotizaciones' },
   { to: '/correctivos', icon: AlertOctagon, label: 'Alertas y órdenes', sub: 'Correctivos autorizados', modulo: 'correctivos' },
+  { to: '/control-industrial', icon: RadioTower, label: 'Control industrial', sub: 'Equipos y alarmas en vivo', modulo: 'control_industrial', requiresControl: true },
   { to: '/indicadores', icon: BarChart3, label: 'Indicadores', sub: 'KPIs y gráficos', feature: 'indicadores', modulo: 'indicadores' },
   { to: '/activos', icon: Package, label: 'Activos', sub: 'Tus equipos', modulo: 'activos' },
   { to: '/medicion', icon: ClipboardList, label: 'Mediciones', sub: 'Cargar lectura', modulo: 'medicion' },
@@ -66,6 +70,7 @@ const navEmpresa: NavItem[] = [
 const navSuperadmin: NavItem[] = [
   { to: '/', icon: Building2, label: 'Empresas' },
   { to: '/presentacion', icon: Presentation, label: 'Presentación', sub: 'Demo para potenciales clientes' },
+  { to: '/control-industrial', icon: RadioTower, label: 'Control industrial', sub: 'Licencias y conectividad' },
   { to: '/cotizaciones', icon: FileSignature, label: 'Cotizaciones', sub: 'Crear, enviar y responder' },
   { to: '/correctivos', icon: AlertOctagon, label: 'Alertas y órdenes', sub: 'Riesgo, permisos y trabajos' },
   { to: '/mensajes', icon: MessageSquare, label: 'Mensajes' },
@@ -79,19 +84,24 @@ const bottomPrimarySuperadmin = ['/', '/presentacion', '/mensajes'];
 export const Sidebar: React.FC = () => {
   const [moreOpen, setMoreOpen] = useState(false);
   const [notif, setNotif] = useState({ mensajesNoLeidos: 0, tienePermisoPendiente: false });
+  const [controlHabilitado, setControlHabilitado] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { usuario, logout } = useAuth();
 
   const esSuperadmin = usuario?.rol === 'superadmin';
+  useEffect(() => {
+    if (!usuario || esSuperadmin) { setControlHabilitado(false); return; }
+    estadoControl().then((result) => setControlHabilitado(result.habilitado)).catch(() => setControlHabilitado(false));
+  }, [usuario, esSuperadmin]);
   const navItems = esSuperadmin
     ? navSuperadmin
     : usuario?.rol === 'direccion'
       ? [
           { to: '/', icon: BarChart3, label: 'Dirección', sub: 'Riesgo y decisiones', modulo: 'indicadores' as const },
-          ...navEmpresa.filter((item) => item.to !== '/' && item.to !== '/indicadores' && (!item.modulo || puedeVerModulo(usuario.rol, item.modulo))),
+          ...navEmpresa.filter((item) => item.to !== '/' && item.to !== '/indicadores' && (!item.requiresControl || controlHabilitado) && (!item.modulo || puedeVerModulo(usuario.rol, item.modulo))),
         ]
-      : navEmpresa.filter((item) => !item.modulo || puedeVerModulo(usuario?.rol, item.modulo));
+      : navEmpresa.filter((item) => (!item.requiresControl || controlHabilitado) && (!item.modulo || puedeVerModulo(usuario?.rol, item.modulo)));
   const planActual = usuario?.empresa?.plan ?? 'inicial';
   const bottomPrimary = esSuperadmin
     ? bottomPrimarySuperadmin
@@ -197,7 +207,7 @@ export const Sidebar: React.FC = () => {
           rel="noopener noreferrer"
           className="block text-faint hover:text-brand-600 text-[11px] font-mono transition-colors"
         >
-          v1.3.9 · dev Jesús Olguín
+          v1.4.0 · dev Jesús Olguín
         </a>
       </div>
     </aside>

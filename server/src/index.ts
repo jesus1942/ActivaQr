@@ -51,6 +51,9 @@ import { enviarEmailLead } from './email';
 import { prisma } from './prisma';
 import { obtenerCotizacionMep } from './cotizacion';
 import { iniciarSincronizadorPrecios } from './sincronizarPrecios';
+import { adminControlIndustrialRouter, controlIndustrialRouter, iotIngestRouter } from './routes/controlIndustrial';
+import { limpiarLecturasIoTExpiradas } from './iotIngest';
+import { iniciarSincronizadorEwelink } from './ewelinkConnector';
 
 const app = express();
 
@@ -109,6 +112,7 @@ const apiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Demasiadas solicitudes. Esperá un momento.' },
+  skip: (req) => req.path.startsWith('/iot/ingest'),
 });
 app.use('/api/', apiLimiter);
 
@@ -225,6 +229,15 @@ app.post('/api/leads', leadsLimiter, async (req: Request, res: Response) => {
 
 // Webhooks externos (sin auth: los llama Mercado Pago).
 app.use('/api/webhooks', webhooksRouter);
+// Ingesta máquina-a-máquina. El token rotativo identifica integración y tenant.
+const iotLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 3000,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'La frecuencia de telemetría supera el límite contratado.' },
+});
+app.use('/api/iot/ingest', iotLimiter, iotIngestRouter);
 
 // Telegram Bot webhook — responde /start con el Chat ID del usuario
 app.post('/api/telegram/webhook', express.json(), async (req: Request, res: Response) => {
@@ -288,6 +301,7 @@ app.use('/api/acceso-remoto', accesoRemotoRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/admin/cotizaciones', adminCotizacionesRouter);
 app.use('/api/admin/correctivos', adminCorrectivosRouter);
+app.use('/api/admin/control-industrial', adminControlIndustrialRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/admin', accesoRemotoRouter);
 app.use('/api/presentacion', presentacionRouter);
@@ -318,6 +332,7 @@ app.use('/api/fallas', requireAuthAndActiveEmpresa, fallasRouter);
 app.use('/api/auditoria', requireAuthAndActiveEmpresa, requireConsultaGestion, auditoriaRouter);
 app.use('/api/kpis', requireAuthAndActiveEmpresa, requireConsultaGestion, kpisRouter);
 app.use('/api/documentos', requireAuthAndActiveEmpresa, documentosRouter);
+app.use('/api/control-industrial', requireAuthAndActiveEmpresa, controlIndustrialRouter);
 // Push: la ruta public-key no requiere auth, las demás aplican requireAuth por-ruta.
 app.use('/api/push', pushRouter);
 app.use('/api/admin/categorias-globales', requireAuth, requireSuperadmin, adminCategoriasRouter);
@@ -346,6 +361,9 @@ app.listen(PORT, () => {
     .then(() => seedFallasAutoelevador())
     .catch((e) => console.error('seed/limpieza error:', e));
   seedDemo().catch((e) => console.error('seedDemo error:', e));
+  limpiarLecturasIoTExpiradas().then((count) => count && console.log(`[iot] ${count} lecturas vencidas eliminadas.`)).catch((e) => console.error('[iot] limpieza inicial:', e));
+  setInterval(() => limpiarLecturasIoTExpiradas().catch((e) => console.error('[iot] limpieza programada:', e)), 24 * 60 * 60 * 1000).unref();
+  iniciarSincronizadorEwelink();
 });
 
 export default app;
