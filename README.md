@@ -18,7 +18,7 @@ Base operativa: **Puerto Madryn, Chubut, Argentina**. Cobertura comercial: Patag
 >
 > Monitoreo industrial conectado dentro de ActivaQR: temperaturas, puertas, estados, históricos, alarmas y trazabilidad operativa en un tablero adaptado a cada planta. El servicio se habilitará por empresa como módulo premium, con implementación y abono independientes.
 >
-> La primera etapa incorpora **SONOFF TH Elite/eWeLink** para pilotos rápidos y **Milesight TS30x + UG65** para instalaciones profesionales. Cada tenant habilitado operará desde su propio tablero, mientras el Superadmin conservará el control comercial, técnico y de seguridad. [Ver alcance técnico](docs/ACTIVAQR-CONTROL.md).
+> La primera etapa incorpora **SONOFF TH Elite/eWeLink** para pilotos rápidos y **Milesight TS30x + UG65** para instalaciones profesionales. Cada tenant habilitado operará desde su propio tablero, mientras el Superadmin conservará el control comercial, técnico y de seguridad. [Ver alcance técnico](docs/ACTIVAQR-CONTROL.md).\n>\n> Estado técnico: **v1.4.0 publicada el 10 de agosto de 2026**. La habilitación comercial permanece bajo configuración por empresa.
 
 ---
 
