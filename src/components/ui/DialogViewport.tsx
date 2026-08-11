@@ -57,7 +57,7 @@ export const DialogViewport: React.FC<DialogViewportProps> = ({
     <div
       ref={rootRef}
       tabIndex={-1}
-      className={`fixed inset-0 overflow-y-auto overscroll-contain ${className}`}
+      className={`fixed inset-0 min-h-[100dvh] overflow-y-auto overscroll-contain ${className}`}
     >
       {children}
     </div>,

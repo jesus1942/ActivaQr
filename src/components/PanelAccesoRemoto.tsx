@@ -149,8 +149,8 @@ export const PanelAccesoRemoto: React.FC<Props> = ({ empresaId, empresaNombre, p
   const labelCls = 'block text-xs font-black uppercase tracking-wider text-muted mb-1';
 
   return (
-    <DialogViewport className="z-50 bg-slate-900/40 backdrop-blur-sm flex items-start justify-center p-2 sm:p-6" onEscape={onClose}>
-      <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft w-full max-w-3xl my-4">
+    <DialogViewport className="z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-2 sm:p-6" onEscape={onClose}>
+      <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft w-full max-w-3xl max-h-[calc(100dvh-1rem)] overflow-y-auto sm:max-h-[calc(100dvh-3rem)]">
 
         {/* Header */}
         <div className="bg-slate-900 text-white px-5 py-3 flex items-center justify-between sticky top-0 z-10">

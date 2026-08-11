@@ -67,7 +67,7 @@ const PLANES = ['inicial', 'empresa', 'industrial'] as const;
 const Modal: React.FC<{ titulo: string; icono?: React.ReactNode; onClose: () => void; children: React.ReactNode; maxW?: string }> = ({
   titulo, icono, onClose, children, maxW = 'max-w-md',
 }) => (
-  <DialogViewport className="z-50 bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 pb-safe" onEscape={onClose}>
+  <DialogViewport className="z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 pb-safe" onEscape={onClose}>
     <div
       className={`bg-surface/85 backdrop-blur-xl border border-line shadow-soft w-full ${maxW} max-h-[92vh] overflow-y-auto`}
       onClick={(e) => e.stopPropagation()}
@@ -323,7 +323,7 @@ const ModalWhatsapp: React.FC<{
   const completo = soloDigitos ? `${pais.codigo}${soloDigitos}` : '';
 
   return (
-    <DialogViewport className="z-[60] bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 pb-safe" onEscape={onOmitir}>
+    <DialogViewport className="z-[60] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 pb-safe" onEscape={onOmitir}>
       <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft w-full max-w-sm max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between border border-line px-5 py-3 bg-slate-900 text-white">
           <h2 className="font-display font-black text-base uppercase tracking-wide">{titulo}</h2>

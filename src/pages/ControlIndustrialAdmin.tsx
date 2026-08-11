@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Activity, Building2, Cpu, RadioTower, Save, Search, ShieldCheck, SlidersHorizontal, Snowflake } from 'lucide-react';
 import { configurarControlAdmin, EmpresaControlAdmin, EstadoModuloControl, listarControlAdmin, ModuloControl } from '../data/controlIndustrialApi';
 import { useToast } from '../components/ui/Toast';
+import { DialogViewport } from '../components/ui/DialogViewport';
 
 type Form = Pick<ModuloControl, 'estado' | 'nombreServicio' | 'cargoImplementacionUsd' | 'abonoMensualUsd' | 'monedaFacturacion' | 'limiteDispositivos' | 'limiteGateways' | 'retencionDias' | 'umbralSinConexionMinutos' | 'controlRemotoHabilitado' | 'notasComerciales' | 'tableroConfig'>;
 
@@ -43,6 +44,7 @@ export const ControlIndustrialAdmin: React.FC = () => {
   const alarmas = empresas.reduce((sum, item) => sum + item._count.alarmasIoT, 0);
 
   const open = (empresa: EmpresaControlAdmin) => { setSelected(empresa); setForm(initialForm(empresa)); };
+  const close = () => { setSelected(null); setForm(null); };
   const save = async () => {
     if (!selected || !form) return;
     setSaving(true);
@@ -95,10 +97,10 @@ export const ControlIndustrialAdmin: React.FC = () => {
         </div>
       )}
 
-      {selected && form && <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 p-0 backdrop-blur-sm sm:items-center sm:p-4" onMouseDown={(e) => e.target === e.currentTarget && setSelected(null)}>
-        <div className="max-h-[94vh] w-full max-w-2xl overflow-y-auto border border-line bg-surface shadow-2xl">
-          <div className="sticky top-0 z-10 flex items-center justify-between bg-slate-950 px-5 py-4 text-white"><div><p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300">Contrato y habilitación</p><h2 className="font-display text-xl font-black">{selected.nombre}</h2></div><ShieldCheck size={24} className="text-cyan-300" /></div>
-          <div className="grid gap-5 p-5 sm:grid-cols-2">
+      {selected && form && <DialogViewport className="z-50 flex items-center justify-center bg-slate-950/60 p-2 backdrop-blur-sm sm:p-4" onEscape={close}>
+        <div className="flex max-h-[calc(100dvh-1rem)] w-full max-w-2xl flex-col overflow-hidden border border-line bg-surface shadow-2xl sm:max-h-[calc(100dvh-2rem)]" role="dialog" aria-modal="true" aria-labelledby="control-admin-title">
+          <div className="sticky top-0 z-10 flex items-center justify-between bg-slate-950 px-5 py-4 text-white"><div><p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300">Contrato y habilitación</p><h2 id="control-admin-title" className="font-display text-xl font-black">{selected.nombre}</h2></div><ShieldCheck size={24} className="text-cyan-300" /></div>
+          <div className="grid flex-1 gap-5 overflow-y-auto p-5 sm:grid-cols-2">
             <label className="text-xs font-black uppercase text-muted sm:col-span-2">Nombre visible del servicio<input value={form.nombreServicio} onChange={(e) => setForm({ ...form, nombreServicio: e.target.value })} className="mt-1 h-11 w-full border border-line bg-surface px-3 text-sm normal-case" placeholder="ActivaQR Control" /></label>
             <label className="text-xs font-black uppercase text-muted">Estado<select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value as EstadoModuloControl })} className="mt-1 h-11 w-full border border-line bg-surface px-3 text-sm normal-case"><option value="configuracion">En configuración</option><option value="activo">Activo para el tenant</option><option value="suspendido">Suspendido</option></select></label>
             <label className="text-xs font-black uppercase text-muted">Moneda<input value={form.monedaFacturacion} onChange={(e) => setForm({ ...form, monedaFacturacion: e.target.value.toUpperCase() })} className="mt-1 h-11 w-full border border-line bg-surface px-3 text-sm normal-case" /></label>
@@ -114,9 +116,9 @@ export const ControlIndustrialAdmin: React.FC = () => {
             <label className="flex items-start gap-3 border border-warn bg-warn/10 p-4 sm:col-span-2"><input type="checkbox" checked={form.controlRemotoHabilitado} onChange={(e) => setForm({ ...form, controlRemotoHabilitado: e.target.checked })} className="mt-1" /><span><strong className="block text-sm text-content">Permitir solicitudes de control remoto</strong><span className="text-xs font-normal normal-case text-muted">No ejecuta maniobras por sí solo. Habilita el flujo auditado cuando el dispositivo y su adaptador estén certificados.</span></span></label>
             <label className="text-xs font-black uppercase text-muted sm:col-span-2">Notas comerciales y alcance<textarea rows={4} value={form.notasComerciales ?? ''} onChange={(e) => setForm({ ...form, notasComerciales: e.target.value })} className="mt-1 w-full border border-line bg-surface p-3 text-sm font-normal normal-case" placeholder="Instalación, soporte, SLA, canales incluidos, condiciones…" /></label>
           </div>
-          <div className="sticky bottom-0 flex gap-3 border-t border-line bg-surface p-4"><button onClick={() => setSelected(null)} className="h-11 flex-1 border border-line text-sm font-bold">Cancelar</button><button disabled={saving} onClick={save} className="flex h-11 flex-[2] items-center justify-center gap-2 bg-cyan-700 text-sm font-black uppercase text-white disabled:opacity-50"><Save size={16} />{saving ? 'Guardando…' : 'Guardar servicio'}</button></div>
+          <div className="flex shrink-0 gap-3 border-t border-line bg-surface p-4"><button onClick={close} className="h-11 flex-1 border border-line text-sm font-bold">Cancelar</button><button disabled={saving} onClick={save} className="flex h-11 flex-[2] items-center justify-center gap-2 bg-cyan-700 text-sm font-black uppercase text-white disabled:opacity-50"><Save size={16} />{saving ? 'Guardando…' : 'Guardar servicio'}</button></div>
         </div>
-      </div>}
+      </DialogViewport>}
     </div>
   );
 };
