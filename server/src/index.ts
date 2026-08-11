@@ -54,6 +54,7 @@ import { iniciarSincronizadorPrecios } from './sincronizarPrecios';
 import { adminControlIndustrialRouter, controlIndustrialRouter, iotIngestRouter } from './routes/controlIndustrial';
 import { limpiarLecturasIoTExpiradas } from './iotIngest';
 import { iniciarSincronizadorEwelink } from './ewelinkConnector';
+import { ewelinkOAuthRouter } from './routes/ewelinkOAuth';
 
 const app = express();
 
@@ -292,6 +293,10 @@ app.use('/api/public/fallas', fallasPublicRouter);
 
 // Analítica propia de visitas (sin auth: la landing y las fichas públicas la llaman).
 app.use('/api/visitas', visitasLimiter, visitasRouter);
+
+// Callback público de eWeLink. La identidad y el tenant viajan en un estado
+// firmado de corta duración; nunca se confía en parámetros sueltos del navegador.
+app.use('/api/iot/ewelink/oauth', ewelinkOAuthRouter);
 
 // Acceso remoto: rutas de admin van dentro de /api/admin (ver accesoRemotoRouter)
 // Rutas del cliente para acceso remoto.

@@ -12,7 +12,7 @@ import {
 import { auditar, registrarAuditoria } from '../auditoria';
 import { cifrarCredenciales, hashToken } from '../iotSecrets';
 import { normalizarEventoIoT, procesarEventoIoT } from '../iotIngest';
-import { sincronizarEwelink } from '../ewelinkConnector';
+import { crearAutorizacionEwelink, sincronizarEwelink } from '../ewelinkConnector';
 
 const ESTADOS_MODULO = new Set(['configuracion', 'activo', 'suspendido']);
 const PROVEEDORES = new Set(['sonoff_ewelink', 'milesight_ug65', 'webhook_generico']);
@@ -199,6 +199,30 @@ controlIndustrialRouter.put('/integraciones/:id/credenciales', requireAdmin, asy
     const updated = await prisma.integracionIoT.update({ where: { id: current.id }, data: { credencialesCifradas: cifrarCredenciales(clean), estado: 'configurada', ultimoError: null } });
     await auditar(req, 'editar', 'IntegracionIoT', updated.id, `Credenciales ${current.proveedor} reemplazadas de forma segura.`);
     res.json(publicIntegration(updated));
+  } catch (error) { next(error); }
+});
+
+controlIndustrialRouter.post('/integraciones/:id/autorizar-sonoff', requireAdmin, async (req: AuthRequest, res, next) => {
+  try {
+    const empresaId = tenantId(req);
+    const current = await prisma.integracionIoT.findFirst({ where: { id: req.params.id, empresaId, proveedor: 'sonoff_ewelink' } });
+    if (!current) throw statusError('Integración SONOFF no encontrada.', 404);
+    const appId = String(req.body?.appId ?? '').trim();
+    const appSecret = String(req.body?.appSecret ?? '').trim();
+    if (!appId || !appSecret) throw statusError('Ingresá el APPID y el APP SECRET del proyecto eWeLink.');
+    const pollingSeconds = Math.min(3600, Math.max(60, Number(req.body?.pollingSeconds) || 300));
+    await prisma.integracionIoT.update({
+      where: { id: current.id },
+      data: {
+        credencialesCifradas: cifrarCredenciales({ appId: appId.slice(0, 200), appSecret: appSecret.slice(0, 500) }),
+        configuracion: { ...((current.configuracion as object) || {}), pollingSeconds, oauthAutorizado: false },
+        estado: 'pendiente',
+        ultimoError: null,
+      },
+    });
+    const result = crearAutorizacionEwelink({ integrationId: current.id, empresaId, userId: req.auth!.userId, appId, appSecret });
+    await auditar(req, 'editar', 'IntegracionIoT', current.id, 'Autorización OAuth de eWeLink iniciada.');
+    res.json(result);
   } catch (error) { next(error); }
 });
 

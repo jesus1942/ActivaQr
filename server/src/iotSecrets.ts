@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'crypto';
+import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, timingSafeEqual } from 'crypto';
 
 function key(): Buffer {
   const raw = process.env.IOT_CREDENTIALS_KEY?.trim();
@@ -32,4 +32,21 @@ export function descifrarCredenciales(payload: string): Record<string, unknown> 
 
 export function hashToken(value: string): string {
   return createHash('sha256').update(value, 'utf8').digest('hex');
+}
+
+export function firmarEstadoOAuth(value: Record<string, unknown>): string {
+  const payload = Buffer.from(JSON.stringify(value), 'utf8').toString('base64url');
+  const signature = createHmac('sha256', key()).update(payload).digest('base64url');
+  return `${payload}.${signature}`;
+}
+
+export function verificarEstadoOAuth(payload: string): Record<string, unknown> {
+  const [body, signature] = payload.split('.');
+  if (!body || !signature) throw new Error('Estado OAuth inválido.');
+  const expected = createHmac('sha256', key()).update(body).digest();
+  const received = Buffer.from(signature, 'base64url');
+  if (received.length !== expected.length || !timingSafeEqual(received, expected)) throw new Error('Estado OAuth inválido.');
+  const value = JSON.parse(Buffer.from(body, 'base64url').toString('utf8')) as Record<string, unknown>;
+  if (!Number.isFinite(Number(value.exp)) || Number(value.exp) < Date.now()) throw new Error('La autorización venció. Volvé a iniciarla desde ActivaQR.');
+  return value;
 }

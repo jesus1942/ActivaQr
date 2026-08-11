@@ -1,6 +1,6 @@
 # ActivaQR Control
 
-Versión inicial del módulo: **ActivaQR v1.4.0**.
+Versión actual del módulo: **ActivaQR v1.4.1**.
 
 Módulo premium multi-tenant para telemetría, alarmas y operación gobernada de equipos industriales. La licencia se habilita por empresa y se factura de forma independiente del plan base de ActivaQR.
 
@@ -62,6 +62,14 @@ La cuenta debe autorizar un proyecto creado en eWeLink Developer Center. El cone
 - App Secret.
 - Access Token OAuth.
 - Región (`us`, `eu`, `as` o `cn`).
+
+La URL de redirección registrada en eWeLink debe ser exactamente:
+
+```text
+https://api.activaqr.net/api/iot/ewelink/oauth/callback
+```
+
+Desde el tablero, el administrador carga APPID y APP SECRET y elige “Autorizar con eWeLink”. ActivaQR valida un estado firmado de cinco minutos, intercambia el código OAuth antes de sus 30 segundos de vencimiento, cifra Access Token y Refresh Token, ejecuta la primera sincronización y luego renueva los tokens automáticamente.
 
 “Sincronizar ahora” consulta el endpoint oficial `GET /v2/device/thing`, importa equipos SONOFF/CoolKit autorizados y normaliza `currentTemperature`, `currentHumidity`, `switch` y `online`.
 

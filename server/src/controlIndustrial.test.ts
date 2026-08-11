@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { normalizarEventoIoT } from './iotIngest';
-import { cifrarCredenciales, descifrarCredenciales, hashToken } from './iotSecrets';
+import { cifrarCredenciales, descifrarCredenciales, firmarEstadoOAuth, hashToken, verificarEstadoOAuth } from './iotSecrets';
 
 const ROOT = resolve(process.cwd(), '..');
 const routes = readFileSync(resolve(process.cwd(), 'src/routes/controlIndustrial.ts'), 'utf8');
@@ -39,6 +39,22 @@ test('cifra secretos con autenticación y nunca conserva el texto plano', () => 
     assert.doesNotMatch(encrypted, /secreto-total/);
     assert.deepEqual(descifrarCredenciales(encrypted), { appId: 'app-1', accessToken: 'secreto-total' });
     assert.notEqual(hashToken('token-a'), hashToken('token-b'));
+  } finally {
+    if (original === undefined) delete process.env.IOT_CREDENTIALS_KEY;
+    else process.env.IOT_CREDENTIALS_KEY = original;
+  }
+});
+
+test('firma el estado OAuth y rechaza alteraciones o vencimientos', () => {
+  const original = process.env.IOT_CREDENTIALS_KEY;
+  process.env.IOT_CREDENTIALS_KEY = 'clave-de-prueba-larga-y-unica';
+  try {
+    const state = firmarEstadoOAuth({ integrationId: 'iot-1', empresaId: 'empresa-1', userId: 'user-1', exp: Date.now() + 60_000 });
+    assert.equal(verificarEstadoOAuth(state).integrationId, 'iot-1');
+    const [body, signature] = state.split('.');
+    const alteredBody = `${body[0] === 'a' ? 'b' : 'a'}${body.slice(1)}`;
+    assert.throws(() => verificarEstadoOAuth(`${alteredBody}.${signature}`), /inválido/);
+    assert.throws(() => verificarEstadoOAuth(firmarEstadoOAuth({ exp: Date.now() - 1 })), /venció/);
   } finally {
     if (original === undefined) delete process.env.IOT_CREDENTIALS_KEY;
     else process.env.IOT_CREDENTIALS_KEY = original;

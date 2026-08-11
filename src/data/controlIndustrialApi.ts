@@ -138,6 +138,10 @@ export async function guardarCredenciales(integracionId: string, credenciales: R
   return parse(await apiFetch(`control-industrial/integraciones/${integracionId}/credenciales`, { method: 'PUT', body: JSON.stringify({ credenciales }) }));
 }
 
+export async function autorizarSonoff(integracionId: string, data: { appId: string; appSecret: string; pollingSeconds: number }): Promise<{ authUrl: string; redirectUrl: string }> {
+  return parse(await apiFetch(`control-industrial/integraciones/${integracionId}/autorizar-sonoff`, { method: 'POST', body: JSON.stringify(data) }));
+}
+
 export async function generarTokenWebhook(integracionId: string): Promise<{ token: string; endpoint: string; advertencia: string }> {
   return parse(await apiFetch(`control-industrial/integraciones/${integracionId}/webhook-token`, { method: 'POST' }));
 }
