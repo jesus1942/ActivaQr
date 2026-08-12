@@ -1,6 +1,6 @@
 # ActivaQR Control
 
-Versión actual del módulo: **ActivaQR v1.4.1**.
+Versión actual del módulo: **ActivaQR v1.4.2**.
 
 Módulo premium multi-tenant para telemetría, alarmas y operación gobernada de equipos industriales. La licencia se habilita por empresa y se factura de forma independiente del plan base de ActivaQR.
 

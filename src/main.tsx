@@ -4,6 +4,33 @@ import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import { ensureSeed } from './data/store'
+import { registerSW } from 'virtual:pwa-register'
+
+const UPDATE_INTERVAL_MS = 5 * 60 * 1000
+
+// El registro generado automaticamente instalaba la nueva PWA, pero una
+// pestaña que ya estaba abierta podia seguir mostrando el bundle anterior
+// hasta que el usuario la cerrara. Registramos de forma explicita para que una
+// version activada tome control y recargue la interfaz sin conservar formularios
+// obsoletos (por ejemplo, el Access Token manual de eWeLink).
+registerSW({
+  immediate: true,
+  onRegisteredSW: (_swUrl, registration) => {
+    if (!registration) return
+
+    const checkForUpdate = () => {
+      if (navigator.onLine) void registration.update()
+    }
+
+    window.setInterval(checkForUpdate, UPDATE_INTERVAL_MS)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') checkForUpdate()
+    })
+  },
+  onRegisterError: (error) => {
+    console.error('No se pudo registrar la actualización de ActivaQR.', error)
+  },
+})
 
 // Cuando se publica una versión nueva, una pestaña/PWA que seguía abierta
 // puede intentar importar un chunk con hash anterior que ya no existe.

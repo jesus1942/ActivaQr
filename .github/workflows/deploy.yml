@@ -58,6 +58,14 @@ jobs:
             echo "::error::El build NO contiene api.activaqr.net — el secret VITE_API_URL tiene otro valor."
             exit 1
           fi
+          if ! grep -rq "Autorizar con eWeLink" dist/app/assets/; then
+            echo "::error::El build no contiene el flujo OAuth vigente de eWeLink."
+            exit 1
+          fi
+          if grep -rq "Guardar de forma segura" dist/app/assets/; then
+            echo "::error::El build conserva el formulario anterior de Access Token manual."
+            exit 1
+          fi
           if ! grep -q "id=\"planes\"" dist/index.html; then
             echo "::error::La raíz del sitio no es la landing: no se encontró la sección de planes."
             exit 1

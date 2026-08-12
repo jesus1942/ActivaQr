@@ -10,6 +10,8 @@ const routes = readFileSync(resolve(process.cwd(), 'src/routes/controlIndustrial
 const schema = readFileSync(resolve(process.cwd(), 'prisma/schema.prisma'), 'utf8');
 const app = readFileSync(resolve(ROOT, 'src/App.tsx'), 'utf8');
 const sidebar = readFileSync(resolve(ROOT, 'src/components/layout/Sidebar.tsx'), 'utf8');
+const controlIndustrial = readFileSync(resolve(ROOT, 'src/pages/ControlIndustrial.tsx'), 'utf8');
+const main = readFileSync(resolve(ROOT, 'src/main.tsx'), 'utf8');
 
 test('normaliza eventos HTTPS del UG65 con devEUI y objeto decodificado', () => {
   const event = normalizarEventoIoT({
@@ -89,4 +91,18 @@ test('la navegación muestra Control siempre al Superadmin y sólo tras habilita
   assert.match(app, /conAcceso\('control_industrial',[\s\S]*<ControlIndustrial/);
   assert.match(sidebar, /requiresControl: true/);
   assert.match(sidebar, /estadoControl\(\).*setControlHabilitado/);
+});
+
+test('eWeLink usa autorización OAuth y no vuelve a pedir un Access Token manual', () => {
+  assert.match(controlIndustrial, /Autorizar con eWeLink/);
+  assert.match(controlIndustrial, /autorizarSonoff/);
+  assert.doesNotMatch(controlIndustrial, /Field label="Access Token"/);
+  assert.doesNotMatch(controlIndustrial, /Guardar de forma segura/);
+});
+
+test('la PWA comprueba actualizaciones al abrirse y cuando recupera visibilidad', () => {
+  assert.match(main, /registerSW\(\{/);
+  assert.match(main, /immediate: true/);
+  assert.match(main, /registration\.update\(\)/);
+  assert.match(main, /visibilitychange/);
 });

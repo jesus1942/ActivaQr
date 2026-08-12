@@ -20,7 +20,7 @@ Base operativa: **Puerto Madryn, Chubut, Argentina**. Cobertura comercial: Patag
 >
 > La primera etapa incorpora **SONOFF TH Elite/eWeLink** para pilotos rápidos y **Milesight TS30x + UG65** para instalaciones profesionales. Cada tenant habilitado operará desde su propio tablero, mientras el Superadmin conservará el control comercial, técnico y de seguridad. [Ver alcance técnico](docs/ACTIVAQR-CONTROL.md).
 >
-> Estado técnico: **v1.4.1 publicada el 11 de agosto de 2026**. Incluye vinculación OAuth guiada y renovación automática de tokens eWeLink. La habilitación comercial permanece bajo configuración por empresa.
+> Estado técnico: **v1.4.2 publicada el 11 de agosto de 2026**. Incluye vinculación OAuth guiada, renovación automática de tokens eWeLink y actualización inmediata de la PWA para no conservar formularios anteriores. La habilitación comercial permanece bajo configuración por empresa.
 
 ---
 
