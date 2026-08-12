@@ -44,6 +44,7 @@ import { limpiarEmojisDeCategorias } from './limpiarEmojis';
 import { fallasRouter, fallasPublicRouter } from './routes/fallas';
 import { seedDemo } from './seedDemo';
 import { renderLanding } from './landing';
+import { renderBitacora } from './bitacora';
 import { mpConfigurado } from './mercadopago';
 import { renderPoliticaUso, renderPoliticaPrivacidad, POLITICAS_VERSION } from './politicas';
 import { APP_PUBLIC_URL, SITE_PUBLIC_URL } from './urls';
@@ -140,6 +141,14 @@ app.get('/', (req, res) => {
     mp: process.env.APOYO_MP_URL,
     stripe: process.env.APOYO_STRIPE_URL,
   }));
+});
+
+app.get(['/bitacora', '/bitacora/'], (req, res) => {
+  // Se contabiliza como visita pública junto con la landing para conservar
+  // las métricas existentes sin abrir una categoría incompleta en el admin.
+  registrarVisita(req, 'landing').catch(() => {});
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  res.send(renderBitacora(APP_PUBLIC_URL));
 });
 
 // Paginas legales publicas: requisito para aceptacion previa al pago.
@@ -274,6 +283,7 @@ app.get('/sitemap.xml', (_req, res) => {
   res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${SITE_URL}/</loc><lastmod>${ahora}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>${SITE_URL}/bitacora/</loc><lastmod>${ahora}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>${SITE_URL}/#features</loc><lastmod>${ahora}</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>${SITE_URL}/#planes</loc><lastmod>${ahora}</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>${SITE_URL}/#servicio</loc><lastmod>${ahora}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>

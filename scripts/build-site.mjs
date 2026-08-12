@@ -31,6 +31,9 @@ if (!existsSync(join(dist, 'app', 'index.html'))) {
 const { renderLanding } = await import(
   new URL('../server/dist/src/landing.js', import.meta.url).href
 );
+const { renderBitacora } = await import(
+  new URL('../server/dist/src/bitacora.js', import.meta.url).href
+);
 
 const whatsapp = process.env.WHATSAPP_NUMERO || '5492804018359';
 let landing = renderLanding(APP, whatsapp, {
@@ -59,6 +62,12 @@ if (!landing.includes(`<link rel="canonical" href="${SITIO}/" />`)) {
 }
 
 writeFileSync(join(dist, 'index.html'), landing);
+
+// La bitácora es una página estática indexable y comparte la misma fuente de
+// datos con el resumen que aparece en la landing.
+const bitacoraDir = join(dist, 'bitacora');
+mkdirSync(bitacoraDir, { recursive: true });
+writeFileSync(join(bitacoraDir, 'index.html'), renderBitacora(APP));
 
 // ── 404: GitHub Pages entra aca ante cualquier ruta desconocida ────────────
 // Manda a la app las rutas que le corresponden y a la landing el resto.
@@ -137,12 +146,13 @@ if (existsSync(assetsApp)) {
   }
 }
 
-// Sitemap propio del sitio: la landing es lo unico indexable.
+// Sitemap propio del sitio: landing y bitácora son contenidos indexables.
 writeFileSync(
   join(dist, 'sitemap.xml'),
   `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${SITIO}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>${SITIO}/bitacora/</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
 </urlset>
 `
 );
@@ -153,5 +163,6 @@ writeFileSync(
 
 console.log('Sitio armado:');
 console.log('  dist/index.html   landing (indexable, con rescate de QR viejos)');
+console.log('  dist/bitacora/    evolución pública del producto');
 console.log('  dist/app/         aplicacion React');
 console.log('  dist/sw.js        baja del service worker anterior');

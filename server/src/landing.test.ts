@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { renderLanding } from './landing';
+import { ENTRADAS_BITACORA, renderBitacora } from './bitacora';
 import { PLANES, PLAN_IDS } from './planCatalog';
 
 const RAIZ = resolve(process.cwd(), '..');
@@ -58,4 +59,20 @@ test('el contacto de WhatsApp se configura por entorno y no queda publicado en e
 
   assert.match(servidor, /process\.env\.WHATSAPP_NUMERO/);
   assert.doesNotMatch(servidor, /WHATSAPP_NUMERO\s*\|\|\s*['"]\d{8,}['"]/);
+});
+
+test('la landing abre una bitácora pública con avances verificables', () => {
+  const landing = renderLanding('https://activaqr.net/app/');
+  const bitacora = renderBitacora('https://activaqr.net/app/');
+
+  assert.match(landing, /href="\/bitacora\/"/);
+  assert.match(landing, /Estamos marcando una nueva frontera/);
+  assert.match(bitacora, /Prueba real superada: ActivaQR ya conversa con eWeLink/);
+  assert.match(bitacora, /Estados actualizados cada 5 segundos/);
+  assert.match(bitacora, /Exportación CSV por dispositivo o canal/);
+  assert.match(bitacora, /<link rel="canonical" href="https:\/\/activaqr\.net\/bitacora\/"/);
+  assert.match(bitacora, /@media\(max-width:640px\)/);
+  assert.match(bitacora, /\.entrada\{grid-template-columns:1fr/);
+  assert.match(landing, /@media\(max-width:820px\).*\.bitacora-preview-grid\{grid-template-columns:1fr\}/);
+  assert.equal(ENTRADAS_BITACORA[0].version, 'NUEVO');
 });

@@ -5,6 +5,7 @@
  */
 
 import { PLANES, PLAN_IDS, type PlanId } from './planCatalog';
+import { renderBitacoraPreview } from './bitacora';
 
 const BENEFICIOS_PLAN: Record<PlanId, string[]> = {
   inicial: [
@@ -329,6 +330,20 @@ export function renderLanding(
   .apoyo-btn:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--negro)}
   .apoyo-tit{font-weight:900;font-size:16px;text-transform:uppercase;letter-spacing:.5px}
   .apoyo-sub{font-size:13px;opacity:.92}
+
+  /* BITACORA */
+  .bitacora-preview{border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .bitacora-preview-cabecera{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:30px;margin-bottom:32px}
+  .bitacora-preview-cabecera .bajada{margin-bottom:0}
+  .bitacora-kicker{margin:0 0 10px;color:var(--tealbr);font-size:11px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}
+  .bitacora-preview-grid{display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:16px}
+  .bitacora-preview-card{padding:24px;border:1px solid var(--line);border-radius:14px;background:var(--surface);backdrop-filter:blur(12px)}
+  .bitacora-preview-card.principal{border-color:rgba(45,212,191,.45);box-shadow:0 0 24px rgba(45,212,191,.12)}
+  .bitacora-preview-card h3{margin:12px 0 9px;font-size:19px}
+  .bitacora-preview-card p{margin:0;color:var(--gris);font-size:14px;line-height:1.6}
+  .bitacora-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--gris-c);font-size:10px;text-transform:uppercase;letter-spacing:.07em}
+  .bitacora-meta span{color:var(--tealbr);font-weight:900}
+  @media(max-width:820px){.bitacora-preview-cabecera{grid-template-columns:1fr;align-items:start}.bitacora-preview-cabecera .btn{width:100%}.bitacora-preview-grid{grid-template-columns:1fr}}
 </style>
 
 <!-- ===== TEMA OSCURO / TURQUESA (override del mockup) ===== -->
@@ -456,6 +471,7 @@ export function renderLanding(
       <a class="nav-link" href="#ultimo-km">Por qué</a>
       <a class="nav-link" href="#casos">Para quién</a>
       <a class="nav-link" href="#voces">Voces</a>
+      <a class="nav-link" href="/bitacora/">Bit&aacute;cora</a>
       <a class="nav-link" href="#planes">Planes</a>
       <a class="nav-link" href="#servicio">Servicio</a>
       <a class="btn btn-naranja" href="${appUrl}" target="_blank" rel="noopener">Ingresar</a>
@@ -574,6 +590,8 @@ export function renderLanding(
     </div>
   </div>
 </section>
+
+${renderBitacoraPreview()}
 
 <section id="implementacion" class="reveal">
   <div class="wrap">
@@ -711,6 +729,7 @@ ${seccionApoyo}
         <p class="footer-frase">De la medici&oacute;n en campo a una decisi&oacute;n clara.</p>
       </div>
       <div class="footer-acciones">
+        <a class="footer-enlace" href="/bitacora/">Bit&aacute;cora</a>
         <a class="footer-enlace" href="#planes">Ver planes</a>
         <a class="footer-app" href="${appUrl}" target="_blank" rel="noopener">Ingresar a la app</a>
       </div>
