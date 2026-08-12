@@ -1,6 +1,6 @@
 # ActivaQR Control
 
-Versión actual del módulo: **ActivaQR v1.4.2**.
+Versión actual del módulo: **ActivaQR Control multimarcas**.
 
 Módulo premium multi-tenant para telemetría, alarmas y operación gobernada de equipos industriales. La licencia se habilita por empresa y se factura de forma independiente del plan base de ActivaQR.
 
@@ -12,10 +12,17 @@ Módulo premium multi-tenant para telemetría, alarmas y operación gobernada de
 - Tablero responsive para tablet, celular y escritorio.
 - Integración HTTPS directa para Milesight UG65 y dispositivos genéricos.
 - Sincronización REST real de SONOFF TH Elite mediante eWeLink Open API v2.
+- Sincronización Tuya / Smart Life Cloud por empresa para sensores, medidores e interruptores compatibles.
 - Autodescubrimiento, variables actuales, gráficos de 24 horas y estado de señal/batería.
 - Reglas con umbral, demora sostenida, severidad y notificación push.
 - Reconocimiento y resolución automática de alarmas.
 - Solicitudes de comandos auditadas y bloqueadas hasta habilitar contrato, dispositivo y adaptador.
+
+## Aislamiento por empresa
+
+Cada integración, dispositivo, variable, lectura, regla, alarma, escena y comando conserva `empresaId`. Las rutas del tenant obtienen esa identidad desde la sesión autenticada; no aceptan que el navegador elija otra empresa. Por eso una empresa nueva no puede listar, configurar ni operar los dispositivos de Escuela Nueva Austral. Sólo el Superadmin puede consultar resúmenes globales desde rutas administrativas separadas.
+
+Las credenciales también pertenecen a una integración de una sola empresa y se guardan cifradas. Cada tenant debe vincular su propia cuenta o proyecto del fabricante.
 
 ## Variable obligatoria en Railway
 
@@ -77,6 +84,23 @@ El servidor también ejecuta sincronización programada. El tenant puede elegir 
 
 El Access Token vence y debe reemplazarse al expirar. La autorización empresarial, cuotas y modelos visibles dependen del contrato eWeLink. No se debe prometer a un cliente compatibilidad con modelos no devueltos por su APPID.
 
+## Tuya / Smart Life Cloud
+
+El administrador del tenant crea una conexión “Tuya / Smart Life Cloud” y carga las credenciales de un proyecto Tuya IoT Cloud vinculado a su cuenta Smart Life:
+
+- Access ID / Client ID.
+- Access Secret.
+- UID de la cuenta vinculada.
+- Región del proyecto: América, Europa, China o India.
+
+ActivaQR cifra esas credenciales, solicita y renueva el token de acceso, descubre los dispositivos del UID y consulta estados y especificaciones. Normaliza temperatura, humedad, apertura magnética, inundación, movimiento, batería, corriente, voltaje, potencia, energía e interruptores. El intervalo inicial es de 30 segundos y puede configurarse desde 10 segundos.
+
+La operación de interruptores usa el endpoint de comandos de Tuya y conserva las mismas barreras de contrato, dispositivo, perfil, confirmación y auditoría que eWeLink. La compatibilidad final depende de que el producto y su categoría estén expuestos por el proyecto Tuya del cliente.
+
+## Otras marcas
+
+Milesight y cualquier gateway o dispositivo capaz de enviar JSON decodificado por HTTPS pueden integrarse hoy para monitoreo, historial y alarmas. Control remoto y escenas no se habilitan para una marca solamente por declararla compatible: requieren un adaptador certificado que traduzca el comando, compruebe la identidad del equipo y devuelva un resultado auditable.
+
 ## Seguridad operativa
 
 La activación del módulo no habilita control remoto. Para registrar una maniobra deben cumplirse simultáneamente:
@@ -87,7 +111,7 @@ La activación del módulo no habilita control remoto. Para registrar una maniob
 4. Motivo explícito.
 5. Adaptador certificado para ejecutar el comando.
 
-La versión inicial registra la solicitud como pendiente y no afirma que fue ejecutada. Un adaptador posterior deberá devolver resultado verificable. PLC, controlador frigorífico, presostatos, térmicos, parada de emergencia e interbloqueos locales conservan siempre la autoridad.
+Los adaptadores certificados de eWeLink y Tuya ejecutan la orden y registran su resultado. PLC, controlador frigorífico, presostatos, térmicos, parada de emergencia e interbloqueos locales conservan siempre la autoridad.
 
 ## Puesta en producción
 

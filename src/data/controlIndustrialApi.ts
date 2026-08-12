@@ -7,7 +7,7 @@ async function parse<T>(res: Response): Promise<T> {
 }
 
 export type EstadoModuloControl = 'configuracion' | 'activo' | 'suspendido';
-export type ProveedorIoT = 'sonoff_ewelink' | 'milesight_ug65' | 'webhook_generico';
+export type ProveedorIoT = 'sonoff_ewelink' | 'tuya_cloud' | 'milesight_ug65' | 'webhook_generico';
 
 export interface ModuloControl {
   id: string;
@@ -42,6 +42,7 @@ export interface IntegracionIoT {
   ultimoEventoEn?: string | null;
   ultimoError?: string | null;
   credencialesConfiguradas: boolean;
+  capacidades?: { monitoreo: boolean; descubrimiento: boolean; control: boolean; escenas: boolean };
 }
 
 export interface VariableIoT {
@@ -73,6 +74,7 @@ export interface DispositivoIoT {
   bateria?: number | null;
   rssi?: number | null;
   variables: VariableIoT[];
+  integracion?: { proveedor: ProveedorIoT };
 }
 
 export interface AlarmaIoT {
@@ -180,6 +182,14 @@ export async function generarTokenWebhook(integracionId: string): Promise<{ toke
 
 export async function sincronizarSonoff(integracionId: string): Promise<{ ok: boolean; dispositivosImportados: number; totalInformado: number }> {
   return parse(await apiFetch(`control-industrial/integraciones/${integracionId}/sincronizar-sonoff`, { method: 'POST' }));
+}
+
+export async function configurarTuya(integracionId: string, data: { clientId: string; clientSecret: string; userId: string; region: string; pollingSeconds: number }): Promise<{ ok: boolean; dispositivosImportados: number; totalInformado: number }> {
+  return parse(await apiFetch(`control-industrial/integraciones/${integracionId}/configurar-tuya`, { method: 'PUT', body: JSON.stringify(data) }));
+}
+
+export async function sincronizarTuya(integracionId: string): Promise<{ ok: boolean; dispositivosImportados: number; totalInformado: number }> {
+  return parse(await apiFetch(`control-industrial/integraciones/${integracionId}/sincronizar-tuya`, { method: 'POST' }));
 }
 
 export async function actualizarIntegracion(integracionId: string, data: Record<string, unknown>): Promise<IntegracionIoT> {

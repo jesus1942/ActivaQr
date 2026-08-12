@@ -15,9 +15,10 @@ import { cifrarCredenciales, hashToken } from '../iotSecrets';
 import { normalizarEventoIoT, procesarEventoIoT } from '../iotIngest';
 import { crearAutorizacionEwelink, ejecutarCanalEwelink, sincronizarEwelink } from '../ewelinkConnector';
 import { enviarPushAUsuario } from '../push';
+import { ejecutarCanalTuya, sincronizarTuya } from '../tuyaConnector';
 
 const ESTADOS_MODULO = new Set(['configuracion', 'activo', 'suspendido']);
-const PROVEEDORES = new Set(['sonoff_ewelink', 'milesight_ug65', 'webhook_generico']);
+const PROVEEDORES = new Set(['sonoff_ewelink', 'tuya_cloud', 'milesight_ug65', 'webhook_generico']);
 const OPERADORES = new Set(['gt', 'gte', 'lt', 'lte', 'eq', 'neq']);
 const SEVERIDADES = new Set(['informacion', 'advertencia', 'critica']);
 
@@ -34,7 +35,9 @@ function tenantId(req: AuthRequest): string {
 
 function publicIntegration<T extends { credencialesCifradas?: string | null }>(item: T) {
   const { credencialesCifradas, ...safe } = item;
-  return { ...safe, credencialesConfiguradas: Boolean(credencialesCifradas) };
+  const provider = String((item as T & { proveedor?: string }).proveedor ?? '');
+  const operable = provider === 'sonoff_ewelink' || provider === 'tuya_cloud';
+  return { ...safe, credencialesConfiguradas: Boolean(credencialesCifradas), capacidades: { monitoreo: true, descubrimiento: operable, control: operable, escenas: operable } };
 }
 
 function csvCell(value: unknown): string {
@@ -91,7 +94,7 @@ async function validarAccionesEscena(empresaId: string, actions: AccionEscena[])
   if (devices.length !== new Set(actions.map((item) => item.dispositivoId)).size) throw statusError('La escena incluye un dispositivo que no pertenece a la empresa.', 400);
   for (const action of actions) {
     const device = devices.find((item) => item.id === action.dispositivoId)!;
-    if (!device.permiteControl || device.integracion.proveedor !== 'sonoff_ewelink' || device.tipo === 'puente_rf') throw statusError(`${device.nombre} no está habilitado para escenas.`);
+    if (!device.permiteControl || !['sonoff_ewelink', 'tuya_cloud'].includes(device.integracion.proveedor) || device.tipo === 'puente_rf') throw statusError(`${device.nombre} no está habilitado para escenas.`);
     if (!device.variables.some((item) => item.clave === `switch_${action.canal + 1}` || (action.canal === 0 && item.clave === 'relay'))) throw statusError(`${device.nombre} no informó el canal ${action.canal + 1}.`);
   }
   return devices;
@@ -119,28 +122,33 @@ async function ejecutarReleSeguro(req: AuthRequest, params: { dispositivoId: str
     ]);
     if (!module?.controlRemotoHabilitado) throw statusError('El Superadmin no habilitó control remoto para este contrato.', 403);
     if (!device?.permiteControl) throw statusError('Este dispositivo está configurado sólo para monitoreo.', 409);
-    if (device.integracion.proveedor !== 'sonoff_ewelink') throw statusError('Este equipo no posee un adaptador de operación remota.', 409);
+    if (!['sonoff_ewelink', 'tuya_cloud'].includes(device.integracion.proveedor)) throw statusError('Este equipo no posee un adaptador de operación remota.', 409);
     if (device.tipo === 'puente_rf') throw statusError('El RF Bridge es un puente de acceso y no se opera como una salida.', 409);
     if (!Number.isInteger(params.canal) || params.canal < 0 || params.canal > 3 || typeof params.encendido !== 'boolean') throw statusError('Seleccioná un canal válido y el estado encendido o apagado.');
     const channelVariables = device.variables.filter((item) => /^switch_[1-4]$/.test(item.clave));
     if (channelVariables.length && !channelVariables.some((item) => item.clave === `switch_${params.canal + 1}`)) throw statusError('El dispositivo no informó ese canal.', 409);
     const online = device.variables.find((item) => item.clave === 'online');
-    if (online?.valorBooleano === false || device.estado === 'desconectado') throw statusError(`${device.nombre} está desconectado en eWeLink.`, 409);
+    if (online?.valorBooleano === false || device.estado === 'desconectado') throw statusError(`${device.nombre} está desconectado de la nube del fabricante.`, 409);
     const estados = Object.fromEntries(channelVariables.map((item) => [Number(item.clave.slice(7)) - 1, Boolean(item.valorBooleano)]));
     const command = await prisma.comandoIoT.create({ data: {
       empresaId, dispositivoId: device.id, tipo: 'rele', payload: { canal: params.canal, encendido: params.encendido }, motivo: params.motivo.slice(0, 2000),
       solicitadoPorId: req.auth!.userId, solicitadoPorNombre: req.auth!.email,
-      estado: 'pendiente', resultado: 'Enviando operación segura a eWeLink.',
+      estado: 'pendiente', resultado: `Enviando operación segura mediante ${device.integracion.proveedor}.`,
     } });
     commandId = command.id;
-    await ejecutarCanalEwelink(device.integracionId, device.identificadorExterno, params.canal, params.encendido, estados);
+    if (device.integracion.proveedor === 'sonoff_ewelink') {
+      await ejecutarCanalEwelink(device.integracionId, device.identificadorExterno, params.canal, params.encendido, estados);
+    } else {
+      const tuyaCode = channelVariables.some((item) => item.clave === `switch_${params.canal + 1}`) ? `switch_${params.canal + 1}` : 'switch';
+      await ejecutarCanalTuya(device.integracionId, device.identificadorExterno, tuyaCode, params.encendido);
+    }
     const executed = await prisma.$transaction(async (tx) => {
       const variable = await tx.variableIoT.findUnique({ where: { dispositivoId_clave: { dispositivoId: device.id, clave: `switch_${params.canal + 1}` } } });
       if (variable) {
         await tx.variableIoT.update({ where: { id: variable.id }, data: { valorBooleano: params.encendido, valorNumero: null, valorTexto: null, tipo: 'booleano', calidad: 'buena', medidaEn: new Date() } });
         await tx.lecturaIoT.create({ data: { variableId: variable.id, valorBooleano: params.encendido, medidaEn: new Date(), calidad: 'buena' } });
       }
-      return tx.comandoIoT.update({ where: { id: command.id }, data: { estado: 'ejecutado', ejecutadoEn: new Date(), resultado: `Canal ${params.canal + 1} ${params.encendido ? 'encendido' : 'apagado'} y confirmado por eWeLink.` } });
+      return tx.comandoIoT.update({ where: { id: command.id }, data: { estado: 'ejecutado', ejecutadoEn: new Date(), resultado: `Canal ${params.canal + 1} ${params.encendido ? 'encendido' : 'apagado'} mediante ${device.integracion.proveedor}.` } });
     });
     await auditar(req, 'comando', 'ComandoIoT', command.id, `${device.nombre}: canal ${params.canal + 1} ${params.encendido ? 'encendido' : 'apagado'}. Motivo: ${params.motivo}`);
     return { ...executed, dispositivo: { nombre: device.nombre } };
@@ -240,7 +248,7 @@ controlIndustrialRouter.get('/resumen', async (req: AuthRequest, res, next) => {
     const [module, integraciones, dispositivos, alarmas, comandos, reglas, escenas] = await Promise.all([
       prisma.moduloControlEmpresa.findUnique({ where: { empresaId } }),
       prisma.integracionIoT.findMany({ where: { empresaId }, orderBy: { creadaEn: 'asc' } }),
-      prisma.dispositivoIoT.findMany({ where: { empresaId }, include: { variables: { orderBy: { nombre: 'asc' } } }, orderBy: { nombre: 'asc' } }),
+      prisma.dispositivoIoT.findMany({ where: { empresaId }, include: { integracion: { select: { proveedor: true } }, variables: { orderBy: { nombre: 'asc' } } }, orderBy: { nombre: 'asc' } }),
       prisma.alarmaIoT.findMany({ where: { empresaId, estado: { in: ['activa', 'reconocida'] } }, include: { dispositivo: { select: { nombre: true } }, variable: { select: { nombre: true, unidad: true } } }, orderBy: { iniciadaEn: 'desc' }, take: 100 }),
       prisma.comandoIoT.findMany({ where: { empresaId }, include: { dispositivo: { select: { nombre: true } } }, orderBy: { solicitadoEn: 'desc' }, take: 25 }),
       prisma.reglaAlarmaIoT.findMany({ where: { empresaId }, include: { variable: { include: { dispositivo: { select: { nombre: true } } } } }, orderBy: { creadaEn: 'desc' } }),
@@ -262,7 +270,7 @@ controlIndustrialRouter.post('/integraciones', requireAdmin, async (req: AuthReq
       empresaId,
       nombre: String(nombre).trim().slice(0, 120),
       proveedor,
-      configuracion: { autoDiscover: true, ...(proveedor === 'sonoff_ewelink' ? { pollingSeconds: 5 } : {}), ...(configuracion && typeof configuracion === 'object' ? configuracion : {}) },
+      configuracion: { autoDiscover: true, ...(proveedor === 'sonoff_ewelink' ? { pollingSeconds: 5 } : proveedor === 'tuya_cloud' ? { pollingSeconds: 30 } : {}), ...(configuracion && typeof configuracion === 'object' ? configuracion : {}) },
     } });
     await auditar(req, 'crear', 'IntegracionIoT', integration.id, `Conector ${proveedor}: ${integration.nombre}`);
     res.status(201).json(publicIntegration(integration));
@@ -328,10 +336,32 @@ controlIndustrialRouter.post('/integraciones/:id/autorizar-sonoff', requireAdmin
   } catch (error) { next(error); }
 });
 
+controlIndustrialRouter.put('/integraciones/:id/configurar-tuya', requireAdmin, async (req: AuthRequest, res, next) => {
+  try {
+    const empresaId = tenantId(req);
+    const current = await prisma.integracionIoT.findFirst({ where: { id: req.params.id, empresaId, proveedor: 'tuya_cloud' } });
+    if (!current) throw statusError('Integración Tuya no encontrada.', 404);
+    const clientId = String(req.body?.clientId ?? '').trim();
+    const clientSecret = String(req.body?.clientSecret ?? '').trim();
+    const userId = String(req.body?.userId ?? '').trim();
+    const region = String(req.body?.region ?? 'us').trim();
+    if (!clientId || !clientSecret || !userId || !['us', 'eu', 'cn', 'in'].includes(region)) throw statusError('Completá Access ID, Access Secret, UID y región válidos.');
+    const pollingSeconds = Math.min(3600, Math.max(10, Number(req.body?.pollingSeconds) || 30));
+    await prisma.integracionIoT.update({ where: { id: current.id }, data: {
+      credencialesCifradas: cifrarCredenciales({ clientId: clientId.slice(0, 300), clientSecret: clientSecret.slice(0, 600), userId: userId.slice(0, 300), region }),
+      configuracion: { ...((current.configuracion as object) || {}), pollingSeconds, cloudAutorizada: true },
+      estado: 'configurada', ultimoError: null,
+    } });
+    const result = await sincronizarTuya(current.id);
+    await auditar(req, 'editar', 'IntegracionIoT', current.id, `Tuya Cloud configurada: ${result.dispositivosImportados} dispositivos.`);
+    res.json(result);
+  } catch (error) { next(error); }
+});
+
 controlIndustrialRouter.post('/integraciones/:id/webhook-token', requireAdmin, async (req: AuthRequest, res, next) => {
   try {
     const empresaId = tenantId(req);
-    const current = await prisma.integracionIoT.findFirst({ where: { id: req.params.id, empresaId } });
+    const current = await prisma.integracionIoT.findFirst({ where: { id: req.params.id, empresaId, proveedor: { in: ['milesight_ug65', 'webhook_generico'] } } });
     if (!current) throw statusError('Integración no encontrada.', 404);
     const token = randomBytes(32).toString('base64url');
     await prisma.integracionIoT.update({ where: { id: current.id }, data: { webhookTokenHash: hashToken(token), webhookTokenHint: token.slice(-6), estado: 'configurada' } });
@@ -351,10 +381,21 @@ controlIndustrialRouter.post('/integraciones/:id/sincronizar-sonoff', requireAdm
   } catch (error) { next(error); }
 });
 
+controlIndustrialRouter.post('/integraciones/:id/sincronizar-tuya', requireAdmin, async (req: AuthRequest, res, next) => {
+  try {
+    const empresaId = tenantId(req);
+    const current = await prisma.integracionIoT.findFirst({ where: { id: req.params.id, empresaId, proveedor: 'tuya_cloud' } });
+    if (!current) throw statusError('Integración Tuya no encontrada.', 404);
+    const result = await sincronizarTuya(current.id);
+    await auditar(req, 'editar', 'IntegracionIoT', current.id, `Sincronización Tuya: ${result.dispositivosImportados} dispositivos.`);
+    res.json(result);
+  } catch (error) { next(error); }
+});
+
 controlIndustrialRouter.patch('/dispositivos/:id', requireJefatura, async (req: AuthRequest, res, next) => {
   try {
     const empresaId = tenantId(req);
-    const device = await prisma.dispositivoIoT.findFirst({ where: { id: req.params.id, empresaId } });
+    const device = await prisma.dispositivoIoT.findFirst({ where: { id: req.params.id, empresaId }, include: { integracion: { select: { proveedor: true } } } });
     if (!device) throw statusError('Dispositivo no encontrado.', 404);
     const data: Record<string, unknown> = {};
     for (const field of ['nombre', 'ubicacion', 'modelo', 'tipo'] as const) if (req.body?.[field] !== undefined) data[field] = String(req.body[field]).trim().slice(0, 160) || null;
@@ -366,7 +407,11 @@ controlIndustrialRouter.patch('/dispositivos/:id', requireJefatura, async (req: 
       data.activoId = req.body.activoId || null;
     }
     if (req.body?.habilitado !== undefined) data.habilitado = Boolean(req.body.habilitado);
-    if (req.body?.permiteControl !== undefined) data.permiteControl = Boolean(req.body.permiteControl);
+    if (req.body?.permiteControl !== undefined) {
+      const requested = Boolean(req.body.permiteControl);
+      if (requested && !['sonoff_ewelink', 'tuya_cloud'].includes(device.integracion.proveedor)) throw statusError('Este conector no posee un adaptador certificado de control.', 409);
+      data.permiteControl = requested;
+    }
     const updated = await prisma.dispositivoIoT.update({ where: { id: device.id }, data });
     await auditar(req, 'editar', 'DispositivoIoT', device.id, 'Configuración del dispositivo actualizada.');
     res.json(updated);

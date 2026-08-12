@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import { normalizarEventoIoT } from './iotIngest';
 import { cifrarCredenciales, descifrarCredenciales, firmarEstadoOAuth, hashToken, verificarEstadoOAuth } from './iotSecrets';
 import { clasificarDispositivoEwelink, crearParametrosCanalEwelink, extraerLecturasEwelink } from './ewelinkConnector';
+import { escalarValorTuya, normalizarCodigoTuya } from './tuyaConnector';
 
 const ROOT = resolve(process.cwd(), '..');
 const routes = readFileSync(resolve(process.cwd(), 'src/routes/controlIndustrial.ts'), 'utf8');
@@ -72,6 +73,15 @@ test('separa habilitación Superadmin, acceso tenant e ingesta máquina a máqui
   assert.match(routes, /webhookTokenHash: hashToken\(req\.params\.token\)/);
 });
 
+test('cada consulta y mutación de dispositivos queda aislada por la empresa autenticada', () => {
+  assert.match(routes, /function tenantId[\s\S]*req\.auth\.empresaId/);
+  assert.match(routes, /get\('\/resumen'[\s\S]*findMany\(\{ where: \{ empresaId \}/);
+  assert.match(routes, /dispositivoIoT\.findFirst\(\{ where: \{ id: req\.params\.id, empresaId \}/);
+  assert.match(routes, /variableIoT\.findFirst\(\{ where: \{ id: req\.params\.id, empresaId \}/);
+  assert.match(routes, /integracionIoT\.findFirst\(\{ where: \{ id: req\.params\.id, empresaId, proveedor: 'tuya_cloud' \}/);
+  assert.match(routes, /dispositivoIoT\.findFirst\(\{ where: \{ id: params\.dispositivoId, empresaId \}/);
+});
+
 test('los secretos no salen en respuestas y los comandos exigen doble habilitación', () => {
   assert.match(routes, /const \{ credencialesCifradas, \.\.\.safe \} = item/);
   assert.match(routes, /!module\?\.controlRemotoHabilitado/);
@@ -117,6 +127,30 @@ test('eWeLink importa los canales del DUAL R3 sin perder estados escalares', () 
 test('eWeLink distingue interruptores multicanal y RF Bridge', () => {
   assert.equal(clasificarDispositivoEwelink({ productModel: 'SONOFF DUAL R3', params: { switches: [{ outlet: 0 }, { outlet: 1 }] } }), 'interruptor_multicanal');
   assert.equal(clasificarDispositivoEwelink({ name: 'RF colegio', uiid: 28, params: {} }), 'puente_rf');
+});
+
+test('Tuya normaliza sensores, estados y magnitudes eléctricas', () => {
+  assert.equal(normalizarCodigoTuya('switch_2'), 'switch_2');
+  assert.equal(normalizarCodigoTuya('temp_current'), 'temperature');
+  assert.equal(normalizarCodigoTuya('watersensor_state'), 'water');
+  assert.equal(normalizarCodigoTuya('cur_current'), 'current');
+  assert.equal(normalizarCodigoTuya('cur_voltage'), 'voltage');
+  assert.equal(normalizarCodigoTuya('cur_power'), 'actpow');
+  assert.equal(escalarValorTuya(2234, { values: '{"scale":1}', unit: 'V' }), 223.4);
+  assert.equal(escalarValorTuya(420, { values: '{"scale":0}', unit: 'mA' }), 0.42);
+});
+
+test('multimarca limita control a adaptadores certificados y Tuya usa credenciales por tenant', () => {
+  const tuya = readFileSync(resolve(process.cwd(), 'src/tuyaConnector.ts'), 'utf8');
+  assert.match(routes, /new Set\(\['sonoff_ewelink', 'tuya_cloud', 'milesight_ug65', 'webhook_generico'\]\)/);
+  assert.match(routes, /\['sonoff_ewelink', 'tuya_cloud'\]\.includes\(device\.integracion\.proveedor\)/);
+  assert.match(routes, /proveedor: \{ in: \['milesight_ug65', 'webhook_generico'\] \}/);
+  assert.match(routes, /configurar-tuya[\s\S]*id: req\.params\.id, empresaId, proveedor: 'tuya_cloud'/);
+  assert.match(routes, /credencialesCifradas: cifrarCredenciales\(\{ clientId:/);
+  assert.match(routes, /integracion: \{ select: \{ proveedor: true \} \}/);
+  assert.match(tuya, /procesarEventoIoT\(integration\.id/);
+  assert.match(controlIndustrial, /Tuya \/ Smart Life Cloud/);
+  assert.match(controlIndustrial, /TuyaCredentialsModal/);
 });
 
 test('eWeLink conserva mediciones eléctricas del DUAL R3 por canal', () => {

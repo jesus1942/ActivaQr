@@ -74,6 +74,7 @@ test('la landing abre una bitácora pública con avances verificables', () => {
   assert.match(bitacora, /@media\(max-width:640px\)/);
   assert.match(bitacora, /\.entrada\{grid-template-columns:1fr/);
   assert.match(landing, /@media\(max-width:820px\).*\.bitacora-preview-grid\{grid-template-columns:1fr\}/);
-  assert.equal(ENTRADAS_BITACORA[0].version, 'NUEVO');
+  assert.equal(ENTRADAS_BITACORA[0].version, 'MULTIMARCA');
+  assert.match(bitacora, /Tuya \/ Smart Life Cloud por tenant/);
   assert.match(bitacora, /Corriente, voltaje, potencia y consumo por canal/);
 });

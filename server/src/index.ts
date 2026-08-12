@@ -56,6 +56,7 @@ import { adminControlIndustrialRouter, controlIndustrialRouter, iotIngestRouter 
 import { iniciarMonitorDesconexionesIoT, limpiarLecturasIoTExpiradas } from './iotIngest';
 import { iniciarSincronizadorEwelink } from './ewelinkConnector';
 import { ewelinkOAuthRouter } from './routes/ewelinkOAuth';
+import { iniciarSincronizadorTuya } from './tuyaConnector';
 
 const app = express();
 
@@ -379,6 +380,7 @@ app.listen(PORT, () => {
   limpiarLecturasIoTExpiradas().then((count) => count && console.log(`[iot] ${count} lecturas vencidas eliminadas.`)).catch((e) => console.error('[iot] limpieza inicial:', e));
   setInterval(() => limpiarLecturasIoTExpiradas().catch((e) => console.error('[iot] limpieza programada:', e)), 24 * 60 * 60 * 1000).unref();
   iniciarSincronizadorEwelink();
+  iniciarSincronizadorTuya();
   iniciarMonitorDesconexionesIoT();
 });
 

@@ -11,6 +11,16 @@ export type EntradaBitacora = {
 
 export const ENTRADAS_BITACORA: EntradaBitacora[] = [
   {
+    version: 'MULTIMARCA',
+    fecha: '12 de agosto de 2026',
+    fechaIso: '2026-08-12',
+    titulo: 'Cada empresa puede conectar su propia nube Tuya o eWeLink',
+    resumen: 'ActivaQR Control incorporó una arquitectura por capacidades y un adaptador Tuya / Smart Life Cloud para importar sensores, medidores e interruptores sin mezclar las cuentas de distintas empresas.',
+    impacto: 'Una organización administra solamente sus conectores y dispositivos. La telemetría genérica sigue abierta a otras marcas, mientras el control remoto se habilita únicamente cuando existe un adaptador certificado.',
+    capacidades: ['Tuya / Smart Life Cloud por tenant', 'Aislamiento de dispositivos, escenas y alarmas por empresa', 'Control limitado a adaptadores certificados'],
+    destacada: true,
+  },
+  {
     version: 'NUEVO',
     fecha: '12 de agosto de 2026',
     fechaIso: '2026-08-12',
