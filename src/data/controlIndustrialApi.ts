@@ -158,6 +158,29 @@ export async function actualizarDispositivo(dispositivoId: string, data: Record<
   return parse(await apiFetch(`control-industrial/dispositivos/${dispositivoId}`, { method: 'PATCH', body: JSON.stringify(data) }));
 }
 
+export async function actualizarVariable(variableId: string, nombre: string): Promise<VariableIoT> {
+  return parse(await apiFetch(`control-industrial/variables/${variableId}`, { method: 'PATCH', body: JSON.stringify({ nombre }) }));
+}
+
+async function descargarHistorial(path: string): Promise<{ blob: Blob; filename: string; truncated: boolean }> {
+  const response = await apiFetch(path);
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data?.error || 'No se pudo exportar el historial.');
+  }
+  const disposition = response.headers.get('Content-Disposition') ?? '';
+  const filename = disposition.match(/filename="([^"]+)"/)?.[1] ?? 'historial-activaqr.csv';
+  return { blob: await response.blob(), filename, truncated: response.headers.get('X-ActivaQR-Truncated') === 'true' };
+}
+
+export function exportarHistorialDispositivo(dispositivoId: string, horas = 24) {
+  return descargarHistorial(`control-industrial/dispositivos/${dispositivoId}/historial.csv?horas=${horas}`);
+}
+
+export function exportarHistorialVariable(variableId: string, horas = 24) {
+  return descargarHistorial(`control-industrial/variables/${variableId}/historial.csv?horas=${horas}`);
+}
+
 export async function reconocerAlarma(id: string): Promise<void> {
   await parse(await apiFetch(`control-industrial/alarmas/${id}/reconocer`, { method: 'POST' }));
 }

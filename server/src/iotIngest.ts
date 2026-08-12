@@ -111,6 +111,16 @@ function valorData(value: Scalar) {
       : { tipo: 'texto', valorNumero: null, valorBooleano: null, valorTexto: value.slice(0, 500) };
 }
 
+function lecturaCambio(previous: { valorNumero: number | null; valorBooleano: boolean | null; valorTexto: string | null; lecturas: Array<{ medidaEn: Date }> } | null, values: { valorNumero: number | null; valorBooleano: boolean | null; valorTexto: string | null }, medidaEn: Date): boolean {
+  if (!previous) return true;
+  const changed = previous.valorNumero !== values.valorNumero
+    || previous.valorBooleano !== values.valorBooleano
+    || previous.valorTexto !== values.valorTexto;
+  const ultimaLecturaEn = previous.lecturas[0]?.medidaEn;
+  const checkpointDue = !ultimaLecturaEn || medidaEn.getTime() - ultimaLecturaEn.getTime() >= 5 * 60_000;
+  return changed || checkpointDue;
+}
+
 function cumple(regla: { operador: string; umbralNumero: number | null; umbralBooleano: boolean | null; umbralTexto: string | null }, value: Scalar): boolean {
   const threshold = typeof value === 'number' ? regla.umbralNumero : typeof value === 'boolean' ? regla.umbralBooleano : regla.umbralTexto;
   if (threshold === null || threshold === undefined) return false;
@@ -236,13 +246,19 @@ export async function procesarEventoIoT(integracionId: string, evento: EventoIoT
       if (!clave) continue;
       const meta = LABELS[clave] ?? { nombre: rawKey.replace(/[_-]+/g, ' ') };
       const values = valorData(value);
+      const previous = await tx.variableIoT.findUnique({
+        where: { dispositivoId_clave: { dispositivoId: dispositivo!.id, clave } },
+        select: { valorNumero: true, valorBooleano: true, valorTexto: true, lecturas: { select: { medidaEn: true }, orderBy: { medidaEn: 'desc' }, take: 1 } },
+      });
       const variable = await tx.variableIoT.upsert({
         where: { dispositivoId_clave: { dispositivoId: dispositivo!.id, clave } },
         create: { empresaId: integracion.empresaId, dispositivoId: dispositivo!.id, clave, nombre: meta.nombre, unidad: meta.unidad, ...values, medidaEn: evento.medidaEn },
         update: { ...values, medidaEn: evento.medidaEn, calidad: 'buena' },
       });
       const { tipo: _tipo, ...readingValues } = values;
-      await tx.lecturaIoT.create({ data: { variableId: variable.id, ...readingValues, medidaEn: evento.medidaEn } });
+      if (lecturaCambio(previous, readingValues, evento.medidaEn)) {
+        await tx.lecturaIoT.create({ data: { variableId: variable.id, ...readingValues, medidaEn: evento.medidaEn } });
+      }
     }
   });
 

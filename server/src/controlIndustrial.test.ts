@@ -137,6 +137,31 @@ test('el control remoto ejecuta eWeLink, audita el resultado y excluye el RF Bri
   assert.doesNotMatch(controlIndustrial, /Falta un adaptador de ejecución certificado/);
 });
 
+test('permite alias por dispositivo y canal sin perderlos al sincronizar', () => {
+  assert.match(routes, /patch\('\/dispositivos\/:id'/);
+  assert.match(routes, /patch\('\/variables\/:id'/);
+  assert.match(routes, /data: \{ nombre \}/);
+  assert.match(controlIndustrial, /Nombres de los canales/);
+  assert.match(controlIndustrial, /actualizarVariable/);
+});
+
+test('refresca el tablero y eWeLink cada 5 segundos', () => {
+  const connector = readFileSync(resolve(process.cwd(), 'src/ewelinkConnector.ts'), 'utf8');
+  assert.match(controlIndustrial, /setInterval\(\(\) => load\(true\), 5_000\)/);
+  assert.match(connector, /Math\.max\(5, Number\(config\.pollingSeconds\)/);
+  assert.match(connector, /sincronizarEwelinkProgramado[\s\S]*1_000/);
+});
+
+test('exporta logs por dispositivo o canal y evita duplicados cada cinco segundos', () => {
+  const ingest = readFileSync(resolve(process.cwd(), 'src/iotIngest.ts'), 'utf8');
+  assert.match(routes, /variables\/:id\/historial\.csv/);
+  assert.match(routes, /dispositivos\/:id\/historial\.csv/);
+  assert.match(routes, /X-ActivaQR-Truncated/);
+  assert.match(ingest, /changed \|\| checkpointDue/);
+  assert.match(controlIndustrial, /Exportar canal/);
+  assert.match(controlIndustrial, /Exportar 24 h/);
+});
+
 test('la PWA comprueba actualizaciones al abrirse y cuando recupera visibilidad', () => {
   assert.match(main, /registerSW\(\{/);
   assert.match(main, /immediate: true/);

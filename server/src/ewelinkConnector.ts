@@ -299,7 +299,7 @@ async function sincronizarEwelinkProgramado() {
     const config = integration.configuracion && typeof integration.configuracion === 'object' && !Array.isArray(integration.configuracion)
       ? integration.configuracion as Record<string, unknown>
       : {};
-    const seconds = Math.min(3600, Math.max(60, Number(config.pollingSeconds) || 300));
+    const seconds = Math.min(3600, Math.max(5, Number(config.pollingSeconds) || 5));
     if (integration.ultimoEventoEn && Date.now() - integration.ultimoEventoEn.getTime() < seconds * 1000) continue;
     syncing.add(integration.id);
     try {
@@ -313,6 +313,8 @@ async function sincronizarEwelinkProgramado() {
 }
 
 export function iniciarSincronizadorEwelink() {
-  const timer = setInterval(() => sincronizarEwelinkProgramado().catch((error) => console.error('[ewelink] programador:', error)), 30_000);
+  // El programador revisa cada segundo; cada integración conserva su propio
+  // intervalo (5 s por defecto) y el lock evita sincronizaciones superpuestas.
+  const timer = setInterval(() => sincronizarEwelinkProgramado().catch((error) => console.error('[ewelink] programador:', error)), 1_000);
   timer.unref();
 }
