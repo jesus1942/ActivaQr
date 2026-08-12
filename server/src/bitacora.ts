@@ -11,6 +11,16 @@ export type EntradaBitacora = {
 
 export const ENTRADAS_BITACORA: EntradaBitacora[] = [
   {
+    version: 'CÁMARAS',
+    fecha: '12 de agosto de 2026',
+    fechaIso: '2026-08-12',
+    titulo: 'ActivaQR prepara la videovigilancia como una señal operativa más',
+    resumen: 'Se incorporó un panel de cámaras aislado por empresa, con mosaico en vivo preparado para gateways seguros, eventos de movimiento y actividad agrupada por hora.',
+    impacto: 'El video podrá relacionarse con puertas, sensores, alarmas y escenas sin exponer contraseñas de cámaras ni mezclar información entre clientes.',
+    capacidades: ['Vista en vivo multimarca mediante gateway HTTPS', 'Personas, vehículos y movimientos por hora', 'Eventos de Frigate, ONVIF y fabricantes por tenant'],
+    destacada: true,
+  },
+  {
     version: 'MULTIMARCA',
     fecha: '12 de agosto de 2026',
     fechaIso: '2026-08-12',

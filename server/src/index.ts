@@ -57,6 +57,7 @@ import { iniciarMonitorDesconexionesIoT, limpiarLecturasIoTExpiradas } from './i
 import { iniciarSincronizadorEwelink } from './ewelinkConnector';
 import { ewelinkOAuthRouter } from './routes/ewelinkOAuth';
 import { iniciarSincronizadorTuya } from './tuyaConnector';
+import { camarasIngestRouter, camarasRouter } from './routes/camaras';
 
 const app = express();
 
@@ -72,6 +73,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
       imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+      mediaSrc: ["'self'", 'blob:', 'https:'],
       connectSrc: ["'self'", 'https://api.activaqr.net', 'https://www.google-analytics.com'],
       frameSrc: ["'none'"],
       objectSrc: ["'none'"],
@@ -249,6 +251,7 @@ const iotLimiter = rateLimit({
   message: { error: 'La frecuencia de telemetría supera el límite contratado.' },
 });
 app.use('/api/iot/ingest', iotLimiter, iotIngestRouter);
+app.use('/api/camaras/ingest', iotLimiter, camarasIngestRouter);
 
 // Telegram Bot webhook — responde /start con el Chat ID del usuario
 app.post('/api/telegram/webhook', express.json(), async (req: Request, res: Response) => {
@@ -349,6 +352,7 @@ app.use('/api/auditoria', requireAuthAndActiveEmpresa, requireConsultaGestion, a
 app.use('/api/kpis', requireAuthAndActiveEmpresa, requireConsultaGestion, kpisRouter);
 app.use('/api/documentos', requireAuthAndActiveEmpresa, documentosRouter);
 app.use('/api/control-industrial', requireAuthAndActiveEmpresa, controlIndustrialRouter);
+app.use('/api/camaras', requireAuthAndActiveEmpresa, camarasRouter);
 // Push: la ruta public-key no requiere auth, las demás aplican requireAuth por-ruta.
 app.use('/api/push', pushRouter);
 app.use('/api/admin/categorias-globales', requireAuth, requireSuperadmin, adminCategoriasRouter);

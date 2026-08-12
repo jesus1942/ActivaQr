@@ -47,6 +47,7 @@ const DashboardOperador = lazy(() => import('./pages/DashboardOperador').then((m
 const PresentacionComercial = lazy(() => import('./pages/PresentacionComercial').then((m) => ({ default: m.PresentacionComercial })));
 const ControlIndustrial = lazy(() => import('./pages/ControlIndustrial').then((m) => ({ default: m.ControlIndustrial })));
 const ControlIndustrialAdmin = lazy(() => import('./pages/ControlIndustrialAdmin').then((m) => ({ default: m.ControlIndustrialAdmin })));
+const Camaras = lazy(() => import('./pages/Camaras').then((m) => ({ default: m.Camaras })));
 
 function AppConSplash() {
   const [inicioListo, setInicioListo] = useState(false);
@@ -162,6 +163,7 @@ function AuthedApp() {
             <Route path="cotizaciones" element={conAcceso('cotizaciones', 'Cotizaciones', <CotizacionesCliente />)} />
             <Route path="correctivos" element={conAcceso('correctivos', 'Alertas y ordenes', <Correctivos />)} />
             <Route path="control-industrial" element={conAcceso('control_industrial', 'ActivaQR Control', <ControlIndustrial />)} />
+            <Route path="camaras" element={conAcceso('camaras', 'ActivaQR Cámaras', <Camaras />)} />
           </>
         )}
       </Route>

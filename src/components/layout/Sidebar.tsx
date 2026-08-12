@@ -28,6 +28,7 @@ import {
   AlertOctagon,
   Presentation,
   RadioTower,
+  Camera,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getNotificacionesCliente } from '../../data/accesoRemotoApi';
@@ -55,6 +56,7 @@ const navEmpresa: NavItem[] = [
   { to: '/cotizaciones', icon: FileSignature, label: 'Cotizaciones', sub: 'Propuestas de ActivaQR', modulo: 'cotizaciones' },
   { to: '/correctivos', icon: AlertOctagon, label: 'Alertas y órdenes', sub: 'Correctivos autorizados', modulo: 'correctivos' },
   { to: '/control-industrial', icon: RadioTower, label: 'Control industrial', sub: 'Equipos y alarmas en vivo', modulo: 'control_industrial', requiresControl: true },
+  { to: '/camaras', icon: Camera, label: 'Cámaras', sub: 'Vivo y movimientos por hora', modulo: 'camaras', requiresControl: true },
   { to: '/indicadores', icon: BarChart3, label: 'Indicadores', sub: 'KPIs y gráficos', feature: 'indicadores', modulo: 'indicadores' },
   { to: '/activos', icon: Package, label: 'Activos', sub: 'Tus equipos', modulo: 'activos' },
   { to: '/medicion', icon: ClipboardList, label: 'Mediciones', sub: 'Cargar lectura', modulo: 'medicion' },

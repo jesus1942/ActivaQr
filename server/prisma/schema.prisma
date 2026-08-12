@@ -210,6 +210,9 @@ model Empresa {
   alarmasIoT         AlarmaIoT[]
   comandosIoT        ComandoIoT[]
   escenasIoT         EscenaIoT[]
+  integracionesCamara IntegracionCamara[]
+  camaras            Camara[]
+  eventosCamara      EventoCamara[]
 
   @@index([mpPreapprovalId])
 }
@@ -821,6 +824,82 @@ model EscenaIoT {
 
   @@index([empresaId, activa])
   @@index([empresaId, creadaEn])
+}
+
+// Conectores de video desacoplados del fabricante. ActivaQR nunca expone
+// credenciales RTSP/ONVIF al navegador: el vivo llega desde un gateway HTTPS.
+model IntegracionCamara {
+  id                   String   @id @default(uuid())
+  empresaId            String
+  nombre               String
+  proveedor            String // onvif | frigate | hikvision | dahua | reolink | tuya | generico
+  estado               String   @default("pendiente") // pendiente | configurada | conectada | error | pausada
+  credencialesCifradas String?  @db.Text
+  configuracion        Json?
+  webhookTokenHash     String?  @unique
+  webhookTokenHint     String?
+  ultimoEventoEn       DateTime?
+  ultimoError          String?  @db.Text
+  creadaEn             DateTime @default(now())
+  actualizadaEn        DateTime @updatedAt
+
+  empresa Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  camaras Camara[]
+
+  @@index([empresaId, proveedor])
+  @@index([empresaId, estado])
+}
+
+model Camara {
+  id                    String    @id @default(uuid())
+  empresaId             String
+  integracionId         String
+  identificadorExterno  String
+  nombre                String
+  ubicacion              String?
+  modelo                 String?
+  estado                 String    @default("sin_datos") // en_linea | sin_datos | desconectada | error
+  habilitada             Boolean   @default(true)
+  reproduccionUrl        String?   @db.Text // sólo HTTPS, sin usuario ni contraseña
+  protocoloReproduccion  String? // hls | webrtc | jpeg
+  capacidades            Json?
+  ultimoContactoEn       DateTime?
+  ultimoMovimientoEn     DateTime?
+  creadaEn               DateTime  @default(now())
+  actualizadaEn          DateTime  @updatedAt
+
+  empresa     Empresa           @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  integracion IntegracionCamara @relation(fields: [integracionId], references: [id], onDelete: Cascade)
+  eventos     EventoCamara[]
+
+  @@unique([integracionId, identificadorExterno])
+  @@index([empresaId, estado])
+  @@index([empresaId, ultimoMovimientoEn])
+}
+
+model EventoCamara {
+  id            String    @id @default(uuid())
+  empresaId     String
+  camaraId      String
+  identificadorExterno String?
+  tipo          String // movimiento | persona | vehiculo | animal | linea | manipulacion | desconexion
+  etiqueta      String?
+  zona          String?
+  confianza     Float?
+  iniciadoEn    DateTime
+  finalizadoEn  DateTime?
+  snapshotUrl   String?   @db.Text
+  clipUrl       String?   @db.Text
+  metadatos     Json?
+  recibidoEn    DateTime  @default(now())
+
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  camara  Camara  @relation(fields: [camaraId], references: [id], onDelete: Cascade)
+
+  @@index([empresaId, iniciadoEn])
+  @@index([camaraId, iniciadoEn])
+  @@index([empresaId, tipo, iniciadoEn])
+  @@unique([camaraId, identificadorExterno])
 }
 
 model Medicion {
