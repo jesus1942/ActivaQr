@@ -53,7 +53,7 @@ import { prisma } from './prisma';
 import { obtenerCotizacionMep } from './cotizacion';
 import { iniciarSincronizadorPrecios } from './sincronizarPrecios';
 import { adminControlIndustrialRouter, controlIndustrialRouter, iotIngestRouter } from './routes/controlIndustrial';
-import { limpiarLecturasIoTExpiradas } from './iotIngest';
+import { iniciarMonitorDesconexionesIoT, limpiarLecturasIoTExpiradas } from './iotIngest';
 import { iniciarSincronizadorEwelink } from './ewelinkConnector';
 import { ewelinkOAuthRouter } from './routes/ewelinkOAuth';
 
@@ -379,6 +379,7 @@ app.listen(PORT, () => {
   limpiarLecturasIoTExpiradas().then((count) => count && console.log(`[iot] ${count} lecturas vencidas eliminadas.`)).catch((e) => console.error('[iot] limpieza inicial:', e));
   setInterval(() => limpiarLecturasIoTExpiradas().catch((e) => console.error('[iot] limpieza programada:', e)), 24 * 60 * 60 * 1000).unref();
   iniciarSincronizadorEwelink();
+  iniciarMonitorDesconexionesIoT();
 });
 
 export default app;

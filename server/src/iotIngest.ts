@@ -90,6 +90,28 @@ const LABELS: Record<string, { nombre: string; unidad?: string }> = {
   presion: { nombre: 'Presión' },
   door: { nombre: 'Puerta' },
   puerta: { nombre: 'Puerta' },
+  window: { nombre: 'Ventana' },
+  contact: { nombre: 'Contacto magnético' },
+  open: { nombre: 'Apertura' },
+  water: { nombre: 'Agua detectada' },
+  leak: { nombre: 'Fuga de agua' },
+  flood: { nombre: 'Inundación' },
+  waterleak: { nombre: 'Fuga de agua' },
+  motion: { nombre: 'Movimiento' },
+  pir: { nombre: 'Movimiento' },
+  smoke: { nombre: 'Humo' },
+  gas: { nombre: 'Gas' },
+  co2: { nombre: 'CO₂', unidad: 'ppm' },
+  voltage: { nombre: 'Voltaje', unidad: 'V' },
+  current: { nombre: 'Corriente', unidad: 'A' },
+  actpow: { nombre: 'Potencia activa', unidad: 'W' },
+  power: { nombre: 'Potencia', unidad: 'W' },
+  apparentpow: { nombre: 'Potencia aparente', unidad: 'VA' },
+  reactivepow: { nombre: 'Potencia reactiva', unidad: 'var' },
+  factor: { nombre: 'Factor de potencia' },
+  daykwh: { nombre: 'Consumo diario', unidad: 'kWh' },
+  monthkwh: { nombre: 'Consumo mensual', unidad: 'kWh' },
+  energy: { nombre: 'Energía', unidad: 'kWh' },
   relay: { nombre: 'Relé' },
   switch: { nombre: 'Relé' },
   switch_1: { nombre: 'Canal 1' },
@@ -98,6 +120,24 @@ const LABELS: Record<string, { nombre: string; unidad?: string }> = {
   switch_4: { nombre: 'Canal 4' },
   online: { nombre: 'Conexión' },
 };
+
+function indiceCanal(suffix: string): number {
+  const numeric = Number(suffix);
+  if (!Number.isFinite(numeric)) return 1;
+  if (suffix === '0' || (suffix.length > 1 && suffix.startsWith('0'))) return numeric + 1;
+  return numeric;
+}
+
+function metadataVariable(clave: string, rawKey: string): { nombre: string; unidad?: string } {
+  const exact = LABELS[clave];
+  if (exact) return exact;
+  const electrical = clave.match(/^(current|voltage|actpow|power|apparentpow|reactivepow|factor|daykwh|monthkwh|energy)_([0-9]+)$/);
+  if (electrical) {
+    const base = LABELS[electrical[1]] ?? { nombre: electrical[1] };
+    return { ...base, nombre: `${base.nombre} · canal ${indiceCanal(electrical[2])}` };
+  }
+  return { nombre: rawKey.replace(/[_-]+/g, ' ') };
+}
 
 function claveSegura(raw: string): string {
   return raw.trim().toLowerCase().replace(/[^a-z0-9_áéíóúñ-]+/gi, '_').slice(0, 80);
@@ -144,20 +184,16 @@ async function evaluarReglas(params: {
 }) {
   const reglas = await prisma.reglaAlarmaIoT.findMany({ where: { variableId: params.variableId, activa: true } });
   for (const regla of reglas) {
-    let disparada = cumple(regla, params.value);
-    if (disparada && regla.demoraSegundos > 0) {
-      const desde = new Date(params.medidaEn.getTime() - regla.demoraSegundos * 1000);
-      const ventana = await prisma.lecturaIoT.findMany({
-        where: { variableId: params.variableId, medidaEn: { gte: desde, lte: params.medidaEn } },
-        orderBy: { medidaEn: 'asc' },
-        take: 1000,
-      });
-      const cubreDemora = ventana[0] && ventana[0].medidaEn.getTime() <= desde.getTime() + 5000;
-      disparada = Boolean(cubreDemora && ventana.every((item) => {
-        const v = item.valorNumero ?? item.valorBooleano ?? item.valorTexto ?? '';
-        return cumple(regla, v);
-      }));
+    const condicionCumplida = cumple(regla, params.value);
+    let desde = regla.condicionDesde;
+    if (condicionCumplida && !desde) {
+      desde = params.medidaEn;
+      await prisma.reglaAlarmaIoT.update({ where: { id: regla.id }, data: { condicionDesde: desde } });
+    } else if (!condicionCumplida && desde) {
+      desde = null;
+      await prisma.reglaAlarmaIoT.update({ where: { id: regla.id }, data: { condicionDesde: null } });
     }
+    const disparada = condicionCumplida && Boolean(desde) && params.medidaEn.getTime() - desde!.getTime() >= regla.demoraSegundos * 1000;
 
     const abierta = await prisma.alarmaIoT.findFirst({ where: { reglaId: regla.id, dispositivoId: params.dispositivoId, estado: { in: ['activa', 'reconocida'] } } });
     if (disparada && !abierta) {
@@ -177,6 +213,8 @@ async function evaluarReglas(params: {
           title: regla.severidad === 'critica' ? `Alarma crítica: ${regla.nombre}` : `ActivaQR Control: ${regla.nombre}`,
           body: `Valor recibido: ${String(params.value)}`,
           url: '#/control-industrial',
+          severity: regla.severidad === 'critica' ? 'critical' : 'warning',
+          tag: `alarma-${alarma.id}`,
         }, ['admin', 'mantenimiento', 'jefatura']).catch(() => {});
       }
       await registrarAuditoria({ empresaId: params.empresaId, usuarioNombre: 'ActivaQR Control', usuarioRol: 'sistema', accion: 'alarma', entidad: 'AlarmaIoT', entidadId: alarma.id, detalle: regla.nombre });
@@ -230,6 +268,11 @@ export async function procesarEventoIoT(integracionId: string, evento: EventoIoT
     throw error;
   }
 
+  await prisma.alarmaIoT.updateMany({
+    where: { dispositivoId: dispositivo.id, titulo: 'Dispositivo sin conexión', estado: { in: ['activa', 'reconocida'] } },
+    data: { estado: 'resuelta', resueltaEn: evento.medidaEn, resolucion: 'El dispositivo recuperó la comunicación.' },
+  });
+
   await prisma.$transaction(async (tx) => {
     await tx.dispositivoIoT.update({ where: { id: dispositivo!.id }, data: {
       ultimoContactoEn: evento.medidaEn,
@@ -244,7 +287,7 @@ export async function procesarEventoIoT(integracionId: string, evento: EventoIoT
     for (const [rawKey, value] of Object.entries(evento.lecturas)) {
       const clave = claveSegura(rawKey);
       if (!clave) continue;
-      const meta = LABELS[clave] ?? { nombre: rawKey.replace(/[_-]+/g, ' ') };
+      const meta = metadataVariable(clave, rawKey);
       const values = valorData(value);
       const previous = await tx.variableIoT.findUnique({
         where: { dispositivoId_clave: { dispositivoId: dispositivo!.id, clave } },
@@ -288,4 +331,56 @@ export async function limpiarLecturasIoTExpiradas(): Promise<number> {
     removed += result.count;
   }
   return removed;
+}
+
+export async function evaluarDesconexionesIoT(): Promise<number> {
+  const modules = await prisma.moduloControlEmpresa.findMany({
+    where: { estado: 'activo' },
+    select: { empresaId: true, umbralSinConexionMinutos: true },
+  });
+  let nuevas = 0;
+  for (const module of modules) {
+    const staleBefore = new Date(Date.now() - module.umbralSinConexionMinutos * 60_000);
+    const devices = await prisma.dispositivoIoT.findMany({
+      where: {
+        empresaId: module.empresaId,
+        habilitado: true,
+        ultimoContactoEn: { not: null, lt: staleBefore },
+      },
+      select: { id: true, nombre: true, ultimoContactoEn: true },
+    });
+    for (const device of devices) {
+      await prisma.dispositivoIoT.update({ where: { id: device.id }, data: { estado: 'desconectado' } });
+      const abierta = await prisma.alarmaIoT.findFirst({
+        where: { dispositivoId: device.id, titulo: 'Dispositivo sin conexión', estado: { in: ['activa', 'reconocida'] } },
+      });
+      if (abierta) continue;
+      const detail = `Sin datos desde ${device.ultimoContactoEn?.toLocaleString('es-AR') ?? 'un momento desconocido'}.`;
+      const alarm = await prisma.alarmaIoT.create({ data: {
+        empresaId: module.empresaId,
+        dispositivoId: device.id,
+        titulo: 'Dispositivo sin conexión',
+        detalle: detail,
+        severidad: 'critica',
+        valorDisparador: `${module.umbralSinConexionMinutos} min`,
+      } });
+      nuevas += 1;
+      enviarPushAEmpresa(module.empresaId, {
+        title: `ActivaQR Control: ${device.nombre} sin conexión`,
+        body: detail,
+        url: '#/control-industrial',
+        severity: 'critical',
+        tag: `desconexion-${device.id}`,
+      }, ['admin', 'mantenimiento', 'jefatura', 'direccion']).catch(() => {});
+      await registrarAuditoria({ empresaId: module.empresaId, usuarioNombre: 'ActivaQR Control', usuarioRol: 'sistema', accion: 'alarma', entidad: 'AlarmaIoT', entidadId: alarm.id, detalle: `${device.nombre} quedó sin conexión.` });
+    }
+  }
+  return nuevas;
+}
+
+export function iniciarMonitorDesconexionesIoT() {
+  const run = () => evaluarDesconexionesIoT().catch((error) => console.error('[iot] monitor de desconexiones:', error));
+  run();
+  const timer = setInterval(run, 60_000);
+  timer.unref();
 }

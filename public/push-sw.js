@@ -17,6 +17,10 @@ self.addEventListener('push', (event) => {
     body: data.body || '',
     icon: BASE + 'icons/icon-192.png',
     badge: BASE + 'icons/icon-96.png',
+    tag: data.tag || 'activaqr-aviso',
+    renotify: Boolean(data.tag),
+    requireInteraction: data.severity === 'critical',
+    vibrate: data.severity === 'critical' ? [250, 120, 250, 120, 400] : [180],
     data: { url: data.url || '#/' },
   };
   event.waitUntil(self.registration.showNotification(title, options));

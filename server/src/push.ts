@@ -26,6 +26,8 @@ export interface PushPayload {
   title: string;
   body: string;
   url?: string;
+  severity?: 'info' | 'warning' | 'critical';
+  tag?: string;
 }
 
 /** Envía una notificación a todas las suscripciones de un usuario. */
@@ -40,6 +42,7 @@ export async function enviarPushAUsuario(usuarioId: string, payload: PushPayload
           await webpush.sendNotification(
             { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
             data,
+            { TTL: payload.severity === 'critical' ? 24 * 60 * 60 : 60 * 60, urgency: payload.severity === 'critical' ? 'high' : 'normal' },
           );
         } catch (err: any) {
           const status = err?.statusCode;

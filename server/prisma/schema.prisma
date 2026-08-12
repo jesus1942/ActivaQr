@@ -209,6 +209,7 @@ model Empresa {
   reglasAlarmaIoT    ReglaAlarmaIoT[]
   alarmasIoT         AlarmaIoT[]
   comandosIoT        ComandoIoT[]
+  escenasIoT         EscenaIoT[]
 
   @@index([mpPreapprovalId])
 }
@@ -739,6 +740,7 @@ model ReglaAlarmaIoT {
   severidad      String   @default("advertencia") // informacion | advertencia | critica
   activa         Boolean  @default(true)
   notificarPush  Boolean  @default(true)
+  condicionDesde DateTime?
   creadaEn       DateTime @default(now())
   actualizadaEn  DateTime @updatedAt
 
@@ -799,6 +801,26 @@ model ComandoIoT {
 
   @@index([empresaId, estado, solicitadoEn])
   @@index([dispositivoId, solicitadoEn])
+}
+
+model EscenaIoT {
+  id                    String    @id @default(uuid())
+  empresaId             String
+  nombre                String
+  descripcion           String?   @db.Text
+  activa                Boolean   @default(true)
+  acciones              Json
+  creadaPorId           String
+  creadaPorNombre       String
+  ultimaEjecucionEn     DateTime?
+  ultimaEjecucionEstado String?
+  creadaEn              DateTime  @default(now())
+  actualizadaEn         DateTime  @updatedAt
+
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@index([empresaId, activa])
+  @@index([empresaId, creadaEn])
 }
 
 model Medicion {

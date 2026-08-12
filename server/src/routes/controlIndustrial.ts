@@ -1,4 +1,5 @@
 import { randomBytes } from 'crypto';
+import { Prisma } from '@prisma/client';
 import { NextFunction, Request, Response, Router } from 'express';
 import { prisma } from '../prisma';
 import {
@@ -13,6 +14,7 @@ import { auditar, registrarAuditoria } from '../auditoria';
 import { cifrarCredenciales, hashToken } from '../iotSecrets';
 import { normalizarEventoIoT, procesarEventoIoT } from '../iotIngest';
 import { crearAutorizacionEwelink, ejecutarCanalEwelink, sincronizarEwelink } from '../ewelinkConnector';
+import { enviarPushAUsuario } from '../push';
 
 const ESTADOS_MODULO = new Set(['configuracion', 'activo', 'suspendido']);
 const PROVEEDORES = new Set(['sonoff_ewelink', 'milesight_ug65', 'webhook_generico']);
@@ -46,6 +48,55 @@ function historyRange(query: Request['query']) {
   return { hours, since: new Date(Date.now() - hours * 3600_000) };
 }
 
+function booleanoEstricto(value: unknown): boolean | null {
+  if (value === true || value === 'true' || value === 1 || value === '1') return true;
+  if (value === false || value === 'false' || value === 0 || value === '0') return false;
+  return null;
+}
+
+function umbralDeVariable(variable: { tipo: string }, value: unknown) {
+  if (variable.tipo === 'numero') {
+    const number = Number(value);
+    if (!Number.isFinite(number)) throw statusError('El umbral numérico no es válido.');
+    return { umbralNumero: number, umbralBooleano: null, umbralTexto: null };
+  }
+  if (variable.tipo === 'booleano') {
+    const boolean = booleanoEstricto(value);
+    if (boolean === null) throw statusError('Elegí si la condición debe estar activa o inactiva.');
+    return { umbralNumero: null, umbralBooleano: boolean, umbralTexto: null };
+  }
+  return { umbralNumero: null, umbralBooleano: null, umbralTexto: String(value ?? '').slice(0, 500) };
+}
+
+type AccionEscena = { dispositivoId: string; canal: number; encendido: boolean };
+
+function accionesEscena(value: unknown): AccionEscena[] {
+  if (!Array.isArray(value) || !value.length || value.length > 16) throw statusError('Una escena debe tener entre 1 y 16 acciones.');
+  const actions = value.map((raw) => {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw statusError('La escena contiene una acción inválida.');
+    const item = raw as Record<string, unknown>;
+    const dispositivoId = String(item.dispositivoId ?? '').trim();
+    const canal = Number(item.canal);
+    const encendido = booleanoEstricto(item.encendido);
+    if (!dispositivoId || !Number.isInteger(canal) || canal < 0 || canal > 3 || encendido === null) throw statusError('Cada acción necesita dispositivo, canal y estado válidos.');
+    return { dispositivoId, canal, encendido };
+  });
+  const unique = new Set(actions.map((item) => `${item.dispositivoId}:${item.canal}`));
+  if (unique.size !== actions.length) throw statusError('Una escena no puede definir dos estados para el mismo canal.');
+  return actions;
+}
+
+async function validarAccionesEscena(empresaId: string, actions: AccionEscena[]) {
+  const devices = await prisma.dispositivoIoT.findMany({ where: { empresaId, id: { in: [...new Set(actions.map((item) => item.dispositivoId))] } }, include: { integracion: true, variables: true } });
+  if (devices.length !== new Set(actions.map((item) => item.dispositivoId)).size) throw statusError('La escena incluye un dispositivo que no pertenece a la empresa.', 400);
+  for (const action of actions) {
+    const device = devices.find((item) => item.id === action.dispositivoId)!;
+    if (!device.permiteControl || device.integracion.proveedor !== 'sonoff_ewelink' || device.tipo === 'puente_rf') throw statusError(`${device.nombre} no está habilitado para escenas.`);
+    if (!device.variables.some((item) => item.clave === `switch_${action.canal + 1}` || (action.canal === 0 && item.clave === 'relay'))) throw statusError(`${device.nombre} no informó el canal ${action.canal + 1}.`);
+  }
+  return devices;
+}
+
 async function moduloActivo(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const module = await prisma.moduloControlEmpresa.findUnique({ where: { empresaId: tenantId(req) } });
@@ -55,6 +106,47 @@ async function moduloActivo(req: AuthRequest, res: Response, next: NextFunction)
     next();
   } catch (error) {
     next(error);
+  }
+}
+
+async function ejecutarReleSeguro(req: AuthRequest, params: { dispositivoId: string; canal: number; encendido: boolean; motivo: string }) {
+  const empresaId = tenantId(req);
+  let commandId: string | null = null;
+  try {
+    const [module, device] = await Promise.all([
+      prisma.moduloControlEmpresa.findUnique({ where: { empresaId } }),
+      prisma.dispositivoIoT.findFirst({ where: { id: params.dispositivoId, empresaId }, include: { integracion: true, variables: true } }),
+    ]);
+    if (!module?.controlRemotoHabilitado) throw statusError('El Superadmin no habilitó control remoto para este contrato.', 403);
+    if (!device?.permiteControl) throw statusError('Este dispositivo está configurado sólo para monitoreo.', 409);
+    if (device.integracion.proveedor !== 'sonoff_ewelink') throw statusError('Este equipo no posee un adaptador de operación remota.', 409);
+    if (device.tipo === 'puente_rf') throw statusError('El RF Bridge es un puente de acceso y no se opera como una salida.', 409);
+    if (!Number.isInteger(params.canal) || params.canal < 0 || params.canal > 3 || typeof params.encendido !== 'boolean') throw statusError('Seleccioná un canal válido y el estado encendido o apagado.');
+    const channelVariables = device.variables.filter((item) => /^switch_[1-4]$/.test(item.clave));
+    if (channelVariables.length && !channelVariables.some((item) => item.clave === `switch_${params.canal + 1}`)) throw statusError('El dispositivo no informó ese canal.', 409);
+    const online = device.variables.find((item) => item.clave === 'online');
+    if (online?.valorBooleano === false || device.estado === 'desconectado') throw statusError(`${device.nombre} está desconectado en eWeLink.`, 409);
+    const estados = Object.fromEntries(channelVariables.map((item) => [Number(item.clave.slice(7)) - 1, Boolean(item.valorBooleano)]));
+    const command = await prisma.comandoIoT.create({ data: {
+      empresaId, dispositivoId: device.id, tipo: 'rele', payload: { canal: params.canal, encendido: params.encendido }, motivo: params.motivo.slice(0, 2000),
+      solicitadoPorId: req.auth!.userId, solicitadoPorNombre: req.auth!.email,
+      estado: 'pendiente', resultado: 'Enviando operación segura a eWeLink.',
+    } });
+    commandId = command.id;
+    await ejecutarCanalEwelink(device.integracionId, device.identificadorExterno, params.canal, params.encendido, estados);
+    const executed = await prisma.$transaction(async (tx) => {
+      const variable = await tx.variableIoT.findUnique({ where: { dispositivoId_clave: { dispositivoId: device.id, clave: `switch_${params.canal + 1}` } } });
+      if (variable) {
+        await tx.variableIoT.update({ where: { id: variable.id }, data: { valorBooleano: params.encendido, valorNumero: null, valorTexto: null, tipo: 'booleano', calidad: 'buena', medidaEn: new Date() } });
+        await tx.lecturaIoT.create({ data: { variableId: variable.id, valorBooleano: params.encendido, medidaEn: new Date(), calidad: 'buena' } });
+      }
+      return tx.comandoIoT.update({ where: { id: command.id }, data: { estado: 'ejecutado', ejecutadoEn: new Date(), resultado: `Canal ${params.canal + 1} ${params.encendido ? 'encendido' : 'apagado'} y confirmado por eWeLink.` } });
+    });
+    await auditar(req, 'comando', 'ComandoIoT', command.id, `${device.nombre}: canal ${params.canal + 1} ${params.encendido ? 'encendido' : 'apagado'}. Motivo: ${params.motivo}`);
+    return { ...executed, dispositivo: { nombre: device.nombre } };
+  } catch (error) {
+    if (commandId) await prisma.comandoIoT.update({ where: { id: commandId }, data: { estado: 'error', ejecutadoEn: new Date(), resultado: error instanceof Error ? error.message.slice(0, 2000) : 'Error desconocido al operar.' } }).catch(() => {});
+    throw error;
   }
 }
 
@@ -145,17 +237,16 @@ controlIndustrialRouter.use(moduloActivo);
 controlIndustrialRouter.get('/resumen', async (req: AuthRequest, res, next) => {
   try {
     const empresaId = tenantId(req);
-    const moduleState = await prisma.moduloControlEmpresa.findUnique({ where: { empresaId } });
-    const staleBefore = new Date(Date.now() - (moduleState?.umbralSinConexionMinutos ?? 10) * 60_000);
-    await prisma.dispositivoIoT.updateMany({ where: { empresaId, habilitado: true, ultimoContactoEn: { not: null, lt: staleBefore } }, data: { estado: 'desconectado' } });
-    const [module, integraciones, dispositivos, alarmas, comandos] = await Promise.all([
+    const [module, integraciones, dispositivos, alarmas, comandos, reglas, escenas] = await Promise.all([
       prisma.moduloControlEmpresa.findUnique({ where: { empresaId } }),
       prisma.integracionIoT.findMany({ where: { empresaId }, orderBy: { creadaEn: 'asc' } }),
       prisma.dispositivoIoT.findMany({ where: { empresaId }, include: { variables: { orderBy: { nombre: 'asc' } } }, orderBy: { nombre: 'asc' } }),
       prisma.alarmaIoT.findMany({ where: { empresaId, estado: { in: ['activa', 'reconocida'] } }, include: { dispositivo: { select: { nombre: true } }, variable: { select: { nombre: true, unidad: true } } }, orderBy: { iniciadaEn: 'desc' }, take: 100 }),
       prisma.comandoIoT.findMany({ where: { empresaId }, include: { dispositivo: { select: { nombre: true } } }, orderBy: { solicitadoEn: 'desc' }, take: 25 }),
+      prisma.reglaAlarmaIoT.findMany({ where: { empresaId }, include: { variable: { include: { dispositivo: { select: { nombre: true } } } } }, orderBy: { creadaEn: 'desc' } }),
+      prisma.escenaIoT.findMany({ where: { empresaId }, orderBy: { creadaEn: 'desc' } }),
     ]);
-    res.json({ modulo: module, integraciones: integraciones.map(publicIntegration), dispositivos, alarmas, comandos });
+    res.json({ modulo: module, integraciones: integraciones.map(publicIntegration), dispositivos, alarmas, comandos, reglas, escenas });
   } catch (error) { next(error); }
 });
 
@@ -368,11 +459,131 @@ controlIndustrialRouter.post('/reglas', requireJefatura, async (req: AuthRequest
     if (!nombre || !OPERADORES.has(operador) || !SEVERIDADES.has(severidad)) throw statusError('Completá nombre, operador y severidad válidos.');
     const variable = await prisma.variableIoT.findFirst({ where: { id: variableId, empresaId } });
     if (!variable) throw statusError('Variable no encontrada.', 404);
-    const threshold = variable.tipo === 'numero' ? { umbralNumero: Number(umbral) } : variable.tipo === 'booleano' ? { umbralBooleano: Boolean(umbral) } : { umbralTexto: String(umbral) };
-    if (variable.tipo === 'numero' && !Number.isFinite((threshold as { umbralNumero: number }).umbralNumero)) throw statusError('El umbral numérico no es válido.');
+    const threshold = umbralDeVariable(variable, umbral);
     const rule = await prisma.reglaAlarmaIoT.create({ data: { empresaId, variableId, nombre: String(nombre).trim().slice(0, 160), operador, severidad, demoraSegundos: Math.min(86400, Math.max(0, Number(demoraSegundos) || 0)), notificarPush: notificarPush !== false, ...threshold } });
     await auditar(req, 'crear', 'ReglaAlarmaIoT', rule.id, rule.nombre);
     res.status(201).json(rule);
+  } catch (error) { next(error); }
+});
+
+controlIndustrialRouter.patch('/reglas/:id', requireJefatura, async (req: AuthRequest, res, next) => {
+  try {
+    const empresaId = tenantId(req);
+    const current = await prisma.reglaAlarmaIoT.findFirst({ where: { id: req.params.id, empresaId }, include: { variable: true } });
+    if (!current) throw statusError('Regla no encontrada.', 404);
+    const data: Record<string, unknown> = {};
+    if (req.body?.nombre !== undefined) data.nombre = String(req.body.nombre).trim().slice(0, 160);
+    if (req.body?.operador !== undefined) {
+      if (!OPERADORES.has(req.body.operador)) throw statusError('Operador inválido.');
+      data.operador = req.body.operador;
+      data.condicionDesde = null;
+    }
+    if (req.body?.severidad !== undefined) {
+      if (!SEVERIDADES.has(req.body.severidad)) throw statusError('Severidad inválida.');
+      data.severidad = req.body.severidad;
+    }
+    if (req.body?.umbral !== undefined) { Object.assign(data, umbralDeVariable(current.variable, req.body.umbral)); data.condicionDesde = null; }
+    if (req.body?.demoraSegundos !== undefined) { data.demoraSegundos = Math.min(86400, Math.max(0, Number(req.body.demoraSegundos) || 0)); data.condicionDesde = null; }
+    if (req.body?.notificarPush !== undefined) data.notificarPush = Boolean(req.body.notificarPush);
+    if (req.body?.activa !== undefined) { data.activa = Boolean(req.body.activa); if (!data.activa) data.condicionDesde = null; }
+    const updated = await prisma.reglaAlarmaIoT.update({ where: { id: current.id }, data });
+    await auditar(req, 'editar', 'ReglaAlarmaIoT', updated.id, `${updated.nombre}: ${updated.activa ? 'activa' : 'pausada'}.`);
+    res.json(updated);
+  } catch (error) { next(error); }
+});
+
+controlIndustrialRouter.delete('/reglas/:id', requireJefatura, async (req: AuthRequest, res, next) => {
+  try {
+    const empresaId = tenantId(req);
+    const current = await prisma.reglaAlarmaIoT.findFirst({ where: { id: req.params.id, empresaId } });
+    if (!current) throw statusError('Regla no encontrada.', 404);
+    await prisma.reglaAlarmaIoT.delete({ where: { id: current.id } });
+    await auditar(req, 'eliminar', 'ReglaAlarmaIoT', current.id, current.nombre);
+    res.status(204).end();
+  } catch (error) { next(error); }
+});
+
+controlIndustrialRouter.post('/notificaciones/prueba', async (req: AuthRequest, res, next) => {
+  try {
+    const subscriptions = await prisma.pushSubscription.count({ where: { usuarioId: req.auth!.userId } });
+    if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) throw statusError('Las notificaciones push no están configuradas en el servidor.', 503);
+    if (!subscriptions) throw statusError('Este celular todavía no está suscripto. Activá las notificaciones primero.', 409);
+    await enviarPushAUsuario(req.auth!.userId, { title: 'ActivaQR Control conectado', body: 'Las alarmas de sensores pueden llegar a este dispositivo.', url: '#/control-industrial' });
+    res.json({ ok: true, suscripciones: subscriptions });
+  } catch (error) { next(error); }
+});
+
+controlIndustrialRouter.post('/escenas', requireJefatura, async (req: AuthRequest, res, next) => {
+  try {
+    const empresaId = tenantId(req);
+    const nombre = String(req.body?.nombre ?? '').trim().slice(0, 160);
+    if (!nombre) throw statusError('Ingresá un nombre para la escena.');
+    const actions = accionesEscena(req.body?.acciones);
+    await validarAccionesEscena(empresaId, actions);
+    const scene = await prisma.escenaIoT.create({ data: {
+      empresaId,
+      nombre,
+      descripcion: String(req.body?.descripcion ?? '').trim().slice(0, 2000) || null,
+      acciones: actions as unknown as Prisma.InputJsonValue,
+      creadaPorId: req.auth!.userId,
+      creadaPorNombre: req.auth!.email,
+    } });
+    await auditar(req, 'crear', 'EscenaIoT', scene.id, `${scene.nombre}: ${actions.length} acciones.`);
+    res.status(201).json(scene);
+  } catch (error) { next(error); }
+});
+
+controlIndustrialRouter.patch('/escenas/:id', requireJefatura, async (req: AuthRequest, res, next) => {
+  try {
+    const empresaId = tenantId(req);
+    const current = await prisma.escenaIoT.findFirst({ where: { id: req.params.id, empresaId } });
+    if (!current) throw statusError('Escena no encontrada.', 404);
+    const data: Record<string, unknown> = {};
+    if (req.body?.nombre !== undefined) data.nombre = String(req.body.nombre).trim().slice(0, 160);
+    if (req.body?.descripcion !== undefined) data.descripcion = String(req.body.descripcion).trim().slice(0, 2000) || null;
+    if (req.body?.activa !== undefined) data.activa = Boolean(req.body.activa);
+    if (req.body?.acciones !== undefined) {
+      const actions = accionesEscena(req.body.acciones);
+      await validarAccionesEscena(empresaId, actions);
+      data.acciones = actions as unknown as Prisma.InputJsonValue;
+    }
+    const updated = await prisma.escenaIoT.update({ where: { id: current.id }, data });
+    await auditar(req, 'editar', 'EscenaIoT', updated.id, `${updated.nombre}: ${updated.activa ? 'activa' : 'pausada'}.`);
+    res.json(updated);
+  } catch (error) { next(error); }
+});
+
+controlIndustrialRouter.delete('/escenas/:id', requireJefatura, async (req: AuthRequest, res, next) => {
+  try {
+    const empresaId = tenantId(req);
+    const current = await prisma.escenaIoT.findFirst({ where: { id: req.params.id, empresaId } });
+    if (!current) throw statusError('Escena no encontrada.', 404);
+    await prisma.escenaIoT.delete({ where: { id: current.id } });
+    await auditar(req, 'eliminar', 'EscenaIoT', current.id, current.nombre);
+    res.status(204).end();
+  } catch (error) { next(error); }
+});
+
+controlIndustrialRouter.post('/escenas/:id/ejecutar', requireJefatura, async (req: AuthRequest, res, next) => {
+  try {
+    const empresaId = tenantId(req);
+    const scene = await prisma.escenaIoT.findFirst({ where: { id: req.params.id, empresaId } });
+    if (!scene) throw statusError('Escena no encontrada.', 404);
+    if (!scene.activa) throw statusError('La escena está pausada.', 409);
+    const actions = accionesEscena(scene.acciones);
+    await validarAccionesEscena(empresaId, actions);
+    const results = [];
+    try {
+      for (const action of actions) {
+        results.push(await ejecutarReleSeguro(req, { ...action, motivo: `Escena “${scene.nombre}” confirmada desde ActivaQR.` }));
+      }
+      await prisma.escenaIoT.update({ where: { id: scene.id }, data: { ultimaEjecucionEn: new Date(), ultimaEjecucionEstado: 'ejecutada' } });
+      await auditar(req, 'comando', 'EscenaIoT', scene.id, `${scene.nombre}: ${results.length} acciones ejecutadas.`);
+      res.json({ ok: true, accionesEjecutadas: results.length, resultados: results });
+    } catch (error) {
+      await prisma.escenaIoT.update({ where: { id: scene.id }, data: { ultimaEjecucionEn: new Date(), ultimaEjecucionEstado: `error tras ${results.length} acciones` } });
+      throw error;
+    }
   } catch (error) { next(error); }
 });
 
@@ -388,49 +599,14 @@ controlIndustrialRouter.post('/alarmas/:id/reconocer', requireGestionOperacion, 
 });
 
 controlIndustrialRouter.post('/comandos', requireJefatura, async (req: AuthRequest, res, next) => {
-  let commandId: string | null = null;
   try {
-    const empresaId = tenantId(req);
     const { dispositivoId, tipo, payload, motivo } = req.body ?? {};
     if (tipo !== 'rele' || !payload || typeof payload !== 'object' || !motivo || String(motivo).trim().length < 5) throw statusError('El comando requiere dispositivo, canal, estado y un motivo de al menos 5 caracteres.');
-    const [module, device] = await Promise.all([
-      prisma.moduloControlEmpresa.findUnique({ where: { empresaId } }),
-      prisma.dispositivoIoT.findFirst({ where: { id: dispositivoId, empresaId }, include: { integracion: true, variables: true } }),
-    ]);
-    if (!module?.controlRemotoHabilitado) throw statusError('El Superadmin no habilitó control remoto para este contrato.', 403);
-    if (!device?.permiteControl) throw statusError('Este dispositivo está configurado sólo para monitoreo.', 409);
-    if (device.integracion.proveedor !== 'sonoff_ewelink') throw statusError('Este equipo no posee un adaptador de operación remota.', 409);
-    if (device.tipo === 'puente_rf') throw statusError('El RF Bridge es un puente de acceso y no se opera como una salida.', 409);
     const canal = Number((payload as Record<string, unknown>).canal);
     const encendido = (payload as Record<string, unknown>).encendido;
     if (!Number.isInteger(canal) || canal < 0 || canal > 3 || typeof encendido !== 'boolean') throw statusError('Seleccioná un canal válido y el estado encendido o apagado.');
-    const channelVariables = device.variables.filter((item) => /^switch_[1-4]$/.test(item.clave));
-    if (channelVariables.length && !channelVariables.some((item) => item.clave === `switch_${canal + 1}`)) throw statusError('El dispositivo no informó ese canal.', 409);
-    const online = device.variables.find((item) => item.clave === 'online');
-    if (online?.valorBooleano === false) throw statusError('El dispositivo está desconectado en eWeLink.', 409);
-    const estados = Object.fromEntries(channelVariables.map((item) => [Number(item.clave.slice(7)) - 1, Boolean(item.valorBooleano)]));
-    const command = await prisma.comandoIoT.create({ data: {
-      empresaId, dispositivoId: device.id, tipo, payload, motivo: String(motivo).trim().slice(0, 2000),
-      solicitadoPorId: req.auth!.userId, solicitadoPorNombre: req.auth!.email,
-      estado: 'pendiente',
-      resultado: 'Enviando operación segura a eWeLink.',
-    } });
-    commandId = command.id;
-    await ejecutarCanalEwelink(device.integracionId, device.identificadorExterno, canal, encendido, estados);
-    const executed = await prisma.$transaction(async (tx) => {
-      const variable = await tx.variableIoT.findUnique({ where: { dispositivoId_clave: { dispositivoId: device.id, clave: `switch_${canal + 1}` } } });
-      if (variable) {
-        await tx.variableIoT.update({ where: { id: variable.id }, data: { valorBooleano: encendido, valorNumero: null, valorTexto: null, tipo: 'booleano', calidad: 'buena', medidaEn: new Date() } });
-        await tx.lecturaIoT.create({ data: { variableId: variable.id, valorBooleano: encendido, medidaEn: new Date(), calidad: 'buena' } });
-      }
-      return tx.comandoIoT.update({ where: { id: command.id }, data: { estado: 'ejecutado', ejecutadoEn: new Date(), resultado: `Canal ${canal + 1} ${encendido ? 'encendido' : 'apagado'} y confirmado por eWeLink.` } });
-    });
-    await auditar(req, 'comando', 'ComandoIoT', command.id, `${device.nombre}: canal ${canal + 1} ${encendido ? 'encendido' : 'apagado'}. Motivo: ${motivo}`);
-    res.json({ ...executed, dispositivo: { nombre: device.nombre } });
-  } catch (error) {
-    if (commandId) await prisma.comandoIoT.update({ where: { id: commandId }, data: { estado: 'error', ejecutadoEn: new Date(), resultado: error instanceof Error ? error.message.slice(0, 2000) : 'Error desconocido al operar.' } }).catch(() => {});
-    next(error);
-  }
+    res.json(await ejecutarReleSeguro(req, { dispositivoId, canal, encendido, motivo: String(motivo).trim() }));
+  } catch (error) { next(error); }
 });
 
 export const iotIngestRouter = Router();

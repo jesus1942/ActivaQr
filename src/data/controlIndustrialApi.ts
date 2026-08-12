@@ -97,12 +97,44 @@ export interface ComandoIoT {
   dispositivo: { nombre: string };
 }
 
+export interface ReglaAlarmaIoT {
+  id: string;
+  nombre: string;
+  operador: string;
+  umbralNumero?: number | null;
+  umbralBooleano?: boolean | null;
+  umbralTexto?: string | null;
+  demoraSegundos: number;
+  severidad: string;
+  activa: boolean;
+  notificarPush: boolean;
+  variable: VariableIoT & { dispositivo: { nombre: string } };
+}
+
+export interface AccionEscenaIoT {
+  dispositivoId: string;
+  canal: number;
+  encendido: boolean;
+}
+
+export interface EscenaIoT {
+  id: string;
+  nombre: string;
+  descripcion?: string | null;
+  activa: boolean;
+  acciones: AccionEscenaIoT[];
+  ultimaEjecucionEn?: string | null;
+  ultimaEjecucionEstado?: string | null;
+}
+
 export interface ResumenControl {
   modulo: ModuloControl;
   integraciones: IntegracionIoT[];
   dispositivos: DispositivoIoT[];
   alarmas: AlarmaIoT[];
   comandos: ComandoIoT[];
+  reglas: ReglaAlarmaIoT[];
+  escenas: EscenaIoT[];
 }
 
 export interface EmpresaControlAdmin {
@@ -187,6 +219,36 @@ export async function reconocerAlarma(id: string): Promise<void> {
 
 export async function crearRegla(data: { variableId: string; nombre: string; operador: string; umbral: string | number | boolean; demoraSegundos: number; severidad: string; notificarPush: boolean }): Promise<void> {
   await parse(await apiFetch('control-industrial/reglas', { method: 'POST', body: JSON.stringify(data) }));
+}
+
+export async function actualizarRegla(id: string, data: Record<string, unknown>): Promise<void> {
+  await parse(await apiFetch(`control-industrial/reglas/${id}`, { method: 'PATCH', body: JSON.stringify(data) }));
+}
+
+export async function eliminarRegla(id: string): Promise<void> {
+  const response = await apiFetch(`control-industrial/reglas/${id}`, { method: 'DELETE' });
+  if (!response.ok) throw new Error((await response.json().catch(() => ({})))?.error || 'No se pudo eliminar la regla.');
+}
+
+export async function probarNotificacionControl(): Promise<{ ok: boolean; suscripciones: number }> {
+  return parse(await apiFetch('control-industrial/notificaciones/prueba', { method: 'POST' }));
+}
+
+export async function crearEscena(data: { nombre: string; descripcion?: string; acciones: AccionEscenaIoT[] }): Promise<EscenaIoT> {
+  return parse(await apiFetch('control-industrial/escenas', { method: 'POST', body: JSON.stringify(data) }));
+}
+
+export async function actualizarEscena(id: string, data: Record<string, unknown>): Promise<EscenaIoT> {
+  return parse(await apiFetch(`control-industrial/escenas/${id}`, { method: 'PATCH', body: JSON.stringify(data) }));
+}
+
+export async function eliminarEscena(id: string): Promise<void> {
+  const response = await apiFetch(`control-industrial/escenas/${id}`, { method: 'DELETE' });
+  if (!response.ok) throw new Error((await response.json().catch(() => ({})))?.error || 'No se pudo eliminar la escena.');
+}
+
+export async function ejecutarEscena(id: string): Promise<{ ok: boolean; accionesEjecutadas: number }> {
+  return parse(await apiFetch(`control-industrial/escenas/${id}/ejecutar`, { method: 'POST' }));
 }
 
 export async function historialVariable(id: string, horas = 24): Promise<{ variable: VariableIoT; lecturas: Array<{ id: string; valorNumero?: number | null; valorBooleano?: boolean | null; valorTexto?: string | null; medidaEn: string }> }> {

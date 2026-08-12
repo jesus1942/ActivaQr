@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Activity, AlertTriangle, BellRing, Check, ChevronRight, CircleOff, CloudCog, Cpu, DoorOpen, Download, Gauge, KeyRound, LineChart as LineChartIcon, Plus, RadioTower, RefreshCw, Settings2, ShieldAlert, Signal, Snowflake, Thermometer, WifiOff, Zap } from 'lucide-react';
+import { Activity, AlertTriangle, BellRing, Check, ChevronRight, CircleOff, CloudCog, Cpu, DoorOpen, Download, Droplets, Gauge, KeyRound, Layers3, LineChart as LineChartIcon, Play, Plus, RadioTower, RefreshCw, Settings2, ShieldAlert, Signal, Snowflake, Thermometer, Trash2, WifiOff, Zap } from 'lucide-react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/ui/Toast';
@@ -8,17 +8,23 @@ import { API_URL } from '../data/auth';
 import {
   AlarmaIoT,
   actualizarDispositivo,
+  actualizarRegla,
   actualizarVariable,
   autorizarSonoff,
+  crearEscena,
   crearIntegracion,
   crearRegla,
+  eliminarRegla,
+  eliminarEscena,
   DispositivoIoT,
   exportarHistorialDispositivo,
   exportarHistorialVariable,
+  ejecutarEscena,
   generarTokenWebhook,
   historialVariable,
   IntegracionIoT,
   ProveedorIoT,
+  probarNotificacionControl,
   reconocerAlarma,
   ResumenControl,
   resumenControl,
@@ -26,8 +32,9 @@ import {
   sincronizarSonoff,
   VariableIoT,
 } from '../data/controlIndustrialApi';
+import { activarNotificaciones, estadoNotificaciones } from '../data/push';
 
-type Tab = 'vivo' | 'alarmas' | 'conexiones' | 'comandos';
+type Tab = 'vivo' | 'alarmas' | 'escenas' | 'conexiones' | 'comandos';
 
 const providerLabel: Record<ProveedorIoT, string> = {
   sonoff_ewelink: 'SONOFF TH Elite / eWeLink',
@@ -48,14 +55,22 @@ function valueOf(variable: VariableIoT) {
   if (variable.tipo === 'numero') return variable.valorNumero == null ? '—' : `${Number(variable.valorNumero).toLocaleString('es-AR', { maximumFractionDigits: 2 })}${variable.unidad ? ` ${variable.unidad}` : ''}`;
   if (/^switch_[1-4]$/.test(variable.clave) || variable.clave === 'relay') return variable.valorBooleano ? 'Encendida' : 'Apagada';
   if (variable.clave === 'online') return variable.valorBooleano ? 'En línea' : 'Sin conexión';
-  if (variable.tipo === 'booleano') return variable.valorBooleano ? 'Activo' : 'Normal';
+  if (/^(door|puerta|window|contact|open)/.test(variable.clave)) return variable.valorBooleano ? 'Abierto' : 'Cerrado';
+  if (/^(water|leak|flood|waterleak)/.test(variable.clave)) return variable.valorBooleano ? 'Agua detectada' : 'Seco';
+  if (/^(motion|pir|movement)/.test(variable.clave)) return variable.valorBooleano ? 'Movimiento' : 'Sin movimiento';
+  if (/^(smoke|gas)/.test(variable.clave)) return variable.valorBooleano ? 'Detectado' : 'Normal';
+  if (variable.tipo === 'booleano') return variable.valorBooleano ? 'Sí' : 'No';
   return variable.valorTexto || '—';
 }
 
-const TECHNICAL_VARIABLE = /^(bssid|ssid|sta(mac)?|fw(version)?|rssi|calibstate|sledonline|init|partnerap(index)?|pulse(width)?|startup|configure|timers?|uiid|actpow(r)?|apparentpow(r)?|reactivepow(r)?|current_[0-9]+|voltage_[0-9]+)$/i;
+const TECHNICAL_VARIABLE = /^(bssid|ssid|sta(mac)?|fw(version)?|rssi|calibstate|sledonline|init|partnerap(index)?|pulse(width)?|startup|configure|timers?|uiid)$/i;
+const ELECTRICAL_VARIABLE = /^(current|voltage|actpow|power|apparentpow|reactivepow|factor|daykwh|monthkwh|energy)(?:_([0-9]+))?$/i;
 
 function visibleVariables(device: DispositivoIoT) {
-  return device.variables.filter((variable) => !TECHNICAL_VARIABLE.test(variable.clave) && !/^switch_[1-4]$/.test(variable.clave) && variable.clave !== 'relay');
+  return device.variables.filter((variable) => {
+    const electrical = variable.clave.match(ELECTRICAL_VARIABLE);
+    return !TECHNICAL_VARIABLE.test(variable.clave) && !/^switch_[1-4]$/.test(variable.clave) && variable.clave !== 'relay' && !(electrical?.[2] && channelVariables(device).length);
+  });
 }
 
 function channelVariables(device: DispositivoIoT) {
@@ -67,11 +82,42 @@ function channelVariables(device: DispositivoIoT) {
   return relay ? [{ ...relay, clave: 'switch_1', nombre: relay.nombre || 'Canal 1' }] : [];
 }
 
+function channelIndexFromSuffix(suffix: string) {
+  const value = Number(suffix);
+  if (suffix === '0' || (suffix.length > 1 && suffix.startsWith('0'))) return value + 1;
+  return value;
+}
+
+function channelMetrics(device: DispositivoIoT, channel: number) {
+  return device.variables.filter((variable) => {
+    const match = variable.clave.match(ELECTRICAL_VARIABLE);
+    return Boolean(match?.[2] && channelIndexFromSuffix(match[2]) === channel);
+  });
+}
+
 function deviceKind(device: DispositivoIoT) {
   if (device.tipo === 'puente_rf') return 'Puente RF · acceso para controles remotos';
   if (device.tipo === 'interruptor_multicanal') return 'Interruptor multicanal';
   if (device.tipo === 'interruptor') return 'Interruptor';
+  if (device.tipo === 'sensor_ambiente') return 'Sensor de temperatura y humedad';
+  if (device.tipo === 'sensor_inundacion') return 'Sensor de inundación o fuga';
+  if (device.tipo === 'sensor_magnetico') return 'Sensor magnético de apertura';
+  if (device.tipo === 'sensor_movimiento') return 'Sensor de movimiento';
+  if (device.tipo === 'sensor_alarma') return 'Sensor de seguridad ambiental';
   return device.modelo || device.identificadorExterno;
+}
+
+function DeviceIcon({ device, operable }: { device: DispositivoIoT; operable: boolean }) {
+  if (device.estado === 'desconectado') return <WifiOff size={20} />;
+  if (device.tipo === 'puente_rf') return <RadioTower size={20} />;
+  if (device.tipo === 'sensor_inundacion') return <Droplets size={20} />;
+  if (device.tipo === 'sensor_magnetico') return <DoorOpen size={20} />;
+  if (device.tipo === 'sensor_ambiente') return <Thermometer size={20} />;
+  return operable ? <Zap size={20} /> : <Gauge size={20} />;
+}
+
+function variableAlert(variable: VariableIoT) {
+  return variable.tipo === 'booleano' && variable.valorBooleano === true && /^(door|puerta|window|contact|open|water|leak|flood|waterleak|motion|pir|movement|smoke|gas)/.test(variable.clave);
 }
 
 const stateTone: Record<string, string> = {
@@ -81,6 +127,14 @@ const stateTone: Record<string, string> = {
   sin_datos: 'border-line bg-subtle text-faint',
   desconectado: 'border-line bg-subtle text-faint',
 };
+
+function ruleCondition(rule: ResumenControl['reglas'][number]) {
+  const operators: Record<string, string> = { gt: 'mayor que', gte: 'mayor o igual a', lt: 'menor que', lte: 'menor o igual a', eq: 'igual a', neq: 'distinto de' };
+  const threshold = rule.variable.tipo === 'booleano'
+    ? (rule.umbralBooleano ? 'activo / detectado' : 'inactivo / normal')
+    : rule.umbralNumero ?? rule.umbralTexto ?? '—';
+  return `${operators[rule.operador] ?? rule.operador} ${threshold}${rule.variable.unidad ? ` ${rule.variable.unidad}` : ''}`;
+}
 
 export const ControlIndustrial: React.FC = () => {
   const { usuario } = useAuth();
@@ -95,9 +149,13 @@ export const ControlIndustrial: React.FC = () => {
   const [connectorOpen, setConnectorOpen] = useState(false);
   const [credentialsFor, setCredentialsFor] = useState<IntegracionIoT | null>(null);
   const [ruleOpen, setRuleOpen] = useState(false);
+  const [sceneOpen, setSceneOpen] = useState(false);
+  const [sceneWorking, setSceneWorking] = useState<string | null>(null);
   const [commandFor, setCommandFor] = useState<DispositivoIoT | null>(null);
   const [settingsFor, setSettingsFor] = useState<DispositivoIoT | null>(null);
   const [webhook, setWebhook] = useState<string | null>(null);
+  const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unsupported'>(() => estadoNotificaciones());
+  const [pushWorking, setPushWorking] = useState(false);
 
   const editable = usuario?.rol === 'admin' || usuario?.rol === 'jefatura';
   const owner = usuario?.rol === 'admin';
@@ -143,12 +201,29 @@ export const ControlIndustrial: React.FC = () => {
   };
 
   const critical = data?.alarmas.filter((item) => item.severidad === 'critica' && item.estado !== 'resuelta').length ?? 0;
-  const online = data?.dispositivos.filter((item) => item.ultimoContactoEn && Date.now() - new Date(item.ultimoContactoEn).getTime() < 10 * 60_000).length ?? 0;
+  const disconnectMs = (data?.modulo.umbralSinConexionMinutos ?? 10) * 60_000;
+  const online = data?.dispositivos.filter((item) => item.ultimoContactoEn && Date.now() - new Date(item.ultimoContactoEn).getTime() < disconnectMs).length ?? 0;
   const lastEvent = useMemo(() => data?.dispositivos.map((item) => item.ultimoContactoEn).filter(Boolean).sort().slice(-1)[0], [data]);
 
   const acknowledge = async (alarm: AlarmaIoT) => {
     try { await reconocerAlarma(alarm.id); toast('Alarma reconocida y registrada en auditoría.', 'success'); await load(true); }
     catch (error) { toast(error instanceof Error ? error.message : 'No se pudo reconocer.', 'error'); }
+  };
+
+  const enablePush = async () => {
+    setPushWorking(true);
+    try {
+      const ok = await activarNotificaciones();
+      setPushPermission(estadoNotificaciones());
+      toast(ok ? 'Notificaciones activadas en este dispositivo.' : 'No se pudieron activar las notificaciones.', ok ? 'success' : 'warning');
+    } finally { setPushWorking(false); }
+  };
+
+  const testPush = async () => {
+    setPushWorking(true);
+    try { await probarNotificacionControl(); toast('Notificación de prueba enviada.', 'success'); }
+    catch (error) { toast(error instanceof Error ? error.message : 'No se pudo enviar la prueba.', 'error'); }
+    finally { setPushWorking(false); }
   };
 
   if (loading) return <div className="grid min-h-[60vh] place-items-center"><div className="text-center"><Snowflake className="mx-auto mb-3 animate-pulse text-cyan-500" size={36} /><p className="text-sm font-bold text-muted">Conectando tablero industrial…</p></div></div>;
@@ -172,7 +247,7 @@ export const ControlIndustrial: React.FC = () => {
 
     <nav className="-mx-1 flex snap-x gap-1 overflow-x-auto border-b border-line px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {([
-        ['vivo', 'Vista en vivo', Gauge], ['alarmas', `Alarmas${data.alarmas.length ? ` (${data.alarmas.length})` : ''}`, BellRing], ['conexiones', 'Conexiones', CloudCog], ['comandos', 'Operación', Zap],
+        ['vivo', 'Vista en vivo', Gauge], ['alarmas', `Alarmas${data.alarmas.length ? ` (${data.alarmas.length})` : ''}`, BellRing], ['escenas', 'Escenas', Layers3], ['conexiones', 'Conexiones', CloudCog], ['comandos', 'Operación', Zap],
       ] as Array<[Tab, string, React.ElementType]>).map(([id, label, Icon]) => <button key={id} onClick={() => setTab(id)} className={`flex min-h-12 shrink-0 snap-start items-center gap-2 border-b-2 px-3 py-3 text-[10px] font-black uppercase tracking-wide sm:px-4 sm:text-xs ${tab === id ? 'border-cyan-600 text-cyan-700 dark:text-cyan-300' : 'border-transparent text-faint'}`}><Icon size={16} />{label}</button>)}
       <button onClick={() => load(true)} className="sticky right-0 ml-auto grid min-h-12 w-11 shrink-0 place-items-center border-l border-line bg-canvas text-faint" aria-label="Actualizar"><RefreshCw size={17} className={refreshing ? 'animate-spin' : ''} /></button>
     </nav>
@@ -181,21 +256,30 @@ export const ControlIndustrial: React.FC = () => {
       {!data.dispositivos.length ? <Empty icon={RadioTower} title="Esperando el primer dispositivo" text="Configurá un conector y enviá la primera lectura. El equipo aparecerá automáticamente en este tablero." action={owner ? () => setTab('conexiones') : undefined} actionLabel="Configurar conexión" /> : <div className="grid gap-4 xl:grid-cols-2">
         {data.dispositivos.map((device) => { const shown = visibleVariables(device); const channels = channelVariables(device); const operable = device.tipo !== 'puente_rf' && channels.length > 0; return <article key={device.id} className={`border bg-surface shadow-soft ${device.estado === 'critico' ? 'border-red-500' : 'border-line'}`}>
           <div className="flex items-start gap-3 border-b border-line p-3 sm:p-4">
-            <div className={`grid h-10 w-10 shrink-0 place-items-center border sm:h-11 sm:w-11 ${stateTone[device.estado] ?? stateTone.sin_datos}`}>{device.estado === 'desconectado' ? <WifiOff size={20} /> : device.tipo === 'puente_rf' ? <RadioTower size={20} /> : operable ? <Zap size={20} /> : <Snowflake size={20} />}</div><div className="min-w-0 flex-1"><h2 className="break-words font-display text-base font-black leading-tight text-content sm:text-lg">{device.nombre}</h2><p className="mt-1 break-words text-xs leading-snug text-faint">{device.ubicacion || deviceKind(device)}</p></div>
+            <div className={`grid h-10 w-10 shrink-0 place-items-center border sm:h-11 sm:w-11 ${stateTone[device.estado] ?? stateTone.sin_datos}`}><DeviceIcon device={device} operable={operable} /></div><div className="min-w-0 flex-1"><h2 className="break-words font-display text-base font-black leading-tight text-content sm:text-lg">{device.nombre}</h2><p className="mt-1 break-words text-xs leading-snug text-faint">{device.ubicacion || deviceKind(device)}</p></div>
             <div className="shrink-0 text-right"><span className={`inline-block px-2 py-1 text-[9px] font-black uppercase tracking-wide sm:text-[10px] sm:tracking-wider ${stateTone[device.estado] ?? stateTone.sin_datos}`}>{device.estado.replace('_', ' ')}</span><p className="mt-1 text-[9px] text-faint sm:text-[10px]">{ago(device.ultimoContactoEn)}</p></div>
           </div>
-          {channels.length > 0 && <div className="grid gap-px border-b border-line bg-line sm:grid-cols-2">{channels.map((channel) => <button key={channel.id} onClick={() => { setHistoryHours(24); setSelectedVariable({ device, variable: channel }); }} className="flex items-center justify-between bg-surface px-4 py-3 text-left hover:bg-subtle"><span className="min-w-0"><strong className="block truncate text-sm text-content">{channel.nombre}</strong><span className="text-[10px] uppercase tracking-wider text-faint">Historial del canal</span></span><span className={`ml-3 shrink-0 px-2 py-1 text-[10px] font-black uppercase ${channel.valorBooleano ? 'bg-amber-500/15 text-amber-600' : 'bg-subtle text-faint'}`}>{channel.valorBooleano ? 'Encendida' : 'Apagada'}</span></button>)}</div>}
+          {channels.length > 0 && <div className="grid gap-px border-b border-line bg-line sm:grid-cols-2">{channels.map((channel, index) => { const metrics = channelMetrics(device, index + 1); return <div key={channel.id} className="bg-surface p-3 sm:p-4"><button onClick={() => { setHistoryHours(24); setSelectedVariable({ device, variable: channel }); }} className="flex min-h-11 w-full items-center justify-between text-left"><span className="min-w-0"><strong className="block break-words text-sm text-content">{channel.nombre}</strong><span className="text-[10px] uppercase tracking-wider text-faint">Estado e historial</span></span><span className={`ml-3 shrink-0 px-2 py-1 text-[10px] font-black uppercase ${channel.valorBooleano ? 'bg-amber-500/15 text-amber-600' : 'bg-subtle text-faint'}`}>{channel.valorBooleano ? 'Encendida' : 'Apagada'}</span></button>{metrics.length > 0 && <div className="mt-2 grid grid-cols-2 gap-1 border-t border-line pt-2">{metrics.slice(0, 4).map((metric) => <button key={metric.id} onClick={() => { setHistoryHours(24); setSelectedVariable({ device, variable: metric }); }} className="min-w-0 rounded-sm bg-subtle px-2 py-2 text-left"><strong className="block truncate text-xs text-content">{valueOf(metric)}</strong><span className="block truncate text-[9px] uppercase tracking-wide text-faint">{metric.nombre.replace(/ · canal \d+$/i, '')}</span></button>)}</div>}</div>; })}</div>}
           <div className="grid grid-cols-2 gap-px bg-line sm:grid-cols-3">
-            {shown.length ? shown.slice(0, 6).map((variable) => <button key={variable.id} onClick={() => { setHistoryHours(24); setSelectedVariable({ device, variable }); }} className="group bg-surface p-4 text-left hover:bg-subtle"><div className="mb-2 flex items-center justify-between text-faint"><VariableIcon variable={variable} /><ChevronRight size={14} className="opacity-0 transition-opacity group-hover:opacity-100" /></div><strong className="block truncate text-xl font-black text-content">{valueOf(variable)}</strong><span className="block truncate text-[10px] uppercase tracking-wider text-faint">{variable.nombre}</span></button>) : channels.length === 0 && <div className="col-span-full bg-surface p-6 text-center text-xs text-faint">{device.tipo === 'puente_rf' ? 'Puente RF conectado. Se muestra como acceso y no como una luz.' : 'El dispositivo todavía no envió variables útiles.'}</div>}
+            {shown.length ? shown.slice(0, 8).map((variable) => <button key={variable.id} onClick={() => { setHistoryHours(24); setSelectedVariable({ device, variable }); }} className={`group p-4 text-left hover:bg-subtle ${variableAlert(variable) ? 'bg-red-500/10' : 'bg-surface'}`}><div className={`mb-2 flex items-center justify-between ${variableAlert(variable) ? 'text-red-600' : 'text-faint'}`}><VariableIcon variable={variable} /><ChevronRight size={14} className="opacity-0 transition-opacity group-hover:opacity-100" /></div><strong className={`block break-words text-lg font-black sm:text-xl ${variableAlert(variable) ? 'text-red-600' : 'text-content'}`}>{valueOf(variable)}</strong><span className="block break-words text-[10px] uppercase tracking-wider text-faint">{variable.nombre}</span></button>) : channels.length === 0 && <div className="col-span-full bg-surface p-6 text-center text-xs text-faint">{device.tipo === 'puente_rf' ? 'Puente RF conectado. Se muestra como acceso y no como una luz.' : 'El dispositivo todavía no envió variables útiles.'}</div>}
           </div>
           <div className="grid grid-cols-2 gap-px border-t border-line bg-line text-[10px] uppercase tracking-wide text-faint sm:flex sm:flex-wrap sm:items-center sm:gap-4 sm:border-t-0 sm:bg-transparent sm:p-3 sm:tracking-wider">{data.modulo.tableroConfig?.mostrarBateria !== false && <span className="bg-surface px-3 py-2.5 sm:bg-transparent sm:p-0">Batería {device.bateria == null ? '—' : `${device.bateria}%`}</span>}{data.modulo.tableroConfig?.mostrarSenal !== false && <span className="bg-surface px-3 py-2.5 sm:bg-transparent sm:p-0">Señal {device.rssi == null ? '—' : `${device.rssi} dBm`}</span>}<button onClick={() => downloadHistory('device', device.id)} className="flex min-h-11 items-center justify-center gap-1 bg-surface px-2 font-black text-muted sm:ml-auto sm:min-h-0 sm:justify-start sm:bg-transparent sm:p-0"><Download size={13} /> Exportar 24 h</button>{editable && <button onClick={() => setSettingsFor(device)} className="flex min-h-11 items-center justify-center gap-1 bg-surface px-2 font-black text-muted sm:min-h-0 sm:justify-start sm:bg-transparent sm:p-0"><Settings2 size={13} /> Configurar</button>}{editable && data.modulo.controlRemotoHabilitado && operable && (device.permiteControl ? <button onClick={() => setCommandFor(device)} className="col-span-2 min-h-12 bg-cyan-700 px-3 font-black text-white sm:min-h-0 sm:bg-transparent sm:p-0 sm:text-cyan-700">Operar luces</button> : <button onClick={() => setSettingsFor(device)} className="col-span-2 min-h-12 bg-amber-500/10 px-3 font-black text-amber-700 sm:min-h-0 sm:bg-transparent sm:p-0 sm:text-amber-600">Habilitar control</button>)}</div>
         </article>; })}
       </div>}
     </section>}
 
-    {tab === 'alarmas' && <section className="space-y-4">
+    {tab === 'alarmas' && <section className="space-y-5">
+      <div className="border border-cyan-500/30 bg-cyan-500/5 p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-center"><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><BellRing size={18} className="text-cyan-600" /><h2 className="font-black text-content">Avisos en este celular</h2></div><p className="mt-1 text-xs leading-relaxed text-muted">{pushPermission === 'granted' ? 'Este dispositivo está autorizado para recibir alarmas aunque la PWA esté cerrada.' : pushPermission === 'denied' ? 'El navegador bloqueó los avisos. Debés habilitarlos desde los ajustes del sitio.' : pushPermission === 'unsupported' ? 'Este navegador no admite Web Push.' : 'Activá los avisos para recibir alarmas críticas, aperturas, inundación y desconexiones.'}</p></div><div className="grid gap-2 sm:flex">{pushPermission === 'default' && <button disabled={pushWorking} onClick={enablePush} className="h-11 bg-cyan-700 px-4 text-xs font-black uppercase text-white disabled:opacity-50">Activar avisos</button>}{pushPermission === 'granted' && <button disabled={pushWorking} onClick={testPush} className="h-11 border border-cyan-600 px-4 text-xs font-black uppercase text-cyan-700 disabled:opacity-50">Probar notificación</button>}</div></div></div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-display text-xl font-black text-content">Alarmas abiertas</h2><p className="mt-1 text-xs leading-relaxed text-muted">Reconocer confirma que una persona tomó conocimiento; no cierra la condición.</p></div>{editable && <button onClick={() => setRuleOpen(true)} className="flex h-11 w-full items-center justify-center gap-2 bg-cyan-700 px-4 text-xs font-black uppercase text-white sm:h-10 sm:w-auto"><Plus size={16} /> Nueva regla</button>}</div>
       {!data.alarmas.length ? <Empty icon={Check} title="Todo dentro de rango" text="No hay alarmas activas ni reconocidas." /> : <div className="space-y-2">{data.alarmas.map((alarm) => <div key={alarm.id} className={`flex flex-col gap-4 border-l-4 bg-surface p-4 shadow-soft sm:flex-row sm:items-center ${alarm.severidad === 'critica' ? 'border-l-red-500' : 'border-l-amber-500'}`}><div className="min-w-0 flex-1"><div className="flex items-start gap-2"><AlertTriangle size={17} className={`mt-0.5 shrink-0 ${alarm.severidad === 'critica' ? 'text-red-500' : 'text-amber-500'}`} /><h3 className="min-w-0 flex-1 break-words font-black leading-tight text-content">{alarm.titulo}</h3><span className="shrink-0 text-[9px] font-black uppercase text-faint sm:text-[10px]">{alarm.estado}</span></div><p className="mt-2 break-words text-sm leading-relaxed text-muted">{alarm.dispositivo.nombre} · {alarm.detalle}</p><p className="mt-1 text-[10px] uppercase tracking-wider text-faint">Iniciada {new Date(alarm.iniciadaEn).toLocaleString('es-AR')}</p></div>{alarm.estado === 'activa' && editable && <button onClick={() => acknowledge(alarm)} className="h-11 w-full border border-line-strong px-4 text-xs font-black uppercase text-content hover:border-cyan-600 sm:h-10 sm:w-auto">Reconocer</button>}</div>)}</div>}
+      <div><h2 className="font-display text-xl font-black text-content">Reglas configuradas</h2><p className="mt-1 text-xs text-muted">Qué condición dispara una alarma y si debe avisar por push.</p></div>
+      {!data.reglas.length ? <Empty icon={BellRing} title="Todavía no hay reglas" text="Creá una regla para temperatura, humedad, apertura, inundación, corriente, voltaje o cualquier variable recibida." /> : <div className="grid gap-2 lg:grid-cols-2">{data.reglas.map((rule) => <article key={rule.id} className={`border bg-surface p-4 ${rule.activa ? 'border-line' : 'border-dashed border-line-strong opacity-70'}`}><div className="flex items-start gap-3"><div className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${rule.activa ? rule.severidad === 'critica' ? 'bg-red-500' : 'bg-amber-500' : 'bg-slate-400'}`} /><div className="min-w-0 flex-1"><h3 className="break-words font-black leading-tight text-content">{rule.nombre}</h3><p className="mt-1 text-xs text-muted">{rule.variable.dispositivo.nombre} · {rule.variable.nombre}</p><p className="mt-2 text-sm text-content">{ruleCondition(rule)}</p><p className="mt-1 text-[10px] uppercase tracking-wide text-faint">{rule.demoraSegundos ? `Sostenida ${rule.demoraSegundos} s · ` : ''}{rule.notificarPush ? 'Con aviso push' : 'Sin aviso push'}</p></div></div>{editable && <div className="mt-3 grid grid-cols-2 gap-2"><button onClick={async () => { try { await actualizarRegla(rule.id, { activa: !rule.activa }); await load(true); } catch (error) { toast(error instanceof Error ? error.message : 'No se pudo cambiar la regla.', 'error'); } }} className="min-h-11 border border-line px-3 text-xs font-black uppercase text-content">{rule.activa ? 'Pausar' : 'Activar'}</button><button onClick={async () => { if (!window.confirm(`¿Eliminar la regla “${rule.nombre}”?`)) return; try { await eliminarRegla(rule.id); await load(true); } catch (error) { toast(error instanceof Error ? error.message : 'No se pudo eliminar la regla.', 'error'); } }} className="min-h-11 border border-red-500/40 px-3 text-xs font-black uppercase text-red-600">Eliminar</button></div>}</article>)}</div>}
+    </section>}
+
+    {tab === 'escenas' && <section className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-display text-xl font-black text-content">Escenas de control</h2><p className="mt-1 text-xs leading-relaxed text-muted">Agrupan varias salidas en una operación confirmada y auditable.</p></div>{editable && data.modulo.controlRemotoHabilitado && <button onClick={() => setSceneOpen(true)} className="flex h-11 w-full items-center justify-center gap-2 bg-cyan-700 px-4 text-xs font-black uppercase text-white sm:w-auto"><Plus size={16} /> Nueva escena</button>}</div>
+      <div className="border border-amber-500/40 bg-amber-500/10 p-4 text-xs leading-relaxed text-muted"><strong className="block text-content">Seguridad antes que automatización ciega</strong>Las escenas requieren confirmación humana. Cada dispositivo debe estar habilitado, conectado y autorizado para control remoto; cada acción queda en el historial.</div>
+      {!data.escenas.length ? <Empty icon={Layers3} title="Todavía no hay escenas" text="Podés crear, por ejemplo, “Inicio de jornada”, “Cerrar aulas” o “Apagado general”, eligiendo exactamente qué canal cambia." action={editable && data.modulo.controlRemotoHabilitado ? () => setSceneOpen(true) : undefined} actionLabel="Crear primera escena" /> : <div className="grid gap-3 lg:grid-cols-2">{data.escenas.map((scene) => <article key={scene.id} className={`border bg-surface p-4 shadow-soft ${scene.activa ? 'border-line' : 'border-dashed border-line-strong opacity-70'}`}><div className="flex items-start gap-3"><div className="grid h-10 w-10 shrink-0 place-items-center border border-cyan-500/30 bg-cyan-500/10 text-cyan-700"><Layers3 size={18} /></div><div className="min-w-0 flex-1"><h3 className="break-words font-black text-content">{scene.nombre}</h3><p className="mt-1 text-xs leading-relaxed text-muted">{scene.descripcion || `${scene.acciones.length} acciones configuradas`}</p><p className="mt-2 text-[10px] uppercase tracking-wide text-faint">{scene.ultimaEjecucionEn ? `Última: ${ago(scene.ultimaEjecucionEn)} · ${scene.ultimaEjecucionEstado || 'ejecutada'}` : 'Nunca ejecutada'}</p></div></div>{editable && <div className="mt-4 grid grid-cols-[1fr_auto] gap-2"><button disabled={!scene.activa || sceneWorking !== null} onClick={async () => { if (!window.confirm(`¿Ejecutar la escena “${scene.nombre}” sobre ${scene.acciones.length} salidas reales?`)) return; setSceneWorking(scene.id); try { const result = await ejecutarEscena(scene.id); toast(`Escena ejecutada: ${result.accionesEjecutadas} maniobras confirmadas.`, 'success'); await load(true); } catch (error) { toast(error instanceof Error ? error.message : 'La escena no pudo completarse.', 'error'); } finally { setSceneWorking(null); } }} className="flex min-h-12 items-center justify-center gap-2 bg-cyan-700 px-4 text-xs font-black uppercase text-white disabled:opacity-40"><Play size={15} /> {sceneWorking === scene.id ? 'Ejecutando…' : 'Ejecutar escena'}</button><button disabled={sceneWorking !== null} onClick={async () => { if (!window.confirm(`¿Eliminar la escena “${scene.nombre}”?`)) return; try { await eliminarEscena(scene.id); await load(true); } catch (error) { toast(error instanceof Error ? error.message : 'No se pudo eliminar.', 'error'); } }} className="grid min-h-12 w-12 place-items-center border border-red-500/40 text-red-600" aria-label={`Eliminar ${scene.nombre}`}><Trash2 size={16} /></button></div>}</article>)}</div>}
     </section>}
 
     {tab === 'conexiones' && <section className="space-y-4">
@@ -210,6 +294,7 @@ export const ControlIndustrial: React.FC = () => {
     {connectorOpen && <ConnectorModal onClose={() => setConnectorOpen(false)} onDone={async () => { setConnectorOpen(false); await load(true); }} toast={toast} />}
     {credentialsFor && <CredentialsModal integration={credentialsFor} onClose={() => setCredentialsFor(null)} onDone={async () => { setCredentialsFor(null); await load(true); }} toast={toast} />}
     {ruleOpen && <RuleModal devices={data.dispositivos} onClose={() => setRuleOpen(false)} onDone={async () => { setRuleOpen(false); await load(true); }} toast={toast} />}
+    {sceneOpen && <SceneModal devices={data.dispositivos} onClose={() => setSceneOpen(false)} onDone={async () => { setSceneOpen(false); await load(true); }} toast={toast} />}
     {commandFor && <CommandModal device={commandFor} onClose={() => setCommandFor(null)} onDone={async () => { setCommandFor(null); await load(true); }} toast={toast} />}
     {settingsFor && <DeviceModal device={settingsFor} remoteContract={data.modulo.controlRemotoHabilitado} onClose={() => setSettingsFor(null)} onDone={async () => { setSettingsFor(null); await load(true); }} toast={toast} />}
     {webhook && <DialogViewport className="z-50 flex items-end justify-center bg-slate-950/60 backdrop-blur-sm sm:items-center sm:p-4" onEscape={() => setWebhook(null)}><div className="max-h-[92dvh] w-full max-w-xl overflow-y-auto border-x border-t border-line bg-surface p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:border sm:p-5" role="dialog" aria-modal="true"><h2 className="font-display text-xl font-black text-content">Endpoint de ingesta creado</h2><p className="mt-2 text-sm text-muted">Copialo ahora en el UG65. Al rotarlo, el anterior deja de funcionar.</p><code className="mt-4 block break-all border border-line bg-subtle p-3 text-xs text-content">{webhook}</code><div className="mt-4 grid gap-2 sm:flex"><button onClick={() => navigator.clipboard.writeText(webhook).then(() => toast('Endpoint copiado.', 'success'))} className="h-11 bg-cyan-700 text-xs font-black uppercase text-white sm:flex-1">Copiar</button><button onClick={() => setWebhook(null)} className="h-11 border border-line px-5 text-xs font-black uppercase">Listo</button></div></div></DialogViewport>}
@@ -217,7 +302,7 @@ export const ControlIndustrial: React.FC = () => {
 };
 
 const Empty = ({ icon: Icon, title, text, action, actionLabel }: { icon: React.ElementType; title: string; text: string; action?: () => void; actionLabel?: string }) => <div className="border border-dashed border-line-strong bg-subtle px-4 py-8 text-center sm:p-10"><Icon size={32} className="mx-auto mb-3 text-faint" /><h3 className="font-display text-lg font-black text-content">{title}</h3><p className="mx-auto mt-1 max-w-lg text-sm leading-relaxed text-muted">{text}</p>{action && <button onClick={action} className="mt-4 min-h-11 w-full bg-slate-900 px-4 py-2.5 text-xs font-black uppercase text-white sm:w-auto">{actionLabel}</button>}</div>;
-const VariableIcon = ({ variable }: { variable: VariableIoT }) => variable.clave.includes('temp') ? <Thermometer size={17} /> : variable.clave.includes('door') || variable.clave.includes('puerta') ? <DoorOpen size={17} /> : variable.clave.includes('pres') ? <Gauge size={17} /> : <LineChartIcon size={17} />;
+const VariableIcon = ({ variable }: { variable: VariableIoT }) => variable.clave.includes('temp') || variable.clave.includes('humidity') || variable.clave.includes('humedad') ? <Thermometer size={17} /> : /door|puerta|window|contact|open/.test(variable.clave) ? <DoorOpen size={17} /> : /water|leak|flood/.test(variable.clave) ? <Droplets size={17} /> : /current|voltage|pow|energy|kwh/.test(variable.clave) ? <Zap size={17} /> : variable.clave.includes('pres') ? <Gauge size={17} /> : <LineChartIcon size={17} />;
 
 const ModalShell = ({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) => <DialogViewport className="z-50 flex items-end justify-center bg-slate-950/60 backdrop-blur-sm sm:items-center sm:p-4" onEscape={onClose}><div className="flex max-h-[96dvh] w-full max-w-xl flex-col overflow-hidden border-x border-t border-line bg-surface shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:border" role="dialog" aria-modal="true"><div className="flex min-h-14 shrink-0 items-center justify-between gap-3 bg-slate-950 px-4 py-3 text-white sm:px-5 sm:py-4"><h2 className="min-w-0 break-words font-display text-base font-black leading-tight sm:text-lg">{title}</h2><button onClick={onClose} className="min-h-11 shrink-0 px-2 text-xs font-black uppercase text-slate-400">Cerrar</button></div><div className="overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-5">{children}</div></div></DialogViewport>;
 const Field = ({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) => <label className="block text-xs font-black uppercase tracking-wider text-muted">{label}{children}{hint && <span className="mt-1 block text-[11px] font-normal normal-case tracking-normal text-faint">{hint}</span>}</label>;
@@ -234,8 +319,20 @@ function CredentialsModal({ integration, onClose, onDone, toast }: { integration
 }
 
 function RuleModal({ devices, onClose, onDone, toast }: { devices: DispositivoIoT[]; onClose: () => void; onDone: () => void; toast: (message: string, variant?: 'success' | 'error' | 'warning' | 'info') => void }) {
-  const variables = devices.flatMap((device) => device.variables.map((variable) => ({ device, variable }))); const [form, setForm] = useState({ variableId: variables[0]?.variable.id ?? '', nombre: '', operador: 'gt', umbral: '', demoraSegundos: 300, severidad: 'advertencia', notificarPush: true });
-  return <ModalShell title="Nueva regla de alarma" onClose={onClose}><form className="space-y-4" onSubmit={async (e) => { e.preventDefault(); try { await crearRegla(form); toast('Regla activa desde la próxima lectura.', 'success'); onDone(); } catch (error) { toast(error instanceof Error ? error.message : 'No se pudo crear.', 'error'); } }}><Field label="Variable"><select required value={form.variableId} onChange={(e) => setForm({ ...form, variableId: e.target.value })} className={input}>{variables.map(({ device, variable }) => <option key={variable.id} value={variable.id}>{device.nombre} · {variable.nombre}</option>)}</select></Field><Field label="Nombre de la alarma"><input required value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} placeholder="Ej: Cámara supera −18 °C" className={input} /></Field><div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><Field label="Condición"><select value={form.operador} onChange={(e) => setForm({ ...form, operador: e.target.value })} className={input}><option value="gt">Mayor que</option><option value="gte">Mayor o igual</option><option value="lt">Menor que</option><option value="lte">Menor o igual</option><option value="eq">Igual a</option><option value="neq">Distinto de</option></select></Field><Field label="Umbral"><input required value={form.umbral} onChange={(e) => setForm({ ...form, umbral: e.target.value })} className={input} /></Field></div><div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><Field label="Demora (segundos)" hint="Debe sostenerse todo este tiempo"><input type="number" min="0" value={form.demoraSegundos} onChange={(e) => setForm({ ...form, demoraSegundos: Number(e.target.value) })} className={input} /></Field><Field label="Severidad"><select value={form.severidad} onChange={(e) => setForm({ ...form, severidad: e.target.value })} className={input}><option value="informacion">Información</option><option value="advertencia">Advertencia</option><option value="critica">Crítica</option></select></Field></div><label className="flex min-h-11 items-start gap-3 text-sm leading-relaxed text-muted"><input type="checkbox" checked={form.notificarPush} onChange={(e) => setForm({ ...form, notificarPush: e.target.checked })} className="mt-1 shrink-0" /> Notificar por push a responsables</label><button className="h-12 w-full bg-cyan-700 text-xs font-black uppercase text-white">Activar regla</button></form></ModalShell>;
+  const variables = devices.flatMap((device) => device.variables.filter((variable) => variable.clave !== 'online' && !TECHNICAL_VARIABLE.test(variable.clave)).map((variable) => ({ device, variable })));
+  const [form, setForm] = useState({ variableId: variables[0]?.variable.id ?? '', nombre: '', operador: variables[0]?.variable.tipo === 'booleano' ? 'eq' : 'gt', umbral: variables[0]?.variable.tipo === 'booleano' ? 'true' : '', demoraSegundos: 0, severidad: 'advertencia', notificarPush: true });
+  const selected = variables.find((item) => item.variable.id === form.variableId)?.variable;
+  return <ModalShell title="Nueva regla de alarma" onClose={onClose}><form className="space-y-4" onSubmit={async (e) => { e.preventDefault(); try { await crearRegla(form); toast('Regla activa desde la próxima lectura.', 'success'); onDone(); } catch (error) { toast(error instanceof Error ? error.message : 'No se pudo crear.', 'error'); } }}><Field label="Variable"><select required value={form.variableId} onChange={(e) => { const variable = variables.find((item) => item.variable.id === e.target.value)?.variable; setForm({ ...form, variableId: e.target.value, operador: variable?.tipo === 'booleano' ? 'eq' : 'gt', umbral: variable?.tipo === 'booleano' ? 'true' : '' }); }} className={input}>{variables.map(({ device, variable }) => <option key={variable.id} value={variable.id}>{device.nombre} · {variable.nombre} · {valueOf(variable)}</option>)}</select></Field><Field label="Nombre de la alarma"><input required value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} placeholder={selected?.tipo === 'booleano' ? 'Ej: Se abrió la puerta principal' : 'Ej: Cámara supera −18 °C'} className={input} /></Field><div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><Field label="Condición"><select value={form.operador} onChange={(e) => setForm({ ...form, operador: e.target.value })} className={input}>{selected?.tipo === 'booleano' ? <><option value="eq">Cuando sea</option><option value="neq">Cuando deje de ser</option></> : <><option value="gt">Mayor que</option><option value="gte">Mayor o igual</option><option value="lt">Menor que</option><option value="lte">Menor o igual</option><option value="eq">Igual a</option><option value="neq">Distinto de</option></>}</select></Field><Field label={selected?.tipo === 'booleano' ? 'Estado disparador' : `Umbral${selected?.unidad ? ` (${selected.unidad})` : ''}`}>{selected?.tipo === 'booleano' ? <select value={String(form.umbral)} onChange={(e) => setForm({ ...form, umbral: e.target.value })} className={input}><option value="true">Activo / detectado / abierto</option><option value="false">Inactivo / normal / cerrado</option></select> : <input required type={selected?.tipo === 'numero' ? 'number' : 'text'} step="any" value={form.umbral} onChange={(e) => setForm({ ...form, umbral: e.target.value })} className={input} />}</Field></div><div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><Field label="Demora (segundos)" hint="0 avisa inmediatamente"><input type="number" min="0" value={form.demoraSegundos} onChange={(e) => setForm({ ...form, demoraSegundos: Number(e.target.value) })} className={input} /></Field><Field label="Severidad"><select value={form.severidad} onChange={(e) => setForm({ ...form, severidad: e.target.value })} className={input}><option value="informacion">Información</option><option value="advertencia">Advertencia</option><option value="critica">Crítica</option></select></Field></div><label className="flex min-h-11 items-start gap-3 text-sm leading-relaxed text-muted"><input type="checkbox" checked={form.notificarPush} onChange={(e) => setForm({ ...form, notificarPush: e.target.checked })} className="mt-1 shrink-0" /> Notificar por push a responsables</label><button disabled={!variables.length} className="h-12 w-full bg-cyan-700 text-xs font-black uppercase text-white disabled:opacity-50">Activar regla</button></form></ModalShell>;
+}
+
+function SceneModal({ devices, onClose, onDone, toast }: { devices: DispositivoIoT[]; onClose: () => void; onDone: () => void; toast: (message: string, variant?: 'success' | 'error' | 'warning' | 'info') => void }) {
+  const options = devices.filter((device) => device.permiteControl && device.tipo !== 'puente_rf').flatMap((device) => channelVariables(device).map((channel, index) => ({ device, channel, canal: Number(channel.clave.slice(7)) - 1 || index })));
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [states, setStates] = useState<Record<string, boolean | null>>({});
+  const [saving, setSaving] = useState(false);
+  const selectedCount = Object.values(states).filter((value) => value !== null && value !== undefined).length;
+  return <ModalShell title="Crear escena" onClose={onClose}><form className="space-y-4" onSubmit={async (event) => { event.preventDefault(); const acciones = options.filter((item) => states[`${item.device.id}:${item.canal}`] !== null && states[`${item.device.id}:${item.canal}`] !== undefined).map((item) => ({ dispositivoId: item.device.id, canal: item.canal, encendido: Boolean(states[`${item.device.id}:${item.canal}`]) })); if (!acciones.length) { toast('Elegí al menos una salida para la escena.', 'warning'); return; } setSaving(true); try { await crearEscena({ nombre: name, descripcion: description, acciones }); toast('Escena creada y lista para usar.', 'success'); onDone(); } catch (error) { toast(error instanceof Error ? error.message : 'No se pudo crear la escena.', 'error'); setSaving(false); } }}><Field label="Nombre"><input required value={name} onChange={(event) => setName(event.target.value)} className={input} placeholder="Ej: Cerrar todas las aulas" /></Field><Field label="Descripción"><input value={description} onChange={(event) => setDescription(event.target.value)} className={input} placeholder="Qué hace y cuándo conviene usarla" /></Field><fieldset className="space-y-2"><legend className="mb-2 text-xs font-black uppercase tracking-wider text-muted">Salidas de la escena</legend>{options.map(({ device, channel, canal }) => { const key = `${device.id}:${canal}`; const value = states[key]; return <div key={key} className="border border-line p-3"><div className="min-w-0"><strong className="block break-words text-sm text-content">{channel.nombre}</strong><span className="block text-xs text-faint">{device.nombre}{device.ubicacion ? ` · ${device.ubicacion}` : ''}</span></div><div className="mt-3 grid grid-cols-3 gap-1"><button type="button" onClick={() => setStates({ ...states, [key]: null })} className={`min-h-11 px-2 text-[10px] font-black uppercase ${value === null || value === undefined ? 'bg-slate-900 text-white' : 'border border-line text-muted'}`}>Sin cambio</button><button type="button" onClick={() => setStates({ ...states, [key]: true })} className={`min-h-11 px-2 text-[10px] font-black uppercase ${value === true ? 'bg-amber-500 text-slate-950' : 'border border-line text-muted'}`}>Encender</button><button type="button" onClick={() => setStates({ ...states, [key]: false })} className={`min-h-11 px-2 text-[10px] font-black uppercase ${value === false ? 'bg-cyan-700 text-white' : 'border border-line text-muted'}`}>Apagar</button></div></div>; })}{!options.length && <div className="border border-dashed border-line p-5 text-center text-sm text-muted">No hay salidas habilitadas para control. Primero habilitá cada dispositivo desde Configurar.</div>}</fieldset><div className="border border-amber-500/30 bg-amber-500/5 p-3 text-xs leading-relaxed text-muted">La escena no se ejecuta al guardarla. Primero se crea y luego exige una confirmación separada cada vez que se usa.</div><button disabled={saving || !options.length || !selectedCount} className="h-12 w-full bg-cyan-700 text-xs font-black uppercase text-white disabled:opacity-40">{saving ? 'Creando…' : `Crear escena · ${selectedCount} salidas`}</button></form></ModalShell>;
 }
 
 function CommandModal({ device, onClose, onDone, toast }: { device: DispositivoIoT; onClose: () => void; onDone: () => void; toast: (message: string, variant?: 'success' | 'error' | 'warning' | 'info') => void }) {

@@ -126,7 +126,15 @@ export function extraerLecturasEwelink(value: unknown): Record<string, number | 
     if (typeof item === 'number' || typeof item === 'boolean') result[key] = item;
     else if (typeof item === 'string') {
       const numeric = Number(item);
-      result[key] = item.trim() !== '' && Number.isFinite(numeric) ? numeric : item === 'on' ? true : item === 'off' ? false : item;
+      const normalized = item.trim().toLowerCase();
+      const active = new Set(['on', 'open', 'opened', 'detected', 'alarm', 'wet', 'leak', 'motion']);
+      const inactive = new Set(['off', 'close', 'closed', 'normal', 'dry', 'no_leak', 'clear', 'no_motion']);
+      result[key] = item.trim() !== '' && Number.isFinite(numeric) ? numeric : active.has(normalized) ? true : inactive.has(normalized) ? false : item;
+    } else if (Array.isArray(item) && /^(current|voltage|actpow|apparentpow|reactivepow|power|factor|daykwh|monthkwh|energy)/i.test(key)) {
+      item.forEach((entry, index) => {
+        if (typeof entry === 'number' || typeof entry === 'boolean') result[`${key}_${index + 1}`] = entry;
+        else if (typeof entry === 'string' && entry.trim() !== '' && Number.isFinite(Number(entry))) result[`${key}_${index + 1}`] = Number(entry);
+      });
     }
   }
   if (result.currentTemperature !== undefined) {
@@ -170,6 +178,11 @@ export function clasificarDispositivoEwelink(device: Record<string, unknown>): s
     if (channels === 1) return 'interruptor';
   }
   if ('switch' in params) return 'interruptor';
+  if (/water|leak|flood|inund|fuga/.test(identity) || ['water', 'leak', 'flood', 'waterLeak'].some((key) => key in params)) return 'sensor_inundacion';
+  if (/door|window|contact|magnet|puerta|ventana|apertura/.test(identity) || ['door', 'window', 'contact', 'open'].some((key) => key in params)) return 'sensor_magnetico';
+  if (/temperature|humidity|thermo|hygro|temperatura|humedad|\bth\b/.test(identity) || ['temperature', 'currentTemperature', 'humidity', 'currentHumidity'].some((key) => key in params)) return 'sensor_ambiente';
+  if (/motion|pir|movement|movimiento/.test(identity) || ['motion', 'pir', 'movement'].some((key) => key in params)) return 'sensor_movimiento';
+  if (/smoke|gas|co2|humo/.test(identity) || ['smoke', 'gas', 'co2'].some((key) => key in params)) return 'sensor_alarma';
   return 'sensor';
 }
 

@@ -119,6 +119,32 @@ test('eWeLink distingue interruptores multicanal y RF Bridge', () => {
   assert.equal(clasificarDispositivoEwelink({ name: 'RF colegio', uiid: 28, params: {} }), 'puente_rf');
 });
 
+test('eWeLink conserva mediciones eléctricas del DUAL R3 por canal', () => {
+  const readings = extraerLecturasEwelink({
+    switches: [{ switch: 'on', outlet: 0 }, { switch: 'off', outlet: 1 }],
+    current: ['0.42', '0.00'],
+    voltage: [221.7, 221.5],
+    actPow: ['87.5', '0'],
+    dayKwh: ['0.62', '0.11'],
+  });
+  assert.equal(readings.current_1, 0.42);
+  assert.equal(readings.current_2, 0);
+  assert.equal(readings.voltage_1, 221.7);
+  assert.equal(readings.actPow_1, 87.5);
+  assert.equal(readings.dayKwh_2, 0.11);
+  assert.doesNotMatch(controlIndustrial, /current_\[0-9\]\+\|voltage_\[0-9\]\+/);
+  assert.match(controlIndustrial, /channelMetrics/);
+});
+
+test('clasifica sensores ambientales, magnéticos e inundación sin degradarlos a genérico', () => {
+  assert.equal(clasificarDispositivoEwelink({ productModel: 'SNZB-02P Temperature Humidity', params: { temperature: 20, humidity: 55 } }), 'sensor_ambiente');
+  assert.equal(clasificarDispositivoEwelink({ productModel: 'Door Window Sensor', params: { door: true } }), 'sensor_magnetico');
+  assert.equal(clasificarDispositivoEwelink({ productModel: 'Water Leak Sensor', params: { waterLeak: false } }), 'sensor_inundacion');
+  assert.equal(clasificarDispositivoEwelink({ productModel: 'TH Elite', params: { switch: 'on', currentTemperature: 20 } }), 'interruptor');
+  assert.equal(extraerLecturasEwelink({ door: 'open', waterLeak: 'dry' }).door, true);
+  assert.equal(extraerLecturasEwelink({ door: 'open', waterLeak: 'dry' }).waterLeak, false);
+});
+
 test('el comando DUAL R3 conserva el otro canal y sólo cambia el elegido', () => {
   assert.deepEqual(crearParametrosCanalEwelink(1, true, { 0: false, 1: false }), {
     switches: [{ outlet: 0, switch: 'off' }, { outlet: 1, switch: 'on' }],
@@ -169,6 +195,22 @@ test('Control Industrial conserva una interfaz mobile-first operable', () => {
   assert.match(controlIndustrial, /grid grid-cols-1 gap-3 sm:grid-cols-2/);
   assert.match(controlIndustrial, /col-span-2 min-h-12 bg-cyan-700/);
   assert.doesNotMatch(controlIndustrial, /truncate font-display text-lg font-black text-content/);
+});
+
+test('alarmas booleanas, push, desconexiones y escenas quedan cubiertos de extremo a extremo', () => {
+  const ingest = readFileSync(resolve(process.cwd(), 'src/iotIngest.ts'), 'utf8');
+  assert.match(routes, /booleanoEstricto/);
+  assert.match(routes, /Elegí si la condición debe estar activa o inactiva/);
+  assert.match(routes, /notificaciones\/prueba/);
+  assert.match(ingest, /evaluarDesconexionesIoT/);
+  assert.match(ingest, /condicionDesde/);
+  assert.match(ingest, /Dispositivo sin conexión/);
+  assert.match(schema, /model EscenaIoT \{/);
+  assert.match(routes, /post\('\/escenas'/);
+  assert.match(routes, /escenas\/:id\/ejecutar/);
+  assert.match(controlIndustrial, /Avisos en este celular/);
+  assert.match(controlIndustrial, /Escenas de control/);
+  assert.match(controlIndustrial, /Activo \/ detectado \/ abierto/);
 });
 
 test('la PWA comprueba actualizaciones al abrirse y cuando recupera visibilidad', () => {
