@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { normalizarEventoIoT } from './iotIngest';
 import { cifrarCredenciales, descifrarCredenciales, firmarEstadoOAuth, hashToken, verificarEstadoOAuth } from './iotSecrets';
+import { clasificarDispositivoEwelink, crearParametrosCanalEwelink, extraerLecturasEwelink } from './ewelinkConnector';
 
 const ROOT = resolve(process.cwd(), '..');
 const routes = readFileSync(resolve(process.cwd(), 'src/routes/controlIndustrial.ts'), 'utf8');
@@ -75,7 +76,8 @@ test('los secretos no salen en respuestas y los comandos exigen doble habilitaci
   assert.match(routes, /const \{ credencialesCifradas, \.\.\.safe \} = item/);
   assert.match(routes, /!module\?\.controlRemotoHabilitado/);
   assert.match(routes, /!device\?\.permiteControl/);
-  assert.match(routes, /adaptador de ejecución certificado/);
+  assert.match(routes, /ejecutarCanalEwelink/);
+  assert.match(routes, /solicitadoPorId: req\.auth!\.userId/);
 });
 
 test('el dominio persiste licencia, telemetría, alarmas, retención y comandos por tenant', () => {
@@ -98,6 +100,41 @@ test('eWeLink usa autorización OAuth y no vuelve a pedir un Access Token manual
   assert.match(controlIndustrial, /autorizarSonoff/);
   assert.doesNotMatch(controlIndustrial, /Field label="Access Token"/);
   assert.doesNotMatch(controlIndustrial, /Guardar de forma segura/);
+});
+
+test('eWeLink importa los canales del DUAL R3 sin perder estados escalares', () => {
+  const readings = extraerLecturasEwelink({
+    switches: [{ switch: 'on', outlet: 0 }, { switch: 'off', outlet: 1 }],
+    actPow: 32.4,
+    online: 'on',
+  });
+  assert.equal(readings.switch_1, true);
+  assert.equal(readings.switch_2, false);
+  assert.equal(readings.actPow, 32.4);
+  assert.equal(readings.online, true);
+});
+
+test('eWeLink distingue interruptores multicanal y RF Bridge', () => {
+  assert.equal(clasificarDispositivoEwelink({ productModel: 'SONOFF DUAL R3', params: { switches: [{ outlet: 0 }, { outlet: 1 }] } }), 'interruptor_multicanal');
+  assert.equal(clasificarDispositivoEwelink({ name: 'RF colegio', uiid: 28, params: {} }), 'puente_rf');
+});
+
+test('el comando DUAL R3 conserva el otro canal y sólo cambia el elegido', () => {
+  assert.deepEqual(crearParametrosCanalEwelink(1, true, { 0: false, 1: false }), {
+    switches: [{ outlet: 0, switch: 'off' }, { outlet: 1, switch: 'on' }],
+  });
+  assert.throws(() => crearParametrosCanalEwelink(4, true), /entre 1 y 4/);
+});
+
+test('el control remoto ejecuta eWeLink, audita el resultado y excluye el RF Bridge', () => {
+  const connector = readFileSync(resolve(process.cwd(), 'src/ewelinkConnector.ts'), 'utf8');
+  assert.match(connector, /\/v2\/device\/thing\/status/);
+  assert.match(routes, /ejecutarCanalEwelink/);
+  assert.match(routes, /estado: 'ejecutado'/);
+  assert.match(routes, /device\.tipo === 'puente_rf'/);
+  assert.match(controlIndustrial, /Confirmá la operación/);
+  assert.match(controlIndustrial, /Operar luces/);
+  assert.doesNotMatch(controlIndustrial, /Falta un adaptador de ejecución certificado/);
 });
 
 test('la PWA comprueba actualizaciones al abrirse y cuando recupera visibilidad', () => {

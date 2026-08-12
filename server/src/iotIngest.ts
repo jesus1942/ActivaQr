@@ -9,6 +9,7 @@ export interface EventoIoTNormalizado {
   dispositivoExternoId: string;
   nombre?: string;
   modelo?: string;
+  tipo?: string;
   medidaEn: Date;
   lecturas: Record<string, Scalar>;
   bateria?: number;
@@ -18,7 +19,7 @@ export interface EventoIoTNormalizado {
 
 const RESERVED = new Set([
   'devEUI', 'dev_eui', 'deviceId', 'device_id', 'id', 'name', 'deviceName', 'model',
-  'timestamp', 'time', 'receivedAt', 'battery', 'bateria', 'rssi', 'snr', 'raw', 'data', 'object', 'readings',
+  'deviceType', 'uiid', 'timestamp', 'time', 'receivedAt', 'battery', 'bateria', 'rssi', 'snr', 'raw', 'data', 'object', 'readings',
 ]);
 
 function object(value: unknown): Record<string, unknown> {
@@ -68,6 +69,7 @@ export function normalizarEventoIoT(body: unknown): EventoIoTNormalizado {
     dispositivoExternoId: id.trim(),
     nombre: String(root.deviceName ?? root.name ?? device.name ?? '').trim() || undefined,
     modelo: String(root.model ?? device.model ?? '').trim() || undefined,
+    tipo: String(root.deviceType ?? '').trim() || undefined,
     medidaEn: Number.isNaN(parsed.getTime()) ? new Date() : parsed,
     lecturas,
     bateria: numberOrUndefined(root.battery, root.bateria, lecturas.battery, lecturas.bateria),
@@ -90,6 +92,11 @@ const LABELS: Record<string, { nombre: string; unidad?: string }> = {
   puerta: { nombre: 'Puerta' },
   relay: { nombre: 'Relé' },
   switch: { nombre: 'Relé' },
+  switch_1: { nombre: 'Canal 1' },
+  switch_2: { nombre: 'Canal 2' },
+  switch_3: { nombre: 'Canal 3' },
+  switch_4: { nombre: 'Canal 4' },
+  online: { nombre: 'Conexión' },
 };
 
 function claveSegura(raw: string): string {
@@ -203,6 +210,7 @@ export async function procesarEventoIoT(integracionId: string, evento: EventoIoT
       identificadorExterno: evento.dispositivoExternoId,
       nombre: evento.nombre ?? `Dispositivo ${evento.dispositivoExternoId.slice(-6)}`,
       modelo: evento.modelo,
+      tipo: evento.tipo ?? 'sensor',
     } });
   }
 
@@ -218,6 +226,8 @@ export async function procesarEventoIoT(integracionId: string, evento: EventoIoT
       bateria: evento.bateria,
       rssi: evento.rssi,
       estado: 'normal',
+      modelo: evento.modelo ?? dispositivo!.modelo,
+      tipo: evento.tipo ?? dispositivo!.tipo,
       metadatos: evento.raw as Prisma.InputJsonValue,
     } });
     await tx.integracionIoT.update({ where: { id: integracionId }, data: { estado: 'conectada', ultimoEventoEn: new Date(), ultimoError: null } });

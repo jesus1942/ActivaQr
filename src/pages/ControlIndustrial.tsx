@@ -43,8 +43,32 @@ function ago(value?: string | null) {
 
 function valueOf(variable: VariableIoT) {
   if (variable.tipo === 'numero') return variable.valorNumero == null ? '—' : `${Number(variable.valorNumero).toLocaleString('es-AR', { maximumFractionDigits: 2 })}${variable.unidad ? ` ${variable.unidad}` : ''}`;
+  if (/^switch_[1-4]$/.test(variable.clave) || variable.clave === 'relay') return variable.valorBooleano ? 'Encendida' : 'Apagada';
+  if (variable.clave === 'online') return variable.valorBooleano ? 'En línea' : 'Sin conexión';
   if (variable.tipo === 'booleano') return variable.valorBooleano ? 'Activo' : 'Normal';
   return variable.valorTexto || '—';
+}
+
+const TECHNICAL_VARIABLE = /^(bssid|ssid|sta(mac)?|fw(version)?|rssi|calibstate|sledonline|init|partnerap(index)?|pulse(width)?|startup|configure|timers?|uiid|actpow(r)?|apparentpow(r)?|reactivepow(r)?|current_[0-9]+|voltage_[0-9]+)$/i;
+
+function visibleVariables(device: DispositivoIoT) {
+  return device.variables.filter((variable) => !TECHNICAL_VARIABLE.test(variable.clave));
+}
+
+function channelVariables(device: DispositivoIoT) {
+  const channels = device.variables
+    .filter((variable) => /^switch_[1-4]$/.test(variable.clave))
+    .sort((a, b) => a.clave.localeCompare(b.clave));
+  if (channels.length) return channels;
+  const relay = device.variables.find((variable) => variable.clave === 'relay');
+  return relay ? [{ ...relay, clave: 'switch_1', nombre: 'Canal 1' }] : [];
+}
+
+function deviceKind(device: DispositivoIoT) {
+  if (device.tipo === 'puente_rf') return 'Puente RF · acceso para controles remotos';
+  if (device.tipo === 'interruptor_multicanal') return 'Interruptor multicanal';
+  if (device.tipo === 'interruptor') return 'Interruptor';
+  return device.modelo || device.identificadorExterno;
 }
 
 const stateTone: Record<string, string> = {
@@ -139,16 +163,16 @@ export const ControlIndustrial: React.FC = () => {
 
     {tab === 'vivo' && <section className="space-y-4">
       {!data.dispositivos.length ? <Empty icon={RadioTower} title="Esperando el primer dispositivo" text="Configurá un conector y enviá la primera lectura. El equipo aparecerá automáticamente en este tablero." action={owner ? () => setTab('conexiones') : undefined} actionLabel="Configurar conexión" /> : <div className="grid gap-4 xl:grid-cols-2">
-        {data.dispositivos.map((device) => <article key={device.id} className={`border bg-surface shadow-soft ${device.estado === 'critico' ? 'border-red-500' : 'border-line'}`}>
+        {data.dispositivos.map((device) => { const shown = visibleVariables(device); const channels = channelVariables(device); const operable = device.tipo !== 'puente_rf' && channels.length > 0; return <article key={device.id} className={`border bg-surface shadow-soft ${device.estado === 'critico' ? 'border-red-500' : 'border-line'}`}>
           <div className="flex items-start justify-between gap-3 border-b border-line p-4">
-            <div className="flex min-w-0 items-center gap-3"><div className={`grid h-11 w-11 shrink-0 place-items-center border ${stateTone[device.estado] ?? stateTone.sin_datos}`}>{device.estado === 'desconectado' ? <WifiOff size={20} /> : <Snowflake size={20} />}</div><div className="min-w-0"><h2 className="truncate font-display text-lg font-black text-content">{device.nombre}</h2><p className="truncate text-xs text-faint">{device.ubicacion || device.modelo || device.identificadorExterno}</p></div></div>
+            <div className="flex min-w-0 items-center gap-3"><div className={`grid h-11 w-11 shrink-0 place-items-center border ${stateTone[device.estado] ?? stateTone.sin_datos}`}>{device.estado === 'desconectado' ? <WifiOff size={20} /> : device.tipo === 'puente_rf' ? <RadioTower size={20} /> : operable ? <Zap size={20} /> : <Snowflake size={20} />}</div><div className="min-w-0"><h2 className="truncate font-display text-lg font-black text-content">{device.nombre}</h2><p className="truncate text-xs text-faint">{device.ubicacion || deviceKind(device)}</p></div></div>
             <div className="text-right"><span className={`inline-block px-2 py-1 text-[10px] font-black uppercase tracking-wider ${stateTone[device.estado] ?? stateTone.sin_datos}`}>{device.estado.replace('_', ' ')}</span><p className="mt-1 text-[10px] text-faint">{ago(device.ultimoContactoEn)}</p></div>
           </div>
           <div className="grid grid-cols-2 gap-px bg-line sm:grid-cols-3">
-            {device.variables.length ? device.variables.slice(0, 6).map((variable) => <button key={variable.id} onClick={() => setSelectedVariable({ device, variable })} className="group bg-surface p-4 text-left hover:bg-subtle"><div className="mb-2 flex items-center justify-between text-faint"><VariableIcon variable={variable} /><ChevronRight size={14} className="opacity-0 transition-opacity group-hover:opacity-100" /></div><strong className="block truncate text-xl font-black text-content">{valueOf(variable)}</strong><span className="block truncate text-[10px] uppercase tracking-wider text-faint">{variable.nombre}</span></button>) : <div className="col-span-full bg-surface p-6 text-center text-xs text-faint">El dispositivo todavía no envió variables decodificadas.</div>}
+            {shown.length ? shown.slice(0, 6).map((variable) => <button key={variable.id} onClick={() => setSelectedVariable({ device, variable })} className="group bg-surface p-4 text-left hover:bg-subtle"><div className="mb-2 flex items-center justify-between text-faint"><VariableIcon variable={variable} /><ChevronRight size={14} className="opacity-0 transition-opacity group-hover:opacity-100" /></div><strong className="block truncate text-xl font-black text-content">{valueOf(variable)}</strong><span className="block truncate text-[10px] uppercase tracking-wider text-faint">{variable.nombre}</span></button>) : <div className="col-span-full bg-surface p-6 text-center text-xs text-faint">{device.tipo === 'puente_rf' ? 'Puente RF conectado. Se muestra como acceso y no como una luz.' : 'El dispositivo todavía no envió variables útiles.'}</div>}
           </div>
-          <div className="flex items-center gap-4 p-3 text-[10px] uppercase tracking-wider text-faint">{data.modulo.tableroConfig?.mostrarBateria !== false && <span>Batería {device.bateria == null ? '—' : `${device.bateria}%`}</span>}{data.modulo.tableroConfig?.mostrarSenal !== false && <span>Señal {device.rssi == null ? '—' : `${device.rssi} dBm`}</span>}{editable && <button onClick={() => setSettingsFor(device)} className="ml-auto flex items-center gap-1 font-black text-muted"><Settings2 size={13} /> Configurar</button>}{editable && device.permiteControl && <button onClick={() => setCommandFor(device)} className="font-black text-cyan-700">Operar</button>}</div>
-        </article>)}
+          <div className="flex items-center gap-4 p-3 text-[10px] uppercase tracking-wider text-faint">{data.modulo.tableroConfig?.mostrarBateria !== false && <span>Batería {device.bateria == null ? '—' : `${device.bateria}%`}</span>}{data.modulo.tableroConfig?.mostrarSenal !== false && <span>Señal {device.rssi == null ? '—' : `${device.rssi} dBm`}</span>}{editable && <button onClick={() => setSettingsFor(device)} className="ml-auto flex items-center gap-1 font-black text-muted"><Settings2 size={13} /> Configurar</button>}{editable && data.modulo.controlRemotoHabilitado && operable && (device.permiteControl ? <button onClick={() => setCommandFor(device)} className="font-black text-cyan-700">Operar luces</button> : <button onClick={() => setSettingsFor(device)} className="font-black text-amber-600">Habilitar control</button>)}</div>
+        </article>; })}
       </div>}
     </section>}
 
@@ -198,11 +222,25 @@ function RuleModal({ devices, onClose, onDone, toast }: { devices: DispositivoIo
 }
 
 function CommandModal({ device, onClose, onDone, toast }: { device: DispositivoIoT; onClose: () => void; onDone: () => void; toast: (message: string, variant?: 'success' | 'error' | 'warning' | 'info') => void }) {
-  const [type, setType] = useState('setpoint'); const [value, setValue] = useState(''); const [reason, setReason] = useState('');
-  return <ModalShell title={`Operar ${device.nombre}`} onClose={onClose}><form className="space-y-4" onSubmit={async (e) => { e.preventDefault(); try { await solicitarComando({ dispositivoId: device.id, tipo: type, payload: { valor: type === 'setpoint' ? Number(value) : value }, motivo: reason }); toast('Solicitud registrada. Se ejecutará sólo mediante un adaptador certificado.', 'success'); onDone(); } catch (error) { toast(error instanceof Error ? error.message : 'No se pudo registrar.', 'error'); } }}><div className="border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-muted">Esta acción no puentea protecciones. ActivaQR registra la intención y el adaptador local debe validar límites e interbloqueos.</div><Field label="Acción"><select value={type} onChange={(e) => setType(e.target.value)} className={input}><option value="setpoint">Cambiar setpoint</option><option value="rele">Cambiar relé</option><option value="salida">Accionar salida autorizada</option></select></Field><Field label="Valor"><input required value={value} onChange={(e) => setValue(e.target.value)} className={input} /></Field><Field label="Motivo"><textarea required minLength={5} rows={3} value={reason} onChange={(e) => setReason(e.target.value)} className={`${input} h-auto py-3`} /></Field><button className="h-12 w-full bg-cyan-700 text-xs font-black uppercase text-white">Registrar solicitud</button></form></ModalShell>;
+  const channels = channelVariables(device);
+  const [action, setAction] = useState<{ canal: number; encendido: boolean; nombre: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const execute = async () => {
+    if (!action) return;
+    setSaving(true);
+    try {
+      await solicitarComando({ dispositivoId: device.id, tipo: 'rele', payload: { canal: action.canal, encendido: action.encendido }, motivo: 'Operación manual confirmada desde ActivaQR.' });
+      toast(`${action.nombre} ${action.encendido ? 'encendida' : 'apagada'} correctamente.`, 'success');
+      onDone();
+    } catch (error) {
+      toast(error instanceof Error ? error.message : 'No se pudo operar la luz.', 'error');
+      setSaving(false);
+    }
+  };
+  return <ModalShell title={`Operar ${device.nombre}`} onClose={onClose}><div className="space-y-4"><p className="text-sm text-muted">Seleccioná una salida. ActivaQR enviará el cambio a eWeLink y dejará registrada la maniobra.</p><div className="space-y-2">{channels.map((variable, index) => { const encendida = Boolean(variable.valorBooleano); const canal = Number(variable.clave.slice(7)) - 1; const nombre = variable.nombre || `Canal ${index + 1}`; return <button key={variable.id} disabled={saving} onClick={() => setAction({ canal, encendido: !encendida, nombre })} className="flex w-full items-center justify-between border border-line p-4 text-left hover:border-cyan-600 disabled:opacity-50"><span><strong className="block text-content">{nombre}</strong><span className="text-xs text-faint">{encendida ? 'Encendida' : 'Apagada'}</span></span><span className={`px-3 py-2 text-xs font-black uppercase ${encendida ? 'bg-amber-500/15 text-amber-600' : 'bg-emerald-500/10 text-emerald-600'}`}>{encendida ? 'Apagar' : 'Encender'}</span></button>; })}</div>{action && <div className="border border-amber-500/40 bg-amber-500/10 p-4"><strong className="block text-content">Confirmá la operación</strong><p className="mt-1 text-sm text-muted">Vas a {action.encendido ? 'encender' : 'apagar'} {action.nombre}. La luz real cambiará de estado.</p><div className="mt-4 flex gap-2"><button disabled={saving} onClick={execute} className="h-11 flex-1 bg-cyan-700 px-4 text-xs font-black uppercase text-white disabled:opacity-50">{saving ? 'Enviando…' : 'Confirmar'}</button><button disabled={saving} onClick={() => setAction(null)} className="h-11 border border-line px-4 text-xs font-black uppercase text-content">Cancelar</button></div></div>}</div></ModalShell>;
 }
 
 function DeviceModal({ device, remoteContract, onClose, onDone, toast }: { device: DispositivoIoT; remoteContract: boolean; onClose: () => void; onDone: () => void; toast: (message: string, variant?: 'success' | 'error' | 'warning' | 'info') => void }) {
   const [form, setForm] = useState({ nombre: device.nombre, ubicacion: device.ubicacion ?? '', habilitado: device.habilitado, permiteControl: device.permiteControl });
-  return <ModalShell title="Configurar dispositivo" onClose={onClose}><form className="space-y-4" onSubmit={async (e) => { e.preventDefault(); try { await actualizarDispositivo(device.id, form); toast('Dispositivo actualizado.', 'success'); onDone(); } catch (error) { toast(error instanceof Error ? error.message : 'No se pudo actualizar.', 'error'); } }}><Field label="Nombre visible"><input required value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} className={input} /></Field><Field label="Ubicación"><input value={form.ubicacion} onChange={(e) => setForm({ ...form, ubicacion: e.target.value })} className={input} placeholder="Ej: Cámara 2 · Planta norte" /></Field><label className="flex items-start gap-3 border border-line p-3 text-sm text-muted"><input type="checkbox" checked={form.habilitado} onChange={(e) => setForm({ ...form, habilitado: e.target.checked })} className="mt-1" /><span><strong className="block text-content">Recibir telemetría</strong>Si se pausa, ActivaQR rechaza nuevas lecturas de este equipo.</span></label><label className={`flex items-start gap-3 border p-3 text-sm ${remoteContract ? 'border-amber-500/40 bg-amber-500/5 text-muted' : 'border-line bg-subtle text-faint'}`}><input type="checkbox" disabled={!remoteContract} checked={form.permiteControl} onChange={(e) => setForm({ ...form, permiteControl: e.target.checked })} className="mt-1" /><span><strong className="block text-content">Permitir solicitudes de operación</strong>{remoteContract ? 'Habilita este equipo dentro del contrato de control remoto.' : 'El contrato del tenant está configurado sólo para monitoreo.'}</span></label><button className="h-12 w-full bg-cyan-700 text-xs font-black uppercase text-white">Guardar dispositivo</button></form></ModalShell>;
+  return <ModalShell title="Configurar dispositivo" onClose={onClose}><form className="space-y-4" onSubmit={async (e) => { e.preventDefault(); try { await actualizarDispositivo(device.id, form); toast('Dispositivo actualizado.', 'success'); onDone(); } catch (error) { toast(error instanceof Error ? error.message : 'No se pudo actualizar.', 'error'); } }}><Field label="Nombre visible"><input required value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} className={input} /></Field><Field label="Ubicación"><input value={form.ubicacion} onChange={(e) => setForm({ ...form, ubicacion: e.target.value })} className={input} placeholder="Ej: Aula 1 · Planta baja" /></Field><label className="flex items-start gap-3 border border-line p-3 text-sm text-muted"><input type="checkbox" checked={form.habilitado} onChange={(e) => setForm({ ...form, habilitado: e.target.checked })} className="mt-1" /><span><strong className="block text-content">Recibir telemetría</strong>Si se pausa, ActivaQR rechaza nuevas lecturas de este equipo.</span></label><label className={`flex items-start gap-3 border p-3 text-sm ${remoteContract && device.tipo !== 'puente_rf' ? 'border-amber-500/40 bg-amber-500/5 text-muted' : 'border-line bg-subtle text-faint'}`}><input type="checkbox" disabled={!remoteContract || device.tipo === 'puente_rf'} checked={form.permiteControl} onChange={(e) => setForm({ ...form, permiteControl: e.target.checked })} className="mt-1" /><span><strong className="block text-content">Permitir control remoto</strong>{device.tipo === 'puente_rf' ? 'El RF Bridge se conserva como puente de acceso; no es una salida de luz.' : remoteContract ? 'Permite operar sus canales desde ActivaQR con confirmación y auditoría.' : 'El contrato del tenant está configurado sólo para monitoreo.'}</span></label><button className="h-12 w-full bg-cyan-700 text-xs font-black uppercase text-white">Guardar dispositivo</button></form></ModalShell>;
 }

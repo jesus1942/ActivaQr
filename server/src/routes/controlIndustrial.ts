@@ -12,7 +12,7 @@ import {
 import { auditar, registrarAuditoria } from '../auditoria';
 import { cifrarCredenciales, hashToken } from '../iotSecrets';
 import { normalizarEventoIoT, procesarEventoIoT } from '../iotIngest';
-import { crearAutorizacionEwelink, sincronizarEwelink } from '../ewelinkConnector';
+import { crearAutorizacionEwelink, ejecutarCanalEwelink, sincronizarEwelink } from '../ewelinkConnector';
 
 const ESTADOS_MODULO = new Set(['configuracion', 'activo', 'suspendido']);
 const PROVEEDORES = new Set(['sonoff_ewelink', 'milesight_ug65', 'webhook_generico']);
@@ -309,25 +309,49 @@ controlIndustrialRouter.post('/alarmas/:id/reconocer', requireGestionOperacion, 
 });
 
 controlIndustrialRouter.post('/comandos', requireJefatura, async (req: AuthRequest, res, next) => {
+  let commandId: string | null = null;
   try {
     const empresaId = tenantId(req);
     const { dispositivoId, tipo, payload, motivo } = req.body ?? {};
-    if (!['rele', 'setpoint', 'salida', 'personalizado'].includes(tipo) || !payload || typeof payload !== 'object' || !motivo || String(motivo).trim().length < 5) throw statusError('El comando requiere dispositivo, tipo, valor y un motivo de al menos 5 caracteres.');
+    if (tipo !== 'rele' || !payload || typeof payload !== 'object' || !motivo || String(motivo).trim().length < 5) throw statusError('El comando requiere dispositivo, canal, estado y un motivo de al menos 5 caracteres.');
     const [module, device] = await Promise.all([
       prisma.moduloControlEmpresa.findUnique({ where: { empresaId } }),
-      prisma.dispositivoIoT.findFirst({ where: { id: dispositivoId, empresaId }, include: { integracion: true } }),
+      prisma.dispositivoIoT.findFirst({ where: { id: dispositivoId, empresaId }, include: { integracion: true, variables: true } }),
     ]);
     if (!module?.controlRemotoHabilitado) throw statusError('El Superadmin no habilitó control remoto para este contrato.', 403);
     if (!device?.permiteControl) throw statusError('Este dispositivo está configurado sólo para monitoreo.', 409);
+    if (device.integracion.proveedor !== 'sonoff_ewelink') throw statusError('Este equipo no posee un adaptador de operación remota.', 409);
+    if (device.tipo === 'puente_rf') throw statusError('El RF Bridge es un puente de acceso y no se opera como una salida.', 409);
+    const canal = Number((payload as Record<string, unknown>).canal);
+    const encendido = (payload as Record<string, unknown>).encendido;
+    if (!Number.isInteger(canal) || canal < 0 || canal > 3 || typeof encendido !== 'boolean') throw statusError('Seleccioná un canal válido y el estado encendido o apagado.');
+    const channelVariables = device.variables.filter((item) => /^switch_[1-4]$/.test(item.clave));
+    if (channelVariables.length && !channelVariables.some((item) => item.clave === `switch_${canal + 1}`)) throw statusError('El dispositivo no informó ese canal.', 409);
+    const online = device.variables.find((item) => item.clave === 'online');
+    if (online?.valorBooleano === false) throw statusError('El dispositivo está desconectado en eWeLink.', 409);
+    const estados = Object.fromEntries(channelVariables.map((item) => [Number(item.clave.slice(7)) - 1, Boolean(item.valorBooleano)]));
     const command = await prisma.comandoIoT.create({ data: {
       empresaId, dispositivoId: device.id, tipo, payload, motivo: String(motivo).trim().slice(0, 2000),
       solicitadoPorId: req.auth!.userId, solicitadoPorNombre: req.auth!.email,
       estado: 'pendiente',
-      resultado: 'Registrado. Falta un adaptador de ejecución certificado para el controlador asociado.',
+      resultado: 'Enviando operación segura a eWeLink.',
     } });
-    await auditar(req, 'comando', 'ComandoIoT', command.id, `${tipo}: ${motivo}`);
-    res.status(202).json(command);
-  } catch (error) { next(error); }
+    commandId = command.id;
+    await ejecutarCanalEwelink(device.integracionId, device.identificadorExterno, canal, encendido, estados);
+    const executed = await prisma.$transaction(async (tx) => {
+      const variable = await tx.variableIoT.findUnique({ where: { dispositivoId_clave: { dispositivoId: device.id, clave: `switch_${canal + 1}` } } });
+      if (variable) {
+        await tx.variableIoT.update({ where: { id: variable.id }, data: { valorBooleano: encendido, valorNumero: null, valorTexto: null, tipo: 'booleano', calidad: 'buena', medidaEn: new Date() } });
+        await tx.lecturaIoT.create({ data: { variableId: variable.id, valorBooleano: encendido, medidaEn: new Date(), calidad: 'buena' } });
+      }
+      return tx.comandoIoT.update({ where: { id: command.id }, data: { estado: 'ejecutado', ejecutadoEn: new Date(), resultado: `Canal ${canal + 1} ${encendido ? 'encendido' : 'apagado'} y confirmado por eWeLink.` } });
+    });
+    await auditar(req, 'comando', 'ComandoIoT', command.id, `${device.nombre}: canal ${canal + 1} ${encendido ? 'encendido' : 'apagado'}. Motivo: ${motivo}`);
+    res.json({ ...executed, dispositivo: { nombre: device.nombre } });
+  } catch (error) {
+    if (commandId) await prisma.comandoIoT.update({ where: { id: commandId }, data: { estado: 'error', ejecutadoEn: new Date(), resultado: error instanceof Error ? error.message.slice(0, 2000) : 'Error desconocido al operar.' } }).catch(() => {});
+    next(error);
+  }
 });
 
 export const iotIngestRouter = Router();

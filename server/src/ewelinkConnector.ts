@@ -118,10 +118,11 @@ async function renovarTokenEwelink(integrationId: string, credentials: EwelinkCr
   return renewed;
 }
 
-function scalarParams(value: unknown): Record<string, number | boolean | string> {
+export function extraerLecturasEwelink(value: unknown): Record<string, number | boolean | string> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   const result: Record<string, number | boolean | string> = {};
-  for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+  const params = value as Record<string, unknown>;
+  for (const [key, item] of Object.entries(params)) {
     if (typeof item === 'number' || typeof item === 'boolean') result[key] = item;
     else if (typeof item === 'string') {
       const numeric = Number(item);
@@ -140,27 +141,105 @@ function scalarParams(value: unknown): Record<string, number | boolean | string>
     result.relay = result.switch;
     delete result.switch;
   }
+  if (Array.isArray(params.switches)) {
+    for (const item of params.switches) {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
+      const channel = Number((item as Record<string, unknown>).outlet);
+      const state = (item as Record<string, unknown>).switch;
+      if (Number.isInteger(channel) && channel >= 0 && channel <= 3 && (state === 'on' || state === 'off')) {
+        result[`switch_${channel + 1}`] = state === 'on';
+      }
+    }
+  }
   return result;
+}
+
+export function clasificarDispositivoEwelink(device: Record<string, unknown>): string {
+  const extra = device.extra && typeof device.extra === 'object' && !Array.isArray(device.extra)
+    ? device.extra as Record<string, unknown>
+    : {};
+  const params = device.params && typeof device.params === 'object' && !Array.isArray(device.params)
+    ? device.params as Record<string, unknown>
+    : {};
+  const uiid = Number(device.uiid ?? extra.uiid);
+  const identity = `${device.name ?? ''} ${device.productModel ?? ''} ${extra.model ?? ''}`.toLowerCase();
+  if (uiid === 28 || /rf\s*bridge|rfbridge|puente\s*rf|433\s*bridge/.test(identity)) return 'puente_rf';
+  if (Array.isArray(params.switches)) {
+    const channels = params.switches.filter((item) => item && typeof item === 'object').length;
+    if (channels > 1) return 'interruptor_multicanal';
+    if (channels === 1) return 'interruptor';
+  }
+  if ('switch' in params) return 'interruptor';
+  return 'sensor';
+}
+
+export function crearParametrosCanalEwelink(canal: number, encendido: boolean, estados: Record<number, boolean> = {}) {
+  if (!Number.isInteger(canal) || canal < 0 || canal > 3) throw Object.assign(new Error('El canal eWeLink debe estar entre 1 y 4.'), { status: 400 });
+  const merged = { ...estados, [canal]: encendido };
+  return {
+    switches: Object.entries(merged)
+      .map(([outlet, state]) => ({ outlet: Number(outlet), switch: state ? 'on' : 'off' }))
+      .filter((item) => Number.isInteger(item.outlet) && item.outlet >= 0 && item.outlet <= 3)
+      .sort((a, b) => a.outlet - b.outlet),
+  };
+}
+
+async function credencialesAutorizadas(integration: { id: string; credencialesCifradas: string | null }) {
+  if (!integration.credencialesCifradas) throw Object.assign(new Error('Primero autorizá la cuenta eWeLink.'), { status: 409 });
+  let credentials = credentialsOf(descifrarCredenciales(integration.credencialesCifradas));
+  if (credentials.atExpiredTime && credentials.atExpiredTime < Date.now() + 5 * 60_000) credentials = await renovarTokenEwelink(integration.id, credentials);
+  const region = String(credentials.region ?? 'us');
+  if (!credentials.appId || !credentials.accessToken || !DOMAINS[region]) throw Object.assign(new Error('Las credenciales o la región eWeLink no son válidas.'), { status: 400 });
+  return { credentials, region, domain: DOMAINS[region] };
+}
+
+export async function ejecutarCanalEwelink(integracionId: string, dispositivoExternoId: string, canal: number, encendido: boolean, estados: Record<number, boolean> = {}) {
+  const integration = await prisma.integracionIoT.findUnique({ where: { id: integracionId } });
+  if (!integration || integration.proveedor !== 'sonoff_ewelink') throw Object.assign(new Error('Conector SONOFF no encontrado.'), { status: 404 });
+  const { credentials, domain } = await credencialesAutorizadas(integration);
+  const params = crearParametrosCanalEwelink(canal, encendido, estados);
+  let response: Response;
+  try {
+    response = await fetch(`${domain}/v2/device/thing/status`, {
+      method: 'POST',
+      headers: {
+        'X-CK-Appid': credentials.appId,
+        'X-CK-Nonce': nonce(),
+        Authorization: `Bearer ${credentials.accessToken}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ type: 1, id: dispositivoExternoId, params }),
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (error) {
+    const message = error instanceof Error && error.name === 'TimeoutError'
+      ? 'eWeLink no confirmó la operación dentro de 15 segundos.'
+      : 'No se pudo enviar la operación a eWeLink.';
+    throw Object.assign(new Error(message), { status: 502 });
+  }
+  const body = await response.json().catch(() => ({})) as { error?: number; msg?: string };
+  if (!response.ok || body.error) {
+    const message = response.status === 401 || body.error === 401
+      ? 'eWeLink rechazó la autorización. Volvé a conectar la cuenta.'
+      : `eWeLink no ejecutó la operación: ${body.msg || `error ${body.error ?? response.status}`}`;
+    throw Object.assign(new Error(message), { status: response.status === 401 ? 401 : 502 });
+  }
+  return { ok: true, canal, encendido, params };
 }
 
 export async function sincronizarEwelink(integracionId: string) {
   const integration = await prisma.integracionIoT.findUnique({ where: { id: integracionId } });
   if (!integration || integration.proveedor !== 'sonoff_ewelink') throw Object.assign(new Error('Conector SONOFF no encontrado.'), { status: 404 });
-  if (!integration.credencialesCifradas) throw Object.assign(new Error('Primero guardá las credenciales eWeLink.'), { status: 409 });
-  let credentials = credentialsOf(descifrarCredenciales(integration.credencialesCifradas));
-  if (credentials.atExpiredTime && credentials.atExpiredTime < Date.now() + 5 * 60_000) credentials = await renovarTokenEwelink(integration.id, credentials);
-  const appId = credentials.appId;
-  const accessToken = String(credentials.accessToken ?? '');
-  const region = String(credentials.region ?? 'us');
-  if (!appId || !accessToken || !DOMAINS[region]) throw Object.assign(new Error('Las credenciales o la región eWeLink no son válidas.'), { status: 400 });
+  const { credentials, domain } = await credencialesAutorizadas(integration);
 
   let response: Response;
   try {
-    response = await fetch(`${DOMAINS[region]}/v2/device/thing?lang=en&num=0`, {
+    response = await fetch(`${domain}/v2/device/thing?lang=en&num=0`, {
       headers: {
-        'X-CK-Appid': appId,
+        'X-CK-Appid': credentials.appId,
         'X-CK-Nonce': randomBytes(6).toString('hex').slice(0, 8),
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: `Bearer ${credentials.accessToken}`,
         Accept: 'application/json',
       },
       signal: AbortSignal.timeout(15_000),
@@ -188,12 +267,14 @@ export async function sincronizarEwelink(integracionId: string) {
     const device = thing.itemData ?? {};
     const id = device.deviceid;
     if (typeof id !== 'string') continue;
-    const readings = { ...scalarParams(device.params), online: Boolean(device.online) };
+    const readings = { ...extraerLecturasEwelink(device.params), online: Boolean(device.online) };
     if (!Object.keys(readings).length) continue;
     await procesarEventoIoT(integration.id, normalizarEventoIoT({
       deviceId: id,
       deviceName: device.name,
       model: device.productModel ?? (device.extra as Record<string, unknown> | undefined)?.model,
+      deviceType: clasificarDispositivoEwelink(device),
+      uiid: device.uiid ?? (device.extra as Record<string, unknown> | undefined)?.uiid,
       readings,
       timestamp: new Date().toISOString(),
     }));

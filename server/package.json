@@ -1,6 +1,6 @@
 {
   "name": "activaqr-server",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "private": true,
   "description": "API REST de ActivaQR (Node + Express + Prisma + PostgreSQL)",
   "main": "dist/index.js",
