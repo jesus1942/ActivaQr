@@ -291,12 +291,16 @@ export async function procesarEventoIoT(integracionId: string, evento: EventoIoT
       const values = valorData(value);
       const previous = await tx.variableIoT.findUnique({
         where: { dispositivoId_clave: { dispositivoId: dispositivo!.id, clave } },
-        select: { valorNumero: true, valorBooleano: true, valorTexto: true, lecturas: { select: { medidaEn: true }, orderBy: { medidaEn: 'desc' }, take: 1 } },
+        select: { nombre: true, unidad: true, valorNumero: true, valorBooleano: true, valorTexto: true, lecturas: { select: { medidaEn: true }, orderBy: { medidaEn: 'desc' }, take: 1 } },
       });
+      const automaticName = rawKey.replace(/[_-]+/g, ' ');
+      const metadataUpdate = previous && (previous.nombre === rawKey || previous.nombre.toLowerCase() === automaticName.toLowerCase())
+        ? { nombre: meta.nombre, unidad: previous.unidad ?? meta.unidad }
+        : previous ? { unidad: previous.unidad ?? meta.unidad } : {};
       const variable = await tx.variableIoT.upsert({
         where: { dispositivoId_clave: { dispositivoId: dispositivo!.id, clave } },
         create: { empresaId: integracion.empresaId, dispositivoId: dispositivo!.id, clave, nombre: meta.nombre, unidad: meta.unidad, ...values, medidaEn: evento.medidaEn },
-        update: { ...values, medidaEn: evento.medidaEn, calidad: 'buena' },
+        update: { ...values, ...metadataUpdate, medidaEn: evento.medidaEn, calidad: 'buena' },
       });
       const { tipo: _tipo, ...readingValues } = values;
       if (lecturaCambio(previous, readingValues, evento.medidaEn)) {

@@ -134,6 +134,9 @@ test('eWeLink conserva mediciones eléctricas del DUAL R3 por canal', () => {
   assert.equal(readings.dayKwh_2, 0.11);
   assert.doesNotMatch(controlIndustrial, /current_\[0-9\]\+\|voltage_\[0-9\]\+/);
   assert.match(controlIndustrial, /channelMetrics/);
+  const ingest = readFileSync(resolve(process.cwd(), 'src/iotIngest.ts'), 'utf8');
+  assert.match(ingest, /previous\.nombre === rawKey/);
+  assert.match(ingest, /previous\.unidad \?\? meta\.unidad/);
 });
 
 test('clasifica sensores ambientales, magnéticos e inundación sin degradarlos a genérico', () => {
