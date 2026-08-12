@@ -162,6 +162,15 @@ test('exporta logs por dispositivo o canal y evita duplicados cada cinco segundo
   assert.match(controlIndustrial, /Exportar 24 h/);
 });
 
+test('Control Industrial conserva una interfaz mobile-first operable', () => {
+  assert.match(controlIndustrial, /snap-x/);
+  assert.match(controlIndustrial, /items-end justify-center[\s\S]*sm:items-center/);
+  assert.match(controlIndustrial, /pb-\[calc\(1rem\+env\(safe-area-inset-bottom\)\)\]/);
+  assert.match(controlIndustrial, /grid grid-cols-1 gap-3 sm:grid-cols-2/);
+  assert.match(controlIndustrial, /col-span-2 min-h-12 bg-cyan-700/);
+  assert.doesNotMatch(controlIndustrial, /truncate font-display text-lg font-black text-content/);
+});
+
 test('la PWA comprueba actualizaciones al abrirse y cuando recupera visibilidad', () => {
   assert.match(main, /registerSW\(\{/);
   assert.match(main, /immediate: true/);
