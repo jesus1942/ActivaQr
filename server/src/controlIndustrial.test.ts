@@ -237,7 +237,20 @@ test('DUAL R3 convierte centésimas eléctricas sin alterar lecturas ya decimale
   const scaled = normalizarMagnitudesEwelink({ current_1: 47, voltage_1: 22426, actPow_1: 8578, apparentPow_1: 10540 }, { productModel: 'SONOFF DUAL R3' });
   assert.deepEqual(scaled, { current_1: 0.47, voltage_1: 224.26, actPow_1: 85.78, apparentPow_1: 105.4 });
   assert.equal(normalizarMagnitudesEwelink({ actPow_1: 87.5 }, { productModel: 'SONOFF DUAL R3' }).actPow_1, 87.5);
+  assert.equal(normalizarMagnitudesEwelink({ actPow_1: -1577 }, { productModel: 'SONOFF DUAL R3' }).actPow_1, 15.77);
+  assert.equal(normalizarMagnitudesEwelink({ actPow_1: -15.77 }, { productModel: 'SONOFF DUAL R3' }).actPow_1, 15.77);
   assert.equal(normalizarMagnitudesEwelink({ voltage_1: 22426 }, { productModel: 'Otro equipo' }).voltage_1, 22426);
+});
+
+test('el tablero permite sólo telemetría operativa y no estira cards vecinas', () => {
+  assert.match(controlIndustrial, /LIVE_STATUS_VARIABLE/);
+  assert.match(controlIndustrial, /SENSOR_VARIABLE/);
+  assert.match(controlIndustrial, /grid items-start gap-4 xl:grid-cols-2/);
+  assert.match(controlIndustrial, /Sin consumo atribuido/);
+  assert.match(controlIndustrial, /channel\.valorBooleano && power/);
+  assert.doesNotMatch(controlIndustrial, /TECHNICAL_VARIABLE/);
+  assert.match(routes, /device\.integracion\.proveedor === 'sonoff_ewelink'[\s\S]*variableOperativaEwelink/);
+  assert.doesNotMatch(routes.match(/function variableOperativaEwelink[\s\S]*?\n}/)?.[0] ?? '', /onekwhdata|swmode|timezone|zyxcleartimers/i);
 });
 
 test('clasifica sensores ambientales, magnéticos e inundación sin degradarlos a genérico', () => {
@@ -315,7 +328,9 @@ test('las cards priorizan mando y relegan telemetría técnica a detalles', () =
   assert.match(controlIndustrial, /Ver mediciones e historial/);
   assert.match(controlIndustrial, /Ocultar detalles/);
   assert.match(controlIndustrial, /onCommand\(\{ canal, encendido:/);
-  assert.match(controlIndustrial, /currlocation\|demnextfetchtime\|endtime/);
+  assert.match(controlIndustrial, /LIVE_STATUS_VARIABLE/);
+  assert.doesNotMatch(controlIndustrial, /onekwhdata|motorswreverse|outputreverse|zyxcleartimers/i);
+  assert.match(controlIndustrial, /Medición eléctrica por salida/);
   assert.match(controlIndustrial, /Consumo energético/);
   assert.match(routes, /get\('\/energia\/resumen'/);
 });

@@ -65,6 +65,12 @@ function booleanoEstricto(value: unknown): boolean | null {
   return null;
 }
 
+function variableOperativaEwelink(clave: string) {
+  return /^(switch_[1-4]|relay|online|operation_mode|motor_position|motor_state|active_timers|pulse_enabled(?:_[1-4])?|pulse_duration_ms(?:_[1-4])?)$/i.test(clave)
+    || /^(current|voltage|actpow|power|apparentpow|reactpow|reactivepow|factor|daykwh|monthkwh|energy)(?:_[0-9]+)?$/i.test(clave)
+    || /^(temperature|temperatura|humidity|humedad|pressure|presion|vibration|vibracion|door|puerta|window|contact|open|water|leak|flood|waterleak|motion|pir|movement|smoke|gas|co2)(?:_[0-9]+)?$/i.test(clave);
+}
+
 function umbralDeVariable(variable: { tipo: string }, value: unknown) {
   if (variable.tipo === 'numero') {
     const number = Number(value);
@@ -299,7 +305,10 @@ controlIndustrialRouter.get('/resumen', async (req: AuthRequest, res, next) => {
       prisma.reglaAlarmaIoT.findMany({ where: { empresaId }, include: { variable: { include: { dispositivo: { select: { nombre: true } } } } }, orderBy: { creadaEn: 'desc' } }),
       prisma.escenaIoT.findMany({ where: { empresaId }, orderBy: { creadaEn: 'desc' } }),
     ]);
-    res.json({ modulo: module, integraciones: integraciones.map(publicIntegration), dispositivos, alarmas, comandos, reglas, escenas });
+    const publicDevices = dispositivos.map((device) => device.integracion.proveedor === 'sonoff_ewelink'
+      ? { ...device, variables: device.variables.filter((variable) => variableOperativaEwelink(variable.clave)) }
+      : device);
+    res.json({ modulo: module, integraciones: integraciones.map(publicIntegration), dispositivos: publicDevices, alarmas, comandos, reglas, escenas });
   } catch (error) { next(error); }
 });
 
@@ -311,13 +320,27 @@ controlIndustrialRouter.get('/energia/resumen', async (req: AuthRequest, res, ne
     const previousStart = new Date(now.getTime() - 48 * 3600_000);
     const variables = await prisma.variableIoT.findMany({
       where: { empresaId, OR: [{ clave: { startsWith: 'actpow' } }, { clave: { startsWith: 'power' } }] },
-      select: { id: true, clave: true, valorNumero: true, dispositivo: { select: { id: true, nombre: true } }, lecturas: { where: { medidaEn: { gte: previousStart } }, select: { valorNumero: true, medidaEn: true }, orderBy: { medidaEn: 'asc' } } },
+      select: { id: true, clave: true, valorNumero: true, dispositivo: { select: { id: true, nombre: true, modelo: true, variables: { where: { OR: [{ clave: { startsWith: 'switch_' } }, { clave: 'relay' }] }, select: { clave: true, valorBooleano: true } } } }, lecturas: { where: { medidaEn: { gte: previousStart } }, select: { valorNumero: true, medidaEn: true }, orderBy: { medidaEn: 'asc' } } },
     });
     const active = variables.filter((item) => item.clave.startsWith('actpow') || !variables.some((other) => other.dispositivo.id === item.dispositivo.id && other.clave.replace(/^actpow/, '') === item.clave.replace(/^power/, '') && other.clave.startsWith('actpow')));
-    const average = (values: number[]) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
-    const currentPowerW = active.reduce((sum, item) => sum + Math.max(0, item.valorNumero ?? 0), 0);
-    const currentAverageW = active.reduce((sum, item) => sum + average(item.lecturas.filter((reading) => reading.medidaEn >= currentStart && reading.valorNumero != null).map((reading) => reading.valorNumero!)), 0);
-    const previousAverageW = active.reduce((sum, item) => sum + average(item.lecturas.filter((reading) => reading.medidaEn < currentStart && reading.valorNumero != null).map((reading) => reading.valorNumero!)), 0);
+    const sanePower = (value: number | null | undefined, dualR3: boolean) => value == null || !Number.isFinite(value) ? 0 : Math.min(3300, dualR3 ? Math.abs(value) : Math.max(0, value));
+    const average = (values: number[], dualR3: boolean) => values.length ? values.reduce((sum, value) => sum + sanePower(value, dualR3), 0) / values.length : 0;
+    const channelOf = (key: string) => {
+      const suffix = key.match(/_([0-9]+)$/)?.[1];
+      if (!suffix) return null;
+      const numeric = Number(suffix);
+      return suffix === '0' || (suffix.length > 1 && suffix.startsWith('0')) ? numeric + 1 : numeric;
+    };
+    const outputIsOn = (item: (typeof active)[number]) => {
+      const channel = channelOf(item.clave);
+      const states = item.dispositivo.variables;
+      if (channel != null) return states.find((state) => state.clave === `switch_${channel}`)?.valorBooleano !== false;
+      return states.length ? states.some((state) => state.valorBooleano === true) : true;
+    };
+    const isDualR3 = (item: (typeof active)[number]) => /dual\s*r3|dualr3|e32-2sw/i.test(item.dispositivo.modelo ?? '');
+    const currentPowerW = active.reduce((sum, item) => sum + (outputIsOn(item) ? sanePower(item.valorNumero, isDualR3(item)) : 0), 0);
+    const currentAverageW = active.reduce((sum, item) => sum + average(item.lecturas.filter((reading) => reading.medidaEn >= currentStart && reading.valorNumero != null).map((reading) => reading.valorNumero!), isDualR3(item)), 0);
+    const previousAverageW = active.reduce((sum, item) => sum + average(item.lecturas.filter((reading) => reading.medidaEn < currentStart && reading.valorNumero != null).map((reading) => reading.valorNumero!), isDualR3(item)), 0);
     const variationPercent = previousAverageW > 0 ? ((currentAverageW - previousAverageW) / previousAverageW) * 100 : null;
     res.json({
       currentPowerW, currentAverageW, previousAverageW, variationPercent,

@@ -237,8 +237,12 @@ export function normalizarMagnitudesEwelink(readings: Record<string, number | bo
   if (uiid !== 126 && !/dual\s*r3|dualr3|e32-2sw/.test(identity)) return readings;
   const scaled = { ...readings };
   for (const [key, value] of Object.entries(scaled)) {
-    if (typeof value !== 'number' || !Number.isInteger(value)) continue;
-    if (/^(current|voltage|actpow|power|apparentpow|reactpow|reactivepow)(?:_\d+)?$/i.test(key)) scaled[key] = value / 100;
+    if (typeof value !== 'number') continue;
+    if (/^(current|voltage|actpow|power|apparentpow)(?:_\d+)?$/i.test(key)) {
+      scaled[key] = Math.abs(Number.isInteger(value) ? value / 100 : value);
+    } else if (/^(reactpow|reactivepow)(?:_\d+)?$/i.test(key) && Number.isInteger(value)) {
+      scaled[key] = value / 100;
+    }
   }
   return scaled;
 }
