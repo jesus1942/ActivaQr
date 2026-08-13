@@ -33,9 +33,9 @@ export const Layout: React.FC = () => {
             <div className="flex items-center gap-2 min-w-0">
               <AlertTriangle size={18} className="flex-shrink-0" />
               <div className="min-w-0">
-                <p className="text-sm font-semibold">Sin conexión con el servidor</p>
+                <p className="text-sm font-semibold">No pudimos actualizar todos los datos</p>
                 <p className="text-xs opacity-90 break-words">
-                  Protegimos tus datos y estamos reintentando automáticamente.
+                  Seguís viendo la última copia segura. Reintentamos automáticamente.
                 </p>
               </div>
             </div>

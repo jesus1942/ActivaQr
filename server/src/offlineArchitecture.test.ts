@@ -9,6 +9,7 @@ const queue = leer('src/data/offlineQueue.ts');
 const sync = leer('src/data/offlineSync.ts');
 const store = leer('src/data/store.ts');
 const storage = leer('src/hooks/useStorage.ts');
+const layout = leer('src/components/layout/Layout.tsx');
 const vite = leer('vite.config.ts');
 
 test('el arranque offline es acotado y no espera Railway indefinidamente', () => {
@@ -31,6 +32,14 @@ test('los cambios de las colecciones base persisten y se encolan sin red', () =>
   assert.match(store, /encolarOperacion\(`sync\/\$\{entidad\}`/);
   assert.match(store, /prepararSnapshotLocal/);
   assert.match(store, /aplicarDeltasOffline/);
+  assert.match(store, /res\.status === 401/);
+  assert.match(store, /No se pudo leer la cola local/);
+});
+
+test('la interfaz no confunde un error de datos con una caida del servidor', () => {
+  assert.doesNotMatch(layout, /Sin conexión con el servidor/);
+  assert.match(layout, /No pudimos actualizar todos los datos/);
+  assert.match(layout, /última copia segura/);
 });
 
 test('el shell PWA y sus rutas se precargan para abrir sin conexion', () => {

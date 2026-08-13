@@ -25,7 +25,7 @@ import {
   seedTipos,
   seedTecnicos,
 } from './seed';
-import { authHeaders, getUsuario } from './auth';
+import { authHeaders, getUsuario, limpiarSesion } from './auth';
 import { encolarOperacion, listarPendientes } from './offlineQueue';
 
 export type { Activo, Medicion, TareaMantenimiento, Sector, TipoActivo, Tecnico } from './types';
@@ -120,6 +120,14 @@ async function getBootstrap(): Promise<BootstrapData> {
     cache: 'no-store',
     signal: controller.signal,
   }).then(async (res) => {
+    if (res.status === 401) {
+      // Un token rechazado no es un problema de conectividad. Limpiamos solo
+      // la identidad y volvemos al login; conservar el usuario en memoria
+      // dejaba toda la app mostrando un falso aviso de servidor caido.
+      limpiarSesion();
+      window.location.reload();
+      throw new Error('La sesión venció. Iniciá sesión nuevamente.');
+    }
     if (!res.ok) throw new Error(`GET sync/bootstrap → ${res.status}`);
     const data = (await res.json()) as BootstrapData;
     for (const key of Object.keys(KEYS) as Array<keyof typeof KEYS>) {
@@ -144,7 +152,15 @@ async function getBootstrap(): Promise<BootstrapData> {
 async function aplicarDeltasOffline<T>(key: keyof BootstrapData, remotos: T[]): Promise<T[]> {
   const usuario = getUsuario();
   if (!usuario?.empresaId) return remotos;
-  const pendientes = await listarPendientes({ empresaId: usuario.empresaId, usuarioId: usuario.id });
+  let pendientes: Awaited<ReturnType<typeof listarPendientes>>;
+  try {
+    pendientes = await listarPendientes({ empresaId: usuario.empresaId, usuarioId: usuario.id });
+  } catch (error) {
+    // IndexedDB puede estar bloqueado, deshabilitado o sin espacio. Eso no
+    // convierte a la API en offline ni debe impedir mostrar datos remotos.
+    console.warn(`[offline] No se pudo leer la cola local de ${key}.`, error);
+    return remotos;
+  }
   const deltas = pendientes.filter((op) => op.path === `sync/${key}`);
   if (deltas.length === 0) return remotos;
 
