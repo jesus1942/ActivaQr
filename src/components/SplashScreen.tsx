@@ -5,7 +5,7 @@ const FADE_DURACION = 360;
 const MAX_DURACION = 30_000;
 
 // Logo claro (para fondo oscuro).
-const LOGO_SRC = '/ActivaQr/company-logo1.png';
+const LOGO_SRC = `${import.meta.env.BASE_URL}company-logo1.png`;
 
 // Splash sobrio: fondo oscuro, una cinta vertical ondulada turquesa con glow,
 // el logo centrado con halo y una barra de progreso fina. Coherente con el

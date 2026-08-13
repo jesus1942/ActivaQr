@@ -12,10 +12,15 @@
  */
 
 const DB_NAME = 'activaqr-offline';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE = 'pending';
 
-interface OperacionPendiente {
+export interface ScopeOperacionOffline {
+  empresaId: string;
+  usuarioId: string;
+}
+
+interface OperacionPendiente extends ScopeOperacionOffline {
   id: string;
   path: string;
   method: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -44,7 +49,12 @@ function genId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-export async function encolarOperacion(path: string, method: OperacionPendiente['method'], body: unknown): Promise<string> {
+export async function encolarOperacion(
+  path: string,
+  method: OperacionPendiente['method'],
+  body: unknown,
+  scope: ScopeOperacionOffline,
+): Promise<string> {
   const db = await abrirDB();
   const id = genId();
   const op: OperacionPendiente = {
@@ -54,6 +64,7 @@ export async function encolarOperacion(path: string, method: OperacionPendiente[
     body,
     creadoEn: Date.now(),
     intentos: 0,
+    ...scope,
   };
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE, 'readwrite');
@@ -63,24 +74,26 @@ export async function encolarOperacion(path: string, method: OperacionPendiente[
   });
 }
 
-export async function listarPendientes(): Promise<OperacionPendiente[]> {
+export async function listarPendientes(scope: ScopeOperacionOffline): Promise<OperacionPendiente[]> {
   const db = await abrirDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE, 'readonly');
     const req = tx.objectStore(STORE).getAll();
-    req.onsuccess = () => { db.close(); resolve(req.result as OperacionPendiente[]); };
+    req.onsuccess = () => {
+      db.close();
+      // Las filas de v1 no tenian tenant. Se dejan en cuarentena en vez de
+      // enviarlas con la sesion que casualmente este abierta: eso podria
+      // mezclar datos entre empresas en un dispositivo compartido.
+      resolve((req.result as OperacionPendiente[]).filter((op) =>
+        op.empresaId === scope.empresaId && op.usuarioId === scope.usuarioId
+      ));
+    };
     req.onerror = () => { db.close(); reject(req.error); };
   });
 }
 
-export async function contarPendientes(): Promise<number> {
-  const db = await abrirDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readonly');
-    const req = tx.objectStore(STORE).count();
-    req.onsuccess = () => { db.close(); resolve(req.result); };
-    req.onerror = () => { db.close(); reject(req.error); };
-  });
+export async function contarPendientes(scope: ScopeOperacionOffline): Promise<number> {
+  return (await listarPendientes(scope)).length;
 }
 
 export async function actualizarOperacion(id: string, cambios: Partial<OperacionPendiente>): Promise<void> {

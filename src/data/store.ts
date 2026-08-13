@@ -25,7 +25,8 @@ import {
   seedTipos,
   seedTecnicos,
 } from './seed';
-import { authHeaders } from './auth';
+import { authHeaders, getUsuario } from './auth';
+import { encolarOperacion, listarPendientes } from './offlineQueue';
 
 export type { Activo, Medicion, TareaMantenimiento, Sector, TipoActivo, Tecnico } from './types';
 
@@ -93,6 +94,15 @@ function cloneItems<T>(items: T[]): T[] {
 }
 
 /**
+ * Hidrata la base de comparación con la última copia persistida del tenant.
+ * Es imprescindible al arrancar sin red: permite calcular altas, cambios y
+ * bajas reales sin interpretar el array completo como datos nuevos.
+ */
+export function prepararSnapshotLocal(entidad: string, data: unknown[]): void {
+  if (!snapshots.has(entidad)) snapshots.set(entidad, cloneItems(data));
+}
+
+/**
  * Las seis colecciones base viajan en una única respuesta. La caché dura sólo
  * dos segundos: alcanza para que los seis hooks compartan la misma llamada,
  * pero un reintento posterior siempre vuelve a consultar el servidor.
@@ -131,9 +141,35 @@ async function getBootstrap(): Promise<BootstrapData> {
   return actual;
 }
 
+async function aplicarDeltasOffline<T>(key: keyof BootstrapData, remotos: T[]): Promise<T[]> {
+  const usuario = getUsuario();
+  if (!usuario?.empresaId) return remotos;
+  const pendientes = await listarPendientes({ empresaId: usuario.empresaId, usuarioId: usuario.id });
+  const deltas = pendientes.filter((op) => op.path === `sync/${key}`);
+  if (deltas.length === 0) return remotos;
+
+  const porId = new Map<string, T>();
+  for (const item of remotos) {
+    const id = (item as { id?: unknown }).id;
+    if (typeof id === 'string') porId.set(id, item);
+  }
+  for (const operacion of deltas.sort((a, b) => a.creadoEn - b.creadoEn)) {
+    const body = operacion.body as { items?: T[]; deletedIds?: string[] };
+    for (const id of body.deletedIds ?? []) porId.delete(id);
+    for (const item of body.items ?? []) {
+      const id = (item as { id?: unknown }).id;
+      if (typeof id === 'string') porId.set(id, item);
+    }
+  }
+  return [...porId.values()];
+}
+
 async function getBootstrapItems<T>(key: keyof BootstrapData): Promise<T[]> {
   const data = await getBootstrap();
-  const items = data[key] as T[];
+  // Si una lectura remota gana la carrera contra el drenado de la cola, se
+  // vuelven a aplicar localmente los deltas pendientes. Asi un GET viejo no
+  // hace desaparecer de la pantalla lo que el tecnico capturo sin señal.
+  const items = await aplicarDeltasOffline(key, data[key] as T[]);
   snapshots.set(key, cloneItems(items));
   return items;
 }
@@ -154,16 +190,47 @@ async function apiSync<T>(entidad: string, data: T[]): Promise<void> {
 
     if (items.length === 0 && deletedIds.length === 0) return;
 
-    const res = await fetch(`${API_URL}/sync/${entidad}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ items, deletedIds }),
-    });
-    if (!res.ok) {
-      const detalle = await res.json().catch(() => null);
-      throw new Error(detalle?.error || `SYNC ${entidad} → ${res.status}`);
+    const body = { items, deletedIds };
+    const usuario = getUsuario();
+    if (!usuario?.empresaId) throw new Error('No hay un tenant autenticado para sincronizar.');
+
+    const encolar = async () => {
+      await encolarOperacion(`sync/${entidad}`, 'PUT', body, {
+        empresaId: usuario.empresaId!,
+        usuarioId: usuario.id,
+      });
+      // El snapshot local avanza junto con la cola. Si hay mas cambios sin
+      // señal se encolan como deltas pequeños y se reproducen en orden.
+      snapshots.set(entidad, cloneItems(data));
+    };
+
+    if (!navigator.onLine) {
+      await encolar();
+      return;
     }
-    snapshots.set(entidad, cloneItems(data));
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 15_000);
+    try {
+      const res = await fetch(`${API_URL}/sync/${entidad}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        const detalle = await res.json().catch(() => null);
+        throw new Error(detalle?.error || `SYNC ${entidad} → ${res.status}`);
+      }
+      snapshots.set(entidad, cloneItems(data));
+    } catch (error) {
+      const esRed = error instanceof TypeError ||
+        (error instanceof Error && (error.name === 'AbortError' || error.message === 'Failed to fetch'));
+      if (!esRed) throw error;
+      await encolar();
+    } finally {
+      window.clearTimeout(timer);
+    }
   });
   syncQueues.set(entidad, siguiente);
   return siguiente.finally(() => {

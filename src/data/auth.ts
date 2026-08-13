@@ -264,7 +264,12 @@ async function apiEnvioConCola<T = unknown>(path: string, method: 'POST' | 'PUT'
     }
     const esErrorDeRed = err instanceof TypeError || (err instanceof Error && (err.name === 'AbortError' || err.message === 'Failed to fetch'));
     if (esErrorDeRed) {
-      const idLocal = await encolarOperacion(path, method, body);
+      const usuario = getUsuario();
+      if (!usuario?.empresaId) throw err;
+      const idLocal = await encolarOperacion(path, method, body, {
+        empresaId: usuario.empresaId,
+        usuarioId: usuario.id,
+      });
       return { encolada: true, idLocal };
     }
     throw err;

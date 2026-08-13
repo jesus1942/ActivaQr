@@ -116,10 +116,14 @@ export const Mantenimiento: React.FC = () => {
     if (window.confirm(`¿Eliminar la tarea "${t.tipo}"?`)) deleteTarea(t.id);
   };
 
-  const TaskCard = ({ tarea, highlight }: { tarea: TareaMantenimiento; highlight?: boolean }) => {
+  // Es una funcion de render, no un componente React declarado dentro de la
+  // pagina. Si se usa como <TaskCard>, React recibe un tipo de componente
+  // nuevo en cada cambio de estado y desmonta sus inputs. Ese remontaje era
+  // el que expulsaba el foco del textarea despues del primer caracter.
+  const renderTaskCard = (tarea: TareaMantenimiento, highlight = false) => {
     const activo = activos.find((a) => a.id === tarea.activoId);
     return (
-      <div className={`bg-surface border ${highlight ? 'border-danger' : 'border-line'} shadow-soft p-4 mb-3`}>
+      <div key={tarea.id} className={`bg-surface border ${highlight ? 'border-danger' : 'border-line'} shadow-soft p-4 mb-3`}>
         <div className="flex justify-between items-start gap-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -303,7 +307,7 @@ export const Mantenimiento: React.FC = () => {
               <p className="font-semibold">Sin tareas vencidas</p>
             </div>
           ) : (
-            vencidas.map((t) => <TaskCard key={t.id} tarea={t} highlight />)
+            vencidas.map((t) => renderTaskCard(t, true))
           )}
         </div>
 
@@ -318,7 +322,7 @@ export const Mantenimiento: React.FC = () => {
               <p className="font-semibold">Sin tareas pendientes</p>
             </div>
           ) : (
-            pendientes.map((t) => <TaskCard key={t.id} tarea={t} />)
+            pendientes.map((t) => renderTaskCard(t))
           )}
         </div>
       </div>
@@ -330,7 +334,7 @@ export const Mantenimiento: React.FC = () => {
           COMPLETADAS ({completadas.length})
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {completadas.map((t) => <TaskCard key={t.id} tarea={t} />)}
+          {completadas.map((t) => renderTaskCard(t))}
         </div>
       </div>
 

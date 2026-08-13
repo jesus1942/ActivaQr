@@ -21,18 +21,11 @@
  * (para que el usuario pueda decidir).
  */
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { API_URL, authHeaders } from '../data/auth';
-import {
-  listarPendientes,
-  contarPendientes,
-  borrarOperacion,
-  actualizarOperacion,
-  OperacionPendiente,
-} from '../data/offlineQueue';
+import { contarPendientes } from '../data/offlineQueue';
+import { scopeOfflineActual, sincronizarPendientesOffline } from '../data/offlineSync';
+import { reintentarCargasRemotas } from './useStorage';
 
 const INTERVALO_REINTENTO_MS = 30_000;
-const MAX_INTENTOS = 5;
-
 export function useEstadoSync() {
   const [online, setOnline] = useState<boolean>(navigator.onLine);
   const [pendientes, setPendientes] = useState<number>(0);
@@ -42,53 +35,27 @@ export function useEstadoSync() {
 
   const refrescarConteo = useCallback(async () => {
     try {
-      setPendientes(await contarPendientes());
+      const scope = scopeOfflineActual();
+      setPendientes(scope ? await contarPendientes(scope) : 0);
     } catch {
       // si IndexedDB falla, no rompemos la UI
     }
   }, []);
 
-  const enviarUna = useCallback(async (op: OperacionPendiente): Promise<'ok' | 'red' | 'server'> => {
-    try {
-      const res = await fetch(`${API_URL}/${op.path}`, {
-        method: op.method,
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders(),
-        },
-        body: JSON.stringify(op.body),
-      });
-      if (res.ok) return 'ok';
-      // Error 401/403: no tiene sentido reintentar muchas veces. Dejarlo igual en cola pero marcar intento.
-      return 'server';
-    } catch {
-      // TypeError → red. No incrementar intentos, esperar a que vuelva la conexion.
-      return 'red';
-    }
-  }, []);
-
   const drenarAhora = useCallback(async () => {
     if (drenandoRef.current) return;
-    if (!navigator.onLine) return;
+    if (!navigator.onLine) {
+      setOnline(false);
+      return;
+    }
     drenandoRef.current = true;
     setDrenando(true);
     setErrorSync(null);
     try {
-      const ops = await listarPendientes();
-      const ordenadas = ops.sort((a, b) => a.creadoEn - b.creadoEn);
-      for (const op of ordenadas) {
-        // No reintentar las que ya fallaron muchas veces hasta que el usuario actue.
-        if (op.intentos >= MAX_INTENTOS) continue;
-        const resultado = await enviarUna(op);
-        if (resultado === 'ok') {
-          await borrarOperacion(op.id);
-        } else if (resultado === 'server') {
-          await actualizarOperacion(op.id, { intentos: op.intentos + 1, ultimoError: 'El servidor rechazo la operacion.' });
-        } else {
-          // red caida en medio del drenado: cortar y esperar
-          break;
-        }
-      }
+      const resultado = await sincronizarPendientesOffline();
+      setOnline(!resultado.sinRed);
+      if (resultado.rechazados > 0) setErrorSync('El servidor rechazó una operación pendiente.');
+      if (resultado.enviados > 0) reintentarCargasRemotas();
     } catch (e) {
       setErrorSync(e instanceof Error ? e.message : 'Error al sincronizar');
     } finally {
@@ -96,7 +63,7 @@ export function useEstadoSync() {
       setDrenando(false);
       await refrescarConteo();
     }
-  }, [enviarUna, refrescarConteo]);
+  }, [refrescarConteo]);
 
   // Eventos de online/offline + drenado inicial.
   useEffect(() => {
@@ -114,7 +81,7 @@ export function useEstadoSync() {
 
   // Reintento periodico mientras haya pendientes y online.
   useEffect(() => {
-    if (!online || pendientes === 0) return;
+    if (!navigator.onLine || pendientes === 0) return;
     const iv = setInterval(() => { drenarAhora(); }, INTERVALO_REINTENTO_MS);
     return () => clearInterval(iv);
   }, [online, pendientes, drenarAhora]);

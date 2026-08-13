@@ -94,6 +94,7 @@ import {
   saveSectores,
   saveTipos,
   saveTecnicos,
+  prepararSnapshotLocal,
 } from '../data/store';
 
 import { getUsuario } from '../data/auth';
@@ -200,12 +201,17 @@ export function useStorage<T>(key: string, initialValue: T) {
             return { valor: initialValue, hubo: false };
           }
         })();
+    if (useRemote && cacheInicial.current.hubo && Array.isArray(cacheInicial.current.valor)) {
+      prepararSnapshotLocal(key, cacheInicial.current.valor as unknown[]);
+    }
   }
 
   const [value, setValueState] = useState<T>(cacheInicial.current.valor);
 
-  // En local ya está cargado; en remoto, hasta que llegue la API no persistimos.
-  const cargado = useRef(!useRemote);
+  // Una copia tenant-scoped ya es una base segura para trabajar sin red. Si
+  // nunca se abrió esta empresa en el dispositivo esperamos el primer GET y
+  // evitamos fabricar un snapshot vacío que pudiera borrar datos remotos.
+  const cargado = useRef(!useRemote || cacheInicial.current.hubo);
   const omitirGuardado = useRef(false);
 
   // Carga inicial desde la API (solo modo remoto).
@@ -261,22 +267,20 @@ export function useStorage<T>(key: string, initialValue: T) {
       return;
     }
     if (useRemote) {
-      // CRITICO: si CUALQUIER entidad fallo al cargar, no persistir
-      // NADA. El estado local puede ser inconsistente con el backend
-      // y el sync de delete-rest borraria datos del cliente.
-      if (_errorSync) {
-        console.warn(`[useStorage] Sync bloqueado por error previo, descartando save de "${key}".`);
-        return;
-      }
+      // La copia se actualiza antes del envio: si el proceso se cierra sin
+      // señal, el formulario y su resultado sobreviven al próximo arranque.
+      guardarCache(key, value);
       const fn = remoteSave[key];
       if (fn) {
-        void fn(value).catch((e) => {
-          console.error(`[useStorage] Error guardando "${key}":`, e);
-          actualizarErrorCarga(
-            `save:${key}`,
-            e instanceof Error ? e.message : `No se pudieron guardar los ${key}.`
-          );
-        });
+        void fn(value)
+          .then(() => actualizarErrorCarga(`save:${key}`, null))
+          .catch((e) => {
+            console.error(`[useStorage] Error guardando "${key}":`, e);
+            actualizarErrorCarga(
+              `save:${key}`,
+              e instanceof Error ? e.message : `No se pudieron guardar los ${key}.`
+            );
+          });
       }
     } else {
       localStorage.setItem(key, JSON.stringify(value));
