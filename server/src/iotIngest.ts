@@ -119,6 +119,9 @@ const LABELS: Record<string, { nombre: string; unidad?: string }> = {
   switch_3: { nombre: 'Canal 3' },
   switch_4: { nombre: 'Canal 4' },
   online: { nombre: 'Conexión' },
+  active_timers: { nombre: 'Temporizadores activos' },
+  pulse_enabled: { nombre: 'Modo impulso' },
+  pulse_duration_ms: { nombre: 'Duración del impulso', unidad: 'ms' },
 };
 
 function indiceCanal(suffix: string): number {

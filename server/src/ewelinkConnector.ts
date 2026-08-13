@@ -10,6 +10,10 @@ const DOMAINS: Record<string, string> = {
   eu: 'https://eu-apia.coolkit.cc',
 };
 const syncing = new Set<string>();
+const freshStatusCursor = new Map<string, number>();
+const FRESH_STATUS_LIMIT = 4;
+let statusRequestQueue: Promise<void> = Promise.resolve();
+let lastStatusRequestAt = 0;
 export const EWELINK_REDIRECT_URL = process.env.EWELINK_REDIRECT_URL?.trim()
   || 'https://api.activaqr.net/api/iot/ewelink/oauth/callback';
 
@@ -159,7 +163,35 @@ export function extraerLecturasEwelink(value: unknown): Record<string, number | 
       }
     }
   }
+  if (Array.isArray(params.timers) && params.timers.length) {
+    result.active_timers = params.timers.filter((item) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) return false;
+      const enabled = (item as Record<string, unknown>).enabled;
+      return enabled !== false && enabled !== 0 && enabled !== 'off' && enabled !== 'disable';
+    }).length;
+  }
+  if (params.pulse !== undefined) {
+    const pulse = params.pulse;
+    result.pulse_enabled = pulse === true || pulse === 1 || pulse === 'on' || pulse === 'enable';
+  }
+  if (params.pulseWidth !== undefined && Number.isFinite(Number(params.pulseWidth))) {
+    result.pulse_duration_ms = Number(params.pulseWidth);
+  }
   return result;
+}
+
+export function normalizarOnlineEwelink(value: unknown): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value !== 0;
+  if (typeof value === 'string') return !['', '0', 'false', 'off', 'offline', 'no'].includes(value.trim().toLowerCase());
+  return false;
+}
+
+export function combinarEstadoEwelink(device: Record<string, unknown>, freshParams?: Record<string, unknown>): Record<string, unknown> {
+  const listedParams = device.params && typeof device.params === 'object' && !Array.isArray(device.params)
+    ? device.params as Record<string, unknown>
+    : {};
+  return { ...device, params: { ...listedParams, ...(freshParams ?? {}) } };
 }
 
 export function normalizarMagnitudesEwelink(readings: Record<string, number | boolean | string>, device: Record<string, unknown>) {
@@ -218,6 +250,42 @@ async function credencialesAutorizadas(integration: { id: string; credencialesCi
   return { credentials, region, domain: DOMAINS[region] };
 }
 
+async function esperarTurnoEstadoEwelink() {
+  const current = statusRequestQueue.then(async () => {
+    const waitMs = Math.max(0, 550 - (Date.now() - lastStatusRequestAt));
+    if (waitMs) await new Promise<void>((resolve) => setTimeout(resolve, waitMs));
+    lastStatusRequestAt = Date.now();
+  });
+  statusRequestQueue = current.catch(() => {});
+  await current;
+}
+
+async function obtenerEstadoEfectivoEwelink(domain: string, credentials: EwelinkCredentials, dispositivoExternoId: string) {
+  const query = new URLSearchParams({ type: '1', id: dispositivoExternoId });
+  await esperarTurnoEstadoEwelink();
+  const response = await fetch(`${domain}/v2/device/thing/status?${query}`, {
+    headers: {
+      'X-CK-Appid': credentials.appId,
+      'X-CK-Nonce': nonce(),
+      Authorization: `Bearer ${credentials.accessToken}`,
+      Accept: 'application/json',
+    },
+    signal: AbortSignal.timeout(8_000),
+  });
+  const body = await response.json().catch(() => ({})) as { error?: number; msg?: string; data?: { params?: Record<string, unknown> } };
+  if (!response.ok || body.error || !body.data?.params) {
+    throw new Error(`Estado eWeLink no disponible: ${body.msg || `error ${body.error ?? response.status}`}`);
+  }
+  return body.data.params;
+}
+
+function requiereEstadoEfectivoEwelink(device: Record<string, unknown>) {
+  const params = device.params && typeof device.params === 'object' && !Array.isArray(device.params)
+    ? device.params as Record<string, unknown>
+    : {};
+  return 'switch' in params || Array.isArray(params.switches) || 'pulse' in params || Array.isArray(params.timers);
+}
+
 export async function ejecutarCanalEwelink(integracionId: string, dispositivoExternoId: string, canal: number, encendido: boolean, estados: Record<number, boolean> = {}) {
   const integration = await prisma.integracionIoT.findUnique({ where: { id: integracionId } });
   if (!integration || integration.proveedor !== 'sonoff_ewelink') throw Object.assign(new Error('Conector SONOFF no encontrado.'), { status: 404 });
@@ -225,6 +293,7 @@ export async function ejecutarCanalEwelink(integracionId: string, dispositivoExt
   const params = crearParametrosCanalEwelink(canal, encendido, estados);
   let response: Response;
   try {
+    await esperarTurnoEstadoEwelink();
     response = await fetch(`${domain}/v2/device/thing/status`, {
       method: 'POST',
       headers: {
@@ -286,13 +355,33 @@ export async function sincronizarEwelink(integracionId: string) {
   }
 
   const things = body.data?.thingList ?? [];
+  const dynamicDevices = things
+    .filter((thing) => thing.itemType === 1 && requiereEstadoEfectivoEwelink(thing.itemData ?? {}))
+    .map((thing) => thing.itemData ?? {})
+    .filter((device): device is Record<string, unknown> & { deviceid: string } => typeof device.deviceid === 'string');
+  const freshParams = new Map<string, Record<string, unknown>>();
+  if (dynamicDevices.length) {
+    const cursor = freshStatusCursor.get(integration.id) ?? 0;
+    const amount = Math.min(FRESH_STATUS_LIMIT, dynamicDevices.length);
+    const selected = Array.from({ length: amount }, (_, index) => dynamicDevices[(cursor + index) % dynamicDevices.length]);
+    freshStatusCursor.set(integration.id, (cursor + amount) % dynamicDevices.length);
+    for (const device of selected) {
+      try {
+        freshParams.set(device.deviceid, await obtenerEstadoEfectivoEwelink(domain, credentials, device.deviceid));
+      } catch (error) {
+        console.warn('[ewelink] estado efectivo:', device.deviceid, error instanceof Error ? error.message : error);
+      }
+    }
+  }
   let imported = 0;
   for (const thing of things) {
     if (thing.itemType !== 1 && thing.itemType !== 2) continue;
-    const device = thing.itemData ?? {};
+    const listedDevice = thing.itemData ?? {};
+    const listedId = listedDevice.deviceid;
+    const device = combinarEstadoEwelink(listedDevice, typeof listedId === 'string' ? freshParams.get(listedId) : undefined);
     const id = device.deviceid;
     if (typeof id !== 'string') continue;
-    const readings = { ...normalizarMagnitudesEwelink(extraerLecturasEwelink(device.params), device), online: Boolean(device.online) };
+    const readings = { ...normalizarMagnitudesEwelink(extraerLecturasEwelink(device.params), device), online: normalizarOnlineEwelink(device.online) };
     if (!Object.keys(readings).length) continue;
     await procesarEventoIoT(integration.id, normalizarEventoIoT({
       deviceId: id,

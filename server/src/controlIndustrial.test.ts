@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { normalizarEventoIoT } from './iotIngest';
 import { cifrarCredenciales, descifrarCredenciales, firmarEstadoOAuth, hashToken, verificarEstadoOAuth } from './iotSecrets';
-import { clasificarDispositivoEwelink, crearParametrosCanalEwelink, extraerLecturasEwelink, normalizarMagnitudesEwelink } from './ewelinkConnector';
+import { clasificarDispositivoEwelink, combinarEstadoEwelink, crearParametrosCanalEwelink, extraerLecturasEwelink, normalizarMagnitudesEwelink, normalizarOnlineEwelink } from './ewelinkConnector';
 import { escalarValorTuya, normalizarCodigoTuya } from './tuyaConnector';
 
 const ROOT = resolve(process.cwd(), '..');
@@ -124,6 +124,27 @@ test('eWeLink importa los canales del DUAL R3 sin perder estados escalares', () 
   assert.equal(readings.online, true);
 });
 
+test('eWeLink prioriza el estado efectivo tras cambios externos, timers e impulsos', () => {
+  const device = combinarEstadoEwelink({
+    deviceid: 'dual-r3-1',
+    online: 'false',
+    params: { switches: [{ switch: 'off', outlet: 0 }, { switch: 'on', outlet: 1 }], voltage: [22000, 22000] },
+  }, {
+    switches: [{ switch: 'on', outlet: 0 }, { switch: 'off', outlet: 1 }],
+    timers: [{ enabled: 1, type: 'delay' }, { enabled: 0, type: 'repeat' }],
+    pulse: 'on',
+    pulseWidth: 750,
+  });
+  const readings = extraerLecturasEwelink(device.params);
+  assert.equal(readings.switch_1, true);
+  assert.equal(readings.switch_2, false);
+  assert.equal(readings.active_timers, 1);
+  assert.equal(readings.pulse_enabled, true);
+  assert.equal(readings.pulse_duration_ms, 750);
+  assert.equal(normalizarOnlineEwelink(device.online), false);
+  assert.equal(normalizarOnlineEwelink('online'), true);
+});
+
 test('eWeLink distingue interruptores multicanal y RF Bridge', () => {
   assert.equal(clasificarDispositivoEwelink({ productModel: 'SONOFF DUAL R3', params: { switches: [{ outlet: 0 }, { outlet: 1 }] } }), 'interruptor_multicanal');
   assert.equal(clasificarDispositivoEwelink({ name: 'RF colegio', uiid: 28, params: {} }), 'puente_rf');
@@ -221,6 +242,8 @@ test('refresca el tablero y eWeLink cada 5 segundos', () => {
   assert.match(controlIndustrial, /setInterval\(\(\) => load\(true\), 5_000\)/);
   assert.match(connector, /Math\.max\(5, Number\(config\.pollingSeconds\)/);
   assert.match(connector, /sincronizarEwelinkProgramado[\s\S]*1_000/);
+  assert.match(connector, /GET|obtenerEstadoEfectivoEwelink/);
+  assert.match(connector, /\/v2\/device\/thing\/status\?\$\{query\}/);
 });
 
 test('exporta logs por dispositivo o canal y evita duplicados cada cinco segundos', () => {
