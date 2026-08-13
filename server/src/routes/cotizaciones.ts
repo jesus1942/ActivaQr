@@ -16,7 +16,10 @@ import { enviarMensajeTelegram } from '../telegram';
 import { enviarPushAEmpresa, enviarPushASuperadmin } from '../push';
 import {
   armarTextoCotizacion,
+  armarTextoCotizacionActivaControl,
+  calcularCotizacionActivaControl,
   calcularCotizacionGestionada,
+  type DetalleCotizacionActivaControl,
   type DetalleCotizacionGestionada,
 } from '../cotizacionesCore';
 import { armarTextoCorrectivo, type PropuestaCorrectiva } from '../correctivosCore';
@@ -69,6 +72,18 @@ function textoDe(cotizacion: any): string {
       riesgo: alerta?.riesgo ?? detalle.riesgo,
       recomendacion: alerta?.recomendacion ?? detalle.recomendacion,
       detalle,
+      vigenciaHasta: cotizacion.vigenciaHasta,
+    });
+  }
+  if (cotizacion.tipo === 'activa_control') {
+    return armarTextoCotizacionActivaControl({
+      numero: cotizacion.numero,
+      clienteNombre: cotizacion.clienteNombre,
+      concepto: cotizacion.concepto,
+      detalle: cotizacion.detalle as DetalleCotizacionActivaControl,
+      subtotal: cotizacion.subtotal,
+      descuento: cotizacion.descuento,
+      total: cotizacion.total,
       vigenciaHasta: cotizacion.vigenciaHasta,
     });
   }
@@ -179,7 +194,10 @@ adminCotizacionesRouter.post('/', async (req: AuthRequest, res: Response, next: 
     const contacto = empresa.usuarios.find((usuario) => usuario.id === contactoId)
       ?? empresa.usuarios[0]
       ?? null;
-    const calculada = calcularCotizacionGestionada(req.body ?? {});
+    const tipo = req.body?.tipoProducto === 'activa_control' ? 'activa_control' : 'gestionado';
+    const calculada = tipo === 'activa_control'
+      ? calcularCotizacionActivaControl(req.body ?? {})
+      : calcularCotizacionGestionada(req.body ?? {});
     const ahora = new Date();
     const vigenciaHasta = new Date(ahora.getTime() + calculada.vigenciaDias * 86_400_000);
     const id = randomUUID();
@@ -195,6 +213,7 @@ adminCotizacionesRouter.post('/', async (req: AuthRequest, res: Response, next: 
         contactoTelefono: contacto?.telefono ?? null,
         concepto: calculada.concepto,
         planSoftware: calculada.planSoftware,
+        tipo,
         detalle: calculada.detalle as unknown as Prisma.InputJsonValue,
         moneda: 'ARS',
         subtotal: calculada.subtotal,
@@ -208,7 +227,7 @@ adminCotizacionesRouter.post('/', async (req: AuthRequest, res: Response, next: 
     });
     res.status(201).json(presentar(cotizacion));
   } catch (error) {
-    if (error instanceof Error && /debe|válid|vigencia/i.test(error.message)) {
+    if (error instanceof Error && /debe|válid|vigencia|dispositivo|retención|abono|precio|costo|implementación/i.test(error.message)) {
       return res.status(400).json({ error: error.message });
     }
     next(error);

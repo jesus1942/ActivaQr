@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Activity, AlertTriangle, BellRing, Check, ChevronDown, ChevronRight, ChevronUp, CircleOff, CloudCog, Cpu, DoorOpen, Download, Droplets, Gauge, KeyRound, Layers3, LineChart as LineChartIcon, Play, Plus, RadioTower, RefreshCw, Settings2, ShieldAlert, Signal, Snowflake, Thermometer, Trash2, WifiOff, Zap } from 'lucide-react';
+import { Activity, AlertTriangle, BellRing, Check, ChevronDown, ChevronRight, ChevronUp, CircleOff, CloudCog, Cpu, DoorOpen, Download, Droplets, Gauge, KeyRound, Layers3, LineChart as LineChartIcon, Maximize2, Minimize2, Play, Plus, RadioTower, RefreshCw, Settings2, ShieldAlert, Signal, Snowflake, Thermometer, Trash2, WifiOff, Zap } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/ui/Toast';
@@ -9,6 +9,7 @@ import {
   AlarmaIoT,
   actualizarDispositivo,
   actualizarRegla,
+  actualizarTableroControl,
   actualizarVariable,
   autorizarSonoff,
   configurarTuya,
@@ -203,6 +204,8 @@ export const ControlIndustrial: React.FC = () => {
   const [webhook, setWebhook] = useState<string | null>(null);
   const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unsupported'>(() => estadoNotificaciones());
   const [pushWorking, setPushWorking] = useState(false);
+  const [presentationMode, setPresentationMode] = useState(false);
+  const [dashboardSettingsOpen, setDashboardSettingsOpen] = useState(false);
 
   const editable = usuario?.rol === 'admin' || usuario?.rol === 'jefatura';
   const owner = usuario?.rol === 'admin';
@@ -233,6 +236,24 @@ export const ControlIndustrial: React.FC = () => {
     if (!selectedVariable) return;
     historialVariable(selectedVariable.variable.id, historyHours).then((result) => setHistory(result.lecturas)).catch((error) => toast(error.message, 'error'));
   }, [selectedVariable, historyHours]);
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      if (!document.fullscreenElement) setPresentationMode(false);
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+  }, []);
+
+  const openPresentation = () => {
+    setPresentationMode(true);
+    document.documentElement.requestFullscreen?.().catch(() => {});
+  };
+
+  const closePresentation = () => {
+    setPresentationMode(false);
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+  };
 
   const downloadHistory = async (kind: 'device' | 'variable', id: string, hours = 24) => {
     try {
@@ -280,7 +301,7 @@ export const ControlIndustrial: React.FC = () => {
     <header className="relative overflow-hidden border-y border-slate-800 bg-slate-950 px-4 py-5 text-white sm:border sm:p-7">
       <div className="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-cyan-500/10 to-transparent" />
       <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-        <div className="min-w-0"><div className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[.18em] text-cyan-300 sm:text-[11px] sm:tracking-[.22em]"><Activity size={15} /> Supervisión en vivo</div><h1 className="break-words font-display text-2xl font-black leading-tight sm:text-3xl">{data.modulo.nombreServicio}</h1><p className="mt-2 text-xs leading-relaxed text-slate-400 sm:text-sm">{data.modulo.tableroConfig?.subtitulo || usuario?.empresa?.nombre}<span className="mt-1 block text-[11px] text-cyan-200/70 sm:ml-1 sm:mt-0 sm:inline">· Actualiza cada 5 segundos</span></p></div>
+        <div className="min-w-0"><div className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[.18em] text-cyan-300 sm:text-[11px] sm:tracking-[.22em]"><Activity size={15} /> Supervisión en vivo</div><h1 className="break-words font-display text-2xl font-black leading-tight sm:text-3xl">{data.modulo.tableroConfig?.titulo || usuario?.empresa?.nombre || data.modulo.nombreServicio}</h1><p className="mt-2 text-xs leading-relaxed text-slate-400 sm:text-sm">{data.modulo.tableroConfig?.subtitulo || data.modulo.nombreServicio}<span className="mt-1 block text-[11px] text-cyan-200/70 sm:ml-1 sm:mt-0 sm:inline">· Actualiza cada 5 segundos</span></p></div>
         <div className="grid w-full grid-cols-2 gap-px border border-slate-700 bg-slate-700 xl:w-auto xl:grid-cols-4">
           {[
             { value: `${online}/${data.dispositivos.length}`, label: 'En línea', icon: Signal, tone: 'text-emerald-300' },
@@ -296,7 +317,8 @@ export const ControlIndustrial: React.FC = () => {
       {([
         ['vivo', 'Vista en vivo', Gauge], ['alarmas', `Alarmas${data.alarmas.length ? ` (${data.alarmas.length})` : ''}`, BellRing], ['escenas', 'Escenas', Layers3], ['conexiones', 'Conexiones', CloudCog], ['comandos', 'Operación', Zap],
       ] as Array<[Tab, string, React.ElementType]>).map(([id, label, Icon]) => <button key={id} onClick={() => setTab(id)} className={`flex min-h-12 shrink-0 snap-start items-center gap-2 border-b-2 px-3 py-3 text-[10px] font-black uppercase tracking-wide sm:px-4 sm:text-xs ${tab === id ? 'border-cyan-600 text-cyan-700 dark:text-cyan-300' : 'border-transparent text-faint'}`}><Icon size={16} />{label}</button>)}
-      <button onClick={() => load(true)} className="sticky right-0 ml-auto grid min-h-12 w-11 shrink-0 place-items-center border-l border-line bg-canvas text-faint" aria-label="Actualizar"><RefreshCw size={17} className={refreshing ? 'animate-spin' : ''} /></button>
+      <button onClick={openPresentation} className="ml-auto grid min-h-12 w-11 shrink-0 place-items-center text-content" aria-label="Expandir tablero" title="Expandir tablero"><Maximize2 size={17} /></button>
+      <button onClick={() => load(true)} className="sticky right-0 grid min-h-12 w-11 shrink-0 place-items-center border-l border-line bg-canvas text-faint" aria-label="Actualizar"><RefreshCw size={17} className={refreshing ? 'animate-spin' : ''} /></button>
     </nav>
 
     {tab === 'vivo' && <section className="space-y-4">
@@ -336,9 +358,55 @@ export const ControlIndustrial: React.FC = () => {
     {sceneOpen && <SceneModal devices={data.dispositivos} onClose={() => setSceneOpen(false)} onDone={async () => { setSceneOpen(false); await load(true); }} toast={toast} />}
     {commandFor && <CommandModal device={commandFor.device} initialAction={commandFor.initial} onClose={() => setCommandFor(null)} onDone={async () => { setCommandFor(null); await load(true); }} toast={toast} />}
     {settingsFor && <DeviceModal device={settingsFor} remoteContract={data.modulo.controlRemotoHabilitado} onClose={() => setSettingsFor(null)} onDone={async () => { setSettingsFor(null); await load(true); }} toast={toast} />}
+    {dashboardSettingsOpen && <DashboardSettingsModal module={data.modulo} fallbackTitle={usuario?.empresa?.nombre || 'Mi espacio'} onClose={() => setDashboardSettingsOpen(false)} onDone={(module) => { setData((current) => current ? { ...current, modulo: module } : current); setDashboardSettingsOpen(false); toast('La identidad del tablero quedó actualizada.', 'success'); }} toast={toast} />}
+    {presentationMode && <PresentationDashboard data={data} energy={energy} editable={editable} customizable={owner} title={data.modulo.tableroConfig?.titulo || usuario?.empresa?.nombre || 'Mi espacio'} onExit={closePresentation} onSettings={() => setDashboardSettingsOpen(true)} onCommand={(device, initial) => setCommandFor({ device, initial })} />}
     {webhook && <DialogViewport className="z-50 flex items-end justify-center bg-slate-950/60 backdrop-blur-sm sm:items-center sm:p-4" onEscape={() => setWebhook(null)}><div className="max-h-[92dvh] w-full max-w-xl overflow-y-auto border-x border-t border-line bg-surface p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:border sm:p-5" role="dialog" aria-modal="true"><h2 className="font-display text-xl font-black text-content">Endpoint de ingesta creado</h2><p className="mt-2 text-sm text-muted">Copialo ahora en el UG65. Al rotarlo, el anterior deja de funcionar.</p><code className="mt-4 block break-all border border-line bg-subtle p-3 text-xs text-content">{webhook}</code><div className="mt-4 grid gap-2 sm:flex"><button onClick={() => navigator.clipboard.writeText(webhook).then(() => toast('Endpoint copiado.', 'success'))} className="h-11 bg-cyan-700 text-xs font-black uppercase text-white sm:flex-1">Copiar</button><button onClick={() => setWebhook(null)} className="h-11 border border-line px-5 text-xs font-black uppercase">Listo</button></div></div></DialogViewport>}
   </div>;
 };
+
+function PresentationDashboard({ data, energy, editable, customizable, title, onExit, onSettings, onCommand }: { data: ResumenControl; energy: ResumenEnergia | null; editable: boolean; customizable: boolean; title: string; onExit: () => void; onSettings: () => void; onCommand: (device: DispositivoIoT, initial: { canal: number; encendido: boolean; nombre: string }) => void }) {
+  const disconnectMs = (data.modulo.umbralSinConexionMinutos ?? 10) * 60_000;
+  const online = data.dispositivos.filter((device) => device.ultimoContactoEn && Date.now() - new Date(device.ultimoContactoEn).getTime() < disconnectMs).length;
+  const critical = data.alarmas.filter((alarm) => alarm.severidad === 'critica' && alarm.estado !== 'resuelta').length;
+  const operable = (device: DispositivoIoT) => editable && data.modulo.controlRemotoHabilitado && device.permiteControl && ['sonoff_ewelink', 'tuya_cloud'].includes(device.integracion?.proveedor ?? '');
+  return <DialogViewport className="z-[40] flex min-h-dvh flex-col overflow-y-auto bg-[#edf1ef] text-slate-950" onEscape={onExit}>
+    <header className="bg-slate-950 px-5 py-5 text-white sm:px-8 lg:px-12 lg:py-7">
+      <div className="flex items-start justify-between gap-6">
+        <div className="min-w-0"><p className="mb-2 text-[10px] font-black uppercase tracking-[.28em] text-cyan-300">Control operativo en vivo</p><h1 className="truncate font-display text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">{title}</h1><p className="mt-2 text-sm text-slate-400">{data.modulo.tableroConfig?.subtitulo || data.modulo.nombreServicio}</p></div>
+        <div className="flex shrink-0 gap-2">{customizable && <button onClick={onSettings} className="grid h-11 w-11 place-items-center bg-cyan-300 text-slate-950" aria-label="Personalizar tablero" title="Personalizar tablero"><Settings2 size={19} /></button>}<button onClick={onExit} className="grid h-11 w-11 place-items-center bg-white text-slate-950" aria-label="Salir de pantalla completa" title="Salir de pantalla completa"><Minimize2 size={19} /></button></div>
+      </div>
+      <div className="mt-6 flex flex-wrap gap-x-8 gap-y-3 text-sm"><span><strong className="mr-2 text-2xl font-black text-cyan-300">{online}/{data.dispositivos.length}</strong>equipos en línea</span><span><strong className={`mr-2 text-2xl font-black ${critical ? 'text-red-400' : 'text-emerald-300'}`}>{critical}</strong>alarmas críticas</span>{energy && <span><strong className="mr-2 text-2xl font-black text-white">{energy.currentPowerW.toLocaleString('es-AR', { maximumFractionDigits: 0 })} W</strong>consumo actual</span>}</div>
+    </header>
+
+    <main className="flex-1 px-5 py-7 sm:px-8 lg:px-12 lg:py-10">
+      <div className="grid auto-rows-fr gap-5 md:grid-cols-2 2xl:grid-cols-3">
+        {data.dispositivos.map((device) => {
+          const channels = channelVariables(device);
+          const sensors = visibleVariables(device).filter((variable) => SENSOR_VARIABLE.test(variable.clave));
+          const isOnline = Boolean(device.ultimoContactoEn && Date.now() - new Date(device.ultimoContactoEn).getTime() < disconnectMs);
+          return <article key={device.id} className="flex min-h-56 flex-col bg-white p-5 shadow-[7px_7px_0_#0f172a] sm:p-6">
+            <div className="flex items-start gap-4"><div className="grid h-12 w-12 shrink-0 place-items-center bg-cyan-300 text-slate-950"><DeviceIcon device={device} operable={channels.length > 0} /></div><div className="min-w-0 flex-1"><h2 className="truncate font-display text-xl font-black sm:text-2xl">{device.nombre}</h2><p className="mt-1 truncate text-xs font-bold uppercase tracking-wider text-slate-500">{device.ubicacion || deviceKind(device)}</p></div><span className={`mt-2 h-3 w-3 shrink-0 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-red-500'}`} title={isOnline ? 'En línea' : 'Sin conexión'} /></div>
+            {sensors.length > 0 && <div className="mt-7 grid grid-cols-2 gap-5">{sensors.slice(0, 2).map((variable) => <div key={variable.id}><strong className={`block text-4xl font-black tracking-tight ${variableAlert(variable) ? 'text-red-600' : 'text-slate-950'}`}>{valueOf(variable, device)}</strong><span className="mt-1 block text-[10px] font-black uppercase tracking-[.16em] text-slate-500">{variable.nombre}</span></div>)}</div>}
+            {channels.length > 0 && !isMotorMode(device) && <div className="mt-6 grid gap-3 sm:grid-cols-2">{channels.slice(0, 4).map((channel, index) => { const canal = Number(channel.clave.slice(7)) - 1; const name = channel.nombre || `Canal ${index + 1}`; const power = channelMetrics(device, index + 1).find((item) => /^(actpow|power)/i.test(item.clave)); return <div key={channel.id} className="bg-[#edf1ef] p-4"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><strong className="block truncate text-base font-black">{name}</strong><span className="mt-1 block text-xs text-slate-500">{channel.valorBooleano ? `Encendida${power ? ` · ${valueOf(power)}` : ''}` : 'Apagada'}</span></div><span className={`mt-1 h-3 w-3 shrink-0 rounded-full ${channel.valorBooleano ? 'bg-amber-400' : 'bg-slate-400'}`} /></div>{operable(device) && <button onClick={() => onCommand(device, { canal, encendido: !channel.valorBooleano, nombre: name })} className={`mt-4 min-h-11 w-full text-xs font-black uppercase ${channel.valorBooleano ? 'bg-slate-950 text-white' : 'bg-cyan-300 text-slate-950'}`}>{channel.valorBooleano ? 'Apagar' : 'Encender'}</button>}</div>; })}</div>}
+            {!channels.length && !sensors.length && <div className="mt-auto pt-8"><strong className="text-2xl font-black">{isOnline ? 'Operativo' : 'Sin conexión'}</strong><p className="mt-1 text-sm text-slate-500">Último dato {ago(device.ultimoContactoEn)}</p></div>}
+            <p className="mt-auto pt-5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Actualizado {ago(device.ultimoContactoEn)}</p>
+          </article>;
+        })}
+      </div>
+    </main>
+
+    <footer className="mt-auto flex flex-col gap-4 bg-slate-950 px-5 py-5 text-white sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-12">
+      <div className="flex items-center gap-4"><img src={`${import.meta.env.BASE_URL}company-logo1.png`} alt="ActivaQR" className="h-8 w-auto object-contain" /><div className="h-7 w-px bg-slate-700" /><strong className="font-display text-lg font-black uppercase tracking-[.18em] text-cyan-300">ActivaControl</strong></div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-slate-500">Supervisión · automatización · trazabilidad</p>
+    </footer>
+  </DialogViewport>;
+}
+
+function DashboardSettingsModal({ module, fallbackTitle, onClose, onDone, toast }: { module: ResumenControl['modulo']; fallbackTitle: string; onClose: () => void; onDone: (module: ResumenControl['modulo']) => void; toast: (message: string, variant?: 'success' | 'error' | 'warning' | 'info') => void }) {
+  const [title, setTitle] = useState(module.tableroConfig?.titulo || fallbackTitle);
+  const [subtitle, setSubtitle] = useState(module.tableroConfig?.subtitulo || module.nombreServicio);
+  const [saving, setSaving] = useState(false);
+  return <ModalShell title="Identidad de ActivaControl" onClose={onClose}><form className="space-y-4" onSubmit={async (event) => { event.preventDefault(); setSaving(true); try { const updated = await actualizarTableroControl({ ...module.tableroConfig, titulo: title, subtitulo: subtitle }); onDone(updated); } catch (error) { toast(error instanceof Error ? error.message : 'No se pudo personalizar el tablero.', 'error'); setSaving(false); } }}><p className="text-sm leading-relaxed text-muted">Este nombre aparece en la vista operativa y en pantalla completa. La marca ActivaControl se conserva en el pie.</p><Field label="Título principal"><input required maxLength={100} value={title} onChange={(event) => setTitle(event.target.value)} className={input} placeholder="Empresa, casa o edificio" /></Field><Field label="Subtítulo"><input maxLength={180} value={subtitle} onChange={(event) => setSubtitle(event.target.value)} className={input} placeholder="Área, planta o propósito del tablero" /></Field><button disabled={saving} className="h-12 w-full bg-cyan-700 text-xs font-black uppercase text-white disabled:opacity-50">{saving ? 'Guardando…' : 'Guardar identidad'}</button></form></ModalShell>;
+}
 
 function EnergySummary({ energy }: { energy: ResumenEnergia }) {
   const variation = energy.variationPercent;

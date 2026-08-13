@@ -220,6 +220,7 @@ export const CotizacionesAdmin: React.FC = () => {
                   </div>
                   <div className="text-right shrink-0">
                     <p className="font-display font-black text-lg text-content">{ARS.format(cotizacion.total)}</p>
+                    {cotizacion.tipo === 'activa_control' && 'abonoMensual' in cotizacion.detalle && <p className="text-[10px] font-black uppercase text-cyan-700">+ {ARS.format(cotizacion.detalle.abonoMensual)}/mes</p>}
                     <span className={`inline-block border px-2 py-0.5 text-[11px] font-black uppercase ${estado.clase}`}>{estado.label}</span>
                   </div>
                 </div>

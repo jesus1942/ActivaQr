@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { armarTextoCotizacion, calcularCotizacionGestionada } from './cotizacionesCore';
+import { armarTextoCotizacion, armarTextoCotizacionActivaControl, calcularCotizacionActivaControl, calcularCotizacionGestionada } from './cotizacionesCore';
 
 test('calcula una cotización gestionada con visitas, traslado y descuento', () => {
   const resultado = calcularCotizacionGestionada({
@@ -50,4 +50,26 @@ test('el texto identifica número, cliente, total y vigencia', () => {
   assert.match(texto, /17\/8\/2026/);
   assert.match(texto, /No incluye mantenimiento correctivo/);
   assert.match(texto, /aprobación expresa del administrador/);
+});
+
+test('ActivaControl separa la instalación del abono recurrente por dispositivo', () => {
+  const calculada = calcularCotizacionActivaControl({
+    dispositivos: 4,
+    costoReferenciaDispositivo: 100_000,
+    precioInstaladoDispositivo: 200_000,
+    abonoPorDispositivo: 12_000,
+    abonoMinimoMensual: 35_000,
+    vigenciaDias: 15,
+  });
+  assert.equal(calculada.total, 800_000);
+  assert.equal(calculada.detalle.abonoMensual, 48_000);
+  assert.equal(calculada.planSoftware, 'industrial');
+  const texto = armarTextoCotizacionActivaControl({
+    numero: 'AQ-20260813-CONTROL', clienteNombre: 'Frigorífico Sur', concepto: calculada.concepto,
+    detalle: calculada.detalle, subtotal: calculada.subtotal, descuento: calculada.descuento,
+    total: calculada.total, vigenciaHasta: new Date('2026-08-28T12:00:00Z'),
+  });
+  assert.match(texto, /TOTAL PUESTA EN MARCHA/);
+  assert.match(texto, /ABONO MENSUAL/);
+  assert.match(texto, /dispositivos provistos e instalados/i);
 });

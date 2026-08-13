@@ -249,6 +249,7 @@ adminControlIndustrialRouter.put('/:empresaId', async (req: AuthRequest, res, ne
       controlRemotoHabilitado: Boolean(controlRemotoHabilitado),
       notasComerciales: notasComerciales ? String(notasComerciales).slice(0, 5000) : null,
       tableroConfig: tableroConfig && typeof tableroConfig === 'object' ? {
+        titulo: String(tableroConfig.titulo || '').trim().slice(0, 100),
         subtitulo: String(tableroConfig.subtitulo || '').trim().slice(0, 180),
         refreshSeconds: 5,
         mostrarBateria: tableroConfig.mostrarBateria !== false,
@@ -292,6 +293,30 @@ controlIndustrialRouter.get('/estado', async (req: AuthRequest, res, next) => {
 });
 
 controlIndustrialRouter.use(moduloActivo);
+
+controlIndustrialRouter.patch('/tablero', requireAdmin, async (req: AuthRequest, res, next) => {
+  try {
+    const empresaId = tenantId(req);
+    const current = await prisma.moduloControlEmpresa.findUnique({ where: { empresaId } });
+    if (!current) throw statusError('ActivaControl no está configurado para esta empresa.', 404);
+    const incoming = req.body?.tableroConfig;
+    if (!incoming || typeof incoming !== 'object' || Array.isArray(incoming)) throw statusError('La configuración del tablero no es válida.');
+    const previous = current.tableroConfig && typeof current.tableroConfig === 'object' && !Array.isArray(current.tableroConfig)
+      ? current.tableroConfig as Record<string, unknown>
+      : {};
+    const tableroConfig = {
+      ...previous,
+      titulo: String(incoming.titulo || '').trim().slice(0, 100),
+      subtitulo: String(incoming.subtitulo || '').trim().slice(0, 180),
+      refreshSeconds: 5,
+      mostrarBateria: incoming.mostrarBateria !== false,
+      mostrarSenal: incoming.mostrarSenal !== false,
+    };
+    const module = await prisma.moduloControlEmpresa.update({ where: { empresaId }, data: { tableroConfig } });
+    await auditar(req, 'editar', 'ModuloControlEmpresa', module.id, 'Personalización del tablero ActivaControl actualizada.');
+    res.json(module);
+  } catch (error) { next(error); }
+});
 
 controlIndustrialRouter.get('/resumen', async (req: AuthRequest, res, next) => {
   try {

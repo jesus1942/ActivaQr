@@ -23,6 +23,31 @@ export interface CotizacionCalculada {
   vigenciaDias: number;
 }
 
+export interface DetalleCotizacionActivaControl {
+  dispositivos: number;
+  costoReferenciaDispositivo: number;
+  precioInstaladoDispositivo: number;
+  extrasImplementacion: number;
+  cargoInicial: number;
+  abonoPorDispositivo: number;
+  abonoMinimoMensual: number;
+  abonoMensual: number;
+  retencionDias: number;
+  incluyeAlertas: boolean;
+  incluyeControlRemoto: boolean;
+  notas: string | null;
+}
+
+export interface CotizacionActivaControlCalculada {
+  concepto: string;
+  planSoftware: 'industrial';
+  detalle: DetalleCotizacionActivaControl;
+  subtotal: number;
+  descuento: number;
+  total: number;
+  vigenciaDias: number;
+}
+
 const PLANES = new Set(['inicial', 'empresa', 'industrial']);
 
 function numero(
@@ -103,6 +128,46 @@ export function calcularCotizacionGestionada(entrada: Record<string, unknown>): 
   };
 }
 
+export function calcularCotizacionActivaControl(entrada: Record<string, unknown>): CotizacionActivaControlCalculada {
+  const dispositivos = entero(entrada.dispositivos, 'Dispositivos', 10_000, 1);
+  if (dispositivos < 1) throw new Error('La propuesta necesita al menos un dispositivo.');
+  const costoReferenciaDispositivo = numero(entrada.costoReferenciaDispositivo, 'Costo de referencia del dispositivo', 1_000_000_000, 100_000);
+  const precioInstaladoDispositivo = numero(entrada.precioInstaladoDispositivo, 'Precio instalado por dispositivo', 1_000_000_000, 200_000);
+  const extrasImplementacion = numero(entrada.extrasImplementacion, 'Extras de implementación', 1_000_000_000);
+  const abonoPorDispositivo = numero(entrada.abonoPorDispositivo, 'Abono por dispositivo', 1_000_000_000, 12_000);
+  const abonoMinimoMensual = numero(entrada.abonoMinimoMensual, 'Abono mínimo mensual', 1_000_000_000, 35_000);
+  const retencionDias = entero(entrada.retencionDias, 'Retención histórica', 3_650, 365);
+  if (retencionDias < 7) throw new Error('La retención histórica debe ser de al menos 7 días.');
+  const descuentoPorcentaje = numero(entrada.descuento, 'Descuento', 100);
+  const vigenciaDias = entero(entrada.vigenciaDias, 'Vigencia', 180, 15);
+  if (vigenciaDias < 1) throw new Error('La vigencia debe ser de al menos 1 día.');
+  const cargoInicial = dispositivos * precioInstaladoDispositivo + extrasImplementacion;
+  const descuento = cargoInicial * descuentoPorcentaje / 100;
+  const abonoMensual = Math.max(dispositivos * abonoPorDispositivo, abonoMinimoMensual);
+  return {
+    concepto: texto(entrada.concepto, 160) ?? 'ActivaControl · monitoreo y operación inteligente',
+    planSoftware: 'industrial',
+    detalle: {
+      dispositivos,
+      costoReferenciaDispositivo,
+      precioInstaladoDispositivo,
+      extrasImplementacion,
+      cargoInicial: redondear(cargoInicial),
+      abonoPorDispositivo,
+      abonoMinimoMensual,
+      abonoMensual: redondear(abonoMensual),
+      retencionDias,
+      incluyeAlertas: entrada.incluyeAlertas !== false,
+      incluyeControlRemoto: entrada.incluyeControlRemoto !== false,
+      notas: texto(entrada.notas, 2_000),
+    },
+    subtotal: redondear(cargoInicial),
+    descuento: redondear(descuento),
+    total: redondear(Math.max(0, cargoInicial - descuento)),
+    vigenciaDias,
+  };
+}
+
 const ARS = new Intl.NumberFormat('es-AR', {
   style: 'currency',
   currency: 'ARS',
@@ -141,5 +206,35 @@ export function armarTextoCotizacion(params: {
     'No incluye mantenimiento correctivo, repuestos, materiales ni mano de obra adicional.',
     'Si se detecta una anomalía, cualquier correctivo se cotiza por separado y sólo puede ejecutarse con aprobación expresa del administrador de la empresa y orden de trabajo autorizada.',
     'La suscripción de software se factura aparte según el plan elegido.',
+  ].join('\n');
+}
+
+export function armarTextoCotizacionActivaControl(params: {
+  numero: string;
+  clienteNombre: string;
+  concepto: string;
+  detalle: DetalleCotizacionActivaControl;
+  subtotal: number;
+  descuento: number;
+  total: number;
+  vigenciaHasta: Date;
+}): string {
+  const descuento = params.descuento > 0 ? `\nDescuento sobre implementación: -${ARS.format(params.descuento)}` : '';
+  const notas = params.detalle.notas ? `\nObservaciones: ${params.detalle.notas}` : '';
+  return [
+    `COTIZACIÓN ${params.numero} — ACTIVACONTROL`,
+    `Cliente: ${params.clienteNombre}`,
+    `Concepto: ${params.concepto}`,
+    `Dispositivos provistos e instalados: ${params.detalle.dispositivos}`,
+    `Precio instalado por dispositivo: ${ARS.format(params.detalle.precioInstaladoDispositivo)}`,
+    `Inversión inicial: ${ARS.format(params.subtotal)}${descuento}`,
+    `TOTAL PUESTA EN MARCHA: ${ARS.format(params.total)}`,
+    `ABONO MENSUAL: ${ARS.format(params.detalle.abonoMensual)}`,
+    `Válida hasta: ${params.vigenciaHasta.toLocaleDateString('es-AR')}${notas}`,
+    '',
+    `Incluye provisión, instalación y configuración de ${params.detalle.dispositivos} dispositivo(s), tablero ActivaControl personalizado, historial por ${params.detalle.retencionDias} días y soporte remoto.`,
+    params.detalle.incluyeAlertas ? 'Incluye reglas de alarma y notificaciones al celular.' : 'No incluye reglas ni notificaciones de alarma.',
+    params.detalle.incluyeControlRemoto ? 'Incluye operación remota auditada en dispositivos compatibles, sujeta a protecciones e interbloqueos locales.' : 'La propuesta es sólo de monitoreo; no habilita operación remota.',
+    'El abono contempla plataforma, almacenamiento, sincronización y mantenimiento evolutivo. Trabajos eléctricos adicionales, conectividad del sitio y repuestos se cotizan por separado.',
   ].join('\n');
 }

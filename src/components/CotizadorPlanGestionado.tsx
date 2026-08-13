@@ -5,6 +5,7 @@ import { crearCotizacion, type Cotizacion } from '../data/cotizacionesApi';
 import { useToast } from './ui/Toast';
 
 interface DatosCotizador {
+  tipoProducto: 'gestionado' | 'activa_control';
   empresaId: string;
   contactoId: string;
   concepto: string;
@@ -21,11 +22,21 @@ interface DatosCotizador {
   descuento: number;
   vigenciaDias: number;
   notas: string;
+  dispositivos: number;
+  costoReferenciaDispositivo: number;
+  precioInstaladoDispositivo: number;
+  extrasImplementacion: number;
+  abonoPorDispositivo: number;
+  abonoMinimoMensual: number;
+  retencionDias: number;
+  incluyeAlertas: boolean;
+  incluyeControlRemoto: boolean;
 }
 
 const STORAGE_KEY = 'activaqr_cotizador_gestionado_v2';
 
 const INICIAL: DatosCotizador = {
+  tipoProducto: 'gestionado',
   empresaId: '',
   contactoId: '',
   concepto: 'Plan Gestionado ActivaQR',
@@ -42,6 +53,15 @@ const INICIAL: DatosCotizador = {
   descuento: 0,
   vigenciaDias: 15,
   notas: '',
+  dispositivos: 1,
+  costoReferenciaDispositivo: 100_000,
+  precioInstaladoDispositivo: 200_000,
+  extrasImplementacion: 0,
+  abonoPorDispositivo: 12_000,
+  abonoMinimoMensual: 35_000,
+  retencionDias: 365,
+  incluyeAlertas: true,
+  incluyeControlRemoto: true,
 };
 
 function cargarInicial(): DatosCotizador {
@@ -96,6 +116,17 @@ export const CotizadorPlanGestionado: React.FC<{
     ?? empresa?.usuarios[0];
 
   const totales = useMemo(() => {
+    if (datos.tipoProducto === 'activa_control') {
+      const subtotalInicial = datos.dispositivos * datos.precioInstaladoDispositivo + datos.extrasImplementacion;
+      const descuento = subtotalInicial * Math.min(Math.max(datos.descuento, 0), 100) / 100;
+      return {
+        porVisita: datos.precioInstaladoDispositivo,
+        subtotalMensual: subtotalInicial,
+        descuento,
+        mensual: Math.max(0, Math.round(subtotalInicial - descuento)),
+        abono: Math.max(datos.dispositivos * datos.abonoPorDispositivo, datos.abonoMinimoMensual),
+      };
+    }
     const trabajo = datos.horasVisita * datos.valorHora;
     const mediciones = datos.activos * datos.valorActivo;
     const traslado = datos.kilometrosVisita * datos.valorKilometro;
@@ -107,6 +138,7 @@ export const CotizadorPlanGestionado: React.FC<{
       subtotalMensual,
       descuento,
       mensual: Math.max(0, Math.round(subtotalMensual - descuento)),
+      abono: 0,
     };
   }, [datos]);
 
@@ -167,10 +199,15 @@ export const CotizadorPlanGestionado: React.FC<{
           </h2>
           <p className="text-sm text-muted mt-1">Elegí un cliente existente; sus datos de contacto se completan desde la nómina.</p>
         </div>
-        <span className="hidden sm:block text-xs font-black uppercase tracking-wider text-brand-600">Plan Gestionado</span>
+        <span className="hidden sm:block text-xs font-black uppercase tracking-wider text-brand-600">{datos.tipoProducto === 'activa_control' ? 'ActivaControl' : 'Plan Gestionado'}</span>
       </div>
 
       <div className="p-4 space-y-5">
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" onClick={() => setDatos((actual) => ({ ...actual, tipoProducto: 'gestionado', concepto: 'Plan Gestionado ActivaQR' }))} className={`min-h-12 px-3 text-xs font-black uppercase ${datos.tipoProducto === 'gestionado' ? 'bg-slate-950 text-white' : 'border border-line text-muted'}`}>Gestión de activos</button>
+          <button type="button" onClick={() => setDatos((actual) => ({ ...actual, tipoProducto: 'activa_control', concepto: 'ActivaControl · monitoreo y operación inteligente', planSoftware: 'industrial' }))} className={`min-h-12 px-3 text-xs font-black uppercase ${datos.tipoProducto === 'activa_control' ? 'bg-cyan-700 text-white' : 'border border-line text-muted'}`}>ActivaControl</button>
+        </div>
+        {datos.tipoProducto === 'activa_control' && <div className="bg-cyan-500/10 p-4 text-sm leading-relaxed text-muted"><strong className="block text-content">Producto llave en mano</strong>El cliente recibe los dispositivos instalados, el tablero personalizado, alertas, historial y soporte. La propuesta separa inversión inicial y abono mensual.</div>}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="block sm:col-span-2">
             <span className="block text-[11px] font-black uppercase tracking-wider text-muted mb-1">Empresa de tu nómina</span>
@@ -206,7 +243,7 @@ export const CotizadorPlanGestionado: React.FC<{
               className="w-full h-10 border border-line bg-surface px-3 text-sm font-semibold outline-none focus:border-brand-600"
             />
           </label>
-          <label className="block">
+          {datos.tipoProducto === 'gestionado' && <label className="block">
             <span className="block text-[11px] font-black uppercase tracking-wider text-muted mb-1">Plan de software</span>
             <select
               value={datos.planSoftware}
@@ -217,17 +254,29 @@ export const CotizadorPlanGestionado: React.FC<{
               <option value="empresa">Empresa</option>
               <option value="industrial">Industrial</option>
             </select>
-          </label>
+          </label>}
           {campoNumero('Vigencia', 'vigenciaDias', 'días')}
-          {campoNumero('Equipos a medir', 'activos')}
-          {campoNumero('Visitas por mes', 'visitasMes')}
-          {campoNumero('Horas por visita', 'horasVisita', 'h')}
-          {campoNumero('Valor por hora', 'valorHora', 'ARS')}
-          {campoNumero('Valor por equipo', 'valorActivo', 'ARS')}
-          {campoNumero('Km ida y vuelta', 'kilometrosVisita', 'km')}
-          {campoNumero('Valor por km', 'valorKilometro', 'ARS')}
-          {campoNumero('Viáticos por visita', 'viaticosVisita', 'ARS')}
-          {campoNumero('Extras mensuales', 'extrasMensuales', 'ARS')}
+          {datos.tipoProducto === 'gestionado' ? <>
+            {campoNumero('Equipos a medir', 'activos')}
+            {campoNumero('Visitas por mes', 'visitasMes')}
+            {campoNumero('Horas por visita', 'horasVisita', 'h')}
+            {campoNumero('Valor por hora', 'valorHora', 'ARS')}
+            {campoNumero('Valor por equipo', 'valorActivo', 'ARS')}
+            {campoNumero('Km ida y vuelta', 'kilometrosVisita', 'km')}
+            {campoNumero('Valor por km', 'valorKilometro', 'ARS')}
+            {campoNumero('Viáticos por visita', 'viaticosVisita', 'ARS')}
+            {campoNumero('Extras mensuales', 'extrasMensuales', 'ARS')}
+          </> : <>
+            {campoNumero('Cantidad de dispositivos', 'dispositivos')}
+            {campoNumero('Costo de referencia', 'costoReferenciaDispositivo', 'ARS/u')}
+            {campoNumero('Precio instalado', 'precioInstaladoDispositivo', 'ARS/u')}
+            {campoNumero('Extras de implementación', 'extrasImplementacion', 'ARS')}
+            {campoNumero('Abono por dispositivo', 'abonoPorDispositivo', 'ARS/mes')}
+            {campoNumero('Abono mínimo', 'abonoMinimoMensual', 'ARS/mes')}
+            {campoNumero('Historial', 'retencionDias', 'días')}
+            <label className="flex min-h-10 items-center gap-2 text-sm font-bold text-muted"><input type="checkbox" checked={datos.incluyeAlertas} onChange={(event) => setDatos((actual) => ({ ...actual, incluyeAlertas: event.target.checked }))} /> Alertas al celular</label>
+            <label className="flex min-h-10 items-center gap-2 text-sm font-bold text-muted"><input type="checkbox" checked={datos.incluyeControlRemoto} onChange={(event) => setDatos((actual) => ({ ...actual, incluyeControlRemoto: event.target.checked }))} /> Control remoto auditado</label>
+          </>}
           {campoNumero('Descuento', 'descuento', '%')}
           <label className="block sm:col-span-2 lg:col-span-4">
             <span className="block text-[11px] font-black uppercase tracking-wider text-muted mb-1">Observaciones</span>
@@ -250,9 +299,9 @@ export const CotizadorPlanGestionado: React.FC<{
           </div>
         )}
 
-        <div className="grid gap-3 sm:grid-cols-4">
+        <div className={`grid gap-3 ${datos.tipoProducto === 'activa_control' ? 'sm:grid-cols-5' : 'sm:grid-cols-4'}`}>
           <div className="border border-line bg-subtle p-3">
-            <p className="text-[11px] font-black uppercase tracking-wider text-muted">Por visita</p>
+            <p className="text-[11px] font-black uppercase tracking-wider text-muted">{datos.tipoProducto === 'activa_control' ? 'Instalado por equipo' : 'Por visita'}</p>
             <p className="font-display font-black text-xl text-content">{moneda.format(totales.porVisita)}</p>
           </div>
           <div className="border border-line bg-subtle p-3">
@@ -264,9 +313,10 @@ export const CotizadorPlanGestionado: React.FC<{
             <p className="font-display font-black text-xl text-content">-{moneda.format(totales.descuento)}</p>
           </div>
           <div className="border border-brand-600 bg-brand-50 dark:bg-brand-600/15 p-3">
-            <p className="text-[11px] font-black uppercase tracking-wider text-brand-700 dark:text-brand-300">Total mensual</p>
+            <p className="text-[11px] font-black uppercase tracking-wider text-brand-700 dark:text-brand-300">{datos.tipoProducto === 'activa_control' ? 'Puesta en marcha' : 'Total mensual'}</p>
             <p className="font-display font-black text-xl text-content">{moneda.format(totales.mensual)}</p>
           </div>
+          {datos.tipoProducto === 'activa_control' && <div className="bg-slate-950 p-3 text-white"><p className="text-[11px] font-black uppercase tracking-wider text-cyan-300">Abono mensual</p><p className="font-display text-xl font-black">{moneda.format(totales.abono)}</p></div>}
         </div>
 
         <button

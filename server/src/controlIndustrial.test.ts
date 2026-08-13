@@ -105,6 +105,16 @@ test('la navegación muestra Control siempre al Superadmin y sólo tras habilita
   assert.match(sidebar, /estadoControl\(\).*setControlHabilitado/);
 });
 
+test('el tenant personaliza su tablero sin poder alterar licencia ni permisos', () => {
+  assert.match(routes, /patch\('\/tablero', requireAdmin/);
+  assert.match(routes, /Personalización del tablero ActivaControl actualizada/);
+  assert.match(routes, /titulo: String\(incoming\.titulo/);
+  assert.doesNotMatch(routes, /patch\('\/tablero'[\s\S]{0,1200}controlRemotoHabilitado/);
+  assert.match(controlIndustrial, /PresentationDashboard/);
+  assert.match(controlIndustrial, /customizable=\{owner\}/);
+  assert.match(controlIndustrial, /ActivaControl/);
+});
+
 test('eWeLink usa autorización OAuth y no vuelve a pedir un Access Token manual', () => {
   assert.match(controlIndustrial, /Autorizar con eWeLink/);
   assert.match(controlIndustrial, /autorizarSonoff/);

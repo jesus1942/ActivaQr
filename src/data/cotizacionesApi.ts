@@ -18,6 +18,21 @@ export interface DetalleCotizacion {
   notas: string | null;
 }
 
+export interface DetalleCotizacionActivaControl {
+  dispositivos: number;
+  costoReferenciaDispositivo: number;
+  precioInstaladoDispositivo: number;
+  extrasImplementacion: number;
+  cargoInicial: number;
+  abonoPorDispositivo: number;
+  abonoMinimoMensual: number;
+  abonoMensual: number;
+  retencionDias: number;
+  incluyeAlertas: boolean;
+  incluyeControlRemoto: boolean;
+  notas: string | null;
+}
+
 export interface EnvioCotizacion {
   id: string;
   canal: CanalCotizacion;
@@ -44,8 +59,9 @@ export interface Cotizacion {
   contactoEmail: string | null;
   contactoTelefono: string | null;
   concepto: string;
+  tipo: 'gestionado' | 'activa_control' | 'correctivo';
   planSoftware: string;
-  detalle: DetalleCotizacion;
+  detalle: DetalleCotizacion | DetalleCotizacionActivaControl;
   moneda: 'ARS';
   subtotal: number;
   descuento: number;
@@ -80,6 +96,16 @@ export interface NuevaCotizacionPayload {
   descuento: number;
   vigenciaDias: number;
   notas?: string;
+  tipoProducto?: 'gestionado' | 'activa_control';
+  dispositivos?: number;
+  costoReferenciaDispositivo?: number;
+  precioInstaladoDispositivo?: number;
+  extrasImplementacion?: number;
+  abonoPorDispositivo?: number;
+  abonoMinimoMensual?: number;
+  retencionDias?: number;
+  incluyeAlertas?: boolean;
+  incluyeControlRemoto?: boolean;
 }
 
 async function parse<T>(respuesta: Response): Promise<T> {

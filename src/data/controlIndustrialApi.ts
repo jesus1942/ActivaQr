@@ -23,6 +23,7 @@ export interface ModuloControl {
   umbralSinConexionMinutos: number;
   controlRemotoHabilitado: boolean;
   tableroConfig?: {
+    titulo?: string;
     subtitulo?: string;
     refreshSeconds?: number;
     mostrarBateria?: boolean;
@@ -169,6 +170,10 @@ export async function resumenControl(): Promise<ResumenControl> {
 
 export async function resumenEnergia(): Promise<ResumenEnergia> {
   return parse(await apiFetch('control-industrial/energia/resumen'));
+}
+
+export async function actualizarTableroControl(tableroConfig: NonNullable<ModuloControl['tableroConfig']>): Promise<ModuloControl> {
+  return parse(await apiFetch('control-industrial/tablero', { method: 'PATCH', body: JSON.stringify({ tableroConfig }) }));
 }
 
 export async function listarControlAdmin(): Promise<EmpresaControlAdmin[]> {
