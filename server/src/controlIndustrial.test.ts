@@ -255,7 +255,7 @@ test('DUAL R3 convierte centésimas eléctricas sin alterar lecturas ya decimale
 test('el tablero permite sólo telemetría operativa y no estira cards vecinas', () => {
   assert.match(controlIndustrial, /LIVE_STATUS_VARIABLE/);
   assert.match(controlIndustrial, /SENSOR_VARIABLE/);
-  assert.match(controlIndustrial, /grid items-start gap-4 xl:grid-cols-2/);
+  assert.match(controlIndustrial, /grid items-start gap-4 lg:order-2 xl:grid-cols-2/);
   assert.match(controlIndustrial, /Sin consumo atribuido/);
   assert.match(controlIndustrial, /channel\.valorBooleano && power/);
   assert.doesNotMatch(controlIndustrial, /TECHNICAL_VARIABLE/);
@@ -329,7 +329,11 @@ test('Control Industrial conserva una interfaz mobile-first operable', () => {
   assert.match(controlIndustrial, /items-end justify-center[\s\S]*sm:items-center/);
   assert.match(controlIndustrial, /pb-\[calc\(1rem\+env\(safe-area-inset-bottom\)\)\]/);
   assert.match(controlIndustrial, /grid grid-cols-1 gap-3 sm:grid-cols-2/);
-  assert.match(controlIndustrial, /min-h-12 min-w-24/);
+  assert.match(controlIndustrial, /order-1 grid items-start gap-4 lg:order-2/);
+  assert.match(controlIndustrial, /min-\[400px\]:w-auto min-\[400px\]:min-w-24/);
+  assert.match(controlIndustrial, /Ver comparación gráfica/);
+  assert.match(controlIndustrial, /overflow-x-hidden overflow-y-auto/);
+  assert.doesNotMatch(controlIndustrial, /auto-rows-fr/);
   assert.doesNotMatch(controlIndustrial, /truncate font-display text-lg font-black text-content/);
 });
 
