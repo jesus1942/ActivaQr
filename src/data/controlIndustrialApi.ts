@@ -49,6 +49,7 @@ export interface VariableIoT {
   id: string;
   clave: string;
   nombre: string;
+  uso: 'carga' | 'lampara' | 'motor' | 'ventilador' | 'bomba' | 'calefaccion' | 'toma' | 'otro';
   tipo: 'numero' | 'booleano' | 'texto';
   unidad?: string | null;
   valorNumero?: number | null;
@@ -214,8 +215,8 @@ export async function actualizarDispositivo(dispositivoId: string, data: Record<
   return parse(await apiFetch(`control-industrial/dispositivos/${dispositivoId}`, { method: 'PATCH', body: JSON.stringify(data) }));
 }
 
-export async function actualizarVariable(variableId: string, nombre: string): Promise<VariableIoT> {
-  return parse(await apiFetch(`control-industrial/variables/${variableId}`, { method: 'PATCH', body: JSON.stringify({ nombre }) }));
+export async function actualizarVariable(variableId: string, data: { nombre?: string; uso?: VariableIoT['uso'] }): Promise<VariableIoT> {
+  return parse(await apiFetch(`control-industrial/variables/${variableId}`, { method: 'PATCH', body: JSON.stringify(data) }));
 }
 
 async function descargarHistorial(path: string): Promise<{ blob: Blob; filename: string; truncated: boolean }> {

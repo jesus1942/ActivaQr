@@ -696,6 +696,7 @@ model VariableIoT {
   dispositivoId String
   clave         String
   nombre        String
+  uso           String    @default("carga") // carga | lampara | motor | ventilador | bomba | calefaccion | toma | otro
   tipo          String    @default("numero") // numero | booleano | texto
   unidad        String?
   valorNumero   Float?

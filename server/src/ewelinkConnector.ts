@@ -1,4 +1,5 @@
 import { createHmac, randomBytes } from 'crypto';
+import WebSocket from 'ws';
 import { prisma } from './prisma';
 import { cifrarCredenciales, descifrarCredenciales, firmarEstadoOAuth } from './iotSecrets';
 import { normalizarEventoIoT, procesarEventoIoT } from './iotIngest';
@@ -9,11 +10,20 @@ const DOMAINS: Record<string, string> = {
   us: 'https://us-apia.coolkit.cc',
   eu: 'https://eu-apia.coolkit.cc',
 };
+const DISPATCH_DOMAINS: Record<string, string> = {
+  cn: 'https://cn-dispa.coolkit.cn',
+  as: 'https://as-dispa.coolkit.cc',
+  us: 'https://us-dispa.coolkit.cc',
+  eu: 'https://eu-dispa.coolkit.cc',
+};
 const syncing = new Set<string>();
 const freshStatusCursor = new Map<string, number>();
 const FRESH_STATUS_LIMIT = 4;
+const REALTIME_MAX_PAYLOAD_BYTES = 256 * 1024;
 let statusRequestQueue: Promise<void> = Promise.resolve();
 let lastStatusRequestAt = 0;
+type RealtimeConnection = { socket: WebSocket; heartbeat?: NodeJS.Timeout; authenticated: boolean };
+const realtimeConnections = new Map<string, RealtimeConnection>();
 export const EWELINK_REDIRECT_URL = process.env.EWELINK_REDIRECT_URL?.trim()
   || 'https://api.activaqr.net/api/iot/ewelink/oauth/callback';
 
@@ -134,7 +144,7 @@ export function extraerLecturasEwelink(value: unknown): Record<string, number | 
       const active = new Set(['on', 'open', 'opened', 'detected', 'alarm', 'wet', 'leak', 'motion']);
       const inactive = new Set(['off', 'close', 'closed', 'normal', 'dry', 'no_leak', 'clear', 'no_motion']);
       result[key] = item.trim() !== '' && Number.isFinite(numeric) ? numeric : active.has(normalized) ? true : inactive.has(normalized) ? false : item;
-    } else if (Array.isArray(item) && /^(current|voltage|actpow|apparentpow|reactivepow|power|factor|daykwh|monthkwh|energy)/i.test(key)) {
+    } else if (Array.isArray(item) && /^(current|voltage|actpow|apparentpow|reactpow|reactivepow|power|factor|daykwh|monthkwh|energy)/i.test(key)) {
       item.forEach((entry, index) => {
         if (typeof entry === 'number' || typeof entry === 'boolean') result[`${key}_${index + 1}`] = entry;
         else if (typeof entry === 'string' && entry.trim() !== '' && Number.isFinite(Number(entry))) result[`${key}_${index + 1}`] = Number(entry);
@@ -163,19 +173,45 @@ export function extraerLecturasEwelink(value: unknown): Record<string, number | 
       }
     }
   }
-  if (Array.isArray(params.timers) && params.timers.length) {
+  if (Array.isArray(params.timers)) {
     result.active_timers = params.timers.filter((item) => {
       if (!item || typeof item !== 'object' || Array.isArray(item)) return false;
       const enabled = (item as Record<string, unknown>).enabled;
       return enabled !== false && enabled !== 0 && enabled !== 'off' && enabled !== 'disable';
     }).length;
   }
-  if (params.pulse !== undefined) {
-    const pulse = params.pulse;
+  const pulseConfig = params.pulseConfig && typeof params.pulseConfig === 'object' && !Array.isArray(params.pulseConfig)
+    ? params.pulseConfig as Record<string, unknown>
+    : {};
+  if (params.pulse !== undefined || pulseConfig.pulse !== undefined) {
+    const pulse = params.pulse ?? pulseConfig.pulse;
     result.pulse_enabled = pulse === true || pulse === 1 || pulse === 'on' || pulse === 'enable';
   }
-  if (params.pulseWidth !== undefined && Number.isFinite(Number(params.pulseWidth))) {
-    result.pulse_duration_ms = Number(params.pulseWidth);
+  const pulseWidth = params.pulseWidth ?? pulseConfig.pulseWidth;
+  if (pulseWidth !== undefined && Number.isFinite(Number(pulseWidth))) {
+    result.pulse_duration_ms = Number(pulseWidth);
+  }
+  if (Array.isArray(params.pulses)) {
+    for (const item of params.pulses) {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
+      const entry = item as Record<string, unknown>;
+      const outlet = Number(entry.outlet);
+      if (!Number.isInteger(outlet) || outlet < 0 || outlet > 3) continue;
+      result[`pulse_enabled_${outlet + 1}`] = entry.pulse === true || entry.pulse === 1 || entry.pulse === 'on' || entry.pulse === 'enable';
+      if (Number.isFinite(Number(entry.width))) result[`pulse_duration_ms_${outlet + 1}`] = Number(entry.width);
+    }
+  }
+  if (params.workMode !== undefined && Number.isFinite(Number(params.workMode))) {
+    result.operation_mode = Number(params.workMode) === 2 ? 'motor' : 'interruptor';
+    delete result.workMode;
+  }
+  if (params.currLocation !== undefined && Number.isFinite(Number(params.currLocation))) {
+    result.motor_position = Math.min(100, Math.max(0, Number(params.currLocation)));
+    delete result.currLocation;
+  }
+  if (params.motorTurn !== undefined && [0, 1, 2].includes(Number(params.motorTurn))) {
+    result.motor_state = ['detenido', 'abriendo', 'cerrando'][Number(params.motorTurn)];
+    delete result.motorTurn;
   }
   return result;
 }
@@ -197,11 +233,12 @@ export function combinarEstadoEwelink(device: Record<string, unknown>, freshPara
 export function normalizarMagnitudesEwelink(readings: Record<string, number | boolean | string>, device: Record<string, unknown>) {
   const extra = device.extra && typeof device.extra === 'object' && !Array.isArray(device.extra) ? device.extra as Record<string, unknown> : {};
   const identity = `${device.name ?? ''} ${device.productModel ?? ''} ${extra.model ?? ''}`.toLowerCase();
-  if (!/dual\s*r3|dualr3/.test(identity)) return readings;
+  const uiid = Number(device.uiid ?? extra.uiid);
+  if (uiid !== 126 && !/dual\s*r3|dualr3|e32-2sw/.test(identity)) return readings;
   const scaled = { ...readings };
   for (const [key, value] of Object.entries(scaled)) {
     if (typeof value !== 'number' || !Number.isInteger(value)) continue;
-    if (/^(current|voltage|actpow|power|apparentpow|reactivepow)(?:_\d+)?$/i.test(key)) scaled[key] = value / 100;
+    if (/^(current|voltage|actpow|power|apparentpow|reactpow|reactivepow)(?:_\d+)?$/i.test(key)) scaled[key] = value / 100;
   }
   return scaled;
 }
@@ -279,6 +316,109 @@ async function obtenerEstadoEfectivoEwelink(domain: string, credentials: Ewelink
   return body.data.params;
 }
 
+async function getAuthorizedJson<T>(url: string, credentials: EwelinkCredentials): Promise<T> {
+  const response = await fetch(url, {
+    headers: {
+      'X-CK-Appid': credentials.appId,
+      'X-CK-Nonce': nonce(),
+      Authorization: `Bearer ${credentials.accessToken}`,
+      Accept: 'application/json',
+    },
+    signal: AbortSignal.timeout(12_000),
+  });
+  const body = await response.json().catch(() => ({})) as { error?: number; msg?: string; reason?: string; data?: T } & T;
+  if (!response.ok || body.error) throw new Error(body.msg || body.reason || `eWeLink respondió ${response.status}.`);
+  return (body.data ?? body) as T;
+}
+
+export async function procesarMensajeTiempoRealEwelink(integracionId: string, message: unknown) {
+  if (!message || typeof message !== 'object' || Array.isArray(message)) return false;
+  const event = message as Record<string, unknown>;
+  if (!['update', 'sysmsg'].includes(String(event.action)) || typeof event.deviceid !== 'string') return false;
+  const params = event.params && typeof event.params === 'object' && !Array.isArray(event.params)
+    ? event.params as Record<string, unknown>
+    : {};
+  const device = await prisma.dispositivoIoT.findUnique({
+    where: { integracionId_identificadorExterno: { integracionId, identificadorExterno: event.deviceid } },
+    select: { nombre: true, modelo: true, tipo: true },
+  });
+  if (!device) return false;
+  const readings = normalizarMagnitudesEwelink(extraerLecturasEwelink(params), { productModel: device.modelo });
+  if (event.action === 'sysmsg' && 'online' in params) readings.online = normalizarOnlineEwelink(params.online);
+  else if (event.action === 'update') readings.online = true;
+  if (!Object.keys(readings).length) return false;
+  await procesarEventoIoT(integracionId, normalizarEventoIoT({
+    deviceId: event.deviceid,
+    deviceName: device.nombre,
+    model: device.modelo,
+    deviceType: device.tipo,
+    readings,
+    timestamp: new Date().toISOString(),
+  }));
+  return true;
+}
+
+async function asegurarTiempoRealEwelink(integration: { id: string }, credentials: EwelinkCredentials, region: string, domain: string) {
+  const current = realtimeConnections.get(integration.id);
+  if (current && (current.socket.readyState === WebSocket.OPEN || current.socket.readyState === WebSocket.CONNECTING)) return;
+  const profile = await getAuthorizedJson<{ user?: { apikey?: string } }>(`${domain}/v2/user/profile`, credentials);
+  const apikey = profile.user?.apikey;
+  if (!apikey) throw new Error('eWeLink no informó la identidad necesaria para sincronización en tiempo real.');
+  const dispatch = await getAuthorizedJson<{ domain?: string; port?: number }>(`${DISPATCH_DOMAINS[region]}/dispatch/app`, credentials);
+  const host = String(dispatch.domain ?? '').trim().toLowerCase().replace(/\.$/, '');
+  const port = Number(dispatch.port);
+  if (!host || !/(^|\.)(coolkit\.cc|coolkit\.cn)$/.test(host) || !Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error('eWeLink informó un servidor de tiempo real no permitido.');
+  }
+  const socket = new WebSocket(`wss://${host}:${port}/api/ws`, {
+    handshakeTimeout: 10_000,
+    maxPayload: REALTIME_MAX_PAYLOAD_BYTES,
+    perMessageDeflate: false,
+  });
+  const connection: RealtimeConnection = { socket, authenticated: false };
+  realtimeConnections.set(integration.id, connection);
+  let messageQueue = Promise.resolve();
+  const close = () => {
+    if (connection.heartbeat) clearInterval(connection.heartbeat);
+    if (realtimeConnections.get(integration.id)?.socket === socket) realtimeConnections.delete(integration.id);
+  };
+  socket.on('open', () => socket.send(JSON.stringify({
+    action: 'userOnline', version: 8, ts: Math.floor(Date.now() / 1000),
+    at: credentials.accessToken, userAgent: 'app', apikey, appid: credentials.appId,
+    nonce: nonce(), sequence: String(Date.now()),
+  })));
+  socket.on('message', (raw) => {
+    const text = raw.toString();
+    if (Buffer.byteLength(text, 'utf8') > REALTIME_MAX_PAYLOAD_BYTES) {
+      socket.close(1009, 'Mensaje demasiado grande');
+      return;
+    }
+    if (text === 'pong') return;
+    let message: Record<string, unknown>;
+    try { message = JSON.parse(text) as Record<string, unknown>; } catch { return; }
+    if (!connection.authenticated && message.error === 0 && message.apikey) {
+      connection.authenticated = true;
+      const config = message.config && typeof message.config === 'object' && !Array.isArray(message.config) ? message.config as Record<string, unknown> : {};
+      const heartbeatSeconds = Math.min(300, Math.max(30, Number(config.hbInterval) || 90)) + 7;
+      connection.heartbeat = setInterval(() => socket.readyState === WebSocket.OPEN && socket.send('ping'), heartbeatSeconds * 1000);
+      connection.heartbeat.unref();
+      console.log('[ewelink] tiempo real conectado:', integration.id);
+      return;
+    }
+    if (!connection.authenticated && typeof message.error === 'number' && message.error !== 0) {
+      console.warn('[ewelink] autenticación en tiempo real rechazada:', integration.id, message.error);
+      socket.close(1008, 'Autenticación rechazada');
+      return;
+    }
+    if (!connection.authenticated) return;
+    messageQueue = messageQueue.then(() => procesarMensajeTiempoRealEwelink(integration.id, message).then(() => undefined)).catch((error) => {
+      console.error('[ewelink] evento tiempo real:', integration.id, error instanceof Error ? error.message : error);
+    });
+  });
+  socket.on('close', close);
+  socket.on('error', (error) => console.warn('[ewelink] tiempo real:', integration.id, error.message));
+}
+
 function requiereEstadoEfectivoEwelink(device: Record<string, unknown>) {
   const params = device.params && typeof device.params === 'object' && !Array.isArray(device.params)
     ? device.params as Record<string, unknown>
@@ -322,6 +462,47 @@ export async function ejecutarCanalEwelink(integracionId: string, dispositivoExt
   return { ok: true, canal, encendido, params };
 }
 
+export type AccionMotorEwelink = 'abrir' | 'detener' | 'cerrar';
+
+export function crearParametrosMotorEwelink(accion: AccionMotorEwelink) {
+  const motorTurn = { detener: 0, abrir: 1, cerrar: 2 }[accion];
+  if (motorTurn === undefined) throw Object.assign(new Error('Seleccioná abrir, detener o cerrar.'), { status: 400 });
+  return { motorTurn };
+}
+
+export async function ejecutarMotorEwelink(integracionId: string, dispositivoExternoId: string, accion: AccionMotorEwelink) {
+  const integration = await prisma.integracionIoT.findUnique({ where: { id: integracionId } });
+  if (!integration || integration.proveedor !== 'sonoff_ewelink') throw Object.assign(new Error('Conector SONOFF no encontrado.'), { status: 404 });
+  const { credentials, domain } = await credencialesAutorizadas(integration);
+  const params = crearParametrosMotorEwelink(accion);
+  let response: Response;
+  try {
+    await esperarTurnoEstadoEwelink();
+    response = await fetch(`${domain}/v2/device/thing/status`, {
+      method: 'POST',
+      headers: {
+        'X-CK-Appid': credentials.appId,
+        'X-CK-Nonce': nonce(),
+        Authorization: `Bearer ${credentials.accessToken}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ type: 1, id: dispositivoExternoId, params }),
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (error) {
+    const message = error instanceof Error && error.name === 'TimeoutError'
+      ? 'eWeLink no confirmó la maniobra del motor dentro de 15 segundos.'
+      : 'No se pudo enviar la maniobra del motor a eWeLink.';
+    throw Object.assign(new Error(message), { status: 502 });
+  }
+  const body = await response.json().catch(() => ({})) as { error?: number; msg?: string };
+  if (!response.ok || body.error) {
+    throw Object.assign(new Error(`eWeLink no ejecutó la maniobra: ${body.msg || `error ${body.error ?? response.status}`}`), { status: response.status === 401 ? 401 : 502 });
+  }
+  return { ok: true, accion, params };
+}
+
 export async function sincronizarEwelink(integracionId: string) {
   const integration = await prisma.integracionIoT.findUnique({ where: { id: integracionId } });
   if (!integration || integration.proveedor !== 'sonoff_ewelink') throw Object.assign(new Error('Conector SONOFF no encontrado.'), { status: 404 });
@@ -355,6 +536,9 @@ export async function sincronizarEwelink(integracionId: string) {
   }
 
   const things = body.data?.thingList ?? [];
+  asegurarTiempoRealEwelink(integration, credentials, String(credentials.region ?? 'us'), domain).catch((error) => {
+    console.warn('[ewelink] no se pudo iniciar tiempo real:', integration.id, error instanceof Error ? error.message : error);
+  });
   const dynamicDevices = things
     .filter((thing) => thing.itemType === 1 && requiereEstadoEfectivoEwelink(thing.itemData ?? {}))
     .map((thing) => thing.itemData ?? {})

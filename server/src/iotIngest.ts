@@ -108,6 +108,7 @@ const LABELS: Record<string, { nombre: string; unidad?: string }> = {
   power: { nombre: 'Potencia', unidad: 'W' },
   apparentpow: { nombre: 'Potencia aparente', unidad: 'VA' },
   reactivepow: { nombre: 'Potencia reactiva', unidad: 'var' },
+  reactpow: { nombre: 'Potencia reactiva', unidad: 'var' },
   factor: { nombre: 'Factor de potencia' },
   daykwh: { nombre: 'Consumo diario', unidad: 'kWh' },
   monthkwh: { nombre: 'Consumo mensual', unidad: 'kWh' },
@@ -122,6 +123,9 @@ const LABELS: Record<string, { nombre: string; unidad?: string }> = {
   active_timers: { nombre: 'Temporizadores activos' },
   pulse_enabled: { nombre: 'Modo impulso' },
   pulse_duration_ms: { nombre: 'Duración del impulso', unidad: 'ms' },
+  operation_mode: { nombre: 'Modo del Dual R3' },
+  motor_position: { nombre: 'Posición del motor', unidad: '%' },
+  motor_state: { nombre: 'Movimiento del motor' },
 };
 
 function indiceCanal(suffix: string): number {
@@ -134,7 +138,7 @@ function indiceCanal(suffix: string): number {
 function metadataVariable(clave: string, rawKey: string): { nombre: string; unidad?: string } {
   const exact = LABELS[clave];
   if (exact) return exact;
-  const electrical = clave.match(/^(current|voltage|actpow|power|apparentpow|reactivepow|factor|daykwh|monthkwh|energy)_([0-9]+)$/);
+  const electrical = clave.match(/^(current|voltage|actpow|power|apparentpow|reactpow|reactivepow|factor|daykwh|monthkwh|energy)_([0-9]+)$/);
   if (electrical) {
     const base = LABELS[electrical[1]] ?? { nombre: electrical[1] };
     return { ...base, nombre: `${base.nombre} · canal ${indiceCanal(electrical[2])}` };

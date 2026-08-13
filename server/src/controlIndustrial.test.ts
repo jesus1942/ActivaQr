@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { normalizarEventoIoT } from './iotIngest';
 import { cifrarCredenciales, descifrarCredenciales, firmarEstadoOAuth, hashToken, verificarEstadoOAuth } from './iotSecrets';
-import { clasificarDispositivoEwelink, combinarEstadoEwelink, crearParametrosCanalEwelink, extraerLecturasEwelink, normalizarMagnitudesEwelink, normalizarOnlineEwelink } from './ewelinkConnector';
+import { clasificarDispositivoEwelink, combinarEstadoEwelink, crearParametrosCanalEwelink, crearParametrosMotorEwelink, extraerLecturasEwelink, normalizarMagnitudesEwelink, normalizarOnlineEwelink } from './ewelinkConnector';
 import { escalarValorTuya, normalizarCodigoTuya } from './tuyaConnector';
 
 const ROOT = resolve(process.cwd(), '..');
@@ -134,6 +134,7 @@ test('eWeLink prioriza el estado efectivo tras cambios externos, timers e impuls
     timers: [{ enabled: 1, type: 'delay' }, { enabled: 0, type: 'repeat' }],
     pulse: 'on',
     pulseWidth: 750,
+    workMode: 1,
   });
   const readings = extraerLecturasEwelink(device.params);
   assert.equal(readings.switch_1, true);
@@ -141,8 +142,46 @@ test('eWeLink prioriza el estado efectivo tras cambios externos, timers e impuls
   assert.equal(readings.active_timers, 1);
   assert.equal(readings.pulse_enabled, true);
   assert.equal(readings.pulse_duration_ms, 750);
+  assert.equal(readings.operation_mode, 'interruptor');
   assert.equal(normalizarOnlineEwelink(device.online), false);
   assert.equal(normalizarOnlineEwelink('online'), true);
+});
+
+test('DUAL R3 interpreta protocolo UIID 126, modos y pulsos por salida', () => {
+  const readings = normalizarMagnitudesEwelink(extraerLecturasEwelink({
+    workMode: 2,
+    current_00: 47,
+    voltage_00: 22426,
+    actPow_00: 8578,
+    reactPow_00: 120,
+    apparentPow_00: 10540,
+    pulses: [{ pulse: 'on', width: 500, outlet: 0 }, { pulse: 'off', width: 1000, outlet: 1 }],
+  }), { extra: { uiid: 126, model: 'E32-2SW-P0' } });
+  assert.equal(readings.operation_mode, 'motor');
+  assert.equal(readings.current_00, 0.47);
+  assert.equal(readings.voltage_00, 224.26);
+  assert.equal(readings.actPow_00, 85.78);
+  assert.equal(readings.reactPow_00, 1.2);
+  assert.equal(readings.apparentPow_00, 105.4);
+  assert.equal(readings.pulse_enabled_1, true);
+  assert.equal(readings.pulse_duration_ms_2, 1000);
+  assert.equal(readings.workMode, undefined);
+});
+
+test('mando de motor eWeLink usa únicamente la enumeración permitida', () => {
+  assert.deepEqual(crearParametrosMotorEwelink('abrir'), { motorTurn: 1 });
+  assert.deepEqual(crearParametrosMotorEwelink('detener'), { motorTurn: 0 });
+  assert.deepEqual(crearParametrosMotorEwelink('cerrar'), { motorTurn: 2 });
+  assert.throws(() => crearParametrosMotorEwelink('encender' as never), /abrir, detener o cerrar/i);
+});
+
+test('tiempo real eWeLink limita origen y tamaño, y el relé se bloquea en modo motor', () => {
+  const connector = readFileSync(resolve(process.cwd(), 'src/ewelinkConnector.ts'), 'utf8');
+  assert.match(connector, /coolkit\\\.cc\|coolkit\\\.cn/);
+  assert.match(connector, /maxPayload: REALTIME_MAX_PAYLOAD_BYTES/);
+  assert.match(connector, /perMessageDeflate: false/);
+  assert.match(routes, /operationMode === 'motor'.*Por seguridad no admite mandos de relé independientes/s);
+  assert.match(routes, /operationMode !== 'motor'.*maniobra fue bloqueada/s);
 });
 
 test('eWeLink distingue interruptores multicanal y RF Bridge', () => {
@@ -232,9 +271,12 @@ test('el control remoto ejecuta eWeLink, audita el resultado y excluye el RF Bri
 test('permite alias por dispositivo y canal sin perderlos al sincronizar', () => {
   assert.match(routes, /patch\('\/dispositivos\/:id'/);
   assert.match(routes, /patch\('\/variables\/:id'/);
-  assert.match(routes, /data: \{ nombre \}/);
-  assert.match(controlIndustrial, /Nombres de los canales/);
+  assert.match(routes, /data: \{ nombre\?: string; uso\?: string \}/);
+  assert.match(controlIndustrial, /Función de cada salida/);
   assert.match(controlIndustrial, /actualizarVariable/);
+  assert.match(schema, /uso\s+String\s+@default\("carga"\)/);
+  assert.match(controlIndustrial, /Qué opera/);
+  assert.match(controlIndustrial, /Motor eléctrico/);
 });
 
 test('refresca el tablero y eWeLink cada 5 segundos', () => {
@@ -244,6 +286,9 @@ test('refresca el tablero y eWeLink cada 5 segundos', () => {
   assert.match(connector, /sincronizarEwelinkProgramado[\s\S]*1_000/);
   assert.match(connector, /GET|obtenerEstadoEfectivoEwelink/);
   assert.match(connector, /\/v2\/device\/thing\/status\?\$\{query\}/);
+  assert.match(connector, /wss:\/\/\$\{host\}:\$\{port\}\/api\/ws/);
+  assert.match(connector, /action: 'userOnline'/);
+  assert.match(connector, /procesarMensajeTiempoRealEwelink/);
 });
 
 test('exporta logs por dispositivo o canal y evita duplicados cada cinco segundos', () => {

@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
 import { Prisma } from '@prisma/client';
 import { NextFunction, Request, Response, Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { prisma } from '../prisma';
 import {
   AuthRequest,
@@ -13,7 +14,7 @@ import {
 import { auditar, registrarAuditoria } from '../auditoria';
 import { cifrarCredenciales, hashToken } from '../iotSecrets';
 import { normalizarEventoIoT, procesarEventoIoT } from '../iotIngest';
-import { crearAutorizacionEwelink, ejecutarCanalEwelink, sincronizarEwelink } from '../ewelinkConnector';
+import { AccionMotorEwelink, crearAutorizacionEwelink, ejecutarCanalEwelink, ejecutarMotorEwelink, sincronizarEwelink } from '../ewelinkConnector';
 import { enviarPushAUsuario } from '../push';
 import { ejecutarCanalTuya, sincronizarTuya } from '../tuyaConnector';
 
@@ -21,6 +22,13 @@ const ESTADOS_MODULO = new Set(['configuracion', 'activo', 'suspendido']);
 const PROVEEDORES = new Set(['sonoff_ewelink', 'tuya_cloud', 'milesight_ug65', 'webhook_generico']);
 const OPERADORES = new Set(['gt', 'gte', 'lt', 'lte', 'eq', 'neq']);
 const SEVERIDADES = new Set(['informacion', 'advertencia', 'critica']);
+const commandLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas maniobras en un minuto. Esperá antes de volver a operar.' },
+});
 
 function statusError(message: string, status = 400) {
   const error = new Error(message);
@@ -95,6 +103,7 @@ async function validarAccionesEscena(empresaId: string, actions: AccionEscena[])
   for (const action of actions) {
     const device = devices.find((item) => item.id === action.dispositivoId)!;
     if (!device.permiteControl || !['sonoff_ewelink', 'tuya_cloud'].includes(device.integracion.proveedor) || device.tipo === 'puente_rf') throw statusError(`${device.nombre} no está habilitado para escenas.`);
+    if (device.variables.some((item) => item.clave === 'operation_mode' && item.valorTexto === 'motor')) throw statusError(`${device.nombre} está en modo motor y no admite escenas de relé independientes.`);
     if (!device.variables.some((item) => item.clave === `switch_${action.canal + 1}` || (action.canal === 0 && item.clave === 'relay'))) throw statusError(`${device.nombre} no informó el canal ${action.canal + 1}.`);
   }
   return devices;
@@ -124,6 +133,8 @@ async function ejecutarReleSeguro(req: AuthRequest, params: { dispositivoId: str
     if (!device?.permiteControl) throw statusError('Este dispositivo está configurado sólo para monitoreo.', 409);
     if (!['sonoff_ewelink', 'tuya_cloud'].includes(device.integracion.proveedor)) throw statusError('Este equipo no posee un adaptador de operación remota.', 409);
     if (device.tipo === 'puente_rf') throw statusError('El RF Bridge es un puente de acceso y no se opera como una salida.', 409);
+    const operationMode = device.variables.find((item) => item.clave === 'operation_mode')?.valorTexto;
+    if (operationMode === 'motor') throw statusError('El Dual R3 está en modo motor. Por seguridad no admite mandos de relé independientes; usá Abrir, Detener o Cerrar.', 409);
     if (!Number.isInteger(params.canal) || params.canal < 0 || params.canal > 3 || typeof params.encendido !== 'boolean') throw statusError('Seleccioná un canal válido y el estado encendido o apagado.');
     const channelVariables = device.variables.filter((item) => /^switch_[1-4]$/.test(item.clave));
     if (channelVariables.length && !channelVariables.some((item) => item.clave === `switch_${params.canal + 1}`)) throw statusError('El dispositivo no informó ese canal.', 409);
@@ -151,6 +162,40 @@ async function ejecutarReleSeguro(req: AuthRequest, params: { dispositivoId: str
       return tx.comandoIoT.update({ where: { id: command.id }, data: { estado: 'ejecutado', ejecutadoEn: new Date(), resultado: `Canal ${params.canal + 1} ${params.encendido ? 'encendido' : 'apagado'} mediante ${device.integracion.proveedor}.` } });
     });
     await auditar(req, 'comando', 'ComandoIoT', command.id, `${device.nombre}: canal ${params.canal + 1} ${params.encendido ? 'encendido' : 'apagado'}. Motivo: ${params.motivo}`);
+    return { ...executed, dispositivo: { nombre: device.nombre } };
+  } catch (error) {
+    if (commandId) await prisma.comandoIoT.update({ where: { id: commandId }, data: { estado: 'error', ejecutadoEn: new Date(), resultado: error instanceof Error ? error.message.slice(0, 2000) : 'Error desconocido al operar.' } }).catch(() => {});
+    throw error;
+  }
+}
+
+async function ejecutarMotorSeguro(req: AuthRequest, params: { dispositivoId: string; accion: AccionMotorEwelink; motivo: string }) {
+  const empresaId = tenantId(req);
+  let commandId: string | null = null;
+  try {
+    const [module, device] = await Promise.all([
+      prisma.moduloControlEmpresa.findUnique({ where: { empresaId } }),
+      prisma.dispositivoIoT.findFirst({ where: { id: params.dispositivoId, empresaId }, include: { integracion: true, variables: true } }),
+    ]);
+    if (!module?.controlRemotoHabilitado) throw statusError('El Superadmin no habilitó control remoto para este contrato.', 403);
+    if (!device?.permiteControl) throw statusError('Este dispositivo está configurado sólo para monitoreo.', 409);
+    if (device.integracion.proveedor !== 'sonoff_ewelink') throw statusError('El mando de motor está disponible únicamente para SONOFF eWeLink compatible.', 409);
+    const operationMode = device.variables.find((item) => item.clave === 'operation_mode')?.valorTexto;
+    if (operationMode !== 'motor') throw statusError('El equipo no confirmó que está en modo motor. La maniobra fue bloqueada.', 409);
+    if (!(['abrir', 'detener', 'cerrar'] as string[]).includes(params.accion)) throw statusError('Seleccioná abrir, detener o cerrar.');
+    const online = device.variables.find((item) => item.clave === 'online');
+    if (online?.valorBooleano === false || device.estado === 'desconectado') throw statusError(`${device.nombre} está desconectado de la nube del fabricante.`, 409);
+    const command = await prisma.comandoIoT.create({ data: {
+      empresaId, dispositivoId: device.id, tipo: 'motor', payload: { accion: params.accion }, motivo: params.motivo.slice(0, 2000),
+      solicitadoPorId: req.auth!.userId, solicitadoPorNombre: req.auth!.email,
+      estado: 'pendiente', resultado: 'Enviando maniobra segura mediante eWeLink.',
+    } });
+    commandId = command.id;
+    await ejecutarMotorEwelink(device.integracionId, device.identificadorExterno, params.accion);
+    const executed = await prisma.comandoIoT.update({ where: { id: command.id }, data: {
+      estado: 'ejecutado', ejecutadoEn: new Date(), resultado: `Motor: ${params.accion} mediante eWeLink.`,
+    } });
+    await auditar(req, 'comando', 'ComandoIoT', command.id, `${device.nombre}: motor ${params.accion}. Motivo: ${params.motivo}`);
     return { ...executed, dispositivo: { nombre: device.nombre } };
   } catch (error) {
     if (commandId) await prisma.comandoIoT.update({ where: { id: commandId }, data: { estado: 'error', ejecutadoEn: new Date(), resultado: error instanceof Error ? error.message.slice(0, 2000) : 'Error desconocido al operar.' } }).catch(() => {});
@@ -448,10 +493,21 @@ controlIndustrialRouter.patch('/variables/:id', requireJefatura, async (req: Aut
     const empresaId = tenantId(req);
     const variable = await prisma.variableIoT.findFirst({ where: { id: req.params.id, empresaId }, include: { dispositivo: { select: { nombre: true } } } });
     if (!variable) throw statusError('Canal o variable no encontrada.', 404);
-    const nombre = String(req.body?.nombre ?? '').trim().slice(0, 160);
-    if (!nombre) throw statusError('El nombre visible del canal es obligatorio.');
-    const updated = await prisma.variableIoT.update({ where: { id: variable.id }, data: { nombre } });
-    await auditar(req, 'editar', 'VariableIoT', variable.id, `${variable.dispositivo.nombre}: ${variable.nombre} pasó a llamarse ${nombre}.`);
+    const data: { nombre?: string; uso?: string } = {};
+    if (req.body?.nombre !== undefined) {
+      const nombre = String(req.body.nombre).trim().slice(0, 160);
+      if (!nombre) throw statusError('El nombre visible del canal es obligatorio.');
+      data.nombre = nombre;
+    }
+    if (req.body?.uso !== undefined) {
+      const uso = String(req.body.uso).trim().toLowerCase();
+      if (!new Set(['carga', 'lampara', 'motor', 'ventilador', 'bomba', 'calefaccion', 'toma', 'otro']).has(uso)) throw statusError('Elegí un tipo de carga válido.');
+      if (!/^switch_[1-4]$|^relay$/.test(variable.clave)) throw statusError('El tipo de carga sólo se configura en salidas operables.');
+      data.uso = uso;
+    }
+    if (!Object.keys(data).length) throw statusError('No se recibió ningún cambio para el canal.');
+    const updated = await prisma.variableIoT.update({ where: { id: variable.id }, data });
+    await auditar(req, 'editar', 'VariableIoT', variable.id, `${variable.dispositivo.nombre}: canal ${updated.nombre}, uso ${updated.uso}.`);
     res.json(updated);
   } catch (error) { next(error); }
 });
@@ -634,7 +690,7 @@ controlIndustrialRouter.delete('/escenas/:id', requireJefatura, async (req: Auth
   } catch (error) { next(error); }
 });
 
-controlIndustrialRouter.post('/escenas/:id/ejecutar', requireJefatura, async (req: AuthRequest, res, next) => {
+controlIndustrialRouter.post('/escenas/:id/ejecutar', commandLimiter, requireJefatura, async (req: AuthRequest, res, next) => {
   try {
     const empresaId = tenantId(req);
     const scene = await prisma.escenaIoT.findFirst({ where: { id: req.params.id, empresaId } });
@@ -668,10 +724,16 @@ controlIndustrialRouter.post('/alarmas/:id/reconocer', requireGestionOperacion, 
   } catch (error) { next(error); }
 });
 
-controlIndustrialRouter.post('/comandos', requireJefatura, async (req: AuthRequest, res, next) => {
+controlIndustrialRouter.post('/comandos', commandLimiter, requireJefatura, async (req: AuthRequest, res, next) => {
   try {
     const { dispositivoId, tipo, payload, motivo } = req.body ?? {};
-    if (tipo !== 'rele' || !payload || typeof payload !== 'object' || !motivo || String(motivo).trim().length < 5) throw statusError('El comando requiere dispositivo, canal, estado y un motivo de al menos 5 caracteres.');
+    if (typeof dispositivoId !== 'string' || !payload || typeof payload !== 'object' || Array.isArray(payload) || !motivo || String(motivo).trim().length < 5) throw statusError('El comando requiere dispositivo, parámetros y un motivo de al menos 5 caracteres.');
+    if (tipo === 'motor') {
+      const accion = String((payload as Record<string, unknown>).accion) as AccionMotorEwelink;
+      if (!['abrir', 'detener', 'cerrar'].includes(accion)) throw statusError('Seleccioná abrir, detener o cerrar.');
+      return res.json(await ejecutarMotorSeguro(req, { dispositivoId, accion, motivo: String(motivo).trim() }));
+    }
+    if (tipo !== 'rele') throw statusError('Tipo de comando no permitido.');
     const canal = Number((payload as Record<string, unknown>).canal);
     const encendido = (payload as Record<string, unknown>).encendido;
     if (!Number.isInteger(canal) || canal < 0 || canal > 3 || typeof encendido !== 'boolean') throw statusError('Seleccioná un canal válido y el estado encendido o apagado.');
