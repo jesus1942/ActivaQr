@@ -71,6 +71,8 @@ export interface DispositivoIoT {
   estado: string;
   habilitado: boolean;
   permiteControl: boolean;
+  archivadoEn?: string | null;
+  archivadoPorNombre?: string | null;
   ubicacion?: string | null;
   ultimoContactoEn?: string | null;
   bateria?: number | null;
@@ -218,6 +220,23 @@ export async function actualizarIntegracion(integracionId: string, data: Record<
 
 export async function actualizarDispositivo(dispositivoId: string, data: Record<string, unknown>): Promise<DispositivoIoT> {
   return parse(await apiFetch(`control-industrial/dispositivos/${dispositivoId}`, { method: 'PATCH', body: JSON.stringify(data) }));
+}
+
+export async function listarDispositivosRetirados(): Promise<DispositivoIoT[]> {
+  return parse(await apiFetch('control-industrial/dispositivos/retirados'));
+}
+
+export async function retirarDispositivo(dispositivoId: string): Promise<DispositivoIoT> {
+  return parse(await apiFetch(`control-industrial/dispositivos/${dispositivoId}/retirar`, { method: 'POST' }));
+}
+
+export async function restaurarDispositivo(dispositivoId: string): Promise<DispositivoIoT> {
+  return parse(await apiFetch(`control-industrial/dispositivos/${dispositivoId}/restaurar`, { method: 'POST' }));
+}
+
+export async function eliminarDispositivoDefinitivamente(dispositivoId: string, confirmar: string): Promise<void> {
+  const response = await apiFetch(`control-industrial/dispositivos/${dispositivoId}`, { method: 'DELETE', body: JSON.stringify({ confirmar }) });
+  if (!response.ok) throw new Error((await response.json().catch(() => ({})))?.error || 'No se pudo eliminar el dispositivo.');
 }
 
 export async function actualizarVariable(variableId: string, data: { nombre?: string; uso?: VariableIoT['uso'] }): Promise<VariableIoT> {

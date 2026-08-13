@@ -252,7 +252,7 @@ export async function procesarEventoIoT(integracionId: string, evento: EventoIoT
       (error as Error & { status?: number }).status = 404;
       throw error;
     }
-    const count = await prisma.dispositivoIoT.count({ where: { empresaId: integracion.empresaId } });
+    const count = await prisma.dispositivoIoT.count({ where: { empresaId: integracion.empresaId, archivadoEn: null } });
     const limite = integracion.empresa.moduloControl?.limiteDispositivos ?? 0;
     if (count >= limite) {
       const error = new Error('El tenant alcanzó el límite contratado de dispositivos.');
@@ -267,6 +267,12 @@ export async function procesarEventoIoT(integracionId: string, evento: EventoIoT
       modelo: evento.modelo,
       tipo: evento.tipo ?? 'sensor',
     } });
+  }
+
+  if (dispositivo.archivadoEn) {
+    const error = new Error('El dispositivo fue retirado de ActivaControl. Restauralo antes de volver a recibir telemetría.');
+    (error as Error & { status?: number }).status = 409;
+    throw error;
   }
 
   if (!dispositivo.habilitado) {
@@ -356,6 +362,7 @@ export async function evaluarDesconexionesIoT(): Promise<number> {
       where: {
         empresaId: module.empresaId,
         habilitado: true,
+        archivadoEn: null,
         ultimoContactoEn: { not: null, lt: staleBefore },
       },
       select: { id: true, nombre: true, ultimoContactoEn: true },

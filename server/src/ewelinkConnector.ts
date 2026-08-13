@@ -540,6 +540,10 @@ export async function sincronizarEwelink(integracionId: string) {
   }
 
   const things = body.data?.thingList ?? [];
+  const archivedIds = new Set((await prisma.dispositivoIoT.findMany({
+    where: { integracionId: integration.id, archivadoEn: { not: null } },
+    select: { identificadorExterno: true },
+  })).map((device) => device.identificadorExterno));
   asegurarTiempoRealEwelink(integration, credentials, String(credentials.region ?? 'us'), domain).catch((error) => {
     console.warn('[ewelink] no se pudo iniciar tiempo real:', integration.id, error instanceof Error ? error.message : error);
   });
@@ -569,6 +573,7 @@ export async function sincronizarEwelink(integracionId: string) {
     const device = combinarEstadoEwelink(listedDevice, typeof listedId === 'string' ? freshParams.get(listedId) : undefined);
     const id = device.deviceid;
     if (typeof id !== 'string') continue;
+    if (archivedIds.has(id)) continue;
     const readings = { ...normalizarMagnitudesEwelink(extraerLecturasEwelink(device.params), device), online: normalizarOnlineEwelink(device.online) };
     if (!Object.keys(readings).length) continue;
     await procesarEventoIoT(integration.id, normalizarEventoIoT({

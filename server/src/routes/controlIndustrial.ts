@@ -104,7 +104,7 @@ function accionesEscena(value: unknown): AccionEscena[] {
 }
 
 async function validarAccionesEscena(empresaId: string, actions: AccionEscena[]) {
-  const devices = await prisma.dispositivoIoT.findMany({ where: { empresaId, id: { in: [...new Set(actions.map((item) => item.dispositivoId))] } }, include: { integracion: true, variables: true } });
+  const devices = await prisma.dispositivoIoT.findMany({ where: { empresaId, archivadoEn: null, id: { in: [...new Set(actions.map((item) => item.dispositivoId))] } }, include: { integracion: true, variables: true } });
   if (devices.length !== new Set(actions.map((item) => item.dispositivoId)).size) throw statusError('La escena incluye un dispositivo que no pertenece a la empresa.', 400);
   for (const action of actions) {
     const device = devices.find((item) => item.id === action.dispositivoId)!;
@@ -133,7 +133,7 @@ async function ejecutarReleSeguro(req: AuthRequest, params: { dispositivoId: str
   try {
     const [module, device] = await Promise.all([
       prisma.moduloControlEmpresa.findUnique({ where: { empresaId } }),
-      prisma.dispositivoIoT.findFirst({ where: { id: params.dispositivoId, empresaId }, include: { integracion: true, variables: true } }),
+      prisma.dispositivoIoT.findFirst({ where: { id: params.dispositivoId, empresaId, archivadoEn: null }, include: { integracion: true, variables: true } }),
     ]);
     if (!module?.controlRemotoHabilitado) throw statusError('El Superadmin no habilitó control remoto para este contrato.', 403);
     if (!device?.permiteControl) throw statusError('Este dispositivo está configurado sólo para monitoreo.', 409);
@@ -181,7 +181,7 @@ async function ejecutarMotorSeguro(req: AuthRequest, params: { dispositivoId: st
   try {
     const [module, device] = await Promise.all([
       prisma.moduloControlEmpresa.findUnique({ where: { empresaId } }),
-      prisma.dispositivoIoT.findFirst({ where: { id: params.dispositivoId, empresaId }, include: { integracion: true, variables: true } }),
+      prisma.dispositivoIoT.findFirst({ where: { id: params.dispositivoId, empresaId, archivadoEn: null }, include: { integracion: true, variables: true } }),
     ]);
     if (!module?.controlRemotoHabilitado) throw statusError('El Superadmin no habilitó control remoto para este contrato.', 403);
     if (!device?.permiteControl) throw statusError('Este dispositivo está configurado sólo para monitoreo.', 409);
@@ -324,10 +324,10 @@ controlIndustrialRouter.get('/resumen', async (req: AuthRequest, res, next) => {
     const [module, integraciones, dispositivos, alarmas, comandos, reglas, escenas] = await Promise.all([
       prisma.moduloControlEmpresa.findUnique({ where: { empresaId } }),
       prisma.integracionIoT.findMany({ where: { empresaId }, orderBy: { creadaEn: 'asc' } }),
-      prisma.dispositivoIoT.findMany({ where: { empresaId }, include: { integracion: { select: { proveedor: true } }, variables: { orderBy: { nombre: 'asc' } } }, orderBy: { nombre: 'asc' } }),
-      prisma.alarmaIoT.findMany({ where: { empresaId, estado: { in: ['activa', 'reconocida'] } }, include: { dispositivo: { select: { nombre: true } }, variable: { select: { nombre: true, unidad: true } } }, orderBy: { iniciadaEn: 'desc' }, take: 100 }),
+      prisma.dispositivoIoT.findMany({ where: { empresaId, archivadoEn: null }, include: { integracion: { select: { proveedor: true } }, variables: { orderBy: { nombre: 'asc' } } }, orderBy: { nombre: 'asc' } }),
+      prisma.alarmaIoT.findMany({ where: { empresaId, estado: { in: ['activa', 'reconocida'] }, dispositivo: { archivadoEn: null } }, include: { dispositivo: { select: { nombre: true } }, variable: { select: { nombre: true, unidad: true } } }, orderBy: { iniciadaEn: 'desc' }, take: 100 }),
       prisma.comandoIoT.findMany({ where: { empresaId }, include: { dispositivo: { select: { nombre: true } } }, orderBy: { solicitadoEn: 'desc' }, take: 25 }),
-      prisma.reglaAlarmaIoT.findMany({ where: { empresaId }, include: { variable: { include: { dispositivo: { select: { nombre: true } } } } }, orderBy: { creadaEn: 'desc' } }),
+      prisma.reglaAlarmaIoT.findMany({ where: { empresaId, variable: { dispositivo: { archivadoEn: null } } }, include: { variable: { include: { dispositivo: { select: { nombre: true } } } } }, orderBy: { creadaEn: 'desc' } }),
       prisma.escenaIoT.findMany({ where: { empresaId }, orderBy: { creadaEn: 'desc' } }),
     ]);
     const publicDevices = dispositivos.map((device) => device.integracion.proveedor === 'sonoff_ewelink'
@@ -344,7 +344,7 @@ controlIndustrialRouter.get('/energia/resumen', async (req: AuthRequest, res, ne
     const currentStart = new Date(now.getTime() - 24 * 3600_000);
     const previousStart = new Date(now.getTime() - 48 * 3600_000);
     const variables = await prisma.variableIoT.findMany({
-      where: { empresaId, OR: [{ clave: { startsWith: 'actpow' } }, { clave: { startsWith: 'power' } }] },
+      where: { empresaId, dispositivo: { archivadoEn: null }, OR: [{ clave: { startsWith: 'actpow' } }, { clave: { startsWith: 'power' } }] },
       select: { id: true, clave: true, valorNumero: true, dispositivo: { select: { id: true, nombre: true, modelo: true, variables: { where: { OR: [{ clave: { startsWith: 'switch_' } }, { clave: 'relay' }] }, select: { clave: true, valorBooleano: true } } } }, lecturas: { where: { medidaEn: { gte: previousStart } }, select: { valorNumero: true, medidaEn: true }, orderBy: { medidaEn: 'asc' } } },
     });
     const active = variables.filter((item) => item.clave.startsWith('actpow') || !variables.some((other) => other.dispositivo.id === item.dispositivo.id && other.clave.replace(/^actpow/, '') === item.clave.replace(/^power/, '') && other.clave.startsWith('actpow')));
@@ -510,10 +510,89 @@ controlIndustrialRouter.post('/integraciones/:id/sincronizar-tuya', requireAdmin
   } catch (error) { next(error); }
 });
 
+controlIndustrialRouter.get('/dispositivos/retirados', requireAdmin, async (req: AuthRequest, res, next) => {
+  try {
+    const empresaId = tenantId(req);
+    const devices = await prisma.dispositivoIoT.findMany({
+      where: { empresaId, archivadoEn: { not: null } },
+      include: { integracion: { select: { proveedor: true } }, variables: { orderBy: { nombre: 'asc' } } },
+      orderBy: { archivadoEn: 'desc' },
+    });
+    res.json(devices);
+  } catch (error) { next(error); }
+});
+
+controlIndustrialRouter.post('/dispositivos/:id/retirar', requireAdmin, async (req: AuthRequest, res, next) => {
+  try {
+    const empresaId = tenantId(req);
+    const device = await prisma.dispositivoIoT.findFirst({ where: { id: req.params.id, empresaId }, include: { variables: { select: { id: true } } } });
+    if (!device) throw statusError('Dispositivo no encontrado.', 404);
+    if (device.archivadoEn) return res.json(device);
+    const now = new Date();
+    const variableIds = device.variables.map((variable) => variable.id);
+    const scenes = await prisma.escenaIoT.findMany({ where: { empresaId, activa: true }, select: { id: true, acciones: true } });
+    const affectedScenes = scenes.filter((scene) => Array.isArray(scene.acciones) && scene.acciones.some((action) => action && typeof action === 'object' && !Array.isArray(action) && (action as Record<string, unknown>).dispositivoId === device.id));
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.alarmaIoT.updateMany({
+        where: { dispositivoId: device.id, estado: { in: ['activa', 'reconocida'] } },
+        data: { estado: 'resuelta', resueltaEn: now, resolucion: 'Dispositivo retirado del tablero por el administrador.' },
+      });
+      if (variableIds.length) await tx.reglaAlarmaIoT.updateMany({ where: { variableId: { in: variableIds } }, data: { activa: false, condicionDesde: null } });
+      if (affectedScenes.length) await tx.escenaIoT.updateMany({ where: { id: { in: affectedScenes.map((scene) => scene.id) } }, data: { activa: false } });
+      return tx.dispositivoIoT.update({ where: { id: device.id }, data: {
+        archivadoEn: now,
+        archivadoPorId: req.auth!.userId,
+        archivadoPorNombre: req.auth!.email,
+        habilitado: false,
+        permiteControl: false,
+        estado: 'desconectado',
+      } });
+    });
+    await auditar(req, 'eliminar', 'DispositivoIoT', device.id, `${device.nombre} fue retirado de ActivaControl. Se preservaron historial y auditoría.`);
+    res.json(updated);
+  } catch (error) { next(error); }
+});
+
+controlIndustrialRouter.post('/dispositivos/:id/restaurar', requireAdmin, async (req: AuthRequest, res, next) => {
+  try {
+    const empresaId = tenantId(req);
+    const [device, module, activeCount] = await Promise.all([
+      prisma.dispositivoIoT.findFirst({ where: { id: req.params.id, empresaId, archivadoEn: { not: null } } }),
+      prisma.moduloControlEmpresa.findUnique({ where: { empresaId }, select: { limiteDispositivos: true } }),
+      prisma.dispositivoIoT.count({ where: { empresaId, archivadoEn: null } }),
+    ]);
+    if (!device) throw statusError('Dispositivo retirado no encontrado.', 404);
+    if (!module || activeCount >= module.limiteDispositivos) throw statusError('No hay cupo contratado para restaurar este dispositivo.', 409);
+    const updated = await prisma.dispositivoIoT.update({ where: { id: device.id }, data: {
+      archivadoEn: null,
+      archivadoPorId: null,
+      archivadoPorNombre: null,
+      habilitado: true,
+      permiteControl: false,
+      estado: 'sin_datos',
+    } });
+    await auditar(req, 'editar', 'DispositivoIoT', device.id, `${device.nombre} fue restaurado. El control remoto permanece deshabilitado hasta nueva autorización.`);
+    res.json(updated);
+  } catch (error) { next(error); }
+});
+
+controlIndustrialRouter.delete('/dispositivos/:id', requireAdmin, async (req: AuthRequest, res, next) => {
+  try {
+    const empresaId = tenantId(req);
+    const device = await prisma.dispositivoIoT.findFirst({ where: { id: req.params.id, empresaId } });
+    if (!device) throw statusError('Dispositivo no encontrado.', 404);
+    if (!device.archivadoEn) throw statusError('Primero retiralo del tablero. La eliminación definitiva sólo está disponible para dispositivos retirados.', 409);
+    if (String(req.body?.confirmar ?? '') !== device.nombre) throw statusError(`Escribí exactamente “${device.nombre}” para confirmar la eliminación definitiva.`, 400);
+    await prisma.dispositivoIoT.delete({ where: { id: device.id } });
+    await auditar(req, 'eliminar', 'DispositivoIoT', device.id, `${device.nombre} fue eliminado definitivamente junto con su telemetría, reglas, alarmas y comandos.`);
+    res.status(204).end();
+  } catch (error) { next(error); }
+});
+
 controlIndustrialRouter.patch('/dispositivos/:id', requireJefatura, async (req: AuthRequest, res, next) => {
   try {
     const empresaId = tenantId(req);
-    const device = await prisma.dispositivoIoT.findFirst({ where: { id: req.params.id, empresaId }, include: { integracion: { select: { proveedor: true } } } });
+    const device = await prisma.dispositivoIoT.findFirst({ where: { id: req.params.id, empresaId, archivadoEn: null }, include: { integracion: { select: { proveedor: true } } } });
     if (!device) throw statusError('Dispositivo no encontrado.', 404);
     const data: Record<string, unknown> = {};
     for (const field of ['nombre', 'ubicacion', 'modelo', 'tipo'] as const) if (req.body?.[field] !== undefined) data[field] = String(req.body[field]).trim().slice(0, 160) || null;

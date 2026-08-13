@@ -79,7 +79,7 @@ test('cada consulta y mutación de dispositivos queda aislada por la empresa aut
   assert.match(routes, /dispositivoIoT\.findFirst\(\{ where: \{ id: req\.params\.id, empresaId \}/);
   assert.match(routes, /variableIoT\.findFirst\(\{ where: \{ id: req\.params\.id, empresaId \}/);
   assert.match(routes, /integracionIoT\.findFirst\(\{ where: \{ id: req\.params\.id, empresaId, proveedor: 'tuya_cloud' \}/);
-  assert.match(routes, /dispositivoIoT\.findFirst\(\{ where: \{ id: params\.dispositivoId, empresaId \}/);
+  assert.match(routes, /dispositivoIoT\.findFirst\(\{ where: \{ id: params\.dispositivoId, empresaId, archivadoEn: null \}/);
 });
 
 test('los secretos no salen en respuestas y los comandos exigen doble habilitación', () => {
@@ -255,7 +255,7 @@ test('DUAL R3 convierte centésimas eléctricas sin alterar lecturas ya decimale
 test('el tablero permite sólo telemetría operativa y no estira cards vecinas', () => {
   assert.match(controlIndustrial, /LIVE_STATUS_VARIABLE/);
   assert.match(controlIndustrial, /SENSOR_VARIABLE/);
-  assert.match(controlIndustrial, /grid items-start gap-4 lg:order-2 xl:grid-cols-2/);
+  assert.match(controlIndustrial, /grid items-start gap-4 xl:grid-cols-2/);
   assert.match(controlIndustrial, /Sin consumo atribuido/);
   assert.match(controlIndustrial, /channel\.valorBooleano && power/);
   assert.doesNotMatch(controlIndustrial, /TECHNICAL_VARIABLE/);
@@ -329,12 +329,33 @@ test('Control Industrial conserva una interfaz mobile-first operable', () => {
   assert.match(controlIndustrial, /items-end justify-center[\s\S]*sm:items-center/);
   assert.match(controlIndustrial, /pb-\[calc\(1rem\+env\(safe-area-inset-bottom\)\)\]/);
   assert.match(controlIndustrial, /grid grid-cols-1 gap-3 sm:grid-cols-2/);
-  assert.match(controlIndustrial, /order-1 grid items-start gap-4 lg:order-2/);
+  assert.match(controlIndustrial, /order-1 space-y-3 lg:order-2/);
+  assert.match(controlIndustrial, /grid items-start gap-4 xl:grid-cols-2/);
   assert.match(controlIndustrial, /min-\[400px\]:w-auto min-\[400px\]:min-w-24/);
   assert.match(controlIndustrial, /Ver comparación gráfica/);
   assert.match(controlIndustrial, /overflow-x-hidden overflow-y-auto/);
   assert.doesNotMatch(controlIndustrial, /auto-rows-fr/);
   assert.doesNotMatch(controlIndustrial, /truncate font-display text-lg font-black text-content/);
+});
+
+test('los dispositivos retirados se ocultan sin perder trazabilidad y sólo el admin puede borrarlos', () => {
+  const connector = readFileSync(resolve(process.cwd(), 'src/ewelinkConnector.ts'), 'utf8');
+  const tuya = readFileSync(resolve(process.cwd(), 'src/tuyaConnector.ts'), 'utf8');
+  assert.match(schema, /archivadoEn\s+DateTime\?/);
+  assert.match(schema, /@@index\(\[empresaId, archivadoEn\]\)/);
+  assert.match(routes, /get\('\/dispositivos\/retirados', requireAdmin/);
+  assert.match(routes, /post\('\/dispositivos\/:id\/retirar', requireAdmin/);
+  assert.match(routes, /post\('\/dispositivos\/:id\/restaurar', requireAdmin/);
+  assert.match(routes, /delete\('\/dispositivos\/:id', requireAdmin/);
+  assert.match(routes, /where: \{ empresaId, archivadoEn: null \}/);
+  assert.match(routes, /String\(req\.body\?\.confirmar/);
+  assert.match(routes, /Se preservaron historial y auditoría/);
+  assert.match(connector, /archivedIds[\s\S]*archivadoEn: \{ not: null \}/);
+  assert.match(tuya, /archivedIds[\s\S]*archivadoEn: \{ not: null \}/);
+  assert.match(controlIndustrial, /Retirar del tablero/);
+  assert.match(controlIndustrial, /Dispositivos retirados/);
+  assert.match(controlIndustrial, /Eliminar historial/);
+  assert.match(controlIndustrial, /Ocultar sin conexión/);
 });
 
 test('las cards priorizan mando y relegan telemetría técnica a detalles', () => {

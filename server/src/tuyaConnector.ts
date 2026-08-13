@@ -117,8 +117,13 @@ export async function sincronizarTuya(integracionId: string) {
   const credentials = await authorized(integration);
   try {
     const devices = await rawRequest<TuyaDevice[]>(credentials, 'GET', `/v1.0/users/${encodeURIComponent(credentials.userId)}/devices`);
+    const archivedIds = new Set((await prisma.dispositivoIoT.findMany({
+      where: { integracionId: integration.id, archivadoEn: { not: null } },
+      select: { identificadorExterno: true },
+    })).map((device) => device.identificadorExterno));
     let imported = 0;
     for (const device of devices ?? []) {
+      if (archivedIds.has(device.id)) continue;
       const [status, specs] = await Promise.all([
         rawRequest<TuyaStatus[]>(credentials, 'GET', `/v1.0/devices/${encodeURIComponent(device.id)}/status`).catch(() => device.status ?? []),
         rawRequest<{ status?: Array<{ code: string; values?: string; unit?: string }> }>(credentials, 'GET', `/v1.0/devices/${encodeURIComponent(device.id)}/specifications`).catch(() => ({ status: [] })),

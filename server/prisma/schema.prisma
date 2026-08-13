@@ -670,6 +670,9 @@ model DispositivoIoT {
   estado               String    @default("sin_datos") // normal | advertencia | critico | sin_datos | desconectado
   habilitado           Boolean   @default(true)
   permiteControl       Boolean   @default(false)
+  archivadoEn          DateTime?
+  archivadoPorId       String?
+  archivadoPorNombre   String?
   ubicacion            String?
   ultimoContactoEn     DateTime?
   bateria              Float?
@@ -687,6 +690,7 @@ model DispositivoIoT {
 
   @@unique([integracionId, identificadorExterno])
   @@index([empresaId, estado])
+  @@index([empresaId, archivadoEn])
   @@index([activoId])
 }
 
