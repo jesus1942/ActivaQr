@@ -258,6 +258,31 @@ controlIndustrialRouter.get('/resumen', async (req: AuthRequest, res, next) => {
   } catch (error) { next(error); }
 });
 
+controlIndustrialRouter.get('/energia/resumen', async (req: AuthRequest, res, next) => {
+  try {
+    const empresaId = tenantId(req);
+    const now = new Date();
+    const currentStart = new Date(now.getTime() - 24 * 3600_000);
+    const previousStart = new Date(now.getTime() - 48 * 3600_000);
+    const variables = await prisma.variableIoT.findMany({
+      where: { empresaId, OR: [{ clave: { startsWith: 'actpow' } }, { clave: { startsWith: 'power' } }] },
+      select: { id: true, clave: true, valorNumero: true, dispositivo: { select: { id: true, nombre: true } }, lecturas: { where: { medidaEn: { gte: previousStart } }, select: { valorNumero: true, medidaEn: true }, orderBy: { medidaEn: 'asc' } } },
+    });
+    const active = variables.filter((item) => item.clave.startsWith('actpow') || !variables.some((other) => other.dispositivo.id === item.dispositivo.id && other.clave.replace(/^actpow/, '') === item.clave.replace(/^power/, '') && other.clave.startsWith('actpow')));
+    const average = (values: number[]) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+    const currentPowerW = active.reduce((sum, item) => sum + Math.max(0, item.valorNumero ?? 0), 0);
+    const currentAverageW = active.reduce((sum, item) => sum + average(item.lecturas.filter((reading) => reading.medidaEn >= currentStart && reading.valorNumero != null).map((reading) => reading.valorNumero!)), 0);
+    const previousAverageW = active.reduce((sum, item) => sum + average(item.lecturas.filter((reading) => reading.medidaEn < currentStart && reading.valorNumero != null).map((reading) => reading.valorNumero!)), 0);
+    const variationPercent = previousAverageW > 0 ? ((currentAverageW - previousAverageW) / previousAverageW) * 100 : null;
+    res.json({
+      currentPowerW, currentAverageW, previousAverageW, variationPercent,
+      estimatedKwh24h: currentAverageW * 24 / 1000,
+      previousEstimatedKwh24h: previousAverageW * 24 / 1000,
+      channelsMeasured: active.length,
+    });
+  } catch (error) { next(error); }
+});
+
 controlIndustrialRouter.post('/integraciones', requireAdmin, async (req: AuthRequest, res, next) => {
   try {
     const empresaId = tenantId(req);

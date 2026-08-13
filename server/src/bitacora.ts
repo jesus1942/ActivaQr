@@ -11,6 +11,16 @@ export type EntradaBitacora = {
 
 export const ENTRADAS_BITACORA: EntradaBitacora[] = [
   {
+    version: 'ENERGÍA',
+    fecha: '12 de agosto de 2026',
+    fechaIso: '2026-08-12',
+    titulo: 'El tablero prioriza el mando y empieza a medir ahorro energético',
+    resumen: 'Las cards de dispositivos ahora muestran primero los pulsadores de cada canal y su potencia actual. La telemetría detallada y los historiales permanecen disponibles en una sección desplegable.',
+    impacto: 'Operar un aula requiere menos lectura y menos pasos. Al mismo tiempo, la potencia de los Dual R3 empieza a formar una línea base comparable entre las últimas 24 horas y el período anterior.',
+    capacidades: ['Pulsadores grandes por canal', 'Detalles técnicos ocultos por defecto', 'Comparación de consumo entre períodos'],
+    destacada: true,
+  },
+  {
     version: 'CÁMARAS',
     fecha: '12 de agosto de 2026',
     fechaIso: '2026-08-12',

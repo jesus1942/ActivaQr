@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { normalizarEventoIoT } from './iotIngest';
 import { cifrarCredenciales, descifrarCredenciales, firmarEstadoOAuth, hashToken, verificarEstadoOAuth } from './iotSecrets';
-import { clasificarDispositivoEwelink, crearParametrosCanalEwelink, extraerLecturasEwelink } from './ewelinkConnector';
+import { clasificarDispositivoEwelink, crearParametrosCanalEwelink, extraerLecturasEwelink, normalizarMagnitudesEwelink } from './ewelinkConnector';
 import { escalarValorTuya, normalizarCodigoTuya } from './tuyaConnector';
 
 const ROOT = resolve(process.cwd(), '..');
@@ -173,6 +173,13 @@ test('eWeLink conserva mediciones eléctricas del DUAL R3 por canal', () => {
   assert.match(ingest, /previous\.unidad \?\? meta\.unidad/);
 });
 
+test('DUAL R3 convierte centésimas eléctricas sin alterar lecturas ya decimales', () => {
+  const scaled = normalizarMagnitudesEwelink({ current_1: 47, voltage_1: 22426, actPow_1: 8578, apparentPow_1: 10540 }, { productModel: 'SONOFF DUAL R3' });
+  assert.deepEqual(scaled, { current_1: 0.47, voltage_1: 224.26, actPow_1: 85.78, apparentPow_1: 105.4 });
+  assert.equal(normalizarMagnitudesEwelink({ actPow_1: 87.5 }, { productModel: 'SONOFF DUAL R3' }).actPow_1, 87.5);
+  assert.equal(normalizarMagnitudesEwelink({ voltage_1: 22426 }, { productModel: 'Otro equipo' }).voltage_1, 22426);
+});
+
 test('clasifica sensores ambientales, magnéticos e inundación sin degradarlos a genérico', () => {
   assert.equal(clasificarDispositivoEwelink({ productModel: 'SNZB-02P Temperature Humidity', params: { temperature: 20, humidity: 55 } }), 'sensor_ambiente');
   assert.equal(clasificarDispositivoEwelink({ productModel: 'Door Window Sensor', params: { door: true } }), 'sensor_magnetico');
@@ -196,7 +203,8 @@ test('el control remoto ejecuta eWeLink, audita el resultado y excluye el RF Bri
   assert.match(routes, /estado: 'ejecutado'/);
   assert.match(routes, /device\.tipo === 'puente_rf'/);
   assert.match(controlIndustrial, /Confirmá la operación/);
-  assert.match(controlIndustrial, /Operar luces/);
+  assert.match(controlIndustrial, /Encender/);
+  assert.match(controlIndustrial, /Apagar/);
   assert.doesNotMatch(controlIndustrial, /Falta un adaptador de ejecución certificado/);
 });
 
@@ -222,7 +230,7 @@ test('exporta logs por dispositivo o canal y evita duplicados cada cinco segundo
   assert.match(routes, /X-ActivaQR-Truncated/);
   assert.match(ingest, /changed \|\| checkpointDue/);
   assert.match(controlIndustrial, /Exportar canal/);
-  assert.match(controlIndustrial, /Exportar 24 h/);
+  assert.match(controlIndustrial, /onExport/);
 });
 
 test('Control Industrial conserva una interfaz mobile-first operable', () => {
@@ -230,8 +238,18 @@ test('Control Industrial conserva una interfaz mobile-first operable', () => {
   assert.match(controlIndustrial, /items-end justify-center[\s\S]*sm:items-center/);
   assert.match(controlIndustrial, /pb-\[calc\(1rem\+env\(safe-area-inset-bottom\)\)\]/);
   assert.match(controlIndustrial, /grid grid-cols-1 gap-3 sm:grid-cols-2/);
-  assert.match(controlIndustrial, /col-span-2 min-h-12 bg-cyan-700/);
+  assert.match(controlIndustrial, /min-h-12 min-w-24/);
   assert.doesNotMatch(controlIndustrial, /truncate font-display text-lg font-black text-content/);
+});
+
+test('las cards priorizan mando y relegan telemetría técnica a detalles', () => {
+  assert.match(controlIndustrial, /CompactDeviceCard/);
+  assert.match(controlIndustrial, /Ver mediciones e historial/);
+  assert.match(controlIndustrial, /Ocultar detalles/);
+  assert.match(controlIndustrial, /onCommand\(\{ canal, encendido:/);
+  assert.match(controlIndustrial, /currlocation\|demnextfetchtime\|endtime/);
+  assert.match(controlIndustrial, /Consumo energético/);
+  assert.match(routes, /get\('\/energia\/resumen'/);
 });
 
 test('alarmas booleanas, push, desconexiones y escenas quedan cubiertos de extremo a extremo', () => {

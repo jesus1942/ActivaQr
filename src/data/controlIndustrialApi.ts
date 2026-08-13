@@ -139,6 +139,16 @@ export interface ResumenControl {
   escenas: EscenaIoT[];
 }
 
+export interface ResumenEnergia {
+  currentPowerW: number;
+  currentAverageW: number;
+  previousAverageW: number;
+  variationPercent: number | null;
+  estimatedKwh24h: number;
+  previousEstimatedKwh24h: number;
+  channelsMeasured: number;
+}
+
 export interface EmpresaControlAdmin {
   id: string;
   nombre: string;
@@ -154,6 +164,10 @@ export async function estadoControl(): Promise<{ habilitado: boolean; modulo: Mo
 
 export async function resumenControl(): Promise<ResumenControl> {
   return parse(await apiFetch('control-industrial/resumen'));
+}
+
+export async function resumenEnergia(): Promise<ResumenEnergia> {
+  return parse(await apiFetch('control-industrial/energia/resumen'));
 }
 
 export async function listarControlAdmin(): Promise<EmpresaControlAdmin[]> {

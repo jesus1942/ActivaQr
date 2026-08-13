@@ -113,6 +113,14 @@ La activación del módulo no habilita control remoto. Para registrar una maniob
 
 Los adaptadores certificados de eWeLink y Tuya ejecutan la orden y registran su resultado. PLC, controlador frigorífico, presostatos, térmicos, parada de emergencia e interbloqueos locales conservan siempre la autoridad.
 
+## Tablero operativo y energía
+
+Los dispositivos con salidas se muestran de forma compacta: nombre del canal, estado, potencia actual y pulsador de mando. Corriente, voltaje, potencia aparente, historial, señal, exportación y configuración quedan bajo “Ver mediciones e historial”. Las variables internas del fabricante (`currLocation`, `demNextFetchTime`, `endTime`, `getKwh`, `initSetting` y equivalentes) no se presentan al operador.
+
+El resumen energético suma la potencia activa actual y compara el promedio de las últimas 24 horas con las 24 anteriores. Convierte ese promedio en kWh estimados para formar una línea base de ahorro; no reemplaza un medidor homologado ni una factura eléctrica.
+
+Los Dual R3 informan ciertas magnitudes instantáneas en centésimas. El conector normaliza corriente, voltaje, potencia activa, aparente y reactiva, y la migración `20260812220000_dual_r3_energy_scale` corrige las lecturas históricas enteras importadas antes de esta normalización.
+
 ## Puesta en producción
 
 1. Crear `IOT_CREDENTIALS_KEY` en Railway.

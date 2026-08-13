@@ -162,6 +162,18 @@ export function extraerLecturasEwelink(value: unknown): Record<string, number | 
   return result;
 }
 
+export function normalizarMagnitudesEwelink(readings: Record<string, number | boolean | string>, device: Record<string, unknown>) {
+  const extra = device.extra && typeof device.extra === 'object' && !Array.isArray(device.extra) ? device.extra as Record<string, unknown> : {};
+  const identity = `${device.name ?? ''} ${device.productModel ?? ''} ${extra.model ?? ''}`.toLowerCase();
+  if (!/dual\s*r3|dualr3/.test(identity)) return readings;
+  const scaled = { ...readings };
+  for (const [key, value] of Object.entries(scaled)) {
+    if (typeof value !== 'number' || !Number.isInteger(value)) continue;
+    if (/^(current|voltage|actpow|power|apparentpow|reactivepow)(?:_\d+)?$/i.test(key)) scaled[key] = value / 100;
+  }
+  return scaled;
+}
+
 export function clasificarDispositivoEwelink(device: Record<string, unknown>): string {
   const extra = device.extra && typeof device.extra === 'object' && !Array.isArray(device.extra)
     ? device.extra as Record<string, unknown>
@@ -280,7 +292,7 @@ export async function sincronizarEwelink(integracionId: string) {
     const device = thing.itemData ?? {};
     const id = device.deviceid;
     if (typeof id !== 'string') continue;
-    const readings = { ...extraerLecturasEwelink(device.params), online: Boolean(device.online) };
+    const readings = { ...normalizarMagnitudesEwelink(extraerLecturasEwelink(device.params), device), online: Boolean(device.online) };
     if (!Object.keys(readings).length) continue;
     await procesarEventoIoT(integration.id, normalizarEventoIoT({
       deviceId: id,
