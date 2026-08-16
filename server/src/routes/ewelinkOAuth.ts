@@ -6,7 +6,7 @@ import { APP_URL } from '../urls';
 
 export const ewelinkOAuthRouter = Router();
 
-function redirect(status: 'connected' | 'error', message?: string) {
+function redirect(status: 'connected' | 'pending' | 'error', message?: string) {
   const query = new URLSearchParams({ ewelink: status });
   if (message) query.set('message', message.slice(0, 180));
   return `${APP_URL}/#/control-industrial?${query}`;
@@ -26,8 +26,9 @@ ewelinkOAuthRouter.get('/callback', async (req, res) => {
       prisma.usuario.findFirst({ where: { id: userId, empresaId, rol: 'admin', activo: true } }),
     ]);
     if (!integration || !user) throw new Error('La autorización ya no corresponde a un administrador activo de esta empresa.');
-    await completarAutorizacionEwelink(integration.id, code, region);
-    res.redirect(303, redirect('connected'));
+    const result = await completarAutorizacionEwelink(integration.id, code, region);
+    const pending = 'sincronizacionPendiente' in result && result.sincronizacionPendiente === true;
+    res.redirect(303, redirect(pending ? 'pending' : 'connected'));
   } catch (error) {
     const message = error instanceof Error ? error.message : 'No se pudo completar la autorización eWeLink.';
     res.redirect(303, redirect('error', message));

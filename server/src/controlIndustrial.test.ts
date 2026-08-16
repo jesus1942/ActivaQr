@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { normalizarEventoIoT } from './iotIngest';
 import { cifrarCredenciales, descifrarCredenciales, firmarEstadoOAuth, hashToken, verificarEstadoOAuth } from './iotSecrets';
-import { clasificarDispositivoEwelink, combinarEstadoEwelink, crearParametrosCanalEwelink, crearParametrosMotorEwelink, extraerLecturasEwelink, normalizarMagnitudesEwelink, normalizarOnlineEwelink } from './ewelinkConnector';
+import { clasificarDispositivoEwelink, combinarEstadoEwelink, crearParametrosCanalEwelink, crearParametrosMotorEwelink, extraerLecturasEwelink, mensajePublicoErrorEwelink, normalizarMagnitudesEwelink, normalizarOnlineEwelink } from './ewelinkConnector';
 import { escalarValorTuya, normalizarCodigoTuya } from './tuyaConnector';
 
 const ROOT = resolve(process.cwd(), '..');
@@ -120,11 +120,14 @@ test('el tenant personaliza su tablero sin poder alterar licencia ni permisos', 
 test('eWeLink usa autorización OAuth y no vuelve a pedir un Access Token manual', () => {
   assert.match(controlIndustrial, /Autorizar con eWeLink/);
   assert.match(controlIndustrial, /autorizarSonoff/);
+  assert.match(controlIndustrial, /Cuenta autorizada\. eWeLink limitó la primera sincronización/);
   assert.doesNotMatch(controlIndustrial, /Field label="Access Token"/);
   assert.doesNotMatch(controlIndustrial, /Guardar de forma segura/);
   const connector = readFileSync(resolve(process.cwd(), 'src/ewelinkConnector.ts'), 'utf8');
+  const oauthRoute = readFileSync(resolve(process.cwd(), 'src/routes/ewelinkOAuth.ts'), 'utf8');
   assert.match(connector, /showQRCode: 'true'/);
   assert.match(connector, /15 \* 60_000/);
+  assert.match(oauthRoute, /redirect\(pending \? 'pending' : 'connected'\)/);
 });
 
 test('eWeLink importa los canales del DUAL R3 sin perder estados escalares', () => {
@@ -171,6 +174,12 @@ test('eWeLink protege la cuota, sanea errores y renueva tokens vencidos', () => 
   assert.match(connector, /function cuotaEwelinkAgotada/);
   assert.match(connector, /límite de consultas/);
   assert.doesNotMatch(connector, /no ejecutó la operación: \$\{result\.body\.msg/);
+  assert.equal(
+    mensajePublicoErrorEwelink('invoke too much:identificador-interno'),
+    'eWeLink alcanzó temporalmente el límite de consultas. La conexión se reintentará automáticamente.',
+  );
+  assert.doesNotMatch(mensajePublicoErrorEwelink('error desconocido:identificador-interno') ?? '', /identificador-interno/);
+  assert.match(routes, /mensajePublicoErrorEwelink/);
   assert.match(ingest, /const reportaDesconexion = evento\.lecturas\.online === false/);
   assert.match(ingest, /ultimoContactoEn: reportaDesconexion \? dispositivo!\.ultimoContactoEn : evento\.medidaEn/);
   assert.match(ingest, /estado: reportaDesconexion \? 'desconectado'/);

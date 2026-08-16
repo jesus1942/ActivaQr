@@ -39,6 +39,27 @@ type EwelinkCredentials = {
   redirectUrl?: string;
 };
 
+export function mensajePublicoErrorEwelink(message: unknown): string | null {
+  const text = String(message ?? '').trim();
+  if (!text) return null;
+  if (/invoke too much|too many|rate limit|límite de consultas/i.test(text)) {
+    return 'eWeLink alcanzó temporalmente el límite de consultas. La conexión se reintentará automáticamente.';
+  }
+  if (/access token|autorizaci[oó]n|authorization|unauthorized|credenciales/i.test(text)) {
+    return 'eWeLink rechazó la autorización. Volvé a conectar la cuenta.';
+  }
+  if (/offline|fuera de l[ií]nea|desconectad/i.test(text)) {
+    return 'eWeLink informó que el dispositivo está fuera de línea.';
+  }
+  if (/timeout|timed out|no respondi[oó]/i.test(text)) {
+    return 'eWeLink no respondió dentro del tiempo esperado.';
+  }
+  if (/no se pudo conectar|connection|network/i.test(text)) {
+    return 'No se pudo conectar con la nube eWeLink.';
+  }
+  return 'eWeLink informó un error de integración. Reintentá la sincronización o reconectá la cuenta.';
+}
+
 function expirationMs(value: unknown) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric) || numeric <= 0) return undefined;
@@ -82,7 +103,11 @@ async function postSigned<T>(domain: string, path: string, credentials: EwelinkC
     signal: AbortSignal.timeout(15_000),
   });
   const result = await response.json().catch(() => ({})) as { error?: number; msg?: string; data?: T };
-  if (!response.ok || result.error) throw Object.assign(new Error(`eWeLink respondió ${response.status}: ${result.msg || `error ${result.error ?? 'desconocido'}`}`), { status: 502 });
+  if (!response.ok || result.error) {
+    const message = mensajePublicoErrorEwelink(result.msg)
+      || `eWeLink rechazó la solicitud (código ${result.error ?? response.status}).`;
+    throw Object.assign(new Error(message), { status: 502 });
+  }
   if (!result.data) throw Object.assign(new Error('eWeLink no devolvió las credenciales esperadas.'), { status: 502 });
   return result.data;
 }
@@ -331,7 +356,8 @@ async function obtenerEstadoEfectivoEwelink(domain: string, credentials: Ewelink
   });
   const body = await response.json().catch(() => ({})) as { error?: number; msg?: string; data?: { params?: Record<string, unknown> } };
   if (!response.ok || body.error || !body.data?.params) {
-    throw new Error(`Estado eWeLink no disponible: ${body.msg || `error ${body.error ?? response.status}`}`);
+    throw new Error(mensajePublicoErrorEwelink(body.msg)
+      || `No se pudo obtener el estado eWeLink (código ${body.error ?? response.status}).`);
   }
   return body.data.params;
 }
@@ -347,7 +373,8 @@ async function getAuthorizedJson<T>(url: string, credentials: EwelinkCredentials
     signal: AbortSignal.timeout(12_000),
   });
   const body = await response.json().catch(() => ({})) as { error?: number; msg?: string; reason?: string; data?: T } & T;
-  if (!response.ok || body.error) throw new Error(body.msg || body.reason || `eWeLink respondió ${response.status}.`);
+  if (!response.ok || body.error) throw new Error(mensajePublicoErrorEwelink(body.msg || body.reason)
+    || `eWeLink rechazó la solicitud (código ${body.error ?? response.status}).`);
   return (body.data ?? body) as T;
 }
 

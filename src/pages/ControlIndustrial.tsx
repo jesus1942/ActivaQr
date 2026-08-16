@@ -238,6 +238,7 @@ export const ControlIndustrial: React.FC = () => {
     const params = new URLSearchParams(query);
     const result = params.get('ewelink');
     if (result === 'connected') toast('Cuenta eWeLink conectada y primera sincronización completada.', 'success');
+    if (result === 'pending') toast('Cuenta autorizada. eWeLink limitó la primera sincronización; ActivaQR reintentará automáticamente.', 'warning');
     if (result === 'error') toast(params.get('message') || 'No se pudo conectar eWeLink.', 'error');
     if (result) window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#/control-industrial`);
   }, []);

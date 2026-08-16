@@ -14,7 +14,7 @@ import {
 import { auditar, registrarAuditoria } from '../auditoria';
 import { cifrarCredenciales, hashToken } from '../iotSecrets';
 import { normalizarEventoIoT, procesarEventoIoT } from '../iotIngest';
-import { AccionMotorEwelink, crearAutorizacionEwelink, ejecutarCanalEwelink, ejecutarMotorEwelink, sincronizarEwelink } from '../ewelinkConnector';
+import { AccionMotorEwelink, crearAutorizacionEwelink, ejecutarCanalEwelink, ejecutarMotorEwelink, mensajePublicoErrorEwelink, sincronizarEwelink } from '../ewelinkConnector';
 import { enviarPushAUsuario } from '../push';
 import { ejecutarCanalTuya, sincronizarTuya } from '../tuyaConnector';
 
@@ -45,7 +45,10 @@ function publicIntegration<T extends { credencialesCifradas?: string | null }>(i
   const { credencialesCifradas, ...safe } = item;
   const provider = String((item as T & { proveedor?: string }).proveedor ?? '');
   const operable = provider === 'sonoff_ewelink' || provider === 'tuya_cloud';
-  return { ...safe, credencialesConfiguradas: Boolean(credencialesCifradas), capacidades: { monitoreo: true, descubrimiento: operable, control: operable, escenas: operable } };
+  const ultimoError = provider === 'sonoff_ewelink'
+    ? mensajePublicoErrorEwelink((item as T & { ultimoError?: unknown }).ultimoError)
+    : (item as T & { ultimoError?: unknown }).ultimoError;
+  return { ...safe, ultimoError, credencialesConfiguradas: Boolean(credencialesCifradas), capacidades: { monitoreo: true, descubrimiento: operable, control: operable, escenas: operable } };
 }
 
 function csvCell(value: unknown): string {
