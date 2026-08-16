@@ -86,6 +86,9 @@ test('los secretos no salen en respuestas y los comandos exigen doble habilitaci
   assert.match(routes, /const \{ credencialesCifradas, \.\.\.safe \} = item/);
   assert.match(routes, /!module\?\.controlRemotoHabilitado/);
   assert.match(routes, /!device\?\.permiteControl/);
+  assert.match(routes, /confirmarDisponibilidadFabricante\(device\)/);
+  assert.match(routes, /verificarDisponibilidadEwelink\(device\.integracionId, device\.identificadorExterno\)/);
+  assert.match(routes, /estadosConfirmados \?\? Object\.fromEntries/);
   assert.match(routes, /ejecutarCanalEwelink/);
   assert.match(routes, /solicitadoPorId: req\.auth!\.userId/);
 });
@@ -158,6 +161,18 @@ test('eWeLink prioriza el estado efectivo tras cambios externos, timers e impuls
   assert.equal(readings.operation_mode, 'interruptor');
   assert.equal(normalizarOnlineEwelink(device.online), false);
   assert.equal(normalizarOnlineEwelink('online'), true);
+});
+
+test('eWeLink revalida estados offline almacenados y renueva tokens vencidos', () => {
+  const connector = readFileSync(resolve(process.cwd(), 'src/ewelinkConnector.ts'), 'utf8');
+  const ingest = readFileSync(resolve(process.cwd(), 'src/iotIngest.ts'), 'utf8');
+  assert.match(connector, /export async function verificarDisponibilidadEwelink/);
+  assert.match(connector, /body\.error === 401 \|\| body\.error === 402/);
+  assert.match(connector, /credencialesAutorizadas\(integration, true\)/);
+  assert.match(connector, /error === 4002 \|\| result\.body\.error === 30022/);
+  assert.match(ingest, /const reportaDesconexion = evento\.lecturas\.online === false/);
+  assert.match(ingest, /ultimoContactoEn: reportaDesconexion \? dispositivo!\.ultimoContactoEn : evento\.medidaEn/);
+  assert.match(ingest, /estado: reportaDesconexion \? 'desconectado'/);
 });
 
 test('DUAL R3 interpreta protocolo UIID 126, modos y pulsos por salida', () => {

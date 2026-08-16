@@ -450,39 +450,119 @@ function requiereEstadoEfectivoEwelink(device: Record<string, unknown>) {
   return 'switch' in params || Array.isArray(params.switches) || 'pulse' in params || Array.isArray(params.timers);
 }
 
-export async function ejecutarCanalEwelink(integracionId: string, dispositivoExternoId: string, canal: number, encendido: boolean, estados: Record<number, boolean> = {}) {
-  const integration = await prisma.integracionIoT.findUnique({ where: { id: integracionId } });
-  if (!integration || integration.proveedor !== 'sonoff_ewelink') throw Object.assign(new Error('Conector SONOFF no encontrado.'), { status: 404 });
-  const { credentials, domain } = await credencialesAutorizadas(integration);
-  const params = crearParametrosCanalEwelink(canal, encendido, estados);
-  let response: Response;
-  try {
+type EwelinkApiBody<T = unknown> = { error?: number; msg?: string; data?: T };
+
+function tokenEwelinkRechazado(response: Response, body: EwelinkApiBody) {
+  return response.status === 401 || body.error === 401 || body.error === 402;
+}
+
+async function actualizarEstadoEwelink(
+  integration: { id: string; credencialesCifradas: string | null },
+  dispositivoExternoId: string,
+  params: Record<string, unknown>,
+  timeoutMessage: string,
+) {
+  let authorized = await credencialesAutorizadas(integration);
+  const send = async () => {
     await esperarTurnoEstadoEwelink();
-    response = await fetch(`${domain}/v2/device/thing/status`, {
+    const response = await fetch(`${authorized.domain}/v2/device/thing/status`, {
       method: 'POST',
       headers: {
-        'X-CK-Appid': credentials.appId,
+        'X-CK-Appid': authorized.credentials.appId,
         'X-CK-Nonce': nonce(),
-        Authorization: `Bearer ${credentials.accessToken}`,
+        Authorization: `Bearer ${authorized.credentials.accessToken}`,
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
       body: JSON.stringify({ type: 1, id: dispositivoExternoId, params }),
       signal: AbortSignal.timeout(15_000),
     });
+    const body = await response.json().catch(() => ({})) as EwelinkApiBody;
+    return { response, body };
+  };
+  let result: Awaited<ReturnType<typeof send>>;
+  try {
+    result = await send();
+    if (tokenEwelinkRechazado(result.response, result.body)) {
+      authorized = await credencialesAutorizadas(integration, true);
+      result = await send();
+    }
   } catch (error) {
+    if (Number((error as { status?: number })?.status) === 401) throw error;
     const message = error instanceof Error && error.name === 'TimeoutError'
-      ? 'eWeLink no confirmó la operación dentro de 15 segundos.'
+      ? timeoutMessage
       : 'No se pudo enviar la operación a eWeLink.';
-    throw Object.assign(new Error(message), { status: 502 });
+    throw Object.assign(new Error(message), { status: 502, cause: error });
   }
-  const body = await response.json().catch(() => ({})) as { error?: number; msg?: string };
-  if (!response.ok || body.error) {
-    const message = response.status === 401 || body.error === 401
+  if (!result.response.ok || result.body.error) {
+    if (tokenEwelinkRechazado(result.response, result.body)) {
+      throw Object.assign(new Error('eWeLink rechazó la autorización. Volvé a conectar la cuenta.'), { status: 401 });
+    }
+    if (result.body.error === 4002 || result.body.error === 30022) {
+      throw Object.assign(new Error('eWeLink confirmó que el dispositivo está fuera de línea o no acepta esta maniobra.'), { status: 409 });
+    }
+    throw Object.assign(new Error(`eWeLink no ejecutó la operación: ${result.body.msg || `error ${result.body.error ?? result.response.status}`}`), { status: 502 });
+  }
+}
+
+export async function verificarDisponibilidadEwelink(integracionId: string, dispositivoExternoId: string) {
+  const integration = await prisma.integracionIoT.findUnique({ where: { id: integracionId } });
+  if (!integration || integration.proveedor !== 'sonoff_ewelink') throw Object.assign(new Error('Conector SONOFF no encontrado.'), { status: 404 });
+  let authorized = await credencialesAutorizadas(integration);
+  const fetchThings = async () => {
+    const response = await fetch(`${authorized.domain}/v2/device/thing?lang=en&num=0`, {
+      headers: {
+        'X-CK-Appid': authorized.credentials.appId,
+        'X-CK-Nonce': nonce(),
+        Authorization: `Bearer ${authorized.credentials.accessToken}`,
+        Accept: 'application/json',
+      },
+      signal: AbortSignal.timeout(15_000),
+    });
+    const body = await response.json().catch(() => ({})) as EwelinkApiBody<{ thingList?: Array<{ itemType?: number; itemData?: Record<string, unknown> }> }>;
+    return { response, body };
+  };
+  let result: Awaited<ReturnType<typeof fetchThings>>;
+  try {
+    result = await fetchThings();
+    if (tokenEwelinkRechazado(result.response, result.body)) {
+      authorized = await credencialesAutorizadas(integration, true);
+      result = await fetchThings();
+    }
+  } catch (error) {
+    if (Number((error as { status?: number })?.status) === 401) throw error;
+    throw Object.assign(new Error('No se pudo comprobar el estado actual del dispositivo en eWeLink.'), { status: 502, cause: error });
+  }
+  if (!result.response.ok || result.body.error) {
+    const authorizationFailed = tokenEwelinkRechazado(result.response, result.body);
+    throw Object.assign(new Error(authorizationFailed
       ? 'eWeLink rechazó la autorización. Volvé a conectar la cuenta.'
-      : `eWeLink no ejecutó la operación: ${body.msg || `error ${body.error ?? response.status}`}`;
-    throw Object.assign(new Error(message), { status: response.status === 401 ? 401 : 502 });
+      : `eWeLink no permitió comprobar el dispositivo: ${result.body.msg || `error ${result.body.error ?? result.response.status}`}`), { status: authorizationFailed ? 401 : 502 });
   }
+  const thing = (result.body.data?.thingList ?? []).find((item) => [1, 2].includes(Number(item.itemType)) && item.itemData?.deviceid === dispositivoExternoId)?.itemData;
+  if (!thing) throw Object.assign(new Error('eWeLink no devolvió este dispositivo para la cuenta autorizada.'), { status: 409 });
+  const online = normalizarOnlineEwelink(thing.online);
+  const readings = { ...normalizarMagnitudesEwelink(extraerLecturasEwelink(thing.params), thing), online };
+  await procesarEventoIoT(integration.id, normalizarEventoIoT({
+    deviceId: dispositivoExternoId,
+    deviceName: thing.name,
+    model: thing.productModel ?? (thing.extra as Record<string, unknown> | undefined)?.model,
+    deviceType: clasificarDispositivoEwelink(thing),
+    uiid: thing.uiid ?? (thing.extra as Record<string, unknown> | undefined)?.uiid,
+    readings,
+    timestamp: new Date().toISOString(),
+  }));
+  const estados = Object.fromEntries(Object.entries(readings)
+    .filter(([key, value]) => /^switch_[1-4]$/.test(key) && typeof value === 'boolean')
+    .map(([key, value]) => [Number(key.slice(7)) - 1, Boolean(value)]));
+  return { online, estados };
+}
+
+export async function ejecutarCanalEwelink(integracionId: string, dispositivoExternoId: string, canal: number, encendido: boolean, estados: Record<number, boolean> = {}) {
+  const integration = await prisma.integracionIoT.findUnique({ where: { id: integracionId } });
+  if (!integration || integration.proveedor !== 'sonoff_ewelink') throw Object.assign(new Error('Conector SONOFF no encontrado.'), { status: 404 });
+  const params = crearParametrosCanalEwelink(canal, encendido, estados);
+  await actualizarEstadoEwelink(integration, dispositivoExternoId, params, 'eWeLink no confirmó la operación dentro de 15 segundos.');
   return { ok: true, canal, encendido, params };
 }
 
@@ -497,33 +577,8 @@ export function crearParametrosMotorEwelink(accion: AccionMotorEwelink) {
 export async function ejecutarMotorEwelink(integracionId: string, dispositivoExternoId: string, accion: AccionMotorEwelink) {
   const integration = await prisma.integracionIoT.findUnique({ where: { id: integracionId } });
   if (!integration || integration.proveedor !== 'sonoff_ewelink') throw Object.assign(new Error('Conector SONOFF no encontrado.'), { status: 404 });
-  const { credentials, domain } = await credencialesAutorizadas(integration);
   const params = crearParametrosMotorEwelink(accion);
-  let response: Response;
-  try {
-    await esperarTurnoEstadoEwelink();
-    response = await fetch(`${domain}/v2/device/thing/status`, {
-      method: 'POST',
-      headers: {
-        'X-CK-Appid': credentials.appId,
-        'X-CK-Nonce': nonce(),
-        Authorization: `Bearer ${credentials.accessToken}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({ type: 1, id: dispositivoExternoId, params }),
-      signal: AbortSignal.timeout(15_000),
-    });
-  } catch (error) {
-    const message = error instanceof Error && error.name === 'TimeoutError'
-      ? 'eWeLink no confirmó la maniobra del motor dentro de 15 segundos.'
-      : 'No se pudo enviar la maniobra del motor a eWeLink.';
-    throw Object.assign(new Error(message), { status: 502 });
-  }
-  const body = await response.json().catch(() => ({})) as { error?: number; msg?: string };
-  if (!response.ok || body.error) {
-    throw Object.assign(new Error(`eWeLink no ejecutó la maniobra: ${body.msg || `error ${body.error ?? response.status}`}`), { status: response.status === 401 ? 401 : 502 });
-  }
+  await actualizarEstadoEwelink(integration, dispositivoExternoId, params, 'eWeLink no confirmó la maniobra del motor dentro de 15 segundos.');
   return { ok: true, accion, params };
 }
 
@@ -552,7 +607,7 @@ export async function sincronizarEwelink(integracionId: string) {
     throw Object.assign(new Error(message), { status: 502 });
   }
   let body = await response.json().catch(() => ({})) as { error?: number; msg?: string; data?: { thingList?: Array<{ itemType?: number; itemData?: Record<string, unknown> }> } };
-  if (response.status === 401 || body.error === 401) {
+  if (tokenEwelinkRechazado(response, body)) {
     try {
       authorized = await credencialesAutorizadas(integration, true);
       response = await fetchThings(authorized.credentials, authorized.domain);
@@ -564,11 +619,11 @@ export async function sincronizarEwelink(integracionId: string) {
     }
   }
   if (!response.ok || body.error) {
-    const message = response.status === 401 || body.error === 401
+    const message = tokenEwelinkRechazado(response, body)
       ? 'eWeLink rechazó el Access Token. Volvé a autorizar la cuenta.'
       : `eWeLink respondió ${response.status}: ${body.msg || `error ${body.error ?? 'desconocido'}`}`;
     await prisma.integracionIoT.update({ where: { id: integration.id }, data: { estado: 'error', ultimoError: message } });
-    throw Object.assign(new Error(message), { status: response.status === 401 ? 401 : 502 });
+    throw Object.assign(new Error(message), { status: tokenEwelinkRechazado(response, body) ? 401 : 502 });
   }
 
   const { credentials, domain } = authorized;

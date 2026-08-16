@@ -281,17 +281,22 @@ export async function procesarEventoIoT(integracionId: string, evento: EventoIoT
     throw error;
   }
 
-  await prisma.alarmaIoT.updateMany({
-    where: { dispositivoId: dispositivo.id, titulo: 'Dispositivo sin conexión', estado: { in: ['activa', 'reconocida'] } },
-    data: { estado: 'resuelta', resueltaEn: evento.medidaEn, resolucion: 'El dispositivo recuperó la comunicación.' },
-  });
+  const reportaDesconexion = evento.lecturas.online === false;
+  if (!reportaDesconexion) {
+    await prisma.alarmaIoT.updateMany({
+      where: { dispositivoId: dispositivo.id, titulo: 'Dispositivo sin conexión', estado: { in: ['activa', 'reconocida'] } },
+      data: { estado: 'resuelta', resueltaEn: evento.medidaEn, resolucion: 'El dispositivo recuperó la comunicación.' },
+    });
+  }
 
   await prisma.$transaction(async (tx) => {
     await tx.dispositivoIoT.update({ where: { id: dispositivo!.id }, data: {
-      ultimoContactoEn: evento.medidaEn,
+      // Una notificación explícita offline viene de la nube, no del equipo.
+      // No debe rejuvenecer artificialmente el último contacto del dispositivo.
+      ultimoContactoEn: reportaDesconexion ? dispositivo!.ultimoContactoEn : evento.medidaEn,
       bateria: evento.bateria,
       rssi: evento.rssi,
-      estado: 'normal',
+      estado: reportaDesconexion ? 'desconectado' : 'normal',
       modelo: evento.modelo ?? dispositivo!.modelo,
       tipo: evento.tipo ?? dispositivo!.tipo,
       metadatos: evento.raw as Prisma.InputJsonValue,
@@ -331,7 +336,9 @@ export async function procesarEventoIoT(integracionId: string, evento: EventoIoT
 
   const criticas = await prisma.alarmaIoT.count({ where: { dispositivoId: dispositivo.id, estado: { in: ['activa', 'reconocida'] }, severidad: 'critica' } });
   const advertencias = await prisma.alarmaIoT.count({ where: { dispositivoId: dispositivo.id, estado: { in: ['activa', 'reconocida'] } } });
-  await prisma.dispositivoIoT.update({ where: { id: dispositivo.id }, data: { estado: criticas ? 'critico' : advertencias ? 'advertencia' : 'normal' } });
+  await prisma.dispositivoIoT.update({ where: { id: dispositivo.id }, data: {
+    estado: reportaDesconexion ? 'desconectado' : criticas ? 'critico' : advertencias ? 'advertencia' : 'normal',
+  } });
   return { ok: true, dispositivoId: dispositivo.id, variables: Object.keys(evento.lecturas).length };
 }
 

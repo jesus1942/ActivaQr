@@ -14,7 +14,7 @@ import {
 import { auditar, registrarAuditoria } from '../auditoria';
 import { cifrarCredenciales, hashToken } from '../iotSecrets';
 import { normalizarEventoIoT, procesarEventoIoT } from '../iotIngest';
-import { AccionMotorEwelink, crearAutorizacionEwelink, ejecutarCanalEwelink, ejecutarMotorEwelink, sincronizarEwelink } from '../ewelinkConnector';
+import { AccionMotorEwelink, crearAutorizacionEwelink, ejecutarCanalEwelink, ejecutarMotorEwelink, sincronizarEwelink, verificarDisponibilidadEwelink } from '../ewelinkConnector';
 import { enviarPushAUsuario } from '../push';
 import { ejecutarCanalTuya, sincronizarTuya } from '../tuyaConnector';
 
@@ -127,6 +127,27 @@ async function moduloActivo(req: AuthRequest, res: Response, next: NextFunction)
   }
 }
 
+async function confirmarDisponibilidadFabricante(device: {
+  nombre: string;
+  estado: string;
+  integracionId: string;
+  identificadorExterno: string;
+  integracion: { proveedor: string };
+  variables: Array<{ clave: string; valorBooleano: boolean | null }>;
+}) {
+  const online = device.variables.find((item) => item.clave === 'online');
+  const estadoGuardadoFueraDeLinea = online?.valorBooleano === false || device.estado === 'desconectado';
+  // eWeLink es la fuente autoritativa. Se comprueba en cada maniobra para que
+  // un offline viejo no bloquee y para preservar el estado real del otro canal.
+  if (device.integracion.proveedor === 'sonoff_ewelink') {
+    const current = await verificarDisponibilidadEwelink(device.integracionId, device.identificadorExterno);
+    if (current.online) return current.estados;
+    throw statusError(`${device.nombre} está desconectado de la nube del fabricante.`, 409);
+  }
+  if (!estadoGuardadoFueraDeLinea) return;
+  throw statusError(`${device.nombre} está desconectado de la nube del fabricante.`, 409);
+}
+
 async function ejecutarReleSeguro(req: AuthRequest, params: { dispositivoId: string; canal: number; encendido: boolean; motivo: string }) {
   const empresaId = tenantId(req);
   let commandId: string | null = null;
@@ -144,9 +165,8 @@ async function ejecutarReleSeguro(req: AuthRequest, params: { dispositivoId: str
     if (!Number.isInteger(params.canal) || params.canal < 0 || params.canal > 3 || typeof params.encendido !== 'boolean') throw statusError('Seleccioná un canal válido y el estado encendido o apagado.');
     const channelVariables = device.variables.filter((item) => /^switch_[1-4]$/.test(item.clave));
     if (channelVariables.length && !channelVariables.some((item) => item.clave === `switch_${params.canal + 1}`)) throw statusError('El dispositivo no informó ese canal.', 409);
-    const online = device.variables.find((item) => item.clave === 'online');
-    if (online?.valorBooleano === false || device.estado === 'desconectado') throw statusError(`${device.nombre} está desconectado de la nube del fabricante.`, 409);
-    const estados = Object.fromEntries(channelVariables.map((item) => [Number(item.clave.slice(7)) - 1, Boolean(item.valorBooleano)]));
+    const estadosConfirmados = await confirmarDisponibilidadFabricante(device);
+    const estados = estadosConfirmados ?? Object.fromEntries(channelVariables.map((item) => [Number(item.clave.slice(7)) - 1, Boolean(item.valorBooleano)]));
     const command = await prisma.comandoIoT.create({ data: {
       empresaId, dispositivoId: device.id, tipo: 'rele', payload: { canal: params.canal, encendido: params.encendido }, motivo: params.motivo.slice(0, 2000),
       solicitadoPorId: req.auth!.userId, solicitadoPorNombre: req.auth!.email,
@@ -189,8 +209,7 @@ async function ejecutarMotorSeguro(req: AuthRequest, params: { dispositivoId: st
     const operationMode = device.variables.find((item) => item.clave === 'operation_mode')?.valorTexto;
     if (operationMode !== 'motor') throw statusError('El equipo no confirmó que está en modo motor. La maniobra fue bloqueada.', 409);
     if (!(['abrir', 'detener', 'cerrar'] as string[]).includes(params.accion)) throw statusError('Seleccioná abrir, detener o cerrar.');
-    const online = device.variables.find((item) => item.clave === 'online');
-    if (online?.valorBooleano === false || device.estado === 'desconectado') throw statusError(`${device.nombre} está desconectado de la nube del fabricante.`, 409);
+    await confirmarDisponibilidadFabricante(device);
     const command = await prisma.comandoIoT.create({ data: {
       empresaId, dispositivoId: device.id, tipo: 'motor', payload: { accion: params.accion }, motivo: params.motivo.slice(0, 2000),
       solicitadoPorId: req.auth!.userId, solicitadoPorNombre: req.auth!.email,
