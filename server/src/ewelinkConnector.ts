@@ -18,7 +18,7 @@ const DISPATCH_DOMAINS: Record<string, string> = {
 };
 const syncing = new Set<string>();
 const freshStatusCursor = new Map<string, number>();
-const FRESH_STATUS_LIMIT = 4;
+const FRESH_STATUS_LIMIT = 1;
 const REALTIME_MAX_PAYLOAD_BYTES = 256 * 1024;
 let statusRequestQueue: Promise<void> = Promise.resolve();
 let lastStatusRequestAt = 0;
@@ -288,14 +288,12 @@ export function clasificarDispositivoEwelink(device: Record<string, unknown>): s
   return 'sensor';
 }
 
-export function crearParametrosCanalEwelink(canal: number, encendido: boolean, estados: Record<number, boolean> = {}) {
+export function crearParametrosCanalEwelink(canal: number, encendido: boolean) {
   if (!Number.isInteger(canal) || canal < 0 || canal > 3) throw Object.assign(new Error('El canal eWeLink debe estar entre 1 y 4.'), { status: 400 });
-  const merged = { ...estados, [canal]: encendido };
   return {
-    switches: Object.entries(merged)
-      .map(([outlet, state]) => ({ outlet: Number(outlet), switch: state ? 'on' : 'off' }))
-      .filter((item) => Number.isInteger(item.outlet) && item.outlet >= 0 && item.outlet <= 3)
-      .sort((a, b) => a.outlet - b.outlet),
+    // eWeLink acepta actualizaciones parciales: enviar únicamente la salida
+    // elegida evita pisar el otro canal con un estado almacenado anteriormente.
+    switches: [{ outlet: canal, switch: encendido ? 'on' : 'off' }],
   };
 }
 
@@ -456,6 +454,10 @@ function tokenEwelinkRechazado(response: Response, body: EwelinkApiBody) {
   return response.status === 401 || body.error === 401 || body.error === 402;
 }
 
+function cuotaEwelinkAgotada(body: EwelinkApiBody) {
+  return /invoke too much|too many|rate limit/i.test(String(body.msg ?? ''));
+}
+
 async function actualizarEstadoEwelink(
   integration: { id: string; credencialesCifradas: string | null },
   dispositivoExternoId: string,
@@ -501,67 +503,17 @@ async function actualizarEstadoEwelink(
     if (result.body.error === 4002 || result.body.error === 30022) {
       throw Object.assign(new Error('eWeLink confirmó que el dispositivo está fuera de línea o no acepta esta maniobra.'), { status: 409 });
     }
-    throw Object.assign(new Error(`eWeLink no ejecutó la operación: ${result.body.msg || `error ${result.body.error ?? result.response.status}`}`), { status: 502 });
-  }
-}
-
-export async function verificarDisponibilidadEwelink(integracionId: string, dispositivoExternoId: string) {
-  const integration = await prisma.integracionIoT.findUnique({ where: { id: integracionId } });
-  if (!integration || integration.proveedor !== 'sonoff_ewelink') throw Object.assign(new Error('Conector SONOFF no encontrado.'), { status: 404 });
-  let authorized = await credencialesAutorizadas(integration);
-  const fetchThings = async () => {
-    const response = await fetch(`${authorized.domain}/v2/device/thing?lang=en&num=0`, {
-      headers: {
-        'X-CK-Appid': authorized.credentials.appId,
-        'X-CK-Nonce': nonce(),
-        Authorization: `Bearer ${authorized.credentials.accessToken}`,
-        Accept: 'application/json',
-      },
-      signal: AbortSignal.timeout(15_000),
-    });
-    const body = await response.json().catch(() => ({})) as EwelinkApiBody<{ thingList?: Array<{ itemType?: number; itemData?: Record<string, unknown> }> }>;
-    return { response, body };
-  };
-  let result: Awaited<ReturnType<typeof fetchThings>>;
-  try {
-    result = await fetchThings();
-    if (tokenEwelinkRechazado(result.response, result.body)) {
-      authorized = await credencialesAutorizadas(integration, true);
-      result = await fetchThings();
+    if (cuotaEwelinkAgotada(result.body)) {
+      throw Object.assign(new Error('eWeLink alcanzó temporalmente el límite de consultas. Esperá un minuto y volvé a operar.'), { status: 429 });
     }
-  } catch (error) {
-    if (Number((error as { status?: number })?.status) === 401) throw error;
-    throw Object.assign(new Error('No se pudo comprobar el estado actual del dispositivo en eWeLink.'), { status: 502, cause: error });
+    throw Object.assign(new Error(`eWeLink no ejecutó la operación (código ${result.body.error ?? result.response.status}).`), { status: 502 });
   }
-  if (!result.response.ok || result.body.error) {
-    const authorizationFailed = tokenEwelinkRechazado(result.response, result.body);
-    throw Object.assign(new Error(authorizationFailed
-      ? 'eWeLink rechazó la autorización. Volvé a conectar la cuenta.'
-      : `eWeLink no permitió comprobar el dispositivo: ${result.body.msg || `error ${result.body.error ?? result.response.status}`}`), { status: authorizationFailed ? 401 : 502 });
-  }
-  const thing = (result.body.data?.thingList ?? []).find((item) => [1, 2].includes(Number(item.itemType)) && item.itemData?.deviceid === dispositivoExternoId)?.itemData;
-  if (!thing) throw Object.assign(new Error('eWeLink no devolvió este dispositivo para la cuenta autorizada.'), { status: 409 });
-  const online = normalizarOnlineEwelink(thing.online);
-  const readings = { ...normalizarMagnitudesEwelink(extraerLecturasEwelink(thing.params), thing), online };
-  await procesarEventoIoT(integration.id, normalizarEventoIoT({
-    deviceId: dispositivoExternoId,
-    deviceName: thing.name,
-    model: thing.productModel ?? (thing.extra as Record<string, unknown> | undefined)?.model,
-    deviceType: clasificarDispositivoEwelink(thing),
-    uiid: thing.uiid ?? (thing.extra as Record<string, unknown> | undefined)?.uiid,
-    readings,
-    timestamp: new Date().toISOString(),
-  }));
-  const estados = Object.fromEntries(Object.entries(readings)
-    .filter(([key, value]) => /^switch_[1-4]$/.test(key) && typeof value === 'boolean')
-    .map(([key, value]) => [Number(key.slice(7)) - 1, Boolean(value)]));
-  return { online, estados };
 }
 
-export async function ejecutarCanalEwelink(integracionId: string, dispositivoExternoId: string, canal: number, encendido: boolean, estados: Record<number, boolean> = {}) {
+export async function ejecutarCanalEwelink(integracionId: string, dispositivoExternoId: string, canal: number, encendido: boolean) {
   const integration = await prisma.integracionIoT.findUnique({ where: { id: integracionId } });
   if (!integration || integration.proveedor !== 'sonoff_ewelink') throw Object.assign(new Error('Conector SONOFF no encontrado.'), { status: 404 });
-  const params = crearParametrosCanalEwelink(canal, encendido, estados);
+  const params = crearParametrosCanalEwelink(canal, encendido);
   await actualizarEstadoEwelink(integration, dispositivoExternoId, params, 'eWeLink no confirmó la operación dentro de 15 segundos.');
   return { ok: true, canal, encendido, params };
 }
@@ -619,11 +571,15 @@ export async function sincronizarEwelink(integracionId: string) {
     }
   }
   if (!response.ok || body.error) {
-    const message = tokenEwelinkRechazado(response, body)
+    const authorizationFailed = tokenEwelinkRechazado(response, body);
+    const quotaExceeded = cuotaEwelinkAgotada(body);
+    const message = authorizationFailed
       ? 'eWeLink rechazó el Access Token. Volvé a autorizar la cuenta.'
-      : `eWeLink respondió ${response.status}: ${body.msg || `error ${body.error ?? 'desconocido'}`}`;
+      : quotaExceeded
+        ? 'eWeLink alcanzó temporalmente el límite de consultas. La sincronización se reintentará más tarde.'
+        : `eWeLink rechazó la sincronización (código ${body.error ?? response.status}).`;
     await prisma.integracionIoT.update({ where: { id: integration.id }, data: { estado: 'error', ultimoError: message } });
-    throw Object.assign(new Error(message), { status: tokenEwelinkRechazado(response, body) ? 401 : 502 });
+    throw Object.assign(new Error(message), { status: authorizationFailed ? 401 : quotaExceeded ? 429 : 502 });
   }
 
   const { credentials, domain } = authorized;
@@ -694,9 +650,12 @@ async function sincronizarEwelinkProgramado() {
     const config = integration.configuracion && typeof integration.configuracion === 'object' && !Array.isArray(integration.configuracion)
       ? integration.configuracion as Record<string, unknown>
       : {};
-    const seconds = Math.min(3600, Math.max(5, Number(config.pollingSeconds) || 5));
+    // El WebSocket entrega los cambios en vivo. REST queda como reconciliación
+    // de respaldo para no agotar la cuota de los APPID Standard.
+    const seconds = Math.min(3600, Math.max(300, Number(config.pollingSeconds) || 300));
     const authorizationError = integration.estado === 'error' && /autorización|access token|credenciales/i.test(integration.ultimoError ?? '');
-    const retrySeconds = integration.estado === 'error' ? (authorizationError ? 15 * 60 : 30) : seconds;
+    const quotaError = integration.estado === 'error' && /límite de consultas|invoke too much|too many|rate limit/i.test(integration.ultimoError ?? '');
+    const retrySeconds = integration.estado === 'error' ? (authorizationError || quotaError ? 15 * 60 : 60) : seconds;
     const lastAttempt = integration.estado === 'error' ? integration.actualizadaEn : integration.ultimoEventoEn;
     if (lastAttempt && Date.now() - lastAttempt.getTime() < retrySeconds * 1000) continue;
     syncing.add(integration.id);
@@ -711,8 +670,7 @@ async function sincronizarEwelinkProgramado() {
 }
 
 export function iniciarSincronizadorEwelink() {
-  // El programador revisa cada segundo; cada integración conserva su propio
-  // intervalo (5 s por defecto) y el lock evita sincronizaciones superpuestas.
-  const timer = setInterval(() => sincronizarEwelinkProgramado().catch((error) => console.error('[ewelink] programador:', error)), 1_000);
+  // Sólo revisa vencimientos; el WebSocket conserva la vista en vivo.
+  const timer = setInterval(() => sincronizarEwelinkProgramado().catch((error) => console.error('[ewelink] programador:', error)), 10_000);
   timer.unref();
 }

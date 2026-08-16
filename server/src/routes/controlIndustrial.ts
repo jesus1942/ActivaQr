@@ -14,7 +14,7 @@ import {
 import { auditar, registrarAuditoria } from '../auditoria';
 import { cifrarCredenciales, hashToken } from '../iotSecrets';
 import { normalizarEventoIoT, procesarEventoIoT } from '../iotIngest';
-import { AccionMotorEwelink, crearAutorizacionEwelink, ejecutarCanalEwelink, ejecutarMotorEwelink, sincronizarEwelink, verificarDisponibilidadEwelink } from '../ewelinkConnector';
+import { AccionMotorEwelink, crearAutorizacionEwelink, ejecutarCanalEwelink, ejecutarMotorEwelink, sincronizarEwelink } from '../ewelinkConnector';
 import { enviarPushAUsuario } from '../push';
 import { ejecutarCanalTuya, sincronizarTuya } from '../tuyaConnector';
 
@@ -127,7 +127,7 @@ async function moduloActivo(req: AuthRequest, res: Response, next: NextFunction)
   }
 }
 
-async function confirmarDisponibilidadFabricante(device: {
+function confirmarDisponibilidadFabricante(device: {
   nombre: string;
   estado: string;
   integracionId: string;
@@ -135,15 +135,11 @@ async function confirmarDisponibilidadFabricante(device: {
   integracion: { proveedor: string };
   variables: Array<{ clave: string; valorBooleano: boolean | null }>;
 }) {
+  // En SONOFF la propia operación es la comprobación autoritativa y devuelve
+  // el error offline del fabricante. Evitamos gastar otra llamada de cuota.
+  if (device.integracion.proveedor === 'sonoff_ewelink') return;
   const online = device.variables.find((item) => item.clave === 'online');
   const estadoGuardadoFueraDeLinea = online?.valorBooleano === false || device.estado === 'desconectado';
-  // eWeLink es la fuente autoritativa. Se comprueba en cada maniobra para que
-  // un offline viejo no bloquee y para preservar el estado real del otro canal.
-  if (device.integracion.proveedor === 'sonoff_ewelink') {
-    const current = await verificarDisponibilidadEwelink(device.integracionId, device.identificadorExterno);
-    if (current.online) return current.estados;
-    throw statusError(`${device.nombre} está desconectado de la nube del fabricante.`, 409);
-  }
   if (!estadoGuardadoFueraDeLinea) return;
   throw statusError(`${device.nombre} está desconectado de la nube del fabricante.`, 409);
 }
@@ -165,8 +161,7 @@ async function ejecutarReleSeguro(req: AuthRequest, params: { dispositivoId: str
     if (!Number.isInteger(params.canal) || params.canal < 0 || params.canal > 3 || typeof params.encendido !== 'boolean') throw statusError('Seleccioná un canal válido y el estado encendido o apagado.');
     const channelVariables = device.variables.filter((item) => /^switch_[1-4]$/.test(item.clave));
     if (channelVariables.length && !channelVariables.some((item) => item.clave === `switch_${params.canal + 1}`)) throw statusError('El dispositivo no informó ese canal.', 409);
-    const estadosConfirmados = await confirmarDisponibilidadFabricante(device);
-    const estados = estadosConfirmados ?? Object.fromEntries(channelVariables.map((item) => [Number(item.clave.slice(7)) - 1, Boolean(item.valorBooleano)]));
+    confirmarDisponibilidadFabricante(device);
     const command = await prisma.comandoIoT.create({ data: {
       empresaId, dispositivoId: device.id, tipo: 'rele', payload: { canal: params.canal, encendido: params.encendido }, motivo: params.motivo.slice(0, 2000),
       solicitadoPorId: req.auth!.userId, solicitadoPorNombre: req.auth!.email,
@@ -174,7 +169,7 @@ async function ejecutarReleSeguro(req: AuthRequest, params: { dispositivoId: str
     } });
     commandId = command.id;
     if (device.integracion.proveedor === 'sonoff_ewelink') {
-      await ejecutarCanalEwelink(device.integracionId, device.identificadorExterno, params.canal, params.encendido, estados);
+      await ejecutarCanalEwelink(device.integracionId, device.identificadorExterno, params.canal, params.encendido);
     } else {
       const tuyaCode = channelVariables.some((item) => item.clave === `switch_${params.canal + 1}`) ? `switch_${params.canal + 1}` : 'switch';
       await ejecutarCanalTuya(device.integracionId, device.identificadorExterno, tuyaCode, params.encendido);
@@ -209,7 +204,7 @@ async function ejecutarMotorSeguro(req: AuthRequest, params: { dispositivoId: st
     const operationMode = device.variables.find((item) => item.clave === 'operation_mode')?.valorTexto;
     if (operationMode !== 'motor') throw statusError('El equipo no confirmó que está en modo motor. La maniobra fue bloqueada.', 409);
     if (!(['abrir', 'detener', 'cerrar'] as string[]).includes(params.accion)) throw statusError('Seleccioná abrir, detener o cerrar.');
-    await confirmarDisponibilidadFabricante(device);
+    confirmarDisponibilidadFabricante(device);
     const command = await prisma.comandoIoT.create({ data: {
       empresaId, dispositivoId: device.id, tipo: 'motor', payload: { accion: params.accion }, motivo: params.motivo.slice(0, 2000),
       solicitadoPorId: req.auth!.userId, solicitadoPorNombre: req.auth!.email,
@@ -407,7 +402,7 @@ controlIndustrialRouter.post('/integraciones', requireAdmin, async (req: AuthReq
       empresaId,
       nombre: String(nombre).trim().slice(0, 120),
       proveedor,
-      configuracion: { autoDiscover: true, ...(proveedor === 'sonoff_ewelink' ? { pollingSeconds: 5 } : proveedor === 'tuya_cloud' ? { pollingSeconds: 30 } : {}), ...(configuracion && typeof configuracion === 'object' ? configuracion : {}) },
+      configuracion: { autoDiscover: true, ...(proveedor === 'sonoff_ewelink' ? { pollingSeconds: 300 } : proveedor === 'tuya_cloud' ? { pollingSeconds: 30 } : {}), ...(configuracion && typeof configuracion === 'object' ? configuracion : {}) },
     } });
     await auditar(req, 'crear', 'IntegracionIoT', integration.id, `Conector ${proveedor}: ${integration.nombre}`);
     res.status(201).json(publicIntegration(integration));
@@ -457,7 +452,7 @@ controlIndustrialRouter.post('/integraciones/:id/autorizar-sonoff', requireAdmin
     const appId = String(req.body?.appId ?? '').trim();
     const appSecret = String(req.body?.appSecret ?? '').trim();
     if (!appId || !appSecret) throw statusError('Ingresá el APPID y el APP SECRET del proyecto eWeLink.');
-    const pollingSeconds = Math.min(3600, Math.max(5, Number(req.body?.pollingSeconds) || 5));
+    const pollingSeconds = Math.min(3600, Math.max(300, Number(req.body?.pollingSeconds) || 300));
     await prisma.integracionIoT.update({
       where: { id: current.id },
       data: {

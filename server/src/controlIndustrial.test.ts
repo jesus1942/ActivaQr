@@ -87,8 +87,7 @@ test('los secretos no salen en respuestas y los comandos exigen doble habilitaci
   assert.match(routes, /!module\?\.controlRemotoHabilitado/);
   assert.match(routes, /!device\?\.permiteControl/);
   assert.match(routes, /confirmarDisponibilidadFabricante\(device\)/);
-  assert.match(routes, /verificarDisponibilidadEwelink\(device\.integracionId, device\.identificadorExterno\)/);
-  assert.match(routes, /estadosConfirmados \?\? Object\.fromEntries/);
+  assert.match(routes, /proveedor === 'sonoff_ewelink'\) return/);
   assert.match(routes, /ejecutarCanalEwelink/);
   assert.match(routes, /solicitadoPorId: req\.auth!\.userId/);
 });
@@ -163,13 +162,15 @@ test('eWeLink prioriza el estado efectivo tras cambios externos, timers e impuls
   assert.equal(normalizarOnlineEwelink('online'), true);
 });
 
-test('eWeLink revalida estados offline almacenados y renueva tokens vencidos', () => {
+test('eWeLink protege la cuota, sanea errores y renueva tokens vencidos', () => {
   const connector = readFileSync(resolve(process.cwd(), 'src/ewelinkConnector.ts'), 'utf8');
   const ingest = readFileSync(resolve(process.cwd(), 'src/iotIngest.ts'), 'utf8');
-  assert.match(connector, /export async function verificarDisponibilidadEwelink/);
   assert.match(connector, /body\.error === 401 \|\| body\.error === 402/);
   assert.match(connector, /credencialesAutorizadas\(integration, true\)/);
   assert.match(connector, /error === 4002 \|\| result\.body\.error === 30022/);
+  assert.match(connector, /function cuotaEwelinkAgotada/);
+  assert.match(connector, /límite de consultas/);
+  assert.doesNotMatch(connector, /no ejecutó la operación: \$\{result\.body\.msg/);
   assert.match(ingest, /const reportaDesconexion = evento\.lecturas\.online === false/);
   assert.match(ingest, /ultimoContactoEn: reportaDesconexion \? dispositivo!\.ultimoContactoEn : evento\.medidaEn/);
   assert.match(ingest, /estado: reportaDesconexion \? 'desconectado'/);
@@ -292,9 +293,9 @@ test('clasifica sensores ambientales, magnéticos e inundación sin degradarlos 
   assert.equal(extraerLecturasEwelink({ door: 'open', waterLeak: 'dry' }).waterLeak, false);
 });
 
-test('el comando DUAL R3 conserva el otro canal y sólo cambia el elegido', () => {
-  assert.deepEqual(crearParametrosCanalEwelink(1, true, { 0: false, 1: false }), {
-    switches: [{ outlet: 0, switch: 'off' }, { outlet: 1, switch: 'on' }],
+test('el comando DUAL R3 envía sólo el canal elegido y no pisa el otro', () => {
+  assert.deepEqual(crearParametrosCanalEwelink(1, true), {
+    switches: [{ outlet: 1, switch: 'on' }],
   });
   assert.throws(() => crearParametrosCanalEwelink(4, true), /entre 1 y 4/);
 });
@@ -322,11 +323,14 @@ test('permite alias por dispositivo y canal sin perderlos al sincronizar', () =>
   assert.match(controlIndustrial, /Motor eléctrico/);
 });
 
-test('refresca el tablero y eWeLink cada 5 segundos', () => {
+test('refresca el tablero cada 5 segundos y reserva REST eWeLink como respaldo', () => {
   const connector = readFileSync(resolve(process.cwd(), 'src/ewelinkConnector.ts'), 'utf8');
   assert.match(controlIndustrial, /setInterval\(\(\) => load\(true\), 5_000\)/);
-  assert.match(connector, /Math\.max\(5, Number\(config\.pollingSeconds\)/);
-  assert.match(connector, /sincronizarEwelinkProgramado[\s\S]*1_000/);
+  assert.match(controlIndustrial, /Math\.max\(300, Number\(integration\.configuracion\?\.pollingSeconds\)/);
+  assert.doesNotMatch(controlIndustrial, /option value=\{5\}>Cada 5 segundos/);
+  assert.match(connector, /Math\.max\(300, Number\(config\.pollingSeconds\)/);
+  assert.match(connector, /sincronizarEwelinkProgramado[\s\S]*10_000/);
+  assert.match(connector, /FRESH_STATUS_LIMIT = 1/);
   assert.match(connector, /GET|obtenerEstadoEfectivoEwelink/);
   assert.match(connector, /\/v2\/device\/thing\/status\?\$\{query\}/);
   assert.match(connector, /wss:\/\/\$\{host\}:\$\{port\}\/api\/ws/);
