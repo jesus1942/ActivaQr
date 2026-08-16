@@ -120,6 +120,9 @@ test('eWeLink usa autorización OAuth y no vuelve a pedir un Access Token manual
   assert.match(controlIndustrial, /autorizarSonoff/);
   assert.doesNotMatch(controlIndustrial, /Field label="Access Token"/);
   assert.doesNotMatch(controlIndustrial, /Guardar de forma segura/);
+  const connector = readFileSync(resolve(process.cwd(), 'src/ewelinkConnector.ts'), 'utf8');
+  assert.match(connector, /showQRCode: 'true'/);
+  assert.match(connector, /15 \* 60_000/);
 });
 
 test('eWeLink importa los canales del DUAL R3 sin perder estados escalares', () => {
@@ -190,6 +193,8 @@ test('tiempo real eWeLink limita origen y tamaño, y el relé se bloquea en modo
   assert.match(connector, /coolkit\\\.cc\|coolkit\\\.cn/);
   assert.match(connector, /maxPayload: REALTIME_MAX_PAYLOAD_BYTES/);
   assert.match(connector, /perMessageDeflate: false/);
+  assert.match(connector, /\/v2\/family\?lang=en/);
+  assert.doesNotMatch(connector, /\/v2\/user\/profile/);
   assert.match(routes, /operationMode === 'motor'.*Por seguridad no admite mandos de relé independientes/s);
   assert.match(routes, /operationMode !== 'motor'.*maniobra fue bloqueada/s);
 });
@@ -312,6 +317,10 @@ test('refresca el tablero y eWeLink cada 5 segundos', () => {
   assert.match(connector, /wss:\/\/\$\{host\}:\$\{port\}\/api\/ws/);
   assert.match(connector, /action: 'userOnline'/);
   assert.match(connector, /procesarMensajeTiempoRealEwelink/);
+  assert.match(connector, /estado: \{ in: \['configurada', 'conectada', 'error'\] \}/);
+  assert.match(connector, /integration\.actualizadaEn/);
+  assert.match(connector, /credencialesAutorizadas\(integration, true\)/);
+  assert.match(connector, /sincronizacionPendiente: true/);
 });
 
 test('exporta logs por dispositivo o canal y evita duplicados cada cinco segundos', () => {

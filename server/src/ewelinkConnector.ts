@@ -34,9 +34,16 @@ type EwelinkCredentials = {
   refreshToken?: string;
   atExpiredTime?: number;
   rtExpiredTime?: number;
+  userApiKey?: string;
   region?: string;
   redirectUrl?: string;
 };
+
+function expirationMs(value: unknown) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return undefined;
+  return numeric < 1_000_000_000_000 ? numeric * 1000 : numeric;
+}
 
 function nonce() {
   return randomBytes(6).toString('base64url').replace(/[^a-zA-Z0-9]/g, '').slice(0, 8).padEnd(8, '0');
@@ -52,8 +59,9 @@ function credentialsOf(payload: Record<string, unknown>): EwelinkCredentials {
     appSecret: String(payload.appSecret ?? ''),
     accessToken: payload.accessToken ? String(payload.accessToken) : undefined,
     refreshToken: payload.refreshToken ? String(payload.refreshToken) : undefined,
-    atExpiredTime: payload.atExpiredTime ? Number(payload.atExpiredTime) : undefined,
-    rtExpiredTime: payload.rtExpiredTime ? Number(payload.rtExpiredTime) : undefined,
+    atExpiredTime: expirationMs(payload.atExpiredTime),
+    rtExpiredTime: expirationMs(payload.rtExpiredTime),
+    userApiKey: payload.userApiKey ? String(payload.userApiKey) : undefined,
     region: payload.region ? String(payload.region) : undefined,
     redirectUrl: payload.redirectUrl ? String(payload.redirectUrl) : undefined,
   };
@@ -81,7 +89,7 @@ async function postSigned<T>(domain: string, path: string, credentials: EwelinkC
 
 export function crearAutorizacionEwelink(params: { integrationId: string; empresaId: string; userId: string; appId: string; appSecret: string }) {
   const seq = String(Date.now());
-  const state = firmarEstadoOAuth({ integrationId: params.integrationId, empresaId: params.empresaId, userId: params.userId, exp: Date.now() + 5 * 60_000 });
+  const state = firmarEstadoOAuth({ integrationId: params.integrationId, empresaId: params.empresaId, userId: params.userId, exp: Date.now() + 15 * 60_000 });
   const query = new URLSearchParams({
     state,
     clientId: params.appId,
@@ -90,7 +98,7 @@ export function crearAutorizacionEwelink(params: { integrationId: string; empres
     redirectUrl: EWELINK_REDIRECT_URL,
     nonce: nonce(),
     grantType: 'authorization_code',
-    showQRCode: 'false',
+    showQRCode: 'true',
   });
   return { authUrl: `https://c2ccdn.coolkit.cc/oauth/index.html?${query}`, redirectUrl: EWELINK_REDIRECT_URL };
 }
@@ -114,17 +122,26 @@ export async function completarAutorizacionEwelink(integrationId: string, code: 
       ultimoError: null,
     },
   });
-  return sincronizarEwelink(integration.id);
+  try {
+    return await sincronizarEwelink(integration.id);
+  } catch (error) {
+    // La autorización ya fue concedida. Una caída momentánea de la API de
+    // dispositivos no debe obligar al usuario a repetir OAuth: el programador
+    // retoma la primera sincronización con backoff.
+    console.warn('[ewelink] autorización completa; sincronización pendiente:', integration.id, error instanceof Error ? error.message : error);
+    return { ok: true, dispositivosImportados: 0, totalInformado: 0, sincronizacionPendiente: true };
+  }
 }
 
 async function renovarTokenEwelink(integrationId: string, credentials: EwelinkCredentials): Promise<EwelinkCredentials> {
   const region = credentials.region ?? 'us';
   if (!DOMAINS[region] || !credentials.refreshToken) throw Object.assign(new Error('La autorización eWeLink venció. Volvé a conectar la cuenta.'), { status: 401 });
-  const token = await postSigned<{ at: string; rt: string }>(DOMAINS[region], '/v2/user/refresh', credentials, { rt: credentials.refreshToken });
+  const token = await postSigned<{ at: string; rt: string; user?: { apikey?: string } }>(DOMAINS[region], '/v2/user/refresh', credentials, { rt: credentials.refreshToken });
   const renewed: EwelinkCredentials = {
     ...credentials,
     accessToken: token.at,
     refreshToken: token.rt,
+    userApiKey: token.user?.apikey || credentials.userApiKey,
     atExpiredTime: Date.now() + 30 * 24 * 60 * 60_000,
     rtExpiredTime: Date.now() + 60 * 24 * 60 * 60_000,
   };
@@ -282,10 +299,11 @@ export function crearParametrosCanalEwelink(canal: number, encendido: boolean, e
   };
 }
 
-async function credencialesAutorizadas(integration: { id: string; credencialesCifradas: string | null }) {
+async function credencialesAutorizadas(integration: { id: string; credencialesCifradas: string | null }, forceRefresh = false) {
   if (!integration.credencialesCifradas) throw Object.assign(new Error('Primero autorizá la cuenta eWeLink.'), { status: 409 });
   let credentials = credentialsOf(descifrarCredenciales(integration.credencialesCifradas));
-  if (credentials.atExpiredTime && credentials.atExpiredTime < Date.now() + 5 * 60_000) credentials = await renovarTokenEwelink(integration.id, credentials);
+  if (credentials.rtExpiredTime && credentials.rtExpiredTime <= Date.now()) throw Object.assign(new Error('La autorización eWeLink venció. Volvé a conectar la cuenta.'), { status: 401 });
+  if (forceRefresh || (credentials.atExpiredTime && credentials.atExpiredTime < Date.now() + 5 * 60_000)) credentials = await renovarTokenEwelink(integration.id, credentials);
   const region = String(credentials.region ?? 'us');
   if (!credentials.appId || !credentials.accessToken || !DOMAINS[region]) throw Object.assign(new Error('Las credenciales o la región eWeLink no son válidas.'), { status: 400 });
   return { credentials, region, domain: DOMAINS[region] };
@@ -365,8 +383,10 @@ export async function procesarMensajeTiempoRealEwelink(integracionId: string, me
 async function asegurarTiempoRealEwelink(integration: { id: string }, credentials: EwelinkCredentials, region: string, domain: string) {
   const current = realtimeConnections.get(integration.id);
   if (current && (current.socket.readyState === WebSocket.OPEN || current.socket.readyState === WebSocket.CONNECTING)) return;
-  const profile = await getAuthorizedJson<{ user?: { apikey?: string } }>(`${domain}/v2/user/profile`, credentials);
-  const apikey = profile.user?.apikey;
+  // Standard Role no incluye el endpoint de perfil. La API oficial recomienda
+  // obtener el userApiKey desde la familia autorizada.
+  const families = await getAuthorizedJson<{ familyList?: Array<{ apikey?: string }> }>(`${domain}/v2/family?lang=en`, credentials);
+  const apikey = credentials.userApiKey || families.familyList?.find((family) => family.apikey)?.apikey;
   if (!apikey) throw new Error('eWeLink no informó la identidad necesaria para sincronización en tiempo real.');
   const dispatch = await getAuthorizedJson<{ domain?: string; port?: number }>(`${DISPATCH_DOMAINS[region]}/dispatch/app`, credentials);
   const host = String(dispatch.domain ?? '').trim().toLowerCase().replace(/\.$/, '');
@@ -510,19 +530,20 @@ export async function ejecutarMotorEwelink(integracionId: string, dispositivoExt
 export async function sincronizarEwelink(integracionId: string) {
   const integration = await prisma.integracionIoT.findUnique({ where: { id: integracionId } });
   if (!integration || integration.proveedor !== 'sonoff_ewelink') throw Object.assign(new Error('Conector SONOFF no encontrado.'), { status: 404 });
-  const { credentials, domain } = await credencialesAutorizadas(integration);
+  let authorized = await credencialesAutorizadas(integration);
 
+  const fetchThings = (credentials: EwelinkCredentials, domain: string) => fetch(`${domain}/v2/device/thing?lang=en&num=0`, {
+    headers: {
+      'X-CK-Appid': credentials.appId,
+      'X-CK-Nonce': randomBytes(6).toString('hex').slice(0, 8),
+      Authorization: `Bearer ${credentials.accessToken}`,
+      Accept: 'application/json',
+    },
+    signal: AbortSignal.timeout(15_000),
+  });
   let response: Response;
   try {
-    response = await fetch(`${domain}/v2/device/thing?lang=en&num=0`, {
-      headers: {
-        'X-CK-Appid': credentials.appId,
-        'X-CK-Nonce': randomBytes(6).toString('hex').slice(0, 8),
-        Authorization: `Bearer ${credentials.accessToken}`,
-        Accept: 'application/json',
-      },
-      signal: AbortSignal.timeout(15_000),
-    });
+    response = await fetchThings(authorized.credentials, authorized.domain);
   } catch (error) {
     const message = error instanceof Error && error.name === 'TimeoutError'
       ? 'eWeLink no respondió dentro de 15 segundos.'
@@ -530,7 +551,18 @@ export async function sincronizarEwelink(integracionId: string) {
     await prisma.integracionIoT.update({ where: { id: integration.id }, data: { estado: 'error', ultimoError: message } });
     throw Object.assign(new Error(message), { status: 502 });
   }
-  const body = await response.json().catch(() => ({})) as { error?: number; msg?: string; data?: { thingList?: Array<{ itemType?: number; itemData?: Record<string, unknown> }> } };
+  let body = await response.json().catch(() => ({})) as { error?: number; msg?: string; data?: { thingList?: Array<{ itemType?: number; itemData?: Record<string, unknown> }> } };
+  if (response.status === 401 || body.error === 401) {
+    try {
+      authorized = await credencialesAutorizadas(integration, true);
+      response = await fetchThings(authorized.credentials, authorized.domain);
+      body = await response.json().catch(() => ({})) as typeof body;
+    } catch (error) {
+      const message = 'eWeLink rechazó la renovación automática. Volvé a autorizar la cuenta.';
+      await prisma.integracionIoT.update({ where: { id: integration.id }, data: { estado: 'error', ultimoError: message } });
+      throw Object.assign(new Error(message), { status: 401, cause: error });
+    }
+  }
   if (!response.ok || body.error) {
     const message = response.status === 401 || body.error === 401
       ? 'eWeLink rechazó el Access Token. Volvé a autorizar la cuenta.'
@@ -539,6 +571,7 @@ export async function sincronizarEwelink(integracionId: string) {
     throw Object.assign(new Error(message), { status: response.status === 401 ? 401 : 502 });
   }
 
+  const { credentials, domain } = authorized;
   const things = body.data?.thingList ?? [];
   const archivedIds = new Set((await prisma.dispositivoIoT.findMany({
     where: { integracionId: integration.id, archivadoEn: { not: null } },
@@ -595,7 +628,7 @@ async function sincronizarEwelinkProgramado() {
   const integrations = await prisma.integracionIoT.findMany({
     where: {
       proveedor: 'sonoff_ewelink',
-      estado: { in: ['configurada', 'conectada'] },
+      estado: { in: ['configurada', 'conectada', 'error'] },
       credencialesCifradas: { not: null },
       empresa: { moduloControl: { estado: 'activo' } },
     },
@@ -607,7 +640,10 @@ async function sincronizarEwelinkProgramado() {
       ? integration.configuracion as Record<string, unknown>
       : {};
     const seconds = Math.min(3600, Math.max(5, Number(config.pollingSeconds) || 5));
-    if (integration.ultimoEventoEn && Date.now() - integration.ultimoEventoEn.getTime() < seconds * 1000) continue;
+    const authorizationError = integration.estado === 'error' && /autorización|access token|credenciales/i.test(integration.ultimoError ?? '');
+    const retrySeconds = integration.estado === 'error' ? (authorizationError ? 15 * 60 : 30) : seconds;
+    const lastAttempt = integration.estado === 'error' ? integration.actualizadaEn : integration.ultimoEventoEn;
+    if (lastAttempt && Date.now() - lastAttempt.getTime() < retrySeconds * 1000) continue;
     syncing.add(integration.id);
     try {
       await sincronizarEwelink(integration.id);
