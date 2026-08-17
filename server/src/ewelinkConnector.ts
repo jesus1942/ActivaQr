@@ -319,12 +319,24 @@ export function clasificarDispositivoEwelink(device: Record<string, unknown>): s
   return 'sensor';
 }
 
-export function crearParametrosCanalEwelink(canal: number, encendido: boolean) {
+export type ModoCanalEwelink = 'simple' | 'multicanal' | 'termostato';
+
+export function crearParametrosCanalEwelink(canal: number, encendido: boolean, modo: ModoCanalEwelink = 'multicanal') {
   if (!Number.isInteger(canal) || canal < 0 || canal > 3) throw Object.assign(new Error('El canal eWeLink debe estar entre 1 y 4.'), { status: 400 });
+  if (modo !== 'multicanal' && canal !== 0) throw Object.assign(new Error('Este dispositivo eWeLink posee una única salida.'), { status: 400 });
+  const switchState = encendido ? 'on' : 'off';
+  if (modo === 'simple') return { switch: switchState };
+  if (modo === 'termostato') {
+    // UIID 15 (familia TH): para mando manual eWeLink espera el relé junto
+    // con mainSwitch; al encender se fuerza modo normal para salir de una
+    // eventual automatización local de temperatura/humedad.
+    return encendido
+      ? { switch: 'on', mainSwitch: 'on', deviceType: 'normal' }
+      : { switch: 'off', mainSwitch: 'off' };
+  }
   return {
-    // eWeLink acepta actualizaciones parciales: enviar únicamente la salida
-    // elegida evita pisar el otro canal con un estado almacenado anteriormente.
-    switches: [{ outlet: canal, switch: encendido ? 'on' : 'off' }],
+    // Los equipos de varias salidas usan el arreglo `switches` con outlet.
+    switches: [{ outlet: canal, switch: switchState }],
   };
 }
 
@@ -544,11 +556,26 @@ async function actualizarEstadoEwelink(
 }
 
 export async function ejecutarCanalEwelink(integracionId: string, dispositivoExternoId: string, canal: number, encendido: boolean) {
-  const integration = await prisma.integracionIoT.findUnique({ where: { id: integracionId } });
+  const [integration, device] = await Promise.all([
+    prisma.integracionIoT.findUnique({ where: { id: integracionId } }),
+    prisma.dispositivoIoT.findUnique({
+      where: { integracionId_identificadorExterno: { integracionId, identificadorExterno: dispositivoExternoId } },
+      select: { tipo: true, modelo: true, variables: { select: { clave: true } } },
+    }),
+  ]);
   if (!integration || integration.proveedor !== 'sonoff_ewelink') throw Object.assign(new Error('Conector SONOFF no encontrado.'), { status: 404 });
-  const params = crearParametrosCanalEwelink(canal, encendido);
+  if (!device) throw Object.assign(new Error('Dispositivo SONOFF no encontrado en ActivaQR.'), { status: 404 });
+  const variableKeys = new Set(device.variables.map((variable) => variable.clave));
+  const esTermostato = device.tipo === 'sensor_ambiente'
+    && (/\bth(?:10|16)r2\b/i.test(device.modelo ?? '') || (variableKeys.has('mainSwitch') && variableKeys.has('deviceType')));
+  const modo: ModoCanalEwelink = esTermostato
+    ? 'termostato'
+    : device.tipo === 'interruptor_multicanal'
+      ? 'multicanal'
+      : 'simple';
+  const params = crearParametrosCanalEwelink(canal, encendido, modo);
   await actualizarEstadoEwelink(integration, dispositivoExternoId, params, 'eWeLink no confirmó la operación dentro de 15 segundos.');
-  return { ok: true, canal, encendido, params };
+  return { ok: true, canal, encendido, modo, params };
 }
 
 export type AccionMotorEwelink = 'abrir' | 'detener' | 'cerrar';
