@@ -299,6 +299,12 @@ export function clasificarDispositivoEwelink(device: Record<string, unknown>): s
   const uiid = Number(device.uiid ?? extra.uiid);
   const identity = `${device.name ?? ''} ${device.productModel ?? ''} ${extra.model ?? ''}`.toLowerCase();
   if (uiid === 28 || /rf\s*bridge|rfbridge|puente\s*rf|433\s*bridge/.test(identity)) return 'puente_rf';
+  // Los SONOFF TH16R2/TH10R2 combinan relé con telemetría ambiental. Si hay
+  // temperatura o humedad disponible, el tablero debe priorizar su función de
+  // monitoreo sin perder el canal de mando que se conserva como `relay`.
+  const isThR2 = /\bth(?:10|16)r2\b/.test(identity);
+  const hasAmbientTelemetry = ['temperature', 'currentTemperature', 'humidity', 'currentHumidity'].some((key) => key in params);
+  if (isThR2 && hasAmbientTelemetry) return 'sensor_ambiente';
   if (Array.isArray(params.switches)) {
     const channels = params.switches.filter((item) => item && typeof item === 'object').length;
     if (channels > 1) return 'interruptor_multicanal';
