@@ -45,7 +45,7 @@ const AprobarAccesoRemoto = lazy(() => import('./pages/AprobarAccesoRemoto').the
 const ResetPassword = lazy(() => import('./pages/ResetPassword').then((m) => ({ default: m.ResetPassword })));
 const DashboardOperador = lazy(() => import('./pages/DashboardOperador').then((m) => ({ default: m.DashboardOperador })));
 const PresentacionComercial = lazy(() => import('./pages/PresentacionComercial').then((m) => ({ default: m.PresentacionComercial })));
-const ControlIndustrial = lazy(() => import('./pages/ControlIndustrial').then((m) => ({ default: m.ControlIndustrial })));
+const ControlIndustrial = lazy(() => import('./pages/ControlIndustrialEnhanced').then((m) => ({ default: m.ControlIndustrialEnhanced })));
 const ControlIndustrialAdmin = lazy(() => import('./pages/ControlIndustrialAdmin').then((m) => ({ default: m.ControlIndustrialAdmin })));
 const Camaras = lazy(() => import('./pages/Camaras').then((m) => ({ default: m.Camaras })));
 
