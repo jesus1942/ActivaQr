@@ -1,17 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  Activity,
   BarChart3,
   Download,
   Droplets,
-  Gauge,
   History,
   Info,
   Power,
   RefreshCw,
   Settings2,
-  ShieldCheck,
   SlidersHorizontal,
   Thermometer,
   Wifi,
@@ -21,14 +18,12 @@ import {
   Zap,
 } from 'lucide-react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/ui/Toast';
 import {
   DispositivoIoT,
   exportarHistorialDispositivo,
   historialVariable,
   ResumenControl,
-  ResumenEnergia,
   resumenControl,
   resumenEnergia,
   solicitarComando,
@@ -47,12 +42,12 @@ type HistoryMap = Record<string, HistoryReading[]>;
 type DetailTab = 'graficos' | 'informacion' | 'configuracion' | 'automatizaciones';
 type RangeHours = 6 | 24 | 168 | 720;
 
+const REFRESH_MS = 5_000;
 const AMBIENT_VARIABLE = /^(temperature|temperatura|humidity|humedad)$/i;
 const POWER_VARIABLE = /^(actpow|power)(?:_([0-9]+))?$/i;
-const CURRENT_VARIABLE = /^(current)(?:_([0-9]+))?$/i;
-const VOLTAGE_VARIABLE = /^(voltage)(?:_([0-9]+))?$/i;
+const CURRENT_VARIABLE = /^current(?:_([0-9]+))?$/i;
+const VOLTAGE_VARIABLE = /^voltage(?:_([0-9]+))?$/i;
 const PROVIDERS_WITH_CONTROL = new Set(['sonoff_ewelink', 'tuya_cloud']);
-const REFRESH_MS = 5_000;
 
 function ago(value?: string | null) {
   if (!value) return 'sin datos';
@@ -61,7 +56,7 @@ function ago(value?: string | null) {
   if (seconds < 60) return `hace ${seconds} s`;
   if (seconds < 3600) return `hace ${Math.floor(seconds / 60)} min`;
   if (seconds < 86400) return `hace ${Math.floor(seconds / 3600)} h`;
-  return `hace ${Math.floor(seconds / 86400)} d`;
+  return `hace ${Math.floor(seconds / 86400)} días`;
 }
 
 function isOnline(device: DispositivoIoT, disconnectMs: number) {
@@ -77,47 +72,35 @@ function channelVariables(device: DispositivoIoT): VariableIoT[] {
   return relay ? [{ ...relay, clave: 'switch_1', nombre: relay.nombre || 'Relé interno' }] : [];
 }
 
-function isMotorMode(device: DispositivoIoT) {
-  return device.variables.some((variable) => variable.clave === 'operation_mode' && variable.valorTexto === 'motor');
-}
-
-function channelIndexFromSuffix(suffix: string) {
-  const numeric = Number(suffix);
-  if (!Number.isFinite(numeric)) return 1;
-  if (suffix === '0' || (suffix.length > 1 && suffix.startsWith('0'))) return numeric + 1;
-  return numeric;
-}
-
-function metricForChannel(device: DispositivoIoT, regex: RegExp, channel = 1) {
-  const metrics = device.variables.filter((variable) => regex.test(variable.clave));
-  const exact = metrics.find((variable) => {
-    const suffix = variable.clave.match(regex)?.[2];
-    return suffix ? channelIndexFromSuffix(suffix) === channel : false;
-  });
-  if (exact) return exact;
-  return channelVariables(device).length <= 1 ? metrics.find((variable) => !variable.clave.match(regex)?.[2]) : undefined;
-}
-
 function ambientVariables(device: DispositivoIoT) {
   const temperature = device.variables.find((variable) => /^(temperature|temperatura)$/i.test(variable.clave));
   const humidity = device.variables.find((variable) => /^(humidity|humedad)$/i.test(variable.clave));
   return { temperature, humidity };
 }
 
+function isMotorMode(device: DispositivoIoT) {
+  return device.variables.some((variable) => variable.clave === 'operation_mode' && variable.valorTexto === 'motor');
+}
+
+function suffixToChannel(suffix?: string) {
+  if (!suffix) return 1;
+  const numeric = Number(suffix);
+  if (!Number.isFinite(numeric)) return 1;
+  if (suffix === '0' || (suffix.length > 1 && suffix.startsWith('0'))) return numeric + 1;
+  return numeric;
+}
+
+function metricForChannel(device: DispositivoIoT, matcher: RegExp, channel: number) {
+  const matching = device.variables.filter((variable) => matcher.test(variable.clave));
+  const exact = matching.find((variable) => suffixToChannel(variable.clave.match(matcher)?.[1]) === channel && Boolean(variable.clave.match(matcher)?.[1]));
+  return exact ?? (channelVariables(device).length <= 1 ? matching.find((variable) => !variable.clave.match(matcher)?.[1]) : undefined);
+}
+
 function numericValue(variable?: VariableIoT | null, suffix?: string, decimals = 1) {
   if (!variable || variable.valorNumero == null) return '—';
   const unit = suffix ?? variable.unidad ?? '';
-  return `${Number(variable.valorNumero).toLocaleString('es-AR', { maximumFractionDigits: decimals })}${unit ? ` ${unit}` : ''}`;
-}
-
-function mergeHistory(...groups: HistoryReading[][]) {
-  const unique = new Map<string, HistoryReading>();
-  for (const group of groups) {
-    for (const reading of group) unique.set(reading.medidaEn, reading);
-  }
-  return [...unique.values()]
-    .sort((a, b) => new Date(a.medidaEn).getTime() - new Date(b.medidaEn).getTime())
-    .slice(-4000);
+  const value = Number(variable.valorNumero).toLocaleString('es-AR', { maximumFractionDigits: decimals });
+  return `${value}${unit ? ` ${unit}` : ''}`;
 }
 
 function rangeLabel(hours: RangeHours) {
@@ -128,8 +111,8 @@ function rangeLabel(hours: RangeHours) {
 }
 
 function chartStats(history: HistoryReading[]) {
-  const values = history.filter((item) => item.valorNumero != null).map((item) => Number(item.valorNumero));
-  if (!values.length) return { min: null, max: null };
+  const values = history.map((item) => item.valorNumero).filter((value): value is number => typeof value === 'number');
+  if (!values.length) return { min: null as number | null, max: null as number | null };
   return { min: Math.min(...values), max: Math.max(...values) };
 }
 
@@ -140,38 +123,54 @@ function TrendChart({ variable, history, kind }: { variable: VariableIoT; histor
       hora: new Date(reading.medidaEn).toLocaleString('es-AR', { day: '2-digit', hour: '2-digit', minute: '2-digit' }),
       valor: Number(reading.valorNumero),
     })), [history]);
-  const stroke = kind === 'temperature' ? '#3b82f6' : '#34d399';
+  const stroke = kind === 'temperature' ? '#4f8cff' : '#42d4a4';
   const suffix = kind === 'temperature' ? '°C' : '%';
 
-  return <div className="h-52 sm:h-64">
-    {points.length ? <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={points} margin={{ left: -18, right: 10, top: 10, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 5" stroke="#334155" opacity={0.5} vertical={false} />
-        <XAxis dataKey="hora" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} minTickGap={42} />
-        <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={42} domain={['auto', 'auto']} />
+  if (!points.length) {
+    return <div className="grid h-56 place-items-center rounded-xl border border-slate-800 bg-slate-950/40 px-4 text-center text-xs text-slate-500">Esperando lecturas para dibujar la tendencia.</div>;
+  }
+
+  return <div className="h-56 sm:h-64">
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={points} margin={{ left: -16, right: 8, top: 10, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 5" stroke="#334155" opacity={0.6} vertical={false} />
+        <XAxis dataKey="hora" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={false} tickLine={false} minTickGap={42} />
+        <YAxis tick={{ fontSize: 9, fill: '#64748b' }} axisLine={false} tickLine={false} width={42} domain={['auto', 'auto']} />
         <Tooltip
-          contentStyle={{ borderRadius: 14, border: '1px solid #334155', background: '#0f172a', color: '#e2e8f0', boxShadow: '0 16px 40px rgba(0,0,0,.35)' }}
-          labelStyle={{ color: '#94a3b8' }}
+          contentStyle={{ borderRadius: 12, border: '1px solid #334155', background: '#0f172a', color: '#e2e8f0', boxShadow: '0 16px 40px rgba(0,0,0,.28)' }}
           formatter={(value: number) => [`${Number(value).toLocaleString('es-AR', { maximumFractionDigits: 1 })} ${suffix}`, variable.nombre]}
         />
-        <Line type="monotone" dataKey="valor" stroke={stroke} strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} isAnimationActive={false} />
+        <Line type="monotone" dataKey="valor" stroke={stroke} strokeWidth={2.4} dot={false} activeDot={{ r: 4 }} isAnimationActive={false} />
       </LineChart>
-    </ResponsiveContainer> : <div className="grid h-full place-items-center rounded-2xl bg-slate-900/60 px-5 text-center text-xs text-slate-500">Esperando lecturas para dibujar la tendencia.</div>}
+    </ResponsiveContainer>
   </div>;
 }
 
 function SummaryCard({ icon: Icon, label, value, detail, tone }: { icon: React.ElementType; label: string; value: string; detail: string; tone: 'blue' | 'green' | 'violet' | 'amber' }) {
   const tones = {
-    blue: 'border-blue-500/25 bg-blue-500/10 text-blue-300',
-    green: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300',
-    violet: 'border-violet-500/25 bg-violet-500/10 text-violet-300',
-    amber: 'border-amber-500/25 bg-amber-500/10 text-amber-300',
-  } as const;
+    blue: 'border-blue-500/25 bg-blue-500/[.07] text-blue-400',
+    green: 'border-emerald-500/25 bg-emerald-500/[.07] text-emerald-400',
+    violet: 'border-violet-500/25 bg-violet-500/[.07] text-violet-400',
+    amber: 'border-amber-500/25 bg-amber-500/[.07] text-amber-400',
+  };
   return <div className={`min-w-0 rounded-2xl border p-4 ${tones[tone]}`}>
     <div className="flex items-center justify-between gap-2"><span className="text-[11px] font-semibold text-slate-300">{label}</span><Icon size={18} /></div>
     <strong className="mt-3 block break-words text-2xl font-semibold tracking-tight text-white sm:text-3xl">{value}</strong>
     <span className="mt-2 block text-[11px] text-slate-500">{detail}</span>
   </div>;
+}
+
+function findDeviceNameFromButton(button: HTMLElement) {
+  let node: HTMLElement | null = button;
+  while (node) {
+    if (node.tagName === 'ARTICLE') {
+      const heading = node.querySelector('h2');
+      const text = heading?.textContent?.trim();
+      if (text) return text;
+    }
+    node = node.parentElement;
+  }
+  return null;
 }
 
 function DeviceDetail({
@@ -217,6 +216,8 @@ function DeviceDetail({
   const tempStats = chartStats(tempHistory);
   const humidityStats = chartStats(humidityHistory);
   const deviceRules = data.reglas.filter((rule) => device.variables.some((variable) => variable.id === rule.variable.id));
+  const rawModel = device.modelo || device.nombre;
+  const displayModel = device.integracion?.proveedor === 'sonoff_ewelink' && !/^sonoff\b/i.test(rawModel) ? `SONOFF ${rawModel}` : rawModel;
 
   const tabs: Array<{ id: DetailTab; label: string; icon: React.ElementType }> = [
     { id: 'graficos', label: 'Gráficos', icon: BarChart3 },
@@ -232,7 +233,7 @@ function DeviceDetail({
           {online ? <Thermometer size={30} /> : <WifiOff size={30} />}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2"><h2 className="break-words text-xl font-semibold tracking-tight text-white sm:text-3xl">{device.modelo || device.nombre}</h2>{online && <span className="rounded-lg bg-emerald-500/15 px-2.5 py-1 text-[10px] font-semibold text-emerald-300">En línea</span>}</div>
+          <div className="flex flex-wrap items-center gap-2"><h2 className="break-words text-xl font-semibold tracking-tight text-white sm:text-3xl">{displayModel}</h2><span className={`rounded-lg px-2.5 py-1 text-[10px] font-semibold ${online ? 'bg-emerald-500/15 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>{online ? 'En línea' : 'Sin conexión'}</span></div>
           <p className="mt-1 break-words text-sm text-slate-400">{device.nombre}{device.ubicacion ? ` · ${device.ubicacion}` : ''}</p>
           <p className="mt-2 flex items-center gap-2 text-[11px] text-slate-500"><span className={`h-2 w-2 rounded-full ${online ? 'bg-emerald-400' : 'bg-slate-500'}`} />Última actualización: {ago(device.ultimoContactoEn)}</p>
         </div>
@@ -289,12 +290,12 @@ function DeviceDetail({
     </section>}
 
     {activeTab === 'configuracion' && <section className="rounded-2xl border border-slate-700/70 bg-slate-900/70 p-5">
-      <div className="flex gap-3"><SlidersHorizontal size={20} className="mt-0.5 shrink-0 text-cyan-400" /><div><h3 className="font-semibold text-white">Configuración operativa</h3><p className="mt-1 text-sm leading-relaxed text-slate-400">El equipo está {device.habilitado ? 'habilitado para recibir telemetría' : 'pausado'} y el control remoto está {device.permiteControl ? 'permitido para este dispositivo' : 'deshabilitado'}. Los cambios de nombre, ubicación, función del relé y permisos se mantienen en la pantalla normal de Configurar dispositivo.</p></div></div>
+      <div className="flex gap-3"><SlidersHorizontal size={20} className="mt-0.5 shrink-0 text-cyan-400" /><div><h3 className="font-semibold text-white">Configuración operativa</h3><p className="mt-1 text-sm leading-relaxed text-slate-400">El equipo está {device.habilitado ? 'habilitado para recibir telemetría' : 'pausado'} y el control remoto está {device.permiteControl ? 'permitido para este dispositivo' : 'deshabilitado'}. Los cambios de nombre, ubicación, función del relé y permisos siguen disponibles en “Configurar dispositivo”.</p></div></div>
     </section>}
 
     {activeTab === 'automatizaciones' && <section className="rounded-2xl border border-slate-700/70 bg-slate-900/70 p-5">
       <div className="flex items-center gap-2"><Workflow size={18} className="text-violet-400" /><h3 className="font-semibold text-white">Reglas vinculadas</h3></div>
-      {deviceRules.length ? <div className="mt-4 space-y-2">{deviceRules.map((rule) => <div key={rule.id} className="rounded-xl bg-slate-950/45 p-3"><div className="flex items-center justify-between gap-3"><strong className="text-sm font-medium text-slate-200">{rule.nombre}</strong><span className={`rounded-lg px-2 py-1 text-[9px] font-semibold ${rule.activa ? 'bg-emerald-500/15 text-emerald-300' : 'bg-slate-800 text-slate-500'}`}>{rule.activa ? 'ACTIVA' : 'PAUSADA'}</span></div><p className="mt-1 text-xs text-slate-500">{rule.variable.nombre} · {rule.severidad}</p></div>)}</div> : <p className="mt-3 text-sm text-slate-500">Todavía no hay reglas de alarma o automatización vinculadas a este dispositivo.</p>}
+      {deviceRules.length ? <div className="mt-4 space-y-2">{deviceRules.map((rule) => <div key={rule.id} className="rounded-xl bg-slate-950/45 p-3"><div className="flex items-center justify-between gap-3"><strong className="text-sm font-medium text-slate-200">{rule.nombre}</strong><span className={`rounded-lg px-2 py-1 text-[9px] font-semibold ${rule.activa ? 'bg-emerald-500/15 text-emerald-300' : 'bg-slate-800 text-slate-500'}`}>{rule.activa ? 'ACTIVA' : 'PAUSADA'}</span></div><p className="mt-1 text-xs text-slate-500">{rule.variable.nombre} · {rule.severidad}</p></div>)}</div> : <p className="mt-3 text-sm text-slate-500">Todavía no hay reglas vinculadas a este dispositivo.</p>}
     </section>}
 
     <section className="grid gap-3 rounded-2xl border border-slate-700/70 bg-slate-900/70 p-4 sm:grid-cols-3">
@@ -307,175 +308,113 @@ function DeviceDetail({
   </div>;
 }
 
-function PresentationOverlay({
-  data,
-  energy,
-  historyByVariable,
-  historyHours,
-  refreshing,
-  lastRefreshAt,
-  commandBusy,
-  title,
-  selectedDeviceId,
-  activeTab,
-  onSelectDevice,
-  onTab,
-  onRange,
-  onClose,
-  onCommand,
-  onExport,
-}: {
-  data: ResumenControl;
-  energy: ResumenEnergia | null;
-  historyByVariable: HistoryMap;
-  historyHours: RangeHours;
-  refreshing: boolean;
-  lastRefreshAt: Date | null;
-  commandBusy: string | null;
-  title: string;
-  selectedDeviceId: string | null;
-  activeTab: DetailTab;
-  onSelectDevice: (id: string) => void;
-  onTab: (tab: DetailTab) => void;
-  onRange: (hours: RangeHours) => void;
-  onClose: () => void;
-  onCommand: (device: DispositivoIoT, channel: VariableIoT, channelIndex: number) => void;
-  onExport: (device: DispositivoIoT) => void;
-}) {
-  const devices = useMemo(() => [...data.dispositivos].sort((a, b) => {
-    const aAmbient = a.variables.some((variable) => AMBIENT_VARIABLE.test(variable.clave)) ? 0 : 1;
-    const bAmbient = b.variables.some((variable) => AMBIENT_VARIABLE.test(variable.clave)) ? 0 : 1;
-    return aAmbient - bAmbient || a.nombre.localeCompare(b.nombre);
-  }), [data.dispositivos]);
-  const selected = devices.find((device) => device.id === selectedDeviceId) || devices[0];
-
-  return <div className="fixed inset-0 z-[100] overflow-y-auto bg-[#070b14] text-slate-100">
-    <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_right,rgba(14,116,144,.14),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(37,99,235,.10),transparent_30%)]" />
-    <header className="sticky top-0 z-20 border-b border-slate-800/80 bg-[#070b14]/95 px-3 py-3 backdrop-blur sm:px-6">
-      <div className="mx-auto flex max-w-6xl items-center gap-3">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-cyan-500/10 text-cyan-300"><Activity size={19} /></div>
-        <div className="min-w-0 flex-1"><p className="truncate text-[10px] font-semibold uppercase tracking-[.16em] text-cyan-400">ActivaQR Control</p><h1 className="truncate text-base font-semibold text-white sm:text-lg">{title}</h1></div>
-        <div className="hidden items-center gap-2 text-[11px] text-slate-500 sm:flex"><RefreshCw size={14} className={refreshing ? 'animate-spin text-emerald-400' : ''} />{lastRefreshAt ? `Actualizado ${ago(lastRefreshAt.toISOString())}` : 'Sincronizando'}{energy && <span className="ml-2 text-amber-300">{energy.currentPowerW.toLocaleString('es-AR', { maximumFractionDigits: 0 })} W</span>}</div>
-        <button onClick={onClose} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-slate-800/80 text-slate-300 hover:bg-slate-700" aria-label="Cerrar vista ampliada"><X size={20} /></button>
-      </div>
-    </header>
-
-    <main className="relative mx-auto max-w-6xl px-3 py-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-6">
-      {devices.length > 1 && <div className="mb-4 flex snap-x gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{devices.map((device) => <button key={device.id} onClick={() => onSelectDevice(device.id)} className={`shrink-0 snap-start rounded-xl border px-3 py-2 text-left ${selected?.id === device.id ? 'border-cyan-500/50 bg-cyan-500/10 text-white' : 'border-slate-800 bg-slate-900/50 text-slate-500'}`}><strong className="block max-w-44 truncate text-xs font-semibold">{device.nombre}</strong><span className="mt-0.5 block max-w-44 truncate text-[10px]">{device.modelo || device.tipo}</span></button>)}</div>}
-      {selected ? <DeviceDetail device={selected} data={data} historyByVariable={historyByVariable} historyHours={historyHours} refreshing={refreshing} commandBusy={commandBusy} activeTab={activeTab} onTab={onTab} onRange={onRange} onCommand={onCommand} onExport={onExport} /> : <div className="rounded-3xl border border-slate-800 bg-slate-900/50 p-8 text-center text-sm text-slate-500">No hay dispositivos para mostrar.</div>}
-      <div className="mt-4 flex items-center justify-center gap-2 text-[10px] text-slate-600"><ShieldCheck size={13} />Operaciones auditadas por ActivaQR</div>
-    </main>
-  </div>;
-}
-
 export const ControlIndustrialEnhanced: React.FC = () => {
-  const { usuario } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<ResumenControl | null>(null);
-  const [energy, setEnergy] = useState<ResumenEnergia | null>(null);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [historyByVariable, setHistoryByVariable] = useState<HistoryMap>({});
   const [historyHours, setHistoryHours] = useState<RangeHours>(6);
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null);
-  const [commandBusy, setCommandBusy] = useState<string | null>(null);
-  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<DetailTab>('graficos');
-  const historyRequestVersion = useRef(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const [commandBusy, setCommandBusy] = useState<string | null>(null);
 
-  const loadPresentation = useCallback(async (quiet = false) => {
-    quiet ? setRefreshing(true) : setLoading(true);
+  const selectedDevice = useMemo(
+    () => data?.dispositivos.find((device) => device.id === selectedDeviceId) ?? null,
+    [data, selectedDeviceId],
+  );
+
+  const loadControl = useCallback(async (quiet = false) => {
+    if (quiet) setRefreshing(true);
     try {
-      const [control, energySummary] = await Promise.all([
-        resumenControl(),
-        resumenEnergia().catch(() => null),
-      ]);
+      const control = await resumenControl();
       setData(control);
-      setEnergy(energySummary);
       setSelectedDeviceId((current) => current && control.dispositivos.some((device) => device.id === current)
         ? current
-        : control.dispositivos.find((device) => device.variables.some((variable) => AMBIENT_VARIABLE.test(variable.clave)))?.id || control.dispositivos[0]?.id || null);
-      setLastRefreshAt(new Date());
+        : control.dispositivos.find((device) => device.variables.some((variable) => AMBIENT_VARIABLE.test(variable.clave)))?.id ?? control.dispositivos[0]?.id ?? null);
     } catch (error) {
-      toast(error instanceof Error ? error.message : 'No se pudo actualizar la vista ampliada.', 'error');
+      toast(error instanceof Error ? error.message : 'No se pudo actualizar ActivaQR Control.', 'error');
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   }, [toast]);
 
-  const refreshSelectedHistory = useCallback(async (control: ResumenControl, selectedId: string | null, hours: RangeHours) => {
-    if (!selectedId) return;
-    const device = control.dispositivos.find((item) => item.id === selectedId);
-    if (!device) return;
-    const variables = device.variables.filter((variable) => AMBIENT_VARIABLE.test(variable.clave));
-    const requestVersion = ++historyRequestVersion.current;
+  const openDevice = useCallback(async (deviceName?: string | null) => {
+    setRefreshing(true);
     try {
-      const entries = await Promise.all(variables.map(async (variable) => {
-        const result = await historialVariable(variable.id, hours);
-        return [variable.id, result.lecturas] as const;
-      }));
-      if (requestVersion !== historyRequestVersion.current) return;
-      setHistoryByVariable((current) => {
-        const next = { ...current };
-        for (const [id, readings] of entries) next[id] = mergeHistory(readings);
-        return next;
-      });
-    } catch {
-      // El tablero vivo sigue funcionando aunque un historial puntual falle.
+      const control = await resumenControl();
+      const preferred = deviceName
+        ? control.dispositivos.find((device) => device.nombre.trim().toLowerCase() === deviceName.trim().toLowerCase())
+        : undefined;
+      const device = preferred
+        ?? control.dispositivos.find((item) => item.variables.some((variable) => AMBIENT_VARIABLE.test(variable.clave)))
+        ?? control.dispositivos[0];
+      if (!device) {
+        toast('Todavía no hay dispositivos para mostrar.', 'warning');
+        return;
+      }
+      setData(control);
+      setSelectedDeviceId(device.id);
+      setHistoryHours(6);
+      setActiveTab('graficos');
+      setHistoryByVariable({});
+      setOpen(true);
+    } catch (error) {
+      toast(error instanceof Error ? error.message : 'No se pudo abrir el detalle del dispositivo.', 'error');
+    } finally {
+      setRefreshing(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
-    const captureExpand = (event: MouseEvent) => {
+    const captureDeviceDetail = (event: MouseEvent) => {
       const target = event.target instanceof Element ? event.target : null;
-      if (target?.closest('button[aria-label="Expandir tablero"]')) {
-        setActiveTab('graficos');
-        setHistoryHours(6);
-        setOpen(true);
-      }
+      const button = target?.closest('button') as HTMLElement | null;
+      if (!button) return;
+      const text = (button.textContent ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
+      const expand = button.getAttribute('aria-label') === 'Expandir tablero';
+      const historyButton = /ver gráficos e historial|abrir historial completo/.test(text);
+      const measurementButton = /temperatura|humedad/.test(text) && Boolean(findDeviceNameFromButton(button));
+      if (!expand && !historyButton && !measurementButton) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const name = expand ? null : findDeviceNameFromButton(button);
+      void openDevice(name);
     };
-    document.addEventListener('click', captureExpand, true);
-    return () => document.removeEventListener('click', captureExpand, true);
-  }, []);
+    document.addEventListener('click', captureDeviceDetail, true);
+    return () => document.removeEventListener('click', captureDeviceDetail, true);
+  }, [openDevice]);
 
   useEffect(() => {
     if (!open) return;
-    let cancelled = false;
-    const cycle = async () => {
-      await loadPresentation(true);
-      if (cancelled) return;
-    };
-    loadPresentation();
-    const timer = window.setInterval(cycle, REFRESH_MS);
-    return () => { cancelled = true; window.clearInterval(timer); };
-  }, [open, loadPresentation]);
-
-  useEffect(() => {
-    if (!open || !data || !selectedDeviceId) return;
-    refreshSelectedHistory(data, selectedDeviceId, historyHours);
-    const timer = window.setInterval(() => refreshSelectedHistory(data, selectedDeviceId, historyHours), REFRESH_MS);
+    const timer = window.setInterval(() => void loadControl(true), REFRESH_MS);
     return () => window.clearInterval(timer);
-  }, [open, data, selectedDeviceId, historyHours, refreshSelectedHistory]);
+  }, [open, loadControl]);
 
   useEffect(() => {
-    if (!open || !data || !selectedDeviceId) return;
-    const device = data.dispositivos.find((item) => item.id === selectedDeviceId);
-    if (!device) return;
-    setHistoryByVariable((current) => {
-      const next = { ...current };
-      let changed = false;
-      for (const variable of device.variables.filter((item) => AMBIENT_VARIABLE.test(item.clave))) {
-        if (variable.valorNumero == null || !variable.medidaEn) continue;
-        const existing = next[variable.id] ?? [];
-        if (existing.some((reading) => reading.medidaEn === variable.medidaEn)) continue;
-        next[variable.id] = mergeHistory(existing, [{ medidaEn: variable.medidaEn, valorNumero: variable.valorNumero }]);
-        changed = true;
+    if (!open || !selectedDevice) return;
+    const ambient = ambientVariables(selectedDevice);
+    const variables = [ambient.temperature, ambient.humidity].filter((variable): variable is VariableIoT => Boolean(variable));
+    if (!variables.length) return;
+    let cancelled = false;
+    const loadHistory = async () => {
+      try {
+        const results = await Promise.all(variables.map(async (variable) => {
+          const result = await historialVariable(variable.id, historyHours);
+          return [variable.id, result.lecturas] as const;
+        }));
+        if (!cancelled) setHistoryByVariable(Object.fromEntries(results));
+      } catch {
+        // El valor actual sigue visible aunque el historial falle temporalmente.
       }
-      return changed ? next : current;
-    });
-  }, [open, data, selectedDeviceId]);
+    };
+    void loadHistory();
+    const timer = window.setInterval(() => void loadHistory(), REFRESH_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [open, selectedDevice?.id, historyHours]);
 
   useEffect(() => {
     if (!open) return;
@@ -484,35 +423,29 @@ export const ControlIndustrialEnhanced: React.FC = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
 
-  const closePresentation = useCallback(() => {
-    setOpen(false);
-    historyRequestVersion.current += 1;
-    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
-  }, []);
-
   const commandRelay = useCallback(async (device: DispositivoIoT, channel: VariableIoT, channelIndex: number) => {
-    const canal = Number(channel.clave.slice(7)) - 1;
-    const resolvedChannel = Number.isInteger(canal) && canal >= 0 ? canal : channelIndex;
+    const parsed = Number(channel.clave.slice(7)) - 1;
+    const canal = Number.isInteger(parsed) && parsed >= 0 ? parsed : channelIndex;
     const nextState = !Boolean(channel.valorBooleano);
-    const label = ambientVariables(device).temperature || ambientVariables(device).humidity ? 'relé interno' : channel.nombre || `canal ${resolvedChannel + 1}`;
+    const label = channelVariables(device).length === 1 ? 'relé interno' : channel.nombre || `canal ${canal + 1}`;
     if (!window.confirm(`¿${nextState ? 'Encender' : 'Apagar'} ${label} de ${device.nombre}?`)) return;
-    const key = `${device.id}:${channelIndex}`;
+    const key = `${device.id}:${canal}`;
     setCommandBusy(key);
     try {
       await solicitarComando({
         dispositivoId: device.id,
         tipo: 'rele',
-        payload: { canal: resolvedChannel, encendido: nextState },
-        motivo: 'Operación confirmada desde la vista ampliada de ActivaQR Control.',
+        payload: { canal, encendido: nextState },
+        motivo: 'Operación confirmada desde el detalle ampliado de ActivaQR Control.',
       });
       toast(`${device.nombre}: ${label} ${nextState ? 'encendido' : 'apagado'} y verificado.`, 'success');
-      await loadPresentation(true);
+      await loadControl(true);
     } catch (error) {
       toast(error instanceof Error ? error.message : 'No se pudo confirmar la maniobra.', 'error');
     } finally {
       setCommandBusy(null);
     }
-  }, [loadPresentation, toast]);
+  }, [loadControl, toast]);
 
   const exportDevice = useCallback(async (device: DispositivoIoT) => {
     try {
@@ -523,36 +456,42 @@ export const ControlIndustrialEnhanced: React.FC = () => {
       link.download = result.filename;
       link.click();
       URL.revokeObjectURL(url);
-      toast('Historial exportado.', 'success');
+      toast('Historial exportado correctamente.', 'success');
     } catch (error) {
       toast(error instanceof Error ? error.message : 'No se pudo exportar el historial.', 'error');
     }
   }, [historyHours, toast]);
 
-  const title = data?.modulo.tableroConfig?.titulo || usuario?.empresa?.nombre || data?.modulo.nombreServicio || 'ActivaQR Control';
-
   return <>
     <ControlIndustrial />
-    {open && createPortal(
-      data ? <PresentationOverlay
-        data={data}
-        energy={energy}
-        historyByVariable={historyByVariable}
-        historyHours={historyHours}
-        refreshing={refreshing}
-        lastRefreshAt={lastRefreshAt}
-        commandBusy={commandBusy}
-        title={title}
-        selectedDeviceId={selectedDeviceId}
-        activeTab={activeTab}
-        onSelectDevice={(id) => { setSelectedDeviceId(id); setActiveTab('graficos'); }}
-        onTab={setActiveTab}
-        onRange={setHistoryHours}
-        onClose={closePresentation}
-        onCommand={commandRelay}
-        onExport={exportDevice}
-      /> : <div className="fixed inset-0 z-[100] grid place-items-center bg-[#070b14] text-slate-400">
-        <div className="text-center"><RefreshCw size={28} className={`mx-auto mb-3 text-cyan-400 ${loading ? 'animate-spin' : ''}`} /><p className="text-sm font-semibold">Preparando vista ampliada…</p></div>
+    {open && data && selectedDevice && createPortal(
+      <div className="fixed inset-0 z-[120] overflow-y-auto bg-[#08111f]/98 text-slate-100">
+        <header className="sticky top-0 z-20 border-b border-slate-800/80 bg-[#08111f]/95 px-4 py-3 backdrop-blur sm:px-6">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+            <div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[.16em] text-cyan-400">ActivaQR Control</p><p className="truncate text-sm text-slate-400">Detalle del dispositivo</p></div>
+            <div className="flex items-center gap-2">
+              <select value={selectedDevice.id} onChange={(event) => { setSelectedDeviceId(event.target.value); setHistoryByVariable({}); setActiveTab('graficos'); }} className="max-w-[52vw] rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200 outline-none sm:max-w-xs">
+                {data.dispositivos.map((device) => <option key={device.id} value={device.id}>{device.nombre}</option>)}
+              </select>
+              <button onClick={() => setOpen(false)} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-slate-700 bg-slate-900 text-slate-300" aria-label="Cerrar detalle"><X size={19} /></button>
+            </div>
+          </div>
+        </header>
+        <main className="mx-auto max-w-6xl p-3 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-6">
+          <DeviceDetail
+            device={selectedDevice}
+            data={data}
+            historyByVariable={historyByVariable}
+            historyHours={historyHours}
+            refreshing={refreshing}
+            commandBusy={commandBusy}
+            activeTab={activeTab}
+            onTab={setActiveTab}
+            onRange={setHistoryHours}
+            onCommand={commandRelay}
+            onExport={exportDevice}
+          />
+        </main>
       </div>,
       document.body,
     )}
