@@ -426,7 +426,7 @@ export const ControlIndustrialEnhanced: React.FC = () => {
   const commandRelay = useCallback(async (device: DispositivoIoT, channel: VariableIoT, channelIndex: number) => {
     const parsed = Number(channel.clave.slice(7)) - 1;
     const canal = Number.isInteger(parsed) && parsed >= 0 ? parsed : channelIndex;
-    const nextState = !Boolean(channel.valorBooleano);
+    const nextState = !channel.valorBooleano;
     const label = channelVariables(device).length === 1 ? 'relé interno' : channel.nombre || `canal ${canal + 1}`;
     if (!window.confirm(`¿${nextState ? 'Encender' : 'Apagar'} ${label} de ${device.nombre}?`)) return;
     const key = `${device.id}:${canal}`;
