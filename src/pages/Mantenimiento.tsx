@@ -1,5 +1,5 @@
 // v1.1.0
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Plus, CheckCircle, X, AlertTriangle, Clock, Pencil, Trash2, Download } from 'lucide-react';
@@ -21,6 +21,7 @@ import { TareaMantenimiento } from '../data/types';
 import { DialogViewport } from '../components/ui/DialogViewport';
 import { useAuth } from '../context/AuthContext';
 import { puedeGestionarEstructuraTecnica } from '../data/permisos';
+import { tareaConEstadoEfectivo } from '../utils/estadoTarea';
 
 const emptyTarea = {
   activoId: '',
@@ -47,9 +48,15 @@ export const Mantenimiento: React.FC = () => {
   const [obsInput, setObsInput] = useState('');
   const [newTarea, setNewTarea] = useState(emptyTarea);
 
-  const vencidas = tareas.filter((t) => t.estado === 'vencido');
-  const pendientes = tareas.filter((t) => t.estado === 'pendiente');
-  const completadas = tareas.filter((t) => t.estado === 'completado');
+  // El estado vencido se deriva también de la fecha. De este modo esta pantalla
+  // usa exactamente la misma realidad temporal que el dashboard.
+  const tareasEfectivas = useMemo(
+    () => tareas.map((tarea) => tareaConEstadoEfectivo(tarea)),
+    [tareas],
+  );
+  const vencidas = tareasEfectivas.filter((t) => t.estado === 'vencido');
+  const pendientes = tareasEfectivas.filter((t) => t.estado === 'pendiente');
+  const completadas = tareasEfectivas.filter((t) => t.estado === 'completado');
 
   const crearTareaRecomendada = (activoId: string, estadoActivo: string) => {
     const tipo = estadoActivo === 'critico' ? 'Revision urgente — estado critico' : 'Revision — estado en alerta';
@@ -78,7 +85,7 @@ export const Mantenimiento: React.FC = () => {
 
   const activosSinTarea = activos.filter((a) =>
     (a.estado === 'critico' || a.estado === 'alerta') &&
-    !tareas.some((t) => t.activoId === a.id && (t.estado === 'pendiente' || t.estado === 'vencido'))
+    !tareasEfectivas.some((t) => t.activoId === a.id && (t.estado === 'pendiente' || t.estado === 'vencido'))
   );
 
   const openEdit = (t: TareaMantenimiento) => {

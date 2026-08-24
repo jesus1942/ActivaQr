@@ -139,6 +139,12 @@ export const PanelParametro: React.FC<PanelParametroProps> = ({
                     {analisis.pendienteMensual > 0 ? '+' : ''}{analisis.pendienteMensual.toFixed(2)}{unidad}/mes
                     {analisis.diasHastaAlerta != null && ` · ${analisis.diasHastaAlerta}d hasta alerta`}
                     {analisis.diasHastaCritico != null && ` · ${analisis.diasHastaCritico}d hasta critico`}
+                    {` · confianza ${analisis.confianza}`}
+                  </p>
+                )}
+                {!analisis.prediccionDisponible && (
+                  <p className="text-[11px] text-muted mt-1 leading-snug">
+                    Predicción no disponible · se requieren al menos 5 mediciones distribuidas en 7 días y una tendencia consistente.
                   </p>
                 )}
                 {analisis.recomendacion && (

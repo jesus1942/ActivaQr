@@ -60,9 +60,14 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const operativos = activos.filter((a) => a.estadoOperativo === 'operativo').length;
     const disponibilidad = totalActivos ? Math.round((operativos / totalActivos) * 100) : 100;
 
-    // Tareas
-    const tareasPendientes = tareas.filter((t) => t.estado === 'pendiente').length;
-    const tareasVencidas = tareas.filter((t) => t.estado === 'vencido').length;
+    // Tareas. El vencimiento se deriva de la fecha para que el KPI no dependa
+    // de que otro proceso haya actualizado previamente el campo `estado`.
+    const inicioHoy = new Date();
+    inicioHoy.setHours(0, 0, 0, 0);
+    const estaVencida = (t: typeof tareas[number]) =>
+      t.estado !== 'completado' && t.fechaProgramada.getTime() < inicioHoy.getTime();
+    const tareasVencidas = tareas.filter(estaVencida).length;
+    const tareasPendientes = tareas.filter((t) => t.estado !== 'completado' && !estaVencida(t)).length;
     const tareasCompletadas = tareas.filter((t) => t.estado === 'completado').length;
 
     // Cumplimiento preventivo: % de tareas completadas a tiempo (fechaRealizada <= fechaProgramada)
@@ -133,7 +138,12 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 
     activos.forEach((a) => {
       const ms = mediciones.filter((m) => m.activoId === a.id).slice(0, 8);
-      if (ms.length < 3) return;
+      // Una predicción no se publica con tres puntos consecutivos. Exigimos
+      // cinco lecturas y al menos siete días de historia para evitar presentar
+      // una oscilación corta como tendencia mensual.
+      if (ms.length < 5) return;
+      const periodoDias = (ms[0].fecha.getTime() - ms[ms.length - 1].fecha.getTime()) / DIA_MS;
+      if (periodoDias < 7) return;
 
       const agregar = (parametro: string, t: string) =>
         predictivo.push({ activoId: a.id, codigo: a.codigo, nombre: a.nombre, parametro, tendencia: t });

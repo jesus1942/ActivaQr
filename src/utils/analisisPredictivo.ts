@@ -11,6 +11,7 @@ export interface PuntoMedicion {
 
 export type Direccion = 'creciente' | 'decreciente';
 export type Severidad = 'normal' | 'observar' | 'alerta' | 'critico';
+export type ConfianzaPrediccion = 'insuficiente' | 'baja' | 'media' | 'alta';
 
 export interface ResultadoAnalisis {
   cantidadPuntos: number;
@@ -18,6 +19,9 @@ export interface ResultadoAnalisis {
   ultimoValor: number | null;
   delta: number | null; // ultimoValor - primerValor
   pendienteMensual: number | null; // unidades / 30 dias
+  periodoDias: number;
+  confianza: ConfianzaPrediccion;
+  prediccionDisponible: boolean;
   tendencia: 'subiendo' | 'estable' | 'bajando' | null;
   diasHastaAlerta: number | null; // null si no se proyecta o ya esta cruzado
   diasHastaCritico: number | null;
@@ -32,7 +36,7 @@ export interface ResultadoAnalisis {
  * devuelve 0 para evitar predicciones ridiculas.
  */
 function pendienteLineal(puntos: PuntoMedicion[]): number {
-  if (puntos.length < 3) return 0;
+  if (puntos.length < 5) return 0;
   const base = puntos[0].fecha.getTime();
   const dias = puntos.map((p) => (p.fecha.getTime() - base) / 86400000);
   if (dias[dias.length - 1] === dias[0]) return 0;
@@ -44,6 +48,26 @@ function pendienteLineal(puntos: PuntoMedicion[]): number {
   const denom = n * sumX2 - sumX * sumX;
   if (denom === 0) return 0;
   return (n * sumXY - sumX * sumY) / denom;
+}
+
+/**
+ * Calcula R² para informar cuánta consistencia tiene la tendencia observada.
+ * No se usa como promesa de falla: solamente como control de calidad del dato.
+ */
+function coeficienteDeterminacion(puntos: PuntoMedicion[], pendiente: number): number {
+  if (puntos.length < 2) return 0;
+  const base = puntos[0].fecha.getTime();
+  const xs = puntos.map((p) => (p.fecha.getTime() - base) / 86400000);
+  const mediaX = xs.reduce((a, b) => a + b, 0) / xs.length;
+  const mediaY = puntos.reduce((a, p) => a + p.valor, 0) / puntos.length;
+  const intercepto = mediaY - pendiente * mediaX;
+  const total = puntos.reduce((acc, p) => acc + (p.valor - mediaY) ** 2, 0);
+  if (total === 0) return 1;
+  const residual = puntos.reduce((acc, p, i) => {
+    const estimado = intercepto + pendiente * xs[i];
+    return acc + (p.valor - estimado) ** 2;
+  }, 0);
+  return Math.max(0, Math.min(1, 1 - residual / total));
 }
 
 /**
@@ -88,6 +112,9 @@ export function analizarTendencia({
       ultimoValor: null,
       delta: null,
       pendienteMensual: null,
+      periodoDias: 0,
+      confianza: 'insuficiente',
+      prediccionDisponible: false,
       tendencia: null,
       diasHastaAlerta: null,
       diasHastaCritico: null,
@@ -101,18 +128,31 @@ export function analizarTendencia({
   const primer = ordenados[0];
   const ultimo = ordenados[ordenados.length - 1];
   const delta = ultimo.valor - primer.valor;
-  const pendienteDiaria = pendienteLineal(ordenados);
-  const pendienteMensual = pendienteDiaria * 30;
+  const periodoDias = Math.max(0, (ultimo.fecha.getTime() - primer.fecha.getTime()) / 86400000);
+  const historialSuficiente = ordenados.length >= 5 && periodoDias >= 7;
+  const pendienteDiaria = historialSuficiente ? pendienteLineal(ordenados) : 0;
+  const r2 = historialSuficiente ? coeficienteDeterminacion(ordenados, pendienteDiaria) : 0;
+  const prediccionDisponible = historialSuficiente && r2 >= 0.5;
+  const pendienteMensual = prediccionDisponible ? pendienteDiaria * 30 : null;
+  const confianza: ConfianzaPrediccion = !historialSuficiente
+    ? 'insuficiente'
+    : r2 >= 0.85 && periodoDias >= 30 && ordenados.length >= 8
+      ? 'alta'
+      : r2 >= 0.7
+        ? 'media'
+        : r2 >= 0.5
+          ? 'baja'
+          : 'insuficiente';
 
   // Tendencia categorica: hace falta una variacion minima (5% del rango o
   // 1 unidad) para no marcar oscilaciones de ruido como tendencia.
   const rango = Math.max(0.5, Math.abs(critico ?? alerta ?? ultimo.valor) * 0.05);
-  let tendencia: 'subiendo' | 'estable' | 'bajando' | null = 'estable';
-  if (pendienteMensual > rango) tendencia = 'subiendo';
-  else if (pendienteMensual < -rango) tendencia = 'bajando';
+  let tendencia: 'subiendo' | 'estable' | 'bajando' | null = prediccionDisponible ? 'estable' : null;
+  if (pendienteMensual != null && pendienteMensual > rango) tendencia = 'subiendo';
+  else if (pendienteMensual != null && pendienteMensual < -rango) tendencia = 'bajando';
 
-  const diasAlerta = alerta != null ? diasHasta(ultimo.valor, alerta, pendienteDiaria, direccion) : null;
-  const diasCritico = critico != null ? diasHasta(ultimo.valor, critico, pendienteDiaria, direccion) : null;
+  const diasAlerta = prediccionDisponible && alerta != null ? diasHasta(ultimo.valor, alerta, pendienteDiaria, direccion) : null;
+  const diasCritico = prediccionDisponible && critico != null ? diasHasta(ultimo.valor, critico, pendienteDiaria, direccion) : null;
 
   // Severidad: depende de si ya cruzo umbrales o si va camino a hacerlo.
   let severidad: Severidad = 'normal';
@@ -126,9 +166,17 @@ export function analizarTendencia({
   // Texto de resumen
   let resumen: string;
   const ultimoTxt = `${ultimo.valor.toFixed(1)}${unidad}`;
-  const periodoMeses = (ultimo.fecha.getTime() - primer.fecha.getTime()) / (30 * 86400000);
-  const periodoTxt = periodoMeses < 1.2 ? 'el ultimo mes' : `los ultimos ${Math.round(periodoMeses)} meses`;
-  if (tendencia === 'estable' || pendienteMensual === null) {
+  const periodoTxt = periodoDias < 1
+    ? 'menos de un día'
+    : periodoDias < 30
+      ? `${Math.max(1, Math.round(periodoDias))} días`
+      : periodoDias < 60
+        ? '1 mes'
+        : `${Math.round(periodoDias / 30)} meses`;
+  if (!prediccionDisponible) {
+    const estadoUmbral = cruzaCritico ? 'en nivel crítico' : cruzaAlerta ? 'en alerta' : 'sin tendencia confirmada';
+    resumen = `${parametro} ${estadoUmbral}: ${ultimoTxt}. Historial: ${ordenados.length} mediciones en ${periodoTxt}; todavía no alcanza para proyectar.`;
+  } else if (tendencia === 'estable' || pendienteMensual === null) {
     resumen = `${parametro} estable: ${ultimoTxt} (${ordenados.length} mediciones en ${periodoTxt}).`;
   } else {
     const verbo = pendienteMensual > 0 ? 'subio' : 'bajo';
@@ -141,7 +189,7 @@ export function analizarTendencia({
   if (cruzaCritico) {
     recomendacion = `${parametro} cruzo el umbral CRITICO (${critico}${unidad}). Valor actual: ${ultimoTxt}. Intervencion correctiva inmediata.`;
   } else if (cruzaAlerta) {
-    recomendacion = `${parametro} cruzo el umbral de ALERTA (${alerta}${unidad}). Valor actual: ${ultimoTxt}. Programar revision en los proximos 7 dias.`;
+    recomendacion = `${parametro} cruzó el umbral de ALERTA (${alerta}${unidad}). Valor actual: ${ultimoTxt}. Prioridad alta: revisar dentro de las próximas 24 horas y confirmar con una nueva medición.`;
   } else if (diasCritico != null && diasCritico <= 90) {
     recomendacion = `${parametro} proyecta cruzar el umbral CRITICO (${critico}${unidad}) en ~${diasCritico} dias al ritmo actual. Programar mantenimiento predictivo antes.`;
   } else if (diasAlerta != null && diasAlerta <= 60) {
@@ -154,6 +202,9 @@ export function analizarTendencia({
     ultimoValor: ultimo.valor,
     delta,
     pendienteMensual,
+    periodoDias,
+    confianza,
+    prediccionDisponible,
     tendencia,
     diasHastaAlerta: diasAlerta,
     diasHastaCritico: diasCritico,

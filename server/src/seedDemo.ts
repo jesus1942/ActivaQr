@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
 import { prisma } from './prisma';
 import { POLITICAS_VERSION } from './politicas';
+import { registrarAlertaDesdeMedicion } from './correctivosService';
 
 export const DEMO_EMAIL = 'demo@activaqr.net';
 
@@ -93,11 +94,24 @@ async function asegurarEscenarioFrio(empresaId: string) {
     { id: 'demo-comp-med-01', activoId: compresor.id, fecha: horasAtras(3), temperatura: 98, amperaje: 129, presion: 18.4, estado: 'urgente' as const, observaciones: 'Alta descarga y consumo. Equipo derivado a mantenimiento.' },
   ];
   for (const medicion of mediciones) {
-    await prisma.medicion.upsert({
+    const guardada = await prisma.medicion.upsert({
       where: { id: medicion.id },
       create: { ...medicion, origen: 'manual' },
       update: { ...medicion, origen: 'manual' },
     });
+    // La demo debe enseñar el circuito completo: una medición comprometida
+    // tiene que aparecer también en la bandeja de alertas y órdenes.
+    if (medicion.estado === 'revision' || medicion.estado === 'urgente') {
+      const activo = medicion.activoId === camara.id ? camara : compresor;
+      await registrarAlertaDesdeMedicion({
+        empresaId,
+        activo: { id: activo.id, codigo: activo.codigo, nombre: activo.nombre },
+        medicionId: guardada.id,
+        estadoMedicion: medicion.estado,
+        observaciones: medicion.observaciones,
+        creadaPorNombre: 'Demo ActivaQR',
+      });
+    }
   }
 
   await prisma.tareaMantenimiento.upsert({
@@ -105,13 +119,13 @@ async function asegurarEscenarioFrio(empresaId: string) {
     create: {
       id: 'demo-ot-frio-01', activoId: compresor.id, numero: 1001,
       tipo: 'Revisar alta presión y consumo del compresor',
-      prioridad: 'critica', fechaProgramada: horasAtras(2), estado: 'pendiente',
+      prioridad: 'critica', fechaProgramada: horasAtras(2), estado: 'vencido',
       observaciones: 'Generada por la medición urgente de la guardia.',
     },
     update: {
       activoId: compresor.id, numero: 1001,
       tipo: 'Revisar alta presión y consumo del compresor',
-      prioridad: 'critica', fechaProgramada: horasAtras(2), estado: 'pendiente',
+      prioridad: 'critica', fechaProgramada: horasAtras(2), estado: 'vencido',
       observaciones: 'Generada por la medición urgente de la guardia.',
     },
   });
