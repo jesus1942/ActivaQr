@@ -37,6 +37,7 @@ import { Sheet } from '../ui/Sheet';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { etiquetaRol, puedeVerModulo, type ModuloEmpresa } from '../../data/permisos';
 import { estadoControl } from '../../data/controlIndustrialApi';
+import { useCargaRemota } from '../../hooks/useStorage';
 
 const LOGO_LIGHT = `${import.meta.env.BASE_URL}company-logo-hd.png`;   // negro, fondo claro
 const LOGO_DARK  = `${import.meta.env.BASE_URL}company-logo1.png`;      // claro, fondo oscuro
@@ -90,6 +91,7 @@ export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { usuario, logout } = useAuth();
+  const cargandoDatosIniciales = useCargaRemota();
 
   const esSuperadmin = usuario?.rol === 'superadmin';
   useEffect(() => {
@@ -116,11 +118,15 @@ export const Sidebar: React.FC = () => {
     if (!usuario || usuario.rol === 'superadmin') return;
     const plan = usuario.empresa?.plan ?? '';
     if (!['empresa', 'industrial'].includes(plan)) return;
+    // El badge no es crítico para abrir la aplicación. Esperamos a que termine
+    // bootstrap para no competir por la conexión y la base de datos durante el
+    // arranque, especialmente cuando Railway acaba de despertar.
+    if (cargandoDatosIniciales) return;
     const cargar = () => getNotificacionesCliente().then(setNotif).catch(() => {});
     cargar();
     const iv = setInterval(cargar, 30_000);
     return () => clearInterval(iv);
-  }, [usuario]);
+  }, [usuario, cargandoDatosIniciales]);
 
   const notificationFor = (to: string): number | string => {
     if (to !== '/mensajes') return 0;

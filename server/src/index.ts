@@ -3,6 +3,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import compression from 'compression';
 
 import authRouter from './routes/auth';
 import adminRouter from './routes/admin';
@@ -60,6 +61,11 @@ import { iniciarSincronizadorTuya } from './tuyaConnector';
 import { camarasIngestRouter, camarasRouter } from './routes/camaras';
 
 const app = express();
+
+// El bootstrap contiene activos, mediciones y tareas. En empresas con
+// historial puede acercarse a 1 MB; comprimir JSON reduce drásticamente la
+// transferencia y evita que conexiones móviles lleguen al timeout.
+app.use(compression());
 
 // Railway pone un proxy delante: sin esto, req.ip es la IP del proxy y los
 // rate limits se comparten entre todos los usuarios en vez de ser por visitante.

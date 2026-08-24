@@ -86,6 +86,8 @@ type BootstrapData = {
 
 let bootstrapPromise: Promise<BootstrapData> | null = null;
 let bootstrapCache: { data: BootstrapData; venceEn: number } | null = null;
+const BOOTSTRAP_TIMEOUT_MS = 45_000;
+const BOOTSTRAP_CACHE_MS = 30_000;
 
 function cloneItems<T>(items: T[]): T[] {
   return typeof structuredClone === 'function'
@@ -103,9 +105,11 @@ export function prepararSnapshotLocal(entidad: string, data: unknown[]): void {
 }
 
 /**
- * Las seis colecciones base viajan en una única respuesta. La caché dura sólo
- * dos segundos: alcanza para que los seis hooks compartan la misma llamada,
- * pero un reintento posterior siempre vuelve a consultar el servidor.
+ * Las seis colecciones base viajan en una única respuesta. Railway puede
+ * necesitar algunos segundos para despertar y PostgreSQL puede tardar más en
+ * una primera consulta grande. Por eso el límite es mayor al timeout habitual
+ * y la respuesta se reutiliza durante 30 segundos: evita repetir casi 1 MB al
+ * montar React en modo estricto o al cambiar rápidamente de pantalla.
  */
 async function getBootstrap(): Promise<BootstrapData> {
   if (bootstrapCache && bootstrapCache.venceEn > Date.now()) {
@@ -114,7 +118,7 @@ async function getBootstrap(): Promise<BootstrapData> {
   if (bootstrapPromise) return bootstrapPromise;
 
   const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), 15_000);
+  const timer = window.setTimeout(() => controller.abort(), BOOTSTRAP_TIMEOUT_MS);
   bootstrapPromise = fetch(`${API_URL}/sync/bootstrap`, {
     headers: { ...authHeaders() },
     cache: 'no-store',
@@ -135,7 +139,7 @@ async function getBootstrap(): Promise<BootstrapData> {
         throw new Error(`Bootstrap incompleto: falta ${key}`);
       }
     }
-    bootstrapCache = { data, venceEn: Date.now() + 2_000 };
+    bootstrapCache = { data, venceEn: Date.now() + BOOTSTRAP_CACHE_MS };
     return data;
   }).finally(() => {
     window.clearTimeout(timer);
