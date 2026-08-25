@@ -58,7 +58,7 @@ function csvCell(value: unknown): string {
 }
 
 function historyRange(query: Request['query']) {
-  const hours = Math.min(24 * 31, Math.max(1, Number(query.horas) || 24));
+  const hours = Math.min(24 * 31, Math.max(0.25, Number(query.horas) || 24));
   return { hours, since: new Date(Date.now() - hours * 3600_000) };
 }
 
@@ -89,8 +89,22 @@ function umbralDeVariable(variable: { tipo: string }, value: unknown) {
 }
 
 type AccionEscena = { dispositivoId: string; canal: number; encendido: boolean };
+type DisparadorEscena =
+  | { tipo: 'manual' }
+  | { tipo: 'rango_horario'; dias: number[]; inicio: string; fin: string; zonaHoraria: string }
+  | { tipo: 'variable'; variableId: string; operador: 'gt' | 'gte' | 'lt' | 'lte' | 'eq'; umbral: number | boolean | string };
+type EscenaPersistida = {
+  version: 2;
+  acciones: AccionEscena[];
+  accionesReversion: AccionEscena[];
+  disparador: DisparadorEscena;
+  condicionActiva: boolean;
+};
 
 function accionesEscena(value: unknown): AccionEscena[] {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    value = (value as Record<string, unknown>).acciones;
+  }
   if (!Array.isArray(value) || !value.length || value.length > 16) throw statusError('Una escena debe tener entre 1 y 16 acciones.');
   const actions = value.map((raw) => {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw statusError('La escena contiene una acción inválida.');
@@ -106,6 +120,51 @@ function accionesEscena(value: unknown): AccionEscena[] {
   return actions;
 }
 
+function disparadorEscena(value: unknown): DisparadorEscena {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return { tipo: 'manual' };
+  const raw = value as Record<string, unknown>;
+  if (raw.tipo === 'rango_horario') {
+    const dias = Array.isArray(raw.dias) ? [...new Set(raw.dias.map(Number).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6))] : [];
+    const inicio = String(raw.inicio ?? '');
+    const fin = String(raw.fin ?? '');
+    const zonaHoraria = String(raw.zonaHoraria ?? 'America/Argentina/Buenos_Aires');
+    if (!dias.length || !/^([01]\d|2[0-3]):[0-5]\d$/.test(inicio) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(fin) || inicio === fin) {
+      throw statusError('La programación necesita días, hora de inicio y hora de fin válidos.');
+    }
+    try { new Intl.DateTimeFormat('es-AR', { timeZone: zonaHoraria }).format(new Date()); } catch { throw statusError('La zona horaria no es válida.'); }
+    return { tipo: 'rango_horario', dias, inicio, fin, zonaHoraria };
+  }
+  if (raw.tipo === 'variable') {
+    const variableId = String(raw.variableId ?? '').trim();
+    const operador = String(raw.operador ?? '');
+    if (!variableId || !['gt', 'gte', 'lt', 'lte', 'eq'].includes(operador)) throw statusError('Elegí una variable y una comparación válidas.');
+    const umbral = typeof raw.umbral === 'boolean' || typeof raw.umbral === 'number' ? raw.umbral : String(raw.umbral ?? '').slice(0, 500);
+    return { tipo: 'variable', variableId, operador: operador as 'gt' | 'gte' | 'lt' | 'lte' | 'eq', umbral };
+  }
+  return { tipo: 'manual' };
+}
+
+function escenaPersistida(value: unknown): EscenaPersistida {
+  if (Array.isArray(value)) return { version: 2, acciones: accionesEscena(value), accionesReversion: [], disparador: { tipo: 'manual' }, condicionActiva: false };
+  const raw = value && typeof value === 'object' ? value as Record<string, unknown> : {};
+  const acciones = accionesEscena(raw.acciones);
+  const accionesReversion = raw.accionesReversion == null || (Array.isArray(raw.accionesReversion) && !raw.accionesReversion.length)
+    ? []
+    : accionesEscena(raw.accionesReversion);
+  return {
+    version: 2,
+    acciones,
+    accionesReversion,
+    disparador: disparadorEscena(raw.disparador),
+    condicionActiva: Boolean(raw.condicionActiva),
+  };
+}
+
+function escenaPublica<T extends { acciones: unknown }>(scene: T) {
+  const config = escenaPersistida(scene.acciones);
+  return { ...scene, acciones: config.acciones, accionesReversion: config.accionesReversion, disparador: config.disparador };
+}
+
 async function validarAccionesEscena(empresaId: string, actions: AccionEscena[]) {
   const devices = await prisma.dispositivoIoT.findMany({ where: { empresaId, archivadoEn: null, id: { in: [...new Set(actions.map((item) => item.dispositivoId))] } }, include: { integracion: true, variables: true } });
   if (devices.length !== new Set(actions.map((item) => item.dispositivoId)).size) throw statusError('La escena incluye un dispositivo que no pertenece a la empresa.', 400);
@@ -116,6 +175,133 @@ async function validarAccionesEscena(empresaId: string, actions: AccionEscena[])
     if (!device.variables.some((item) => item.clave === `switch_${action.canal + 1}` || (action.canal === 0 && item.clave === 'relay'))) throw statusError(`${device.nombre} no informó el canal ${action.canal + 1}.`);
   }
   return devices;
+}
+
+async function validarConfiguracionEscena(empresaId: string, config: EscenaPersistida) {
+  await validarAccionesEscena(empresaId, config.acciones);
+  if (config.accionesReversion.length) await validarAccionesEscena(empresaId, config.accionesReversion);
+  if (config.disparador.tipo === 'variable') {
+    const variable = await prisma.variableIoT.findFirst({ where: { id: config.disparador.variableId, empresaId, dispositivo: { archivadoEn: null } } });
+    if (!variable) throw statusError('La variable que dispara la automatización no pertenece a la empresa.', 404);
+  }
+  if (config.disparador.tipo !== 'manual') {
+    const reverse = new Set(config.accionesReversion.map((action) => `${action.dispositivoId}:${action.canal}`));
+    const missing = config.acciones.filter((action) => !reverse.has(`${action.dispositivoId}:${action.canal}`));
+    if (missing.length) throw statusError('Toda automatización debe definir una acción de recuperación para cada canal. Así ningún equipo queda apagado o encendido indefinidamente.');
+  }
+}
+
+function configEscenaDesdeBody(body: Record<string, unknown>, previous?: EscenaPersistida): EscenaPersistida {
+  return {
+    version: 2,
+    acciones: body.acciones === undefined && previous ? previous.acciones : accionesEscena(body.acciones),
+    accionesReversion: body.accionesReversion === undefined && previous
+      ? previous.accionesReversion
+      : body.accionesReversion == null || (Array.isArray(body.accionesReversion) && !body.accionesReversion.length)
+        ? []
+        : accionesEscena(body.accionesReversion),
+    disparador: body.disparador === undefined && previous ? previous.disparador : disparadorEscena(body.disparador),
+    condicionActiva: false,
+  };
+}
+
+function valorVariable(variable: { tipo: string; valorNumero: number | null; valorBooleano: boolean | null; valorTexto: string | null }) {
+  if (variable.tipo === 'numero') return variable.valorNumero;
+  if (variable.tipo === 'booleano') return variable.valorBooleano;
+  return variable.valorTexto;
+}
+
+function cumpleComparacion(actual: number | boolean | string | null, operador: 'gt' | 'gte' | 'lt' | 'lte' | 'eq', umbral: number | boolean | string) {
+  if (actual == null) return false;
+  if (operador === 'eq') return String(actual) === String(umbral);
+  const left = Number(actual);
+  const right = Number(umbral);
+  if (!Number.isFinite(left) || !Number.isFinite(right)) return false;
+  if (operador === 'gt') return left > right;
+  if (operador === 'gte') return left >= right;
+  if (operador === 'lt') return left < right;
+  return left <= right;
+}
+
+function partesHorario(now: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone, weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(now);
+  const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? '';
+  const weekdays: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return { day: weekdays[value('weekday')], minutes: Number(value('hour')) * 60 + Number(value('minute')) };
+}
+
+function horarioActivo(trigger: Extract<DisparadorEscena, { tipo: 'rango_horario' }>, now = new Date()) {
+  const { day, minutes } = partesHorario(now, trigger.zonaHoraria);
+  const toMinutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3));
+  const start = toMinutes(trigger.inicio);
+  const end = toMinutes(trigger.fin);
+  if (start < end) return trigger.dias.includes(day) && minutes >= start && minutes < end;
+  if (minutes >= start) return trigger.dias.includes(day);
+  return minutes < end && trigger.dias.includes((day + 6) % 7);
+}
+
+async function condicionEscena(empresaId: string, trigger: DisparadorEscena) {
+  if (trigger.tipo === 'manual') return false;
+  if (trigger.tipo === 'rango_horario') return horarioActivo(trigger);
+  const variable = await prisma.variableIoT.findFirst({ where: { id: trigger.variableId, empresaId, dispositivo: { archivadoEn: null } } });
+  return variable ? cumpleComparacion(valorVariable(variable), trigger.operador, trigger.umbral) : false;
+}
+
+function requestSistema(empresaId: string): AuthRequest {
+  return { auth: { userId: 'sistema-activaqr', email: 'ActivaQR Automatizaciones', rol: 'superadmin', empresaId } } as AuthRequest;
+}
+
+async function ejecutarAccionesAutomaticas(empresaId: string, scene: { id: string; nombre: string }, actions: AccionEscena[], phase: 'activación' | 'recuperación') {
+  const req = requestSistema(empresaId);
+  let count = 0;
+  for (const action of actions) {
+    const state = await prisma.variableIoT.findFirst({
+      where: { dispositivoId: action.dispositivoId, empresaId, OR: [{ clave: `switch_${action.canal + 1}` }, ...(action.canal === 0 ? [{ clave: 'relay' }] : [])] },
+      select: { valorBooleano: true },
+    });
+    if (state?.valorBooleano === action.encendido) continue;
+    await ejecutarReleSeguro(req, { ...action, motivo: `Automatización “${scene.nombre}”: ${phase} segura.` });
+    count += 1;
+  }
+  return count;
+}
+
+let automatizacionesEvaluando = false;
+async function evaluarAutomatizacionesIoT() {
+  if (automatizacionesEvaluando) return;
+  automatizacionesEvaluando = true;
+  try {
+    const scenes = await prisma.escenaIoT.findMany({ where: { activa: true } });
+    for (const scene of scenes) {
+      let config: EscenaPersistida;
+      try { config = escenaPersistida(scene.acciones); } catch { continue; }
+      if (config.disparador.tipo === 'manual') continue;
+      try {
+        const active = await condicionEscena(scene.empresaId, config.disparador);
+        if (active === config.condicionActiva) continue;
+        const actions = active ? config.acciones : config.accionesReversion;
+        const count = await ejecutarAccionesAutomaticas(scene.empresaId, scene, actions, active ? 'activación' : 'recuperación');
+        config.condicionActiva = active;
+        await prisma.escenaIoT.update({ where: { id: scene.id }, data: {
+          acciones: config as unknown as Prisma.InputJsonValue,
+          ultimaEjecucionEn: new Date(),
+          ultimaEjecucionEstado: `${active ? 'activada' : 'recuperada'} · ${count} maniobras`,
+        } });
+        await registrarAuditoria({ empresaId: scene.empresaId, usuarioNombre: 'ActivaQR Automatizaciones', usuarioRol: 'sistema', accion: 'comando', entidad: 'EscenaIoT', entidadId: scene.id, detalle: `${scene.nombre}: ${active ? 'condición activa' : 'condición finalizada'}, ${count} maniobras necesarias.` });
+      } catch (error) {
+        await prisma.escenaIoT.update({ where: { id: scene.id }, data: { ultimaEjecucionEn: new Date(), ultimaEjecucionEstado: `error: ${error instanceof Error ? error.message.slice(0, 160) : 'desconocido'}` } }).catch(() => {});
+      }
+    }
+  } finally {
+    automatizacionesEvaluando = false;
+  }
+}
+
+export function iniciarAutomatizacionesIoT() {
+  evaluarAutomatizacionesIoT().catch((error) => console.error('[iot] automatizaciones iniciales:', error));
+  setInterval(() => evaluarAutomatizacionesIoT().catch((error) => console.error('[iot] automatizaciones:', error)), 15_000).unref();
 }
 
 async function moduloActivo(req: AuthRequest, res: Response, next: NextFunction) {
@@ -338,10 +524,11 @@ controlIndustrialRouter.patch('/tablero', requireAdmin, async (req: AuthRequest,
 controlIndustrialRouter.get('/resumen', async (req: AuthRequest, res, next) => {
   try {
     const empresaId = tenantId(req);
-    const [module, integraciones, dispositivos, alarmas, comandos, reglas, escenas] = await Promise.all([
+    const [module, integraciones, dispositivos, activos, alarmas, comandos, reglas, escenas] = await Promise.all([
       prisma.moduloControlEmpresa.findUnique({ where: { empresaId } }),
       prisma.integracionIoT.findMany({ where: { empresaId }, orderBy: { creadaEn: 'asc' } }),
       prisma.dispositivoIoT.findMany({ where: { empresaId, archivadoEn: null }, include: { integracion: { select: { proveedor: true } }, variables: { orderBy: { nombre: 'asc' } } }, orderBy: { nombre: 'asc' } }),
+      prisma.activo.findMany({ where: { empresaId }, select: { id: true, codigo: true, nombre: true }, orderBy: { codigo: 'asc' } }),
       prisma.alarmaIoT.findMany({ where: { empresaId, estado: { in: ['activa', 'reconocida'] }, dispositivo: { archivadoEn: null } }, include: { dispositivo: { select: { nombre: true } }, variable: { select: { nombre: true, unidad: true } } }, orderBy: { iniciadaEn: 'desc' }, take: 100 }),
       prisma.comandoIoT.findMany({ where: { empresaId }, include: { dispositivo: { select: { nombre: true } } }, orderBy: { solicitadoEn: 'desc' }, take: 25 }),
       prisma.reglaAlarmaIoT.findMany({ where: { empresaId, variable: { dispositivo: { archivadoEn: null } } }, include: { variable: { include: { dispositivo: { select: { nombre: true } } } } }, orderBy: { creadaEn: 'desc' } }),
@@ -350,7 +537,7 @@ controlIndustrialRouter.get('/resumen', async (req: AuthRequest, res, next) => {
     const publicDevices = dispositivos.map((device) => device.integracion.proveedor === 'sonoff_ewelink'
       ? { ...device, variables: device.variables.filter((variable) => variableOperativaEwelink(variable.clave)) }
       : device);
-    res.json({ modulo: module, integraciones: integraciones.map(publicIntegration), dispositivos: publicDevices, alarmas, comandos, reglas, escenas });
+    res.json({ modulo: module, integraciones: integraciones.map(publicIntegration), dispositivos: publicDevices, activos, alarmas, comandos, reglas, escenas: escenas.map(escenaPublica) });
   } catch (error) { next(error); }
 });
 
@@ -661,7 +848,7 @@ controlIndustrialRouter.get('/variables/:id/historial', async (req: AuthRequest,
     const empresaId = tenantId(req);
     const variable = await prisma.variableIoT.findFirst({ where: { id: req.params.id, empresaId } });
     if (!variable) throw statusError('Variable no encontrada.', 404);
-    const hours = Math.min(24 * 31, Math.max(1, Number(req.query.horas) || 24));
+    const hours = Math.min(24 * 31, Math.max(0.25, Number(req.query.horas) || 24));
     const readings = await prisma.lecturaIoT.findMany({ where: { variableId: variable.id, medidaEn: { gte: new Date(Date.now() - hours * 3600_000) } }, orderBy: { medidaEn: 'desc' }, take: 5000 });
     res.json({ variable, lecturas: readings.reverse() });
   } catch (error) { next(error); }
@@ -788,18 +975,18 @@ controlIndustrialRouter.post('/escenas', requireJefatura, async (req: AuthReques
     const empresaId = tenantId(req);
     const nombre = String(req.body?.nombre ?? '').trim().slice(0, 160);
     if (!nombre) throw statusError('Ingresá un nombre para la escena.');
-    const actions = accionesEscena(req.body?.acciones);
-    await validarAccionesEscena(empresaId, actions);
+    const config = configEscenaDesdeBody(req.body ?? {});
+    await validarConfiguracionEscena(empresaId, config);
     const scene = await prisma.escenaIoT.create({ data: {
       empresaId,
       nombre,
       descripcion: String(req.body?.descripcion ?? '').trim().slice(0, 2000) || null,
-      acciones: actions as unknown as Prisma.InputJsonValue,
+      acciones: config as unknown as Prisma.InputJsonValue,
       creadaPorId: req.auth!.userId,
       creadaPorNombre: req.auth!.email,
     } });
-    await auditar(req, 'crear', 'EscenaIoT', scene.id, `${scene.nombre}: ${actions.length} acciones.`);
-    res.status(201).json(scene);
+    await auditar(req, 'crear', 'EscenaIoT', scene.id, `${scene.nombre}: ${config.acciones.length} acciones · ${config.disparador.tipo}.`);
+    res.status(201).json(escenaPublica(scene));
   } catch (error) { next(error); }
 });
 
@@ -812,14 +999,14 @@ controlIndustrialRouter.patch('/escenas/:id', requireJefatura, async (req: AuthR
     if (req.body?.nombre !== undefined) data.nombre = String(req.body.nombre).trim().slice(0, 160);
     if (req.body?.descripcion !== undefined) data.descripcion = String(req.body.descripcion).trim().slice(0, 2000) || null;
     if (req.body?.activa !== undefined) data.activa = Boolean(req.body.activa);
-    if (req.body?.acciones !== undefined) {
-      const actions = accionesEscena(req.body.acciones);
-      await validarAccionesEscena(empresaId, actions);
-      data.acciones = actions as unknown as Prisma.InputJsonValue;
+    if (req.body?.acciones !== undefined || req.body?.accionesReversion !== undefined || req.body?.disparador !== undefined) {
+      const config = configEscenaDesdeBody(req.body ?? {}, escenaPersistida(current.acciones));
+      await validarConfiguracionEscena(empresaId, config);
+      data.acciones = config as unknown as Prisma.InputJsonValue;
     }
     const updated = await prisma.escenaIoT.update({ where: { id: current.id }, data });
     await auditar(req, 'editar', 'EscenaIoT', updated.id, `${updated.nombre}: ${updated.activa ? 'activa' : 'pausada'}.`);
-    res.json(updated);
+    res.json(escenaPublica(updated));
   } catch (error) { next(error); }
 });
 
@@ -840,7 +1027,7 @@ controlIndustrialRouter.post('/escenas/:id/ejecutar', commandLimiter, requireJef
     const scene = await prisma.escenaIoT.findFirst({ where: { id: req.params.id, empresaId } });
     if (!scene) throw statusError('Escena no encontrada.', 404);
     if (!scene.activa) throw statusError('La escena está pausada.', 409);
-    const actions = accionesEscena(scene.acciones);
+    const actions = escenaPersistida(scene.acciones).acciones;
     await validarAccionesEscena(empresaId, actions);
     const results = [];
     try {

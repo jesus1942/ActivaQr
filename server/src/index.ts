@@ -53,7 +53,7 @@ import { enviarEmailLead } from './email';
 import { prisma } from './prisma';
 import { obtenerCotizacionMep } from './cotizacion';
 import { iniciarSincronizadorPrecios } from './sincronizarPrecios';
-import { adminControlIndustrialRouter, controlIndustrialRouter, iotIngestRouter } from './routes/controlIndustrial';
+import { adminControlIndustrialRouter, controlIndustrialRouter, iniciarAutomatizacionesIoT, iotIngestRouter } from './routes/controlIndustrial';
 import { iniciarMonitorDesconexionesIoT, limpiarLecturasIoTExpiradas } from './iotIngest';
 import { iniciarSincronizadorEwelink } from './ewelinkConnector';
 import { ewelinkOAuthRouter } from './routes/ewelinkOAuth';
@@ -392,6 +392,7 @@ app.listen(PORT, () => {
   iniciarSincronizadorEwelink();
   iniciarSincronizadorTuya();
   iniciarMonitorDesconexionesIoT();
+  iniciarAutomatizacionesIoT();
 });
 
 export default app;

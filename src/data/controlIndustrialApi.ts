@@ -123,12 +123,19 @@ export interface AccionEscenaIoT {
   encendido: boolean;
 }
 
+export type DisparadorEscenaIoT =
+  | { tipo: 'manual' }
+  | { tipo: 'rango_horario'; dias: number[]; inicio: string; fin: string; zonaHoraria: string }
+  | { tipo: 'variable'; variableId: string; operador: 'gt' | 'gte' | 'lt' | 'lte' | 'eq'; umbral: number | boolean | string };
+
 export interface EscenaIoT {
   id: string;
   nombre: string;
   descripcion?: string | null;
   activa: boolean;
   acciones: AccionEscenaIoT[];
+  accionesReversion?: AccionEscenaIoT[];
+  disparador?: DisparadorEscenaIoT;
   ultimaEjecucionEn?: string | null;
   ultimaEjecucionEstado?: string | null;
 }
@@ -137,6 +144,7 @@ export interface ResumenControl {
   modulo: ModuloControl;
   integraciones: IntegracionIoT[];
   dispositivos: DispositivoIoT[];
+  activos: Array<{ id: string; codigo: string; nombre: string }>;
   alarmas: AlarmaIoT[];
   comandos: ComandoIoT[];
   reglas: ReglaAlarmaIoT[];
@@ -283,7 +291,7 @@ export async function probarNotificacionControl(): Promise<{ ok: boolean; suscri
   return parse(await apiFetch('control-industrial/notificaciones/prueba', { method: 'POST' }));
 }
 
-export async function crearEscena(data: { nombre: string; descripcion?: string; acciones: AccionEscenaIoT[] }): Promise<EscenaIoT> {
+export async function crearEscena(data: { nombre: string; descripcion?: string; acciones: AccionEscenaIoT[]; accionesReversion?: AccionEscenaIoT[]; disparador?: DisparadorEscenaIoT }): Promise<EscenaIoT> {
   return parse(await apiFetch('control-industrial/escenas', { method: 'POST', body: JSON.stringify(data) }));
 }
 
