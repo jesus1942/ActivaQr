@@ -6,6 +6,8 @@ import {
   Droplets,
   History,
   Info,
+  LayoutDashboard,
+  Maximize2,
   Power,
   RefreshCw,
   Settings2,
@@ -537,6 +539,7 @@ export const ControlIndustrialEnhanced: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [commandBusy, setCommandBusy] = useState<string | null>(null);
   const [linking, setLinking] = useState(false);
+  const [section, setSection] = useState<'inteligente' | 'gestion'>('inteligente');
 
   const selectedDevice = useMemo(
     () => data?.dispositivos.find((device) => device.id === selectedDeviceId) ?? null,
@@ -585,6 +588,13 @@ export const ControlIndustrialEnhanced: React.FC = () => {
     }
   }, [toast]);
 
+  // La sección abre directamente con la experiencia IoT nueva. La vista de
+  // gestión clásica sólo se monta cuando el operador necesita configurar
+  // conectores, alarmas o automatizaciones avanzadas.
+  useEffect(() => {
+    void loadControl();
+  }, [loadControl]);
+
   useEffect(() => {
     const captureDeviceDetail = (event: MouseEvent) => {
       const target = event.target instanceof Element ? event.target : null;
@@ -605,13 +615,12 @@ export const ControlIndustrialEnhanced: React.FC = () => {
   }, [openDevice]);
 
   useEffect(() => {
-    if (!open) return;
     const timer = window.setInterval(() => void loadControl(true), REFRESH_MS);
     return () => window.clearInterval(timer);
-  }, [open, loadControl]);
+  }, [loadControl]);
 
   useEffect(() => {
-    if (!open || !selectedDevice) return;
+    if (!selectedDevice) return;
     const ambient = ambientVariables(selectedDevice);
     const variables = [ambient.temperature, ambient.humidity].filter((variable): variable is VariableIoT => Boolean(variable));
     if (!variables.length) return;
@@ -633,7 +642,7 @@ export const ControlIndustrialEnhanced: React.FC = () => {
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [open, selectedDevice?.id, historyHours]);
+  }, [selectedDevice?.id, historyHours]);
 
   useEffect(() => {
     if (!open) return;
@@ -696,8 +705,48 @@ export const ControlIndustrialEnhanced: React.FC = () => {
     }
   }, [loadControl, selectedDevice, toast]);
 
+  const onlineCount = data?.dispositivos.filter((item) => isOnline(item, (data.modulo.umbralSinConexionMinutos ?? 10) * 60_000)).length ?? 0;
+  const activeAlarms = data?.alarmas.filter((alarm) => alarm.estado === 'activa').length ?? 0;
+
   return <>
-    <ControlIndustrial />
+    <div className="min-h-[calc(100vh-4rem)] bg-[#07111f] text-slate-100">
+      <header className="border-b border-slate-800/90 bg-[#07111f]/95 px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1540px]">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[.22em] text-cyan-400">Supervisión IoT en vivo</p>
+              <h1 className="mt-1 truncate text-2xl font-semibold tracking-tight text-white sm:text-3xl">{data?.modulo.tableroConfig?.titulo || 'ActivaQR Control'}</h1>
+              <p className="mt-1 text-xs text-slate-500">Operación, sensores, activos y automatizaciones en un único centro de mando.</p>
+            </div>
+            <div className="grid grid-cols-3 divide-x divide-slate-800 overflow-hidden rounded-xl border border-slate-800 bg-[#0b1626] xl:min-w-[470px]">
+              <div className="px-4 py-3"><strong className="block text-lg text-white">{onlineCount}/{data?.dispositivos.length ?? 0}</strong><span className="text-[9px] font-semibold uppercase tracking-wide text-slate-500">En línea</span></div>
+              <div className="px-4 py-3"><strong className={`block text-lg ${activeAlarms ? 'text-red-300' : 'text-white'}`}>{activeAlarms}</strong><span className="text-[9px] font-semibold uppercase tracking-wide text-slate-500">Alarmas</span></div>
+              <div className="px-4 py-3"><strong className="block text-lg text-white">{data?.escenas.length ?? 0}</strong><span className="text-[9px] font-semibold uppercase tracking-wide text-slate-500">Escenas</span></div>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-3 border-t border-slate-800 pt-3 sm:flex-row sm:items-center sm:justify-between">
+            <nav className="flex rounded-lg bg-slate-950/55 p-1" aria-label="Secciones de Activa Control">
+              <button onClick={() => setSection('inteligente')} className={`flex min-h-10 items-center gap-2 rounded-md px-4 text-xs font-semibold transition ${section === 'inteligente' ? 'bg-cyan-500/15 text-cyan-300' : 'text-slate-500 hover:text-slate-300'}`}><LayoutDashboard size={15} />Vista inteligente</button>
+              <button onClick={() => setSection('gestion')} className={`flex min-h-10 items-center gap-2 rounded-md px-4 text-xs font-semibold transition ${section === 'gestion' ? 'bg-cyan-500/15 text-cyan-300' : 'text-slate-500 hover:text-slate-300'}`}><Workflow size={15} />Automatizaciones y gestión</button>
+            </nav>
+            {section === 'inteligente' && data && selectedDevice && <div className="flex items-center gap-2">
+              <select value={selectedDevice.id} onChange={(event) => { setSelectedDeviceId(event.target.value); setHistoryByVariable({}); }} className="min-h-10 min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950/60 px-3 text-xs text-slate-200 outline-none focus:border-cyan-500 sm:max-w-xs">
+                {data.dispositivos.map((device) => <option key={device.id} value={device.id}>{device.nombre}</option>)}
+              </select>
+              <button onClick={() => void loadControl(true)} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-slate-700 bg-slate-950/60 text-slate-400 hover:border-slate-500" aria-label="Actualizar tablero"><RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} /></button>
+              <button onClick={() => setOpen(true)} className="flex h-10 shrink-0 items-center gap-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 text-xs font-semibold text-cyan-200 hover:bg-cyan-500/20" aria-label="Abrir pantalla completa"><Maximize2 size={16} /><span className="hidden sm:inline">Pantalla completa</span></button>
+            </div>}
+          </div>
+        </div>
+      </header>
+
+      {section === 'gestion'
+        ? <div className="bg-canvas text-content"><ControlIndustrial /></div>
+        : data && selectedDevice
+          ? <main className="pb-[calc(1rem+env(safe-area-inset-bottom))]"><DeviceDetail device={selectedDevice} data={data} historyByVariable={historyByVariable} historyHours={historyHours} refreshing={refreshing} commandBusy={commandBusy} linking={linking} activeTab={activeTab} onTab={setActiveTab} onRange={setHistoryHours} onCommand={commandRelay} onExport={exportDevice} onLink={linkAsset} /></main>
+          : <div className="mx-auto grid min-h-[420px] max-w-[1540px] place-items-center px-4 text-center"><div><RefreshCw size={22} className="mx-auto animate-spin text-cyan-400" /><p className="mt-3 text-sm text-slate-400">Cargando supervisión IoT…</p></div></div>}
+    </div>
     {open && data && selectedDevice && createPortal(
       <div className="fixed inset-0 z-[120] overflow-y-auto bg-[#07111f] text-slate-100">
         <header className="sticky top-0 z-20 border-b border-slate-800/90 bg-[#07111f]/95 px-4 py-3 backdrop-blur sm:px-6">
