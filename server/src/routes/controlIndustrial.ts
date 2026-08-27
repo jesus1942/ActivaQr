@@ -58,8 +58,16 @@ function csvCell(value: unknown): string {
 }
 
 function historyRange(query: Request['query']) {
-  const hours = Math.min(24 * 31, Math.max(0.25, Number(query.horas) || 24));
-  return { hours, since: new Date(Date.now() - hours * 3600_000) };
+  const from = typeof query.desde === 'string' ? new Date(query.desde) : null;
+  const to = typeof query.hasta === 'string' ? new Date(query.hasta) : null;
+  if (from && !Number.isNaN(from.getTime()) && to && !Number.isNaN(to.getTime())) {
+    if (from > to) throw statusError('La fecha desde no puede ser posterior a la fecha hasta.');
+    return { label: 'rango', since: from, until: to };
+  }
+  const requested = Number(query.horas);
+  if (requested === 0 || query.todo === 'true') return { label: 'completo', since: new Date(0), until: new Date() };
+  const hours = Math.min(24 * 3650, Math.max(0.25, requested || 24));
+  return { label: `${hours}h`, since: new Date(Date.now() - hours * 3600_000), until: new Date() };
 }
 
 function booleanoEstricto(value: unknown): boolean | null {
@@ -848,8 +856,8 @@ controlIndustrialRouter.get('/variables/:id/historial', async (req: AuthRequest,
     const empresaId = tenantId(req);
     const variable = await prisma.variableIoT.findFirst({ where: { id: req.params.id, empresaId } });
     if (!variable) throw statusError('Variable no encontrada.', 404);
-    const hours = Math.min(24 * 31, Math.max(0.25, Number(req.query.horas) || 24));
-    const readings = await prisma.lecturaIoT.findMany({ where: { variableId: variable.id, medidaEn: { gte: new Date(Date.now() - hours * 3600_000) } }, orderBy: { medidaEn: 'desc' }, take: 5000 });
+    const { since, until } = historyRange(req.query);
+    const readings = await prisma.lecturaIoT.findMany({ where: { variableId: variable.id, medidaEn: { gte: since, lte: until } }, orderBy: { medidaEn: 'desc' }, take: 5000 });
     res.json({ variable, lecturas: readings.reverse() });
   } catch (error) { next(error); }
 });
@@ -859,9 +867,9 @@ controlIndustrialRouter.get('/variables/:id/historial.csv', async (req: AuthRequ
     const empresaId = tenantId(req);
     const variable = await prisma.variableIoT.findFirst({ where: { id: req.params.id, empresaId }, include: { dispositivo: { select: { nombre: true } } } });
     if (!variable) throw statusError('Canal o variable no encontrada.', 404);
-    const { hours, since } = historyRange(req.query);
+    const { label, since, until } = historyRange(req.query);
     const readings = await prisma.lecturaIoT.findMany({
-      where: { variableId: variable.id, medidaEn: { gte: since } },
+      where: { variableId: variable.id, medidaEn: { gte: since, lte: until } },
       orderBy: { medidaEn: 'desc' },
       take: 100_001,
     });
@@ -869,7 +877,7 @@ controlIndustrialRouter.get('/variables/:id/historial.csv', async (req: AuthRequ
     const rows = readings.slice(0, 100_000).reverse();
     const safeName = `${variable.dispositivo.nombre}-${variable.nombre}`.replace(/[^a-z0-9áéíóúñ_-]+/gi, '-').slice(0, 100);
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="historial-${safeName}-${hours}h.csv"`);
+    res.setHeader('Content-Disposition', `attachment; filename="historial-${safeName}-${label}.csv"`);
     res.setHeader('X-ActivaQR-Truncated', String(truncated));
     const header = ['Fecha', 'Dispositivo', 'Canal o variable', 'Clave', 'Valor', 'Unidad', 'Calidad'];
     const lines = rows.map((item) => [
@@ -885,14 +893,14 @@ controlIndustrialRouter.get('/dispositivos/:id/historial.csv', async (req: AuthR
     const empresaId = tenantId(req);
     const device = await prisma.dispositivoIoT.findFirst({ where: { id: req.params.id, empresaId }, select: { id: true, nombre: true } });
     if (!device) throw statusError('Dispositivo no encontrado.', 404);
-    const { hours, since } = historyRange(req.query);
+    const { label, since, until } = historyRange(req.query);
     const [readings, commands] = await Promise.all([
       prisma.lecturaIoT.findMany({
-        where: { variable: { dispositivoId: device.id }, medidaEn: { gte: since } },
+        where: { variable: { dispositivoId: device.id }, medidaEn: { gte: since, lte: until } },
         include: { variable: { select: { nombre: true, clave: true, unidad: true } } },
         orderBy: { medidaEn: 'desc' }, take: 100_001,
       }),
-      prisma.comandoIoT.findMany({ where: { dispositivoId: device.id, solicitadoEn: { gte: since } }, orderBy: { solicitadoEn: 'desc' }, take: 10_000 }),
+      prisma.comandoIoT.findMany({ where: { dispositivoId: device.id, solicitadoEn: { gte: since, lte: until } }, orderBy: { solicitadoEn: 'desc' }, take: 10_000 }),
     ]);
     const truncated = readings.length > 100_000;
     const events = [
@@ -901,7 +909,7 @@ controlIndustrialRouter.get('/dispositivos/:id/historial.csv', async (req: AuthR
     ].sort((a, b) => a.fecha.getTime() - b.fecha.getTime());
     const safeName = device.nombre.replace(/[^a-z0-9áéíóúñ_-]+/gi, '-').slice(0, 100);
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="historial-${safeName}-${hours}h.csv"`);
+    res.setHeader('Content-Disposition', `attachment; filename="historial-${safeName}-${label}.csv"`);
     res.setHeader('X-ActivaQR-Truncated', String(truncated));
     const header = ['Fecha', 'Dispositivo', 'Tipo de evento', 'Canal o variable', 'Clave', 'Valor', 'Unidad', 'Estado', 'Detalle'];
     const lines = events.map((item) => [item.fecha.toISOString(), device.nombre, item.tipo, item.canal, item.clave, item.valor, item.unidad, item.estado, item.detalle].map(csvCell).join(','));

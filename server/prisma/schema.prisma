@@ -395,6 +395,8 @@ model Usuario {
   resetToken       String?    @unique
   resetTokenExpiry DateTime?
   telegramChatId   String?
+  telegramAlertasHabilitadas Boolean  @default(false)
+  telegramAlertasAceptadasEn DateTime?
 
   empresa              Empresa?             @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   pushSubscriptions    PushSubscription[]

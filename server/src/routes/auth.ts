@@ -316,12 +316,25 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: Response, next: Nex
 // PATCH /api/auth/perfil — actualizar datos propios (nombre, telegramChatId)
 router.patch('/perfil', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { nombre, telegramChatId } = req.body ?? {};
+    const { nombre, telegramChatId, telegramAlertasHabilitadas } = req.body ?? {};
     const data: Record<string, unknown> = {};
     if (nombre && String(nombre).trim()) data.nombre = String(nombre).trim();
-    if (telegramChatId !== undefined) data.telegramChatId = telegramChatId ? String(telegramChatId).trim() : null;
+    if (telegramChatId !== undefined) {
+      data.telegramChatId = telegramChatId ? String(telegramChatId).trim() : null;
+      if (!data.telegramChatId) { data.telegramAlertasHabilitadas = false; data.telegramAlertasAceptadasEn = null; }
+    }
+    if (telegramAlertasHabilitadas !== undefined) {
+      const habilitadas = telegramAlertasHabilitadas === true;
+      if (habilitadas && !String(telegramChatId ?? '').trim()) {
+        const actual = await prisma.usuario.findUnique({ where: { id: req.auth!.userId }, select: { telegramChatId: true } });
+        if (!actual?.telegramChatId) return res.status(400).json({ error: 'Vinculá Telegram antes de aceptar las alertas.' });
+      }
+      data.telegramAlertasHabilitadas = habilitadas;
+      data.telegramAlertasAceptadasEn = habilitadas ? new Date() : null;
+    }
     if (Object.keys(data).length === 0) return res.status(400).json({ error: 'Nada que actualizar.' });
-    const updated = await prisma.usuario.update({ where: { id: req.auth!.userId }, data, select: { id: true, nombre: true, telegramChatId: true } });
+    const updated = await prisma.usuario.update({ where: { id: req.auth!.userId }, data, select: { id: true, nombre: true, telegramChatId: true, telegramAlertasHabilitadas: true, telegramAlertasAceptadasEn: true } });
+    if (telegramAlertasHabilitadas !== undefined) await registrarAuditoria({ empresaId: req.auth!.empresaId, usuarioId: req.auth!.userId, usuarioNombre: req.auth!.email, usuarioRol: req.auth!.rol, accion: 'editar', entidad: 'Usuario', entidadId: req.auth!.userId, detalle: `Alertas operativas por Telegram ${updated.telegramAlertasHabilitadas ? 'aceptadas' : 'revocadas'}.` });
     res.json(updated);
   } catch (err) {
     next(err);
@@ -333,7 +346,7 @@ router.get('/perfil', requireAuth, async (req: AuthRequest, res: Response, next:
   try {
     const u = await prisma.usuario.findUnique({
       where: { id: req.auth!.userId },
-      select: { id: true, nombre: true, email: true, telefono: true, telegramChatId: true },
+      select: { id: true, nombre: true, email: true, telefono: true, telegramChatId: true, telegramAlertasHabilitadas: true, telegramAlertasAceptadasEn: true },
     });
     if (!u) return res.status(404).json({ error: 'No encontrado.' });
     res.json(u);

@@ -1103,12 +1103,13 @@ const PersonalSection: React.FC = () => {
 
 const SeccionTelegram: React.FC = () => {
   const [chatId, setChatId] = React.useState('');
+  const [alertasHabilitadas, setAlertasHabilitadas] = React.useState(false);
   const [guardado, setGuardado] = React.useState(false);
   const [cargando, setCargando] = React.useState(false);
   const [error, setError] = React.useState('');
 
   React.useEffect(() => {
-    apiFetch('auth/perfil').then((d: any) => { if (d.telegramChatId) setChatId(d.telegramChatId); }).catch(() => {});
+    apiFetch('auth/perfil').then((d: any) => { if (d.telegramChatId) setChatId(d.telegramChatId); setAlertasHabilitadas(d.telegramAlertasHabilitadas === true); }).catch(() => {});
   }, []);
 
   const guardar = async (e: React.FormEvent) => {
@@ -1116,7 +1117,7 @@ const SeccionTelegram: React.FC = () => {
     setError('');
     setCargando(true);
     try {
-      await apiFetch('auth/perfil', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telegramChatId: chatId.trim() || null }) });
+      await apiFetch('auth/perfil', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telegramChatId: chatId.trim() || null, telegramAlertasHabilitadas: Boolean(chatId.trim()) && alertasHabilitadas }) });
       setGuardado(true);
       setTimeout(() => setGuardado(false), 3000);
     } catch (err: any) {
@@ -1130,7 +1131,7 @@ const SeccionTelegram: React.FC = () => {
 
   return (
     <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-5 mb-6">
-      <h2 className="text-sm font-black uppercase tracking-wider text-content mb-1">Telegram para recuperar contraseña</h2>
+      <h2 className="text-sm font-black uppercase tracking-wider text-content mb-1">Telegram y alertas operativas</h2>
       <p className="text-xs text-muted mb-3">
         Si vinculás tu Telegram, el link de recuperación te llega directo al chat en segundos — sin depender del email.
       </p>
@@ -1159,6 +1160,10 @@ const SeccionTelegram: React.FC = () => {
           {cargando ? 'Guardando...' : guardado ? 'Guardado' : 'Guardar'}
         </button>
       </form>
+      <label className="mt-4 flex items-start gap-3 border border-line bg-subtle p-3 text-xs text-content">
+        <input type="checkbox" checked={alertasHabilitadas} disabled={!chatId.trim()} onChange={(e) => setAlertasHabilitadas(e.target.checked)} className="mt-0.5" />
+        <span><strong>Recibir alarmas críticas por Telegram.</strong><span className="mt-1 block text-muted">Acepto que ActivaQR use este Chat ID para avisos operativos. Puedo revocar este consentimiento en cualquier momento desmarcando esta opción.</span></span>
+      </label>
       {error && <p className="text-danger text-xs mt-1">{error}</p>}
       {chatId && !guardado && <p className="text-xs text-faint mt-1">Chat ID actual: <span className="font-mono">{chatId}</span></p>}
     </div>

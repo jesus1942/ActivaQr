@@ -44,7 +44,7 @@ type HistoryReading = {
 
 type HistoryMap = Record<string, HistoryReading[]>;
 type DetailTab = 'graficos' | 'informacion' | 'configuracion' | 'automatizaciones';
-type RangeHours = 0.25 | 1 | 6 | 24 | 168 | 720;
+type RangeHours = 0 | 0.25 | 1 | 6 | 24 | 168 | 720;
 
 // La pantalla consulta la copia normalizada de ActivaQR cada dos segundos.
 // Esto no llama a eWeLink: el conector conserva su propia reconciliación
@@ -112,10 +112,13 @@ function numericValue(variable?: VariableIoT | null, suffix?: string, decimals =
 }
 
 function rangeLabel(hours: RangeHours) {
+  if (hours === 0) return 'Todo';
   if (hours === 0.25) return '15 min';
   if (hours === 1) return '1 hora';
   if (hours === 6) return '6 horas';
-  return '24 horas';
+  if (hours === 24) return '24 horas';
+  if (hours === 168) return '7 días';
+  return '30 días';
 }
 
 function chartStats(history: HistoryReading[]) {
@@ -301,7 +304,7 @@ function SereneDeviceDetail({
             <span className="flex items-center gap-2"><i className="h-0.5 w-5 bg-violet-400" />Humedad (%)</span>
           </div>
           <div className="flex rounded-lg bg-slate-950/55 p-1">
-            {([0.25, 1, 6, 24] as RangeHours[]).map((hours) => <button key={hours} onClick={() => onRange(hours)} className={`min-h-8 rounded-md px-3 text-[11px] font-semibold transition ${historyHours === hours ? 'bg-cyan-500/15 text-cyan-300' : 'text-slate-500 hover:text-slate-300'}`}>{rangeLabel(hours)}</button>)}
+            {([0.25, 1, 6, 24, 0] as RangeHours[]).map((hours) => <button key={hours} onClick={() => onRange(hours)} className={`min-h-8 rounded-md px-3 text-[11px] font-semibold transition ${historyHours === hours ? 'bg-cyan-500/15 text-cyan-300' : 'text-slate-500 hover:text-slate-300'}`}>{rangeLabel(hours)}</button>)}
           </div>
         </div>
         <div className="mt-3 h-[270px]">
@@ -474,7 +477,7 @@ function DeviceDetail({
     {activeTab === 'graficos' && <>
       <div className="flex flex-col gap-3 rounded-2xl border border-slate-700/70 bg-slate-900/70 p-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="grid grid-cols-4 gap-1 rounded-xl bg-slate-950/60 p-1">
-          {([6, 24, 168, 720] as RangeHours[]).map((hours) => <button key={hours} onClick={() => onRange(hours)} className={`min-h-10 rounded-lg px-2 text-[10px] font-semibold sm:px-4 sm:text-xs ${historyHours === hours ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>{rangeLabel(hours)}</button>)}
+          {([6, 24, 168, 720, 0] as RangeHours[]).map((hours) => <button key={hours} onClick={() => onRange(hours)} className={`min-h-10 rounded-lg px-2 text-[10px] font-semibold sm:px-4 sm:text-xs ${historyHours === hours ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>{rangeLabel(hours)}</button>)}
         </div>
         <div className="flex items-center justify-end gap-2 text-[11px] text-slate-500"><RefreshCw size={14} className={refreshing ? 'animate-spin text-emerald-400' : 'text-emerald-400'} />Actualización automática · 5 s</div>
       </div>

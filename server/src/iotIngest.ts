@@ -2,6 +2,8 @@ import { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
 import { enviarPushAEmpresa } from './push';
 import { registrarAuditoria } from './auditoria';
+import { enviarMensajeTelegram } from './telegram';
+import { POLITICAS_VERSION } from './politicas';
 
 type Scalar = number | boolean | string;
 
@@ -202,6 +204,16 @@ function cumple(regla: { operador: string; umbralNumero: number | null; umbralBo
   }
 }
 
+async function notificarTelegramAlarma(empresaId: string, titulo: string, detalle: string) {
+  const empresa = await prisma.empresa.findUnique({ where: { id: empresaId }, select: { politicasAceptadasEn: true, politicasVersion: true } });
+  if (!empresa?.politicasAceptadasEn || empresa.politicasVersion !== POLITICAS_VERSION) return;
+  const destinatarios = await prisma.usuario.findMany({ where: {
+    empresaId, activo: true, telegramChatId: { not: null }, telegramAlertasHabilitadas: true, telegramAlertasAceptadasEn: { not: null },
+    rol: { in: ['admin', 'mantenimiento', 'jefatura', 'direccion'] },
+  }, select: { telegramChatId: true } });
+  await Promise.allSettled(destinatarios.map((usuario) => enviarMensajeTelegram(usuario.telegramChatId!, `ALERTA ACTIVAQR\n${titulo}\n\n${detalle}\n\nAbrí ActivaQR Control para reconocerla.`)));
+}
+
 async function evaluarReglas(params: {
   empresaId: string;
   dispositivoId: string;
@@ -244,6 +256,7 @@ async function evaluarReglas(params: {
           tag: `alarma-${alarma.id}`,
         }, ['admin', 'mantenimiento', 'jefatura']).catch(() => {});
       }
+      void notificarTelegramAlarma(params.empresaId, regla.nombre, `Valor recibido: ${String(params.value)}`);
       await registrarAuditoria({ empresaId: params.empresaId, usuarioNombre: 'ActivaQR Control', usuarioRol: 'sistema', accion: 'alarma', entidad: 'AlarmaIoT', entidadId: alarma.id, detalle: regla.nombre });
     } else if (!disparada && abierta) {
       await prisma.alarmaIoT.update({ where: { id: abierta.id }, data: { estado: 'resuelta', resueltaEn: params.medidaEn, resolucion: 'La variable volvió al rango configurado.' } });
@@ -300,6 +313,7 @@ async function evaluarSaltoTermico(params: {
     severity: 'critical',
     tag: `salto-termico-${params.dispositivoId}`,
   }, ['admin', 'mantenimiento', 'jefatura', 'direccion']).catch(() => {});
+  void notificarTelegramAlarma(params.empresaId, titulo, detalle);
   await registrarAuditoria({
     empresaId: params.empresaId,
     usuarioNombre: 'ActivaQR Control',
