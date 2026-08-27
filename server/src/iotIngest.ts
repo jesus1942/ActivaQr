@@ -5,6 +5,26 @@ import { registrarAuditoria } from './auditoria';
 
 type Scalar = number | boolean | string;
 
+// Segunda barrera de seguridad para sensores térmicos. No reemplaza los
+// umbrales configurados de cada instalación: detecta un salto anormal aun
+// cuando el dispositivo todavía no fue vinculado a un activo ni tiene reglas.
+export function detectarSaltoTemperatura(params: {
+  valorAnterior: number;
+  valorActual: number;
+  fechaAnterior: Date;
+  fechaActual: Date;
+  aumentoMinimo?: number;
+  ventanaMinutos?: number;
+}): { aumento: number; minutos: number } | null {
+  const aumentoMinimo = params.aumentoMinimo ?? 8;
+  const ventanaMinutos = params.ventanaMinutos ?? 15;
+  const aumento = params.valorActual - params.valorAnterior;
+  const minutos = (params.fechaActual.getTime() - params.fechaAnterior.getTime()) / 60_000;
+  if (!Number.isFinite(aumento) || !Number.isFinite(minutos)) return null;
+  if (minutos <= 0 || minutos > ventanaMinutos || aumento < aumentoMinimo) return null;
+  return { aumento, minutos };
+}
+
 export interface EventoIoTNormalizado {
   dispositivoExternoId: string;
   nombre?: string;
@@ -231,6 +251,66 @@ async function evaluarReglas(params: {
   }
 }
 
+async function evaluarSaltoTermico(params: {
+  empresaId: string;
+  dispositivoId: string;
+  variableId: string;
+  variableClave: string;
+  variableNombre: string;
+  medidaEn: Date;
+}) {
+  if (!['temperature', 'temperatura'].includes(params.variableClave)) return;
+  const lecturas = await prisma.lecturaIoT.findMany({
+    where: { variableId: params.variableId, valorNumero: { not: null } },
+    select: { valorNumero: true, medidaEn: true },
+    orderBy: { medidaEn: 'desc' },
+    take: 2,
+  });
+  if (lecturas.length < 2 || lecturas[0].valorNumero == null || lecturas[1].valorNumero == null) return;
+  const salto = detectarSaltoTemperatura({
+    valorAnterior: lecturas[1].valorNumero,
+    valorActual: lecturas[0].valorNumero,
+    fechaAnterior: lecturas[1].medidaEn,
+    fechaActual: lecturas[0].medidaEn,
+  });
+  if (!salto) return;
+
+  const titulo = 'Aumento brusco de temperatura';
+  const abierta = await prisma.alarmaIoT.findFirst({
+    where: { dispositivoId: params.dispositivoId, variableId: params.variableId, titulo, estado: { in: ['activa', 'reconocida'] } },
+  });
+  if (abierta) return;
+
+  const actual = lecturas[0].valorNumero;
+  const detalle = `${params.variableNombre} aumentó ${salto.aumento.toFixed(1)} °C en ${Math.max(1, Math.round(salto.minutos))} min. Valor actual: ${actual.toFixed(1)} °C. Verificá el equipo y la mercadería de inmediato.`;
+  const alarma = await prisma.alarmaIoT.create({ data: {
+    empresaId: params.empresaId,
+    dispositivoId: params.dispositivoId,
+    variableId: params.variableId,
+    titulo,
+    detalle,
+    severidad: 'critica',
+    valorDisparador: `${actual.toFixed(1)} °C`,
+    iniciadaEn: params.medidaEn,
+  } });
+  enviarPushAEmpresa(params.empresaId, {
+    title: 'Alarma crítica: aumento brusco de temperatura',
+    body: detalle,
+    url: '#/control-industrial',
+    severity: 'critical',
+    tag: `salto-termico-${params.dispositivoId}`,
+  }, ['admin', 'mantenimiento', 'jefatura', 'direccion']).catch(() => {});
+  await registrarAuditoria({
+    empresaId: params.empresaId,
+    usuarioNombre: 'ActivaQR Control',
+    usuarioRol: 'sistema',
+    accion: 'alarma',
+    entidad: 'AlarmaIoT',
+    entidadId: alarma.id,
+    detalle,
+  });
+}
+
 export async function procesarEventoIoT(integracionId: string, evento: EventoIoTNormalizado) {
   const integracion = await prisma.integracionIoT.findUnique({
     where: { id: integracionId },
@@ -332,6 +412,14 @@ export async function procesarEventoIoT(integracionId: string, evento: EventoIoT
   for (const variable of variables) {
     if (!(variable.clave in normalizedReadings)) continue;
     await evaluarReglas({ empresaId: integracion.empresaId, dispositivoId: dispositivo.id, variableId: variable.id, value: normalizedReadings[variable.clave], medidaEn: evento.medidaEn });
+    await evaluarSaltoTermico({
+      empresaId: integracion.empresaId,
+      dispositivoId: dispositivo.id,
+      variableId: variable.id,
+      variableClave: variable.clave,
+      variableNombre: variable.nombre,
+      medidaEn: evento.medidaEn,
+    });
   }
 
   const criticas = await prisma.alarmaIoT.count({ where: { dispositivoId: dispositivo.id, estado: { in: ['activa', 'reconocida'] }, severidad: 'critica' } });
