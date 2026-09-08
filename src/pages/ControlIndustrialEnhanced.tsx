@@ -35,6 +35,7 @@ import {
 } from '../data/controlIndustrialApi';
 import { ControlIndustrial } from './ControlIndustrial';
 import { TuyaLightControls } from '../components/TuyaLightControls';
+import { permiteControlDirecto } from '../utils/controlDirecto';
 
 type HistoryReading = {
   medidaEn: string;
@@ -329,8 +330,8 @@ function SereneDeviceDetail({
       <aside className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
         <section className="rounded-xl border border-slate-800 bg-[#0b1626] p-5">
           <div className="flex items-center justify-between gap-3"><h3 className="font-semibold text-white">Control del relé</h3><span className={`text-xs font-semibold ${relay?.valorBooleano ? 'text-emerald-400' : 'text-slate-500'}`}>{relay?.valorBooleano ? 'Encendido' : 'Apagado'}</span></div>
-          {relay && canControlHero ? <button disabled={commandBusy !== null} onClick={() => onCommand(device, relay, 0)} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-500/20 disabled:opacity-50"><Power size={17} />{commandBusy ? 'Confirmando…' : relay.valorBooleano ? 'Apagar compresor' : 'Encender compresor'}</button> : <p className="mt-5 rounded-lg bg-slate-950/50 p-3 text-xs leading-5 text-slate-500">El control remoto no está habilitado para este equipo.</p>}
-          <p className="mt-3 text-xs leading-5 text-slate-500">Cada maniobra exige confirmación, se verifica con el proveedor y queda auditada.</p>
+          {relay && canControlHero ? <button disabled={commandBusy !== null} onClick={() => onCommand(device, relay, 0)} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-500/20 disabled:opacity-50"><Power size={17} />{commandBusy ? 'Enviando…' : relay.valorBooleano ? 'Apagar compresor' : 'Encender compresor'}</button> : <p className="mt-5 rounded-lg bg-slate-950/50 p-3 text-xs leading-5 text-slate-500">El control remoto no está habilitado para este equipo.</p>}
+          <p className="mt-3 text-xs leading-5 text-slate-500">Las luces identificadas se operan con un toque. Las maniobras críticas conservan confirmación. Cada orden queda registrada.</p>
         </section>
         <section className="rounded-xl border border-slate-800 bg-[#0b1626] p-5">
           <div className="flex items-center gap-2"><ShieldCheck size={17} className="text-cyan-400" /><h3 className="font-semibold text-white">Estado operativo</h3></div>
@@ -498,7 +499,7 @@ function DeviceDetail({
       {relay && <section className="rounded-2xl border border-slate-700/70 bg-slate-900/70 p-4 sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div><h3 className="text-base font-semibold text-white">Control del relé</h3><div className="mt-2 flex items-center gap-2 text-sm text-slate-400">Estado actual <span className={`rounded-lg px-2.5 py-1 text-[10px] font-semibold ${relay.valorBooleano ? 'bg-emerald-500/15 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>{relay.valorBooleano ? 'ENCENDIDO' : 'APAGADO'}</span></div></div>
-          {canControl ? <button disabled={commandBusy !== null} onClick={() => onCommand(device, relay, 0)} className={`min-h-12 rounded-xl px-6 text-sm font-semibold transition disabled:opacity-50 ${relay.valorBooleano ? 'border border-slate-600 bg-slate-800 text-white hover:bg-slate-700' : 'border border-emerald-500/60 bg-emerald-600/20 text-emerald-200 hover:bg-emerald-600/30'}`}><Power size={17} className="mr-2 inline" />{commandBusy ? 'Confirmando…' : relay.valorBooleano ? 'Apagar relé' : 'Encender relé'}</button> : <span className="text-xs text-slate-500">Control remoto no habilitado</span>}
+          {canControl ? <button disabled={commandBusy !== null} onClick={() => onCommand(device, relay, 0)} className={`min-h-12 rounded-xl px-6 text-sm font-semibold transition disabled:opacity-50 ${relay.valorBooleano ? 'border border-slate-600 bg-slate-800 text-white hover:bg-slate-700' : 'border border-emerald-500/60 bg-emerald-600/20 text-emerald-200 hover:bg-emerald-600/30'}`}><Power size={17} className="mr-2 inline" />{commandBusy ? 'Enviando…' : relay.valorBooleano ? 'Apagar relé' : 'Encender relé'}</button> : <span className="text-xs text-slate-500">Control remoto no habilitado</span>}
         </div>
       </section>}
     </>}
@@ -661,7 +662,8 @@ export const ControlIndustrialEnhanced: React.FC = () => {
     const canal = Number.isInteger(parsed) && parsed >= 0 ? parsed : channelIndex;
     const nextState = !channel.valorBooleano;
     const label = channelVariables(device).length === 1 ? 'relé interno' : channel.nombre || `canal ${canal + 1}`;
-    if (!window.confirm(`¿${nextState ? 'Encender' : 'Apagar'} ${label} de ${device.nombre}?`)) return;
+    if (commandBusy !== null) return;
+    if (!permiteControlDirecto(device, channel) && !window.confirm(`¿${nextState ? 'Encender' : 'Apagar'} ${label} de ${device.nombre}?`)) return;
     const key = `${device.id}:${canal}`;
     setCommandBusy(key);
     try {
@@ -678,7 +680,7 @@ export const ControlIndustrialEnhanced: React.FC = () => {
     } finally {
       setCommandBusy(null);
     }
-  }, [loadControl, toast]);
+  }, [commandBusy, loadControl, toast]);
 
   const exportDevice = useCallback(async (device: DispositivoIoT) => {
     try {

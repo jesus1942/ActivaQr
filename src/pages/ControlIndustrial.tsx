@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { permiteControlDirecto } from '../utils/controlDirecto';
 import { Activity, AlertTriangle, Archive, BellRing, Check, ChevronDown, ChevronRight, ChevronUp, CircleOff, CloudCog, Cpu, DoorOpen, Download, Droplets, EyeOff, Gauge, KeyRound, Layers3, LineChart as LineChartIcon, Maximize2, Minimize2, Play, Plus, RadioTower, RefreshCw, RotateCcw, Settings2, ShieldAlert, Signal, Snowflake, Thermometer, Trash2, WifiOff, Zap } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useAuth } from '../context/AuthContext';
@@ -220,6 +221,8 @@ export const ControlIndustrial: React.FC = () => {
   const [sceneOpen, setSceneOpen] = useState(false);
   const [sceneWorking, setSceneWorking] = useState<string | null>(null);
   const [commandFor, setCommandFor] = useState<{ device: DispositivoIoT; initial?: { canal: number; encendido: boolean; nombre: string } } | null>(null);
+  const directLock = useRef(false);
+  const [directPending, setDirectPending] = useState('');
   const [settingsFor, setSettingsFor] = useState<DispositivoIoT | null>(null);
   const [expandedDevices, setExpandedDevices] = useState<Set<string>>(new Set());
   const [webhook, setWebhook] = useState<string | null>(null);
@@ -249,6 +252,20 @@ export const ControlIndustrial: React.FC = () => {
     finally { setLoading(false); setRefreshing(false); }
   };
   useEffect(() => { load(); }, []);
+
+  /** Opera luces sin modal y evita duplicar órdenes mientras se actualiza el estado. */
+  async function requestCommand(device: DispositivoIoT, initial?: { canal: number; encendido: boolean; nombre: string }) {
+    if (directLock.current) return;
+    const channel = initial ? channelVariables(device).find((v) => Number(v.clave.slice(7)) - 1 === initial.canal) : undefined;
+    if (!initial || !channel || !permiteControlDirecto(device, channel)) { setCommandFor({ device, initial }); return; }
+    directLock.current = true;
+    setDirectPending(initial.nombre);
+    try {
+      await solicitarComando({ dispositivoId: device.id, tipo: 'rele', payload: { canal: initial.canal, encendido: initial.encendido }, motivo: 'Mando directo de iluminación desde ActivaQR.' });
+      await load(true);
+    } catch (error) { toast(error instanceof Error ? error.message : 'No se pudo operar la luz.', 'error'); }
+    finally { directLock.current = false; setDirectPending(''); }
+  }
   useEffect(() => {
     const query = window.location.hash.split('?')[1];
     if (!query) return;
@@ -364,7 +381,7 @@ export const ControlIndustrial: React.FC = () => {
       {energy && energy.channelsMeasured > 0 && <div className="order-2 lg:order-1"><EnergySummary energy={energy} /></div>}
       {!data.dispositivos.length ? <div className="order-1 lg:order-2"><Empty icon={RadioTower} title="Esperando el primer dispositivo" text="Configurá un conector y enviá la primera lectura. El equipo aparecerá automáticamente en este tablero." action={owner ? () => setTab('conexiones') : undefined} actionLabel="Configurar conexión" /></div> : <div className="order-1 space-y-3 lg:order-2">
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-2"><p className="text-xs text-muted">{displayedDevices.length} de {data.dispositivos.length} dispositivos visibles</p><div className="flex min-w-0 flex-1 justify-end gap-2">{offlineCount > 0 && <button onClick={() => setHideOffline((current) => !current)} className="flex min-h-10 items-center gap-2 border border-line px-3 text-[10px] font-black uppercase text-content"><EyeOff size={14} />{hideOffline ? 'Mostrar todos' : `Ocultar sin conexión (${offlineCount})`}</button>}{owner && retiredDevices.length > 0 && <button onClick={() => setTab('conexiones')} className="flex min-h-10 items-center gap-2 border border-line px-3 text-[10px] font-black uppercase text-content"><Archive size={14} />Retirados ({retiredDevices.length})</button>}</div></div>
-        {displayedDevices.length ? <div className="grid items-start gap-4 xl:grid-cols-2">{displayedDevices.map((device) => <CompactDeviceCard key={device.id} device={device} expanded={expandedDevices.has(device.id)} remoteEnabled={data.modulo.controlRemotoHabilitado} editable={editable} showBattery={data.modulo.tableroConfig?.mostrarBateria !== false} showSignal={data.modulo.tableroConfig?.mostrarSenal !== false} onToggle={() => setExpandedDevices((current) => { const next = new Set(current); next.has(device.id) ? next.delete(device.id) : next.add(device.id); return next; })} onHistory={(variable) => { setHistoryHours(24); setSelectedVariable({ device, variable }); }} onCommand={(initial) => setCommandFor({ device, initial })} onSettings={() => setSettingsFor(device)} onExport={() => downloadHistory('device', device.id)} />)}</div> : <Empty icon={WifiOff} title="Dispositivos sin conexión ocultos" text="No hay equipos en línea para mostrar. Podés volver a mostrar todos sin modificar su configuración." action={() => setHideOffline(false)} actionLabel="Mostrar todos" />}
+        {displayedDevices.length ? <div className="grid items-start gap-4 xl:grid-cols-2">{displayedDevices.map((device) => <CompactDeviceCard key={device.id} device={device} expanded={expandedDevices.has(device.id)} remoteEnabled={data.modulo.controlRemotoHabilitado} editable={editable} showBattery={data.modulo.tableroConfig?.mostrarBateria !== false} showSignal={data.modulo.tableroConfig?.mostrarSenal !== false} onToggle={() => setExpandedDevices((current) => { const next = new Set(current); next.has(device.id) ? next.delete(device.id) : next.add(device.id); return next; })} onHistory={(variable) => { setHistoryHours(24); setSelectedVariable({ device, variable }); }} onCommand={(initial) => void requestCommand(device, initial)} onSettings={() => setSettingsFor(device)} onExport={() => downloadHistory('device', device.id)} />)}</div> : <Empty icon={WifiOff} title="Dispositivos sin conexión ocultos" text="No hay equipos en línea para mostrar. Podés volver a mostrar todos sin modificar su configuración." action={() => setHideOffline(false)} actionLabel="Mostrar todos" />}
       </div>}
     </section>}
 
@@ -397,10 +414,11 @@ export const ControlIndustrial: React.FC = () => {
     {credentialsFor?.proveedor === 'tuya_cloud' && <TuyaCredentialsModal integration={credentialsFor} onClose={() => setCredentialsFor(null)} onDone={async () => { setCredentialsFor(null); await load(true); }} toast={toast} />}
     {ruleOpen && <RuleModal devices={data.dispositivos} onClose={() => setRuleOpen(false)} onDone={async () => { setRuleOpen(false); await load(true); }} toast={toast} />}
     {sceneOpen && <SceneModal devices={data.dispositivos} onClose={() => setSceneOpen(false)} onDone={async () => { setSceneOpen(false); await load(true); }} toast={toast} />}
+    {directPending && <div role="status" className="fixed bottom-4 left-1/2 z-[100] -translate-x-1/2 rounded-lg bg-slate-900 px-5 py-3 text-sm text-white shadow-lg">Enviando… {directPending}</div>}
     {commandFor && <CommandModal device={commandFor.device} initialAction={commandFor.initial} onClose={() => setCommandFor(null)} onDone={async () => { setCommandFor(null); await load(true); }} toast={toast} />}
     {settingsFor && <DeviceModal device={settingsFor} remoteContract={data.modulo.controlRemotoHabilitado} onClose={() => setSettingsFor(null)} onDone={async () => { setSettingsFor(null); await load(true); }} onRetire={owner ? async () => { if (!window.confirm(`¿Retirar “${settingsFor.nombre}” del tablero? Su historial se conservará y podrás restaurarlo.`)) return; try { await retirarDispositivo(settingsFor.id); setSettingsFor(null); toast(`${settingsFor.nombre} fue retirado del tablero.`, 'success'); await load(true); } catch (error) { toast(error instanceof Error ? error.message : 'No se pudo retirar el dispositivo.', 'error'); } } : undefined} toast={toast} />}
     {dashboardSettingsOpen && <DashboardSettingsModal module={data.modulo} fallbackTitle={usuario?.empresa?.nombre || 'Mi espacio'} onClose={() => setDashboardSettingsOpen(false)} onDone={(module) => { setData((current) => current ? { ...current, modulo: module } : current); setDashboardSettingsOpen(false); toast('La identidad del tablero quedó actualizada.', 'success'); }} toast={toast} />}
-    {presentationMode && <PresentationDashboard data={data} energy={energy} editable={editable} customizable={owner} title={data.modulo.tableroConfig?.titulo || usuario?.empresa?.nombre || 'Mi espacio'} onExit={closePresentation} onSettings={() => setDashboardSettingsOpen(true)} onCommand={(device, initial) => setCommandFor({ device, initial })} />}
+    {presentationMode && <PresentationDashboard data={data} energy={energy} editable={editable} customizable={owner} title={data.modulo.tableroConfig?.titulo || usuario?.empresa?.nombre || 'Mi espacio'} onExit={closePresentation} onSettings={() => setDashboardSettingsOpen(true)} onCommand={(device, initial) => void requestCommand(device, initial)} />}
     {webhook && <DialogViewport className="z-50 flex items-end justify-center bg-slate-950/60 backdrop-blur-sm sm:items-center sm:p-4" onEscape={() => setWebhook(null)}><div className="max-h-[92dvh] w-full max-w-xl overflow-y-auto border-x border-t border-line bg-surface p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:border sm:p-5" role="dialog" aria-modal="true"><h2 className="font-display text-xl font-black text-content">Endpoint de ingesta creado</h2><p className="mt-2 text-sm text-muted">Copialo ahora en el UG65. Al rotarlo, el anterior deja de funcionar.</p><code className="mt-4 block break-all border border-line bg-subtle p-3 text-xs text-content">{webhook}</code><div className="mt-4 grid gap-2 sm:flex"><button onClick={() => navigator.clipboard.writeText(webhook).then(() => toast('Endpoint copiado.', 'success'))} className="h-11 bg-cyan-700 text-xs font-black uppercase text-white sm:flex-1">Copiar</button><button onClick={() => setWebhook(null)} className="h-11 border border-line px-5 text-xs font-black uppercase">Listo</button></div></div></DialogViewport>}
   </div>;
 };
