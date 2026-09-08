@@ -102,6 +102,7 @@ export function normalizarCodigoTuya(code: string) {
 }
 
 function classify(device: TuyaDevice, readings: Record<string, unknown>) {
+  if ('switch_led' in readings) return 'luz_rgbw';
   const identity = `${device.category ?? ''} ${device.product_name ?? ''} ${device.name ?? ''}`.toLowerCase();
   if (Object.keys(readings).some((key) => /^switch_\d+$|^relay$/.test(key))) return Object.keys(readings).filter((key) => /^switch_\d+$/.test(key)).length > 1 ? 'interruptor_multicanal' : 'interruptor';
   if (/water|leak|flood|inund/.test(identity) || 'water' in readings) return 'sensor_inundacion';
@@ -132,6 +133,10 @@ export async function sincronizarTuya(integracionId: string) {
       const readings: Record<string, number | boolean | string> = {};
       for (const item of status ?? []) {
         const value = escalarValorTuya(item.value, specByCode[item.code]);
+        if (['colour_data_v2', 'scene_data_v2', 'music_data', 'control_data'].includes(item.code) && value && typeof value === 'object') {
+          readings[item.code] = JSON.stringify(value);
+          continue;
+        }
         if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'string') readings[normalizarCodigoTuya(item.code)] = value;
       }
       readings.online = device.online !== false;
@@ -144,6 +149,24 @@ export async function sincronizarTuya(integracionId: string) {
     await prisma.integracionIoT.update({ where: { id: integration.id }, data: { estado: 'error', ultimoError: error instanceof Error ? error.message.slice(0, 2000) : 'Error Tuya Cloud' } });
     throw error;
   }
+}
+
+/** Verifica las funciones expuestas y exige aceptación explícita de Tuya. */
+export async function ejecutarLuzTuya(integracionId: string, deviceId: string, commands: Array<{ code: string; value: boolean | number | string }>) {
+  const integration = await prisma.integracionIoT.findUnique({ where: { id: integracionId } });
+  if (!integration || integration.proveedor !== 'tuya_cloud' || integration.estado === 'pausada') throw Object.assign(new Error('Integración Tuya no disponible.'), { status: 409 });
+  const credentials = await authorized(integration);
+  const functions = await rawRequest<{ functions: Array<{ code: string; values?: string }> }>(credentials, 'GET', `/v1.0/devices/${encodeURIComponent(deviceId)}/functions`);
+  for (const command of commands) {
+    const spec = functions.functions?.find((item) => item.code === command.code);
+    if (!spec) throw Object.assign(new Error(`El dispositivo no expone ${command.code}.`), { status: 409 });
+    const limits = JSON.parse(spec.values || '{}');
+    if (command.code === 'work_mode' && !limits.range?.includes(command.value)) throw Object.assign(new Error('Modo no compatible.'), { status: 409 });
+    if (typeof command.value === 'number' && (command.value < limits.min || command.value > limits.max)) throw Object.assign(new Error('Valor fuera del rango del equipo.'), { status: 400 });
+  }
+  const accepted = await rawRequest<boolean>(credentials, 'POST', `/v1.0/devices/${encodeURIComponent(deviceId)}/commands`, { commands });
+  if (accepted !== true) throw Object.assign(new Error('Tuya no aceptó la orden.'), { status: 502 });
+  return { aceptado: true };
 }
 
 export async function ejecutarCanalTuya(integracionId: string, dispositivoExternoId: string, codigo: string, encendido: boolean) {

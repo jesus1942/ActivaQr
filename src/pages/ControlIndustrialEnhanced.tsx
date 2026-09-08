@@ -34,6 +34,7 @@ import {
   VariableIoT,
 } from '../data/controlIndustrialApi';
 import { ControlIndustrial } from './ControlIndustrial';
+import { TuyaLightControls } from '../components/TuyaLightControls';
 
 type HistoryReading = {
   medidaEn: string;
@@ -257,6 +258,7 @@ function SereneDeviceDetail({
   );
 
   return <div className="mx-auto flex w-full max-w-[1540px] flex-col gap-5 px-4 pb-5 sm:px-6 lg:px-8">
+    {device.integracion?.proveedor === 'tuya_cloud' && device.variables.some((item) => item.clave === 'switch_led') && <TuyaLightControls key={device.id} device={device} enabled={data.modulo.controlRemotoHabilitado && device.permiteControl} />}
     <section className="pt-5">
       <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
         <div className="min-w-0">

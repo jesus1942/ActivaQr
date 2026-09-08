@@ -17,6 +17,8 @@ import { normalizarEventoIoT, procesarEventoIoT } from '../iotIngest';
 import { AccionMotorEwelink, crearAutorizacionEwelink, ejecutarCanalEwelink, ejecutarMotorEwelink, mensajePublicoErrorEwelink, sincronizarEwelink } from '../ewelinkConnector';
 import { enviarPushAUsuario } from '../push';
 import { ejecutarCanalTuya, sincronizarTuya } from '../tuyaConnector';
+import { ejecutarLuzTuya } from '../tuyaConnector';
+import { comandosLuzTuya } from '../tuyaLight';
 
 const ESTADOS_MODULO = new Set(['configuracion', 'activo', 'suspendido']);
 const PROVEEDORES = new Set(['sonoff_ewelink', 'tuya_cloud', 'milesight_ug65', 'webhook_generico']);
@@ -1067,6 +1069,24 @@ controlIndustrialRouter.post('/comandos', commandLimiter, requireJefatura, async
   try {
     const { dispositivoId, tipo, payload, motivo } = req.body ?? {};
     if (typeof dispositivoId !== 'string' || !payload || typeof payload !== 'object' || Array.isArray(payload) || !motivo || String(motivo).trim().length < 5) throw statusError('El comando requiere dispositivo, parámetros y un motivo de al menos 5 caracteres.');
+    if (tipo === 'luz') {
+      const empresaId = tenantId(req);
+      const device = await prisma.dispositivoIoT.findFirst({ where: { id: dispositivoId, empresaId, archivadoEn: null, habilitado: true }, include: { integracion: true, variables: true } });
+      const module = await prisma.moduloControlEmpresa.findUnique({ where: { empresaId } });
+      if (!module?.controlRemotoHabilitado || !device?.permiteControl || device.integracion.proveedor !== 'tuya_cloud') throw statusError('Control de iluminación no autorizado.', 403);
+      if (!device.variables.some((v) => v.clave === 'switch_led')) throw statusError('El equipo no informó una salida de iluminación.', 409);
+      const commands = comandosLuzTuya(payload);
+      const command = await prisma.comandoIoT.create({ data: { empresaId, dispositivoId, tipo: 'luz', payload, motivo: String(motivo).slice(0, 2000), solicitadoPorId: req.auth!.userId, solicitadoPorNombre: req.auth!.email, estado: 'pendiente' } });
+      try {
+        await ejecutarLuzTuya(device.integracionId, device.identificadorExterno, commands);
+        const result = await prisma.comandoIoT.update({ where: { id: command.id }, data: { estado: 'enviado', resultado: 'Tuya aceptó la orden; pendiente de nueva telemetría.' } });
+        await auditar(req, 'comando', 'ComandoIoT', command.id, `${device.nombre}: iluminación ${String(payload.accion)} aceptada por Tuya.`);
+        return res.json(result);
+      } catch (error) {
+        await prisma.comandoIoT.update({ where: { id: command.id }, data: { estado: 'error', resultado: error instanceof Error ? error.message : 'Error de iluminación' } });
+        throw error;
+      }
+    }
     if (tipo === 'motor') {
       const accion = String((payload as Record<string, unknown>).accion) as AccionMotorEwelink;
       if (!['abrir', 'detener', 'cerrar'].includes(accion)) throw statusError('Seleccioná abrir, detener o cerrar.');
