@@ -54,3 +54,5 @@ Las pruebas automatizadas usan localhost y no envían mensajes ni pagos reales.
 
 Referencias: [Mercado Pago](https://www.mercadopago.com.ar/developers/es/docs/checkout-pro/additional-content/notifications/webhooks)
 y [Telegram setWebhook](https://core.telegram.org/bots/api#setwebhook).
+
+Para registrar el secreto desde el runtime sin revelar el token, definir `TELEGRAM_WEBHOOK_AUTO_REGISTER=true` en el servicio propietario del bot. Al iniciar, consulta el webhook, mantiene su URL de ActivaQR, filtros y límite de conexiones, registra el secreto y verifica el destino. No borra actualizaciones pendientes ni toma webhooks de otros sitios. Usa DNS para el dominio y rechaza certificados personalizados. Los logs solo informan éxito o códigos de error sin credenciales.

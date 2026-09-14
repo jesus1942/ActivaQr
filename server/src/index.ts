@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { iniciarRegistroWebhookTelegram } from './telegramWebhookSetup';
 import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -394,6 +395,7 @@ app.listen(PORT, () => {
   iniciarSincronizadorTuya();
   iniciarMonitorDesconexionesIoT();
   iniciarAutomatizacionesIoT();
+  iniciarRegistroWebhookTelegram();
 });
 
 export default app;
