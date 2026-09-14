@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { randomBytes } from 'crypto';
+import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import { prisma } from './prisma';
 import { faseTrial } from './trial';
 import {
@@ -32,15 +32,35 @@ export interface TokenPayload {
   email: string;
   rol: RolAplicacion;
   empresaId: string | null;
+  credentialVersion?: string;
 }
 
-export function firmarToken(payload: TokenPayload, ttl?: string): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: (ttl ?? TOKEN_TTL) as any });
+/** Huella HMAC: vincula la sesión al hash actual sin publicarlo en el JWT. */
+export function versionCredencial(passwordHash: string): string {
+  return createHmac('sha256', JWT_SECRET).update(`session:v1:${passwordHash}`).digest('hex');
+}
+
+/** Protege códigos cortos en reposo y los vincula a la cuenta y contraseña. */
+export function hashCodigoTelegram(userId: string, chatId: string, passwordHash: string, code: string): string {
+  return createHmac('sha256', JWT_SECRET)
+    .update(JSON.stringify(['telegram-link:v1', userId, chatId, passwordHash, code])).digest('hex');
+}
+
+/** Compara huellas del servidor sin diferencias temporales por prefijo. */
+export function huellasIguales(a: unknown, b: string): boolean {
+  return typeof a === 'string' && /^[a-f0-9]{64}$/.test(a) &&
+    timingSafeEqual(Buffer.from(a, 'hex'), Buffer.from(b, 'hex'));
+}
+
+/** Firma una sesión que se revoca automáticamente cuando cambia la contraseña. */
+export function firmarToken(payload: TokenPayload, passwordHash: string, ttl?: string): string {
+  return jwt.sign({ ...payload, credentialVersion: versionCredencial(passwordHash) }, JWT_SECRET,
+    { algorithm: 'HS256', expiresIn: (ttl ?? TOKEN_TTL) as any });
 }
 
 export function verificarToken(token: string): TokenPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as TokenPayload;
+    return jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }) as TokenPayload;
   } catch {
     return null;
   }
@@ -63,9 +83,9 @@ function leerToken(req: Request): string | null {
 async function validarUsuarioActual(payload: TokenPayload): Promise<TokenPayload | null> {
   const usuario = await prisma.usuario.findUnique({
     where: { id: payload.userId },
-    select: { id: true, email: true, rol: true, empresaId: true, activo: true },
+    select: { id: true, email: true, rol: true, empresaId: true, activo: true, passwordHash: true },
   });
-  if (!usuario?.activo) return null;
+  if (!usuario?.activo || !huellasIguales(payload.credentialVersion, versionCredencial(usuario.passwordHash))) return null;
   if (
     usuario.email !== payload.email ||
     usuario.rol !== payload.rol ||

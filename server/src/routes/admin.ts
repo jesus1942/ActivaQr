@@ -1,3 +1,4 @@
+import { limpiarVinculacionTelegram } from './telegramAccount';
 import crypto from 'crypto';
 import { Router, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
@@ -183,10 +184,11 @@ router.post('/empresas/:id/reset-password', async (req: AuthRequest, res: Respon
     const passwordHashInvalido = await bcrypt.hash(tokenAleatorio, 10);
     // El token viaja al cliente; en la DB queda solo su hash.
     const { token: resetToken, tokenHash, expiry: resetTokenExpiry } = generarResetToken();
-    await prisma.usuario.update({
-      where: { id: admin.id },
-      data: { passwordHash: passwordHashInvalido, resetToken: tokenHash, resetTokenExpiry },
+    const emitido = await prisma.usuario.updateMany({
+      where: { id: admin.id, passwordHash: admin.passwordHash, telegramChatId: admin.telegramChatId },
+      data: { passwordHash: passwordHashInvalido, resetToken: tokenHash, resetTokenExpiry, ...limpiarVinculacionTelegram },
     });
+    if (!emitido.count) return res.status(409).json({ error: 'La cuenta cambió durante la solicitud. Volvé a intentarlo.' });
 
     // 4. Notificar al cliente con motivo "admin-reset"
     const resetUrl = `${APP_PUBLIC_URL}#/reset-password?token=${resetToken}`;

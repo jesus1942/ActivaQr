@@ -17,6 +17,7 @@ import medicionesRouter from './routes/mediciones';
 import tareasRouter from './routes/tareas';
 import syncRouter from './routes/sync';
 import webhooksRouter from './routes/webhooks';
+import { requireTelegramWebhookSecret } from './webhookSecurity';
 import publicRouter from './routes/public';
 import visitasRouter, { registrarVisita } from './routes/visitas';
 import accesoRemotoRouter from './routes/accesoRemoto';
@@ -260,7 +261,7 @@ app.use('/api/iot/ingest', iotLimiter, iotIngestRouter);
 app.use('/api/camaras/ingest', iotLimiter, camarasIngestRouter);
 
 // Telegram Bot webhook — responde /start con el Chat ID del usuario
-app.post('/api/telegram/webhook', express.json(), async (req: Request, res: Response) => {
+app.post('/api/telegram/webhook', requireTelegramWebhookSecret, express.json(), async (req: Request, res: Response) => {
   try {
     const { message } = req.body ?? {};
     if (message?.text?.startsWith('/start') && message.chat?.id) {

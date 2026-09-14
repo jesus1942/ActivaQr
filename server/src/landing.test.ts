@@ -75,7 +75,7 @@ test('la landing abre una bitácora pública con avances verificables', () => {
   assert.match(bitacora, /\.entrada\{grid-template-columns:1fr/);
   assert.match(landing, /@media\(max-width:820px\).*\.bitacora-preview-grid\{grid-template-columns:1fr\}/);
   assert.equal(ENTRADAS_BITACORA[0].version, 'CONTROL DIRECTO');
-  assert.match(bitacora, /Mando directo con un toque para iluminación identificada/);
+  assert.match(bitacora, /Las luces identificadas ahora se operan con un solo toque/);
   assert.match(bitacora, /Pulsadores grandes por canal/);
   assert.match(bitacora, /Vista en vivo multimarca mediante gateway HTTPS/);
   assert.match(bitacora, /Tuya \/ Smart Life Cloud por tenant/);

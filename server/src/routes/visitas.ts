@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
-import { verificarToken } from '../auth';
+import { AuthRequest, requireAuth } from '../auth';
 
 const router = Router();
 
@@ -71,12 +71,10 @@ router.post('/', async (req: Request, res: Response) => {
 
 // POST /api/visitas/seccion — registra navegación interna de un usuario logueado.
 // Liviano: solo guarda la sección y la empresa. No resuelve geolocalización.
-router.post('/seccion', async (req: Request, res: Response) => {
+router.post('/seccion', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { seccion } = req.body ?? {};
-    const header = req.header('authorization');
-    const token = header?.startsWith('Bearer ') ? header.slice(7) : null;
-    const payload = token ? verificarToken(token) : null;
+    const payload = req.auth;
     if (payload && typeof seccion === 'string' && seccion.length <= 60) {
       await prisma.visita.create({
         data: {

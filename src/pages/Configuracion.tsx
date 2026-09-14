@@ -1103,28 +1103,100 @@ const PersonalSection: React.FC = () => {
 
 const SeccionTelegram: React.FC = () => {
   const [chatId, setChatId] = React.useState('');
+  const [chatIdGuardado, setChatIdGuardado] = React.useState('');
+  const [chatIdPendiente, setChatIdPendiente] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [code, setCode] = React.useState('');
   const [alertasHabilitadas, setAlertasHabilitadas] = React.useState(false);
   const [guardado, setGuardado] = React.useState(false);
   const [cargando, setCargando] = React.useState(false);
+  const [perfilCargado, setPerfilCargado] = React.useState(false);
   const [error, setError] = React.useState('');
+  const cambiaChat = chatId.trim() !== chatIdGuardado;
 
-  React.useEffect(() => {
-    apiFetch('auth/perfil').then((d: any) => { if (d.telegramChatId) setChatId(d.telegramChatId); setAlertasHabilitadas(d.telegramAlertasHabilitadas === true); }).catch(() => {});
+  // Actualiza la pantalla únicamente con el canal que confirmó el servidor.
+  const aplicarPerfil = React.useCallback((perfil: { telegramChatId?: string | null; telegramAlertasHabilitadas?: boolean }) => {
+    const id = perfil.telegramChatId || '';
+    setChatId(id);
+    setChatIdGuardado(id);
+    setAlertasHabilitadas(Boolean(id) && perfil.telegramAlertasHabilitadas === true);
   }, []);
 
-  const guardar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  // apiFetch devuelve una Response: interpreta JSON y rechaza errores HTTP antes de confirmar cambios.
+  const solicitarTelegram = React.useCallback(async (path: string, init?: RequestInit) => {
+    const respuesta = await apiFetch(path, init);
+    const datos = await respuesta.json();
+    if (!respuesta.ok) throw new Error(datos?.error || 'No se pudo completar la solicitud.');
+    return datos;
+  }, []);
+
+  // Si falla la lectura inicial, impide sobrescribir un canal cuyo estado desconocemos.
+  const cargarPerfil = React.useCallback(async () => {
     setCargando(true);
+    setError('');
     try {
-      await apiFetch('auth/perfil', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telegramChatId: chatId.trim() || null, telegramAlertasHabilitadas: Boolean(chatId.trim()) && alertasHabilitadas }) });
-      setGuardado(true);
-      setTimeout(() => setGuardado(false), 3000);
+      aplicarPerfil(await solicitarTelegram('auth/perfil'));
+      setPerfilCargado(true);
     } catch (err: any) {
-      setError(err.message || 'Error al guardar.');
+      setError(err.message || 'No se pudo cargar la configuración de Telegram.');
     } finally {
       setCargando(false);
     }
+  }, [aplicarPerfil, solicitarTelegram]);
+
+  React.useEffect(() => { void cargarPerfil(); }, [cargarPerfil]);
+
+  // Guarda consentimiento sin contraseña; cambiar el canal exige contraseña y código.
+  const guardar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (cargando || !perfilCargado) return;
+    setError('');
+    setGuardado(false);
+    setCargando(true);
+    try {
+      if (chatIdPendiente) {
+        const perfil = await solicitarTelegram('auth/telegram/confirmar', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, telegramAlertasHabilitadas: alertasHabilitadas }),
+        });
+        aplicarPerfil(perfil);
+        setChatIdPendiente('');
+        setCode('');
+      } else if (cambiaChat && chatId.trim()) {
+        await solicitarTelegram('auth/telegram/vincular', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ telegramChatId: chatId.trim(), password }),
+        });
+        setChatIdPendiente(chatId.trim());
+        setPassword('');
+        setCode('');
+        return;
+      } else {
+        const perfil = await solicitarTelegram('auth/perfil', {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cambiaChat
+            ? { telegramChatId: null, password, telegramAlertasHabilitadas: false }
+            : { telegramAlertasHabilitadas: Boolean(chatIdGuardado) && alertasHabilitadas }),
+        });
+        aplicarPerfil(perfil);
+      }
+      setPassword('');
+      setGuardado(true);
+    } catch (err: any) {
+      setError(err.message || 'No se pudo guardar la configuración de Telegram.');
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  // Sale de la confirmación local; el canal guardado permanece vigente.
+  const cancelarConfirmacion = () => {
+    setChatIdPendiente('');
+    setChatId(chatIdGuardado);
+    setPassword('');
+    setCode('');
+    setError('');
+    setGuardado(false);
   };
 
   const BOT_NAME = import.meta.env.VITE_TELEGRAM_BOT_NAME || 'activaqr_bot';
@@ -1133,7 +1205,7 @@ const SeccionTelegram: React.FC = () => {
     <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-5 mb-6">
       <h2 className="text-sm font-black uppercase tracking-wider text-content mb-1">Telegram y alertas operativas</h2>
       <p className="text-xs text-muted mb-3">
-        Si vinculás tu Telegram, el link de recuperación te llega directo al chat en segundos — sin depender del email.
+        Vinculá Telegram para recibir enlaces de recuperación de tu cuenta y, si lo elegís, alertas operativas.
       </p>
 
       <div className="bg-subtle border border-line p-3 text-xs text-content mb-4 space-y-1">
@@ -1145,27 +1217,73 @@ const SeccionTelegram: React.FC = () => {
         </ol>
       </div>
 
-      <form onSubmit={guardar} className="flex items-center gap-2">
-        <input
-          value={chatId}
-          onChange={e => setChatId(e.target.value)}
-          placeholder="Ej: 123456789"
-          className="flex-1 border border-line px-3 h-10 text-sm font-mono outline-none focus:border-brand-600"
-        />
-        <button
-          type="submit"
-          disabled={cargando}
-          className="bg-slate-900 text-white px-4 h-10 text-xs font-black uppercase border border-line shadow-soft disabled:opacity-50"
-        >
-          {cargando ? 'Guardando...' : guardado ? 'Guardado' : 'Guardar'}
-        </button>
+      {perfilCargado && <p className="text-xs text-muted mb-3">{chatIdGuardado ? <>Chat ID vinculado: <span className="font-mono">{chatIdGuardado}</span></> : 'Todavía no vinculaste un chat de Telegram.'}</p>}
+      <form onSubmit={guardar}>
+        <fieldset disabled={cargando || !perfilCargado} className="space-y-3 disabled:opacity-60">
+          <label className="block text-xs font-bold text-content">
+            Chat ID
+            <input
+              value={chatId}
+              onChange={e => { setChatId(e.target.value); setPassword(''); setGuardado(false); setError(''); }}
+              disabled={Boolean(chatIdPendiente)}
+              placeholder="Ej: 123456789"
+              autoComplete="off"
+              className="mt-1 w-full border border-line px-3 h-10 text-sm font-mono outline-none focus:border-brand-600"
+            />
+          </label>
+          <p className="text-xs text-muted">Para vincular, cambiar o desvincular el canal de recuperación, ingresá tu contraseña actual. Cambiar solamente las alertas no requiere contraseña. Para desvincularlo, dejá el Chat ID vacío.</p>
+          {cambiaChat && !chatIdPendiente && (
+            <label className="block text-xs font-bold text-content">
+              Contraseña actual
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                className="mt-1 w-full border border-line px-3 h-10 text-sm outline-none focus:border-brand-600"
+              />
+            </label>
+          )}
+          {chatIdPendiente && (
+            <div className="border border-line bg-subtle p-3 space-y-3">
+              <p className="text-xs text-content" role="status">Enviamos un código al chat <span className="font-mono">{chatIdPendiente}</span>. Ingresalo para confirmar la vinculación. Vence en 10 minutos. El canal actual se mantiene hasta que confirmes.</p>
+              <label className="block text-xs font-bold text-content">
+                Código de confirmación
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={code}
+                  onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  required
+                  className="mt-1 w-full border border-line px-3 h-10 text-sm font-mono outline-none focus:border-brand-600"
+                />
+              </label>
+              <p className="text-xs text-muted">Si venció o querés usar otro chat, cancelá este paso y solicitá un nuevo código.</p>
+            </div>
+          )}
+          <label className="flex items-start gap-3 border border-line bg-subtle p-3 text-xs text-content">
+            <input type="checkbox" checked={Boolean(chatId.trim()) && alertasHabilitadas} disabled={!chatId.trim()} onChange={e => { setAlertasHabilitadas(e.target.checked); setGuardado(false); }} className="mt-0.5" />
+            <span><strong>Recibir alarmas críticas por Telegram.</strong><span className="mt-1 block text-muted">Acepto que ActivaQR use este Chat ID para avisos operativos. Puedo revocar este consentimiento desmarcando esta opción y guardando los cambios.</span></span>
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="submit"
+              className="bg-slate-900 text-white px-4 h-10 text-xs font-black uppercase border border-line shadow-soft disabled:opacity-50"
+            >
+              {cargando ? 'Procesando...' : chatIdPendiente ? 'Confirmar vinculación' : cambiaChat ? (chatId.trim() ? 'Enviar código' : 'Desvincular Telegram') : 'Guardar alertas'}
+            </button>
+            {chatIdPendiente && <button type="button" onClick={cancelarConfirmacion} className="px-4 h-10 text-xs font-black uppercase border border-line">Cancelar</button>}
+          </div>
+        </fieldset>
       </form>
-      <label className="mt-4 flex items-start gap-3 border border-line bg-subtle p-3 text-xs text-content">
-        <input type="checkbox" checked={alertasHabilitadas} disabled={!chatId.trim()} onChange={(e) => setAlertasHabilitadas(e.target.checked)} className="mt-0.5" />
-        <span><strong>Recibir alarmas críticas por Telegram.</strong><span className="mt-1 block text-muted">Acepto que ActivaQR use este Chat ID para avisos operativos. Puedo revocar este consentimiento en cualquier momento desmarcando esta opción.</span></span>
-      </label>
-      {error && <p className="text-danger text-xs mt-1">{error}</p>}
-      {chatId && !guardado && <p className="text-xs text-faint mt-1">Chat ID actual: <span className="font-mono">{chatId}</span></p>}
+      {!perfilCargado && !cargando && <button type="button" onClick={() => void cargarPerfil()} className="mt-3 text-xs text-brand-600 underline">Reintentar carga</button>}
+      {cargando && !perfilCargado && <p className="text-xs text-muted mt-2" role="status">Cargando configuración...</p>}
+      {error && <p role="alert" className="text-danger text-xs mt-2">{error}</p>}
+      {guardado && <p role="status" className="text-xs text-content mt-2">Configuración guardada.</p>}
     </div>
   );
 };

@@ -394,6 +394,10 @@ model Usuario {
   ultimoAcceso     DateTime?
   resetToken       String?    @unique
   resetTokenExpiry DateTime?
+  telegramPendingChatId String?
+  telegramLinkCodeHash String?
+  telegramLinkExpires DateTime?
+  telegramLinkAttempts Int @default(0)
   telegramChatId   String?
   telegramAlertasHabilitadas Boolean  @default(false)
   telegramAlertasAceptadasEn DateTime?

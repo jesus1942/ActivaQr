@@ -9,12 +9,14 @@ import { generarResetToken, hashResetToken } from '../resetTokens';
 import { enviarLinkRecuperacion, notificarAdminRecuperacion, notificarAltaTrial } from '../telegram';
 import { enviarPushASuperadmin } from '../push';
 import { registrarAuditoria } from '../auditoria';
+import telegramAccountRouter, { limpiarVinculacionTelegram } from './telegramAccount';
 import { faseTrial } from '../trial';
 import { POLITICAS_VERSION } from '../politicas';
 import { APP_PUBLIC_URL } from '../urls';
 import { DEMO_EMAIL } from '../seedDemo';
 
 const router = Router();
+router.use(telegramAccountRouter);
 
 const TRIAL_DIAS = 30;
 const TRIAL_LECTURA_DIAS = 0; // sin fase intermedia: al dia 31 se bloquea total
@@ -26,7 +28,7 @@ function crearRespuestaSesion(usuario: UsuarioConEmpresa, ttl?: string) {
     email: usuario.email,
     rol: usuario.rol,
     empresaId: usuario.empresaId,
-  }, ttl);
+  }, usuario.passwordHash, ttl);
 
   return {
     token,
@@ -160,7 +162,7 @@ router.post('/registro', async (req, res: Response, next: NextFunction) => {
       email: usuario.email,
       rol: usuario.rol,
       empresaId: empresa.id,
-    });
+    }, usuario.passwordHash);
 
     res.status(201).json({
       token,
@@ -316,24 +318,40 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: Response, next: Nex
 // PATCH /api/auth/perfil — actualizar datos propios (nombre, telegramChatId)
 router.patch('/perfil', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { nombre, telegramChatId, telegramAlertasHabilitadas } = req.body ?? {};
+    const { nombre, telegramChatId, telegramAlertasHabilitadas, password } = req.body ?? {};
     const data: Record<string, unknown> = {};
     if (nombre && String(nombre).trim()) data.nombre = String(nombre).trim();
+    const actual = await prisma.usuario.findUnique({ where: { id: req.auth!.userId } });
+    if (!actual) return res.status(401).json({ error: 'Sesión inválida.' });
     if (telegramChatId !== undefined) {
-      data.telegramChatId = telegramChatId ? String(telegramChatId).trim() : null;
-      if (!data.telegramChatId) { data.telegramAlertasHabilitadas = false; data.telegramAlertasAceptadasEn = null; }
+      if (telegramChatId !== null && typeof telegramChatId !== 'string') {
+        return res.status(400).json({ error: 'Chat ID inválido.' });
+      }
+      const propuesto = typeof telegramChatId === 'string' ? telegramChatId.trim() || null : null;
+      if (propuesto !== actual.telegramChatId) {
+        if (propuesto) return res.status(400).json({ error: 'Confirmá el nuevo Telegram con el código enviado al chat.' });
+        if (typeof password !== 'string' || password.length > 256 || !(await bcrypt.compare(password, actual.passwordHash))) {
+          return res.status(403).json({ error: 'Ingresá tu contraseña actual para desvincular Telegram.' });
+        }
+        Object.assign(data, limpiarVinculacionTelegram, {
+          telegramChatId: null, telegramAlertasHabilitadas: false, telegramAlertasAceptadasEn: null,
+          resetToken: null, resetTokenExpiry: null,
+        });
+      }
     }
     if (telegramAlertasHabilitadas !== undefined) {
       const habilitadas = telegramAlertasHabilitadas === true;
-      if (habilitadas && !String(telegramChatId ?? '').trim()) {
-        const actual = await prisma.usuario.findUnique({ where: { id: req.auth!.userId }, select: { telegramChatId: true } });
-        if (!actual?.telegramChatId) return res.status(400).json({ error: 'Vinculá Telegram antes de aceptar las alertas.' });
-      }
+      const chatFinal = data.telegramChatId === null ? null : actual.telegramChatId;
+      if (habilitadas && !chatFinal) return res.status(400).json({ error: 'Vinculá Telegram antes de aceptar las alertas.' });
       data.telegramAlertasHabilitadas = habilitadas;
       data.telegramAlertasAceptadasEn = habilitadas ? new Date() : null;
     }
     if (Object.keys(data).length === 0) return res.status(400).json({ error: 'Nada que actualizar.' });
-    const updated = await prisma.usuario.update({ where: { id: req.auth!.userId }, data, select: { id: true, nombre: true, telegramChatId: true, telegramAlertasHabilitadas: true, telegramAlertasAceptadasEn: true } });
+    const cambio = await prisma.usuario.updateMany({
+      where: { id: actual.id, passwordHash: actual.passwordHash, telegramChatId: actual.telegramChatId }, data,
+    });
+    if (!cambio.count) return res.status(409).json({ error: 'Tu cuenta cambió. Recargá la página e intentá nuevamente.' });
+    const updated = await prisma.usuario.findUniqueOrThrow({ where: { id: actual.id }, select: { id: true, nombre: true, telegramChatId: true, telegramAlertasHabilitadas: true, telegramAlertasAceptadasEn: true } });
     if (telegramAlertasHabilitadas !== undefined) await registrarAuditoria({ empresaId: req.auth!.empresaId, usuarioId: req.auth!.userId, usuarioNombre: req.auth!.email, usuarioRol: req.auth!.rol, accion: 'editar', entidad: 'Usuario', entidadId: req.auth!.userId, detalle: `Alertas operativas por Telegram ${updated.telegramAlertasHabilitadas ? 'aceptadas' : 'revocadas'}.` });
     res.json(updated);
   } catch (err) {
@@ -365,10 +383,12 @@ router.post('/forgot-password', async (req, res: Response, next: NextFunction) =
     if (usuario) {
       // El token viaja en el link; en la DB queda solo su hash.
       const { token, tokenHash, expiry } = generarResetToken();
-      await prisma.usuario.update({
-        where: { id: usuario.id },
+      // No emitir a un canal anterior si cambió durante esta solicitud.
+      const emitido = await prisma.usuario.updateMany({
+        where: { id: usuario.id, passwordHash: usuario.passwordHash, telegramChatId: usuario.telegramChatId },
         data: { resetToken: tokenHash, resetTokenExpiry: expiry },
       });
+      if (!emitido.count) return res.json({ ok: true });
       const resetUrl = `${APP_PUBLIC_URL}#/reset-password?token=${token}`;
 
       if (usuario.telegramChatId) {
@@ -406,7 +426,7 @@ router.post('/forgot-password', async (req, res: Response, next: NextFunction) =
 router.post('/reset-password', async (req, res: Response, next: NextFunction) => {
   try {
     const { token, password } = req.body ?? {};
-    if (!token || !password) {
+    if (typeof token !== 'string' || typeof password !== 'string' || !token || !password || token.length > 256 || password.length > 256) {
       return res.status(400).json({ error: 'Token y contrasena son obligatorios.' });
     }
     if (String(password).length < 8) {
@@ -419,10 +439,12 @@ router.post('/reset-password', async (req, res: Response, next: NextFunction) =>
       return res.status(400).json({ error: 'Token invalido o expirado' });
     }
     const passwordHash = await bcrypt.hash(password, 10);
-    await prisma.usuario.update({
-      where: { id: usuario.id },
-      data: { passwordHash, resetToken: null, resetTokenExpiry: null },
+    // Consumir el token y cambiar la clave en una sola operación evita reutilización concurrente.
+    const cambio = await prisma.usuario.updateMany({
+      where: { id: usuario.id, resetToken: hashResetToken(token), resetTokenExpiry: { gt: new Date() } },
+      data: { passwordHash, resetToken: null, resetTokenExpiry: null, ...limpiarVinculacionTelegram },
     });
+    if (!cambio.count) return res.status(400).json({ error: 'Token inválido o expirado.' });
     res.json({ ok: true });
   } catch (err) {
     next(err);
