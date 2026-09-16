@@ -37,12 +37,11 @@ const COLOR_PARAMETRO: Record<string, string> = {
 
 const COLOR_SEVERIDAD: Record<Severidad, { bg: string; border: string; text: string; icon: string; chip: string }> = {
   normal:   { bg: 'bg-ok/10', border: 'border-ok', text: 'text-ok-strong dark:text-ok', icon: 'text-ok-strong dark:text-ok', chip: 'bg-ok/10 text-ok-strong dark:text-ok' },
-  observar: { bg: 'bg-sky-50',     border: 'border-sky-400',     text: 'text-sky-700',     icon: 'text-sky-600',     chip: 'bg-sky-100 text-sky-800' },
-  alerta:   { bg: 'bg-warn/10',   border: 'border-warn',   text: 'text-warn-strong dark:text-warn',   icon: 'text-warn-strong dark:text-warn',   chip: 'bg-warn/10 text-warn-strong dark:text-warn' },
-  critico:  { bg: 'bg-danger/10',     border: 'border-danger',     text: 'text-danger-strong dark:text-danger',     icon: 'text-danger',     chip: 'bg-danger/10 text-danger-strong dark:text-danger' },
+  observar: { bg: 'bg-sky-50', border: 'border-sky-400', text: 'text-sky-700', icon: 'text-sky-600', chip: 'bg-sky-100 text-sky-800' },
+  alerta:   { bg: 'bg-warn/10', border: 'border-warn', text: 'text-warn-strong dark:text-warn', icon: 'text-warn-strong dark:text-warn', chip: 'bg-warn/10 text-warn-strong dark:text-warn' },
+  critico:  { bg: 'bg-danger/10', border: 'border-danger', text: 'text-danger-strong dark:text-danger', icon: 'text-danger', chip: 'bg-danger/10 text-danger-strong dark:text-danger' },
 };
 
-// Exportado para que AnalisisActivo pueda calcular severidad sin renderizar.
 export function analizarParametro(
   parametro: string,
   unidad: string,
@@ -75,8 +74,8 @@ export const PanelParametro: React.FC<PanelParametroProps> = ({
     .map((m) => ({ ...m, fechaMs: m.fecha.getTime() }));
 
   const TendenciaIcon = analisis.tendencia === 'subiendo' ? TrendingUp
-                       : analisis.tendencia === 'bajando' ? TrendingDown
-                       : Minus;
+    : analisis.tendencia === 'bajando' ? TrendingDown
+    : Minus;
 
   return (
     <div className="bg-surface">
@@ -96,12 +95,8 @@ export const PanelParametro: React.FC<PanelParametroProps> = ({
                   contentStyle={{ borderRadius: 0, border: '2px solid #0f172a', fontSize: 12 }}
                   formatter={(v: any) => [`${v}${unidad}`, parametro]}
                 />
-                {alerta != null && (
-                  <ReferenceLine y={alerta} stroke="#F59E0B" strokeDasharray="4 2" />
-                )}
-                {critico != null && (
-                  <ReferenceLine y={critico} stroke="#DC2626" strokeDasharray="4 2" />
-                )}
+                {alerta != null && <ReferenceLine y={alerta} stroke="#F59E0B" strokeDasharray="4 2" />}
+                {critico != null && <ReferenceLine y={critico} stroke="#DC2626" strokeDasharray="4 2" />}
                 {rangoNormal && (
                   <>
                     <ReferenceLine y={rangoNormal.min} stroke="#64748B" strokeDasharray="2 4" />
@@ -111,26 +106,36 @@ export const PanelParametro: React.FC<PanelParametroProps> = ({
                 {marcadoresConFecha.map((m, i) => {
                   const punto = data.find((d) => Math.abs(d.fechaMs - m.fechaMs) < 7 * 86400000);
                   if (!punto) return null;
-                  return (
-                    <ReferenceDot key={i} x={punto.fecha} y={punto.valor} r={5} fill="#1E293B" stroke="#F97316" strokeWidth={2} />
-                  );
+                  return <ReferenceDot key={`tarea-${i}`} x={punto.fecha} y={punto.valor} r={5} fill="#1E293B" stroke="#F97316" strokeWidth={2} />;
                 })}
+                {analisis.anomalias.map((a, i) => (
+                  <ReferenceDot
+                    key={`anomalia-${i}`}
+                    x={format(a.fecha, 'dd/MM/yy', { locale: es })}
+                    y={a.valor}
+                    r={a.nivel === 'alerta' ? 7 : 6}
+                    fill={a.nivel === 'alerta' ? '#DC2626' : '#F59E0B'}
+                    stroke="#FFFFFF"
+                    strokeWidth={2}
+                  />
+                ))}
                 <Line type="monotone" dataKey="valor" stroke={colorLinea} strokeWidth={2.2} dot={{ r: 2.5, stroke: '#1E293B', strokeWidth: 1, fill: colorLinea }} name={parametro} />
               </LineChart>
             </ResponsiveContainer>
 
             <div className="flex items-center justify-end gap-3 text-[10px] text-muted mt-1 flex-wrap">
               {alerta != null && <span className="flex items-center gap-1"><span className="inline-block w-3 h-0.5 bg-warn"></span>Alerta {alerta}{unidad}</span>}
-              {critico != null && <span className="flex items-center gap-1"><span className="inline-block w-3 h-0.5 bg-danger"></span>Critico {critico}{unidad}</span>}
+              {critico != null && <span className="flex items-center gap-1"><span className="inline-block w-3 h-0.5 bg-danger"></span>Crítico {critico}{unidad}</span>}
               {rangoNormal && <span className="flex items-center gap-1"><span className="inline-block w-3 h-0.5 bg-slate-500"></span>Rango {rangoNormal.min}-{rangoNormal.max}{unidad}</span>}
               {marcadoresConFecha.length > 0 && <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-slate-900 border border-brand-600"></span>Tarea</span>}
+              {analisis.anomalias.length > 0 && <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-full bg-danger border border-white"></span>Anomalía</span>}
             </div>
           </div>
 
           <div className={`mx-2 sm:mx-3 mt-2 mb-2 p-2.5 border ${colorSev.border} ${colorSev.bg}`}>
             <div className="flex items-start gap-2">
               <div className="flex flex-col items-center pt-0.5">
-                <TendenciaIcon size={14} className={colorSev.icon} />
+                {analisis.ultimaAnomalia ? <AlertTriangle size={14} className={colorSev.icon} /> : <TendenciaIcon size={14} className={colorSev.icon} />}
               </div>
               <div className="flex-1 min-w-0">
                 <p className={`text-xs sm:text-sm font-bold ${colorSev.text} leading-snug`}>{analisis.resumen}</p>
@@ -138,8 +143,13 @@ export const PanelParametro: React.FC<PanelParametroProps> = ({
                   <p className="text-[11px] text-muted mt-1 leading-snug">
                     {analisis.pendienteMensual > 0 ? '+' : ''}{analisis.pendienteMensual.toFixed(2)}{unidad}/mes
                     {analisis.diasHastaAlerta != null && ` · ${analisis.diasHastaAlerta}d hasta alerta`}
-                    {analisis.diasHastaCritico != null && ` · ${analisis.diasHastaCritico}d hasta critico`}
+                    {analisis.diasHastaCritico != null && ` · ${analisis.diasHastaCritico}d hasta crítico`}
                     {` · confianza ${analisis.confianza}`}
+                  </p>
+                )}
+                {analisis.anomalias.length > 0 && (
+                  <p className="text-[11px] text-muted mt-1 leading-snug">
+                    {analisis.anomalias.length} anomalía{analisis.anomalias.length === 1 ? '' : 's'} detectada{analisis.anomalias.length === 1 ? '' : 's'} por mediana/MAD · la señal roja indica mayor desvío.
                   </p>
                 )}
                 {!analisis.prediccionDisponible && (
@@ -149,9 +159,7 @@ export const PanelParametro: React.FC<PanelParametroProps> = ({
                 )}
                 {analisis.recomendacion && (
                   <div className="mt-2">
-                    <p className="text-[11px] sm:text-xs text-content italic leading-snug">
-                      {analisis.recomendacion}
-                    </p>
+                    <p className="text-[11px] sm:text-xs text-content italic leading-snug">{analisis.recomendacion}</p>
                     {onCrearTareaPredictiva && (
                       <button
                         onClick={() => onCrearTareaPredictiva(analisis.recomendacion!)}
@@ -171,7 +179,6 @@ export const PanelParametro: React.FC<PanelParametroProps> = ({
   );
 };
 
-// Resumen visible incluso cuando el panel esta colapsado
 export const ResumenParametro: React.FC<{
   parametro: string;
   unidad: string;
@@ -183,19 +190,13 @@ export const ResumenParametro: React.FC<{
   const analisis = analizarParametro(parametro, unidad, puntos, alerta, critico, direccion);
   const colorSev = COLOR_SEVERIDAD[analisis.severidad];
   const TendenciaIcon = analisis.tendencia === 'subiendo' ? TrendingUp
-                       : analisis.tendencia === 'bajando' ? TrendingDown
-                       : Minus;
+    : analisis.tendencia === 'bajando' ? TrendingDown
+    : Minus;
   return (
     <div className="flex items-center gap-2 min-w-0 flex-1">
       <span className="text-xs sm:text-sm font-black uppercase tracking-wide text-content truncate">{parametro}</span>
-      {analisis.ultimoValor != null && (
-        <span className="text-xs sm:text-sm font-mono font-bold text-content flex-shrink-0">
-          {analisis.ultimoValor.toFixed(1)}{unidad}
-        </span>
-      )}
-      {analisis.tendencia && analisis.tendencia !== 'estable' && (
-        <TendenciaIcon size={12} className={colorSev.icon} />
-      )}
+      {analisis.ultimoValor != null && <span className="text-xs sm:text-sm font-mono font-bold text-content flex-shrink-0">{analisis.ultimoValor.toFixed(1)}{unidad}</span>}
+      {analisis.ultimaAnomalia ? <AlertTriangle size={12} className={colorSev.icon} /> : analisis.tendencia && analisis.tendencia !== 'estable' ? <TendenciaIcon size={12} className={colorSev.icon} /> : null}
       {analisis.severidad !== 'normal' && (
         <span className={`text-[10px] font-black uppercase px-1.5 py-0.5 rounded ${colorSev.chip} flex-shrink-0`}>
           {analisis.severidad === 'observar' ? 'obs' : analisis.severidad}
