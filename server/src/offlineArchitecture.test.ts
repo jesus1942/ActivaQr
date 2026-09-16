@@ -10,6 +10,7 @@ const sync = leer('src/data/offlineSync.ts');
 const store = leer('src/data/store.ts');
 const storage = leer('src/hooks/useStorage.ts');
 const layout = leer('src/components/layout/Layout.tsx');
+const dashboard = leer('src/pages/Dashboard.tsx');
 const vite = leer('vite.config.ts');
 
 test('el arranque offline es acotado y no espera Railway indefinidamente', () => {
@@ -47,4 +48,12 @@ test('el shell PWA y sus rutas se precargan para abrir sin conexion', () => {
   assert.match(vite, /globPatterns: \['\*\*\/\*\.\{js,css,html,ico,png,svg,woff2\}'\]/);
   assert.match(vite, /start_url: base/);
   assert.match(vite, /scope: base/);
+});
+
+test('el dashboard inicial conserva sus dependencias JavaScript disponibles offline', () => {
+  // Dashboard es la ruta inicial normal y usa Recharts. Sus chunks no pueden
+  // quedar fuera del precache o una PWA instalada en iOS puede no abrir sin red.
+  assert.match(dashboard, /from 'recharts'/);
+  assert.doesNotMatch(vite, /generateCategoricalChart\*\.js/);
+  assert.doesNotMatch(vite, /index\.es-\*\.js/);
 });
