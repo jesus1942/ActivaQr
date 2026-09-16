@@ -14,6 +14,62 @@ import { registrarLecturaMantenimiento } from '../mantenimientoService';
 
 const router = Router();
 
+type CampoAnalitico = 'temperatura' | 'amperaje' | 'presion' | 'voltaje' | 'porcentajeBateria' | 'nivelToner';
+
+const CAMPOS_ANALITICOS: Array<{ clave: CampoAnalitico; nombre: string; unidad: string; minimo: number }> = [
+  { clave: 'temperatura', nombre: 'Temperatura', unidad: '°C', minimo: 1.5 },
+  { clave: 'amperaje', nombre: 'Amperaje', unidad: ' A', minimo: 0.5 },
+  { clave: 'presion', nombre: 'Presión', unidad: '', minimo: 0.2 },
+  { clave: 'voltaje', nombre: 'Voltaje', unidad: ' V', minimo: 5 },
+  { clave: 'porcentajeBateria', nombre: 'Batería', unidad: '%', minimo: 5 },
+  { clave: 'nivelToner', nombre: 'Tóner', unidad: '%', minimo: 8 },
+];
+
+function mediana(valores: number[]): number {
+  const ordenados = [...valores].sort((a, b) => a - b);
+  const mitad = Math.floor(ordenados.length / 2);
+  return ordenados.length % 2 ? ordenados[mitad] : (ordenados[mitad - 1] + ordenados[mitad]) / 2;
+}
+
+function describirAnomalia(valor: number, historico: number[], campo: typeof CAMPOS_ANALITICOS[number]): string | null {
+  if (historico.length < 5 || !Number.isFinite(valor)) return null;
+  const centro = mediana(historico);
+  const dispersion = mediana(historico.map((v) => Math.abs(v - centro)));
+  const desvio = Math.abs(valor - centro);
+  const minimo = Math.max(campo.minimo, Math.abs(centro) * 0.08);
+  const score = dispersion > 1e-9 ? (0.6745 * desvio) / dispersion : desvio >= minimo ? 6 : 0;
+  if (score < 4.5 || desvio < minimo) return null;
+  return `${campo.nombre}: ${valor}${campo.unidad} (histórico reciente ~${centro.toFixed(1)}${campo.unidad})`;
+}
+
+async function detectarAnomaliasMedicion(activoId: string, medicion: any): Promise<string[]> {
+  const historial = await prisma.medicion.findMany({
+    where: { activoId, id: { not: medicion.id }, fecha: { lte: medicion.fecha } },
+    orderBy: { fecha: 'desc' },
+    take: 12,
+    select: {
+      temperatura: true,
+      amperaje: true,
+      presion: true,
+      voltaje: true,
+      porcentajeBateria: true,
+      nivelToner: true,
+    },
+  });
+
+  const anomalias: string[] = [];
+  for (const campo of CAMPOS_ANALITICOS) {
+    const actual = Number(medicion[campo.clave]);
+    if (!Number.isFinite(actual)) continue;
+    const valores = historial
+      .map((m: any) => Number(m[campo.clave]))
+      .filter((v: number) => Number.isFinite(v));
+    const descripcion = describirAnomalia(actual, valores, campo);
+    if (descripcion) anomalias.push(descripcion);
+  }
+  return anomalias;
+}
+
 export function validarParametrosExtra(
   valores: unknown,
   parametros: Array<{
@@ -30,20 +86,12 @@ export function validarParametrosExtra(
   for (const parametro of parametros) {
     const valor = objeto[parametro.clave];
     const vacio = valor === undefined || valor === null || valor === '';
-    if (parametro.obligatorio && vacio) {
-      return `El campo "${parametro.nombre}" es obligatorio.`;
-    }
+    if (parametro.obligatorio && vacio) return `El campo "${parametro.nombre}" es obligatorio.`;
     if (vacio) continue;
-    if (
-      (parametro.tipo === 'numerico' || parametro.tipo === 'porcentaje')
-      && !Number.isFinite(Number(valor))
-    ) {
+    if ((parametro.tipo === 'numerico' || parametro.tipo === 'porcentaje') && !Number.isFinite(Number(valor))) {
       return `El campo "${parametro.nombre}" debe ser numérico.`;
     }
-    if (
-      parametro.tipo === 'booleano'
-      && ![true, false, 'true', 'false'].includes(valor as boolean | string)
-    ) {
+    if (parametro.tipo === 'booleano' && ![true, false, 'true', 'false'].includes(valor as boolean | string)) {
       return `El campo "${parametro.nombre}" debe ser Sí o No.`;
     }
     if (parametro.tipo === 'seleccion' && Array.isArray(parametro.opciones)) {
@@ -58,17 +106,9 @@ export function validarParametrosExtra(
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
-    const activoId =
-      typeof req.query.activoId === 'string' ? req.query.activoId : undefined;
-
-    // Las fotos se guardan como data URL base64 dentro de la fila: incluirlas
-    // en el listado completo hacia que la app descargara varios MB en cada
-    // arranque, y crecia sin techo. Solo se envian al pedir un activo puntual.
+    const activoId = typeof req.query.activoId === 'string' ? req.query.activoId : undefined;
     const mediciones = await prisma.medicion.findMany({
-      where: {
-        ...(activoId ? { activoId } : {}),
-        activo: { empresaId }, // garantiza aislamiento multi-tenant
-      },
+      where: { ...(activoId ? { activoId } : {}), activo: { empresaId } },
       include: {
         tecnico: { select: { id: true, nombre: true, cargo: true } },
         ...(activoId ? { fotos: true } : {}),
@@ -82,98 +122,54 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // POST /api/mediciones
-// Al crear, escala el estado del activo:
-//   medición urgente  -> activo critico
-//   medición revision -> activo alerta (solo si estaba normal)
 router.post('/', requireTrabajoCampo as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
     const {
-      activoId,
-      tecnicoId,
-      fecha,
-      temperatura,
-      amperaje,
-      presion,
-      vibracion,
-      horasMarcha,
-      kilometraje,
-      voltaje,
-      porcentajeBateria,
-      nivelToner,
-      contador,
-      estado,
-      observaciones,
-      origen,
-      fotos,
-      parametrosExtra,
+      activoId, tecnicoId, fecha, temperatura, amperaje, presion, vibracion,
+      horasMarcha, kilometraje, voltaje, porcentajeBateria, nivelToner, contador,
+      estado, observaciones, origen, fotos, parametrosExtra,
     } = req.body ?? {};
 
-    if (!activoId || typeof activoId !== 'string') {
-      return res.status(400).json({ error: 'El campo "activoId" es obligatorio' });
-    }
+    if (!activoId || typeof activoId !== 'string') return res.status(400).json({ error: 'El campo "activoId" es obligatorio' });
 
     const activo = await prisma.activo.findFirst({
       where: { id: activoId, empresaId },
-      include: {
-        tipo: {
-          include: {
-            categoria: { include: { parametros: true } },
-          },
-        },
-      },
+      include: { tipo: { include: { categoria: { include: { parametros: true } } } } },
     });
     if (!activo) return res.status(404).json({ error: 'Activo no encontrado' });
-    const errorParametros = validarParametrosExtra(
-      parametrosExtra,
-      activo.tipo.categoria?.parametros ?? [],
-    );
+
+    const errorParametros = validarParametrosExtra(parametrosExtra, activo.tipo.categoria?.parametros ?? []);
     if (errorParametros) return res.status(400).json({ error: errorParametros });
-    const tecnicoSolicitado = typeof tecnicoId === 'string' && tecnicoId
-      ? tecnicoId
-      : (req as AuthRequest).auth?.userId;
+    const tecnicoSolicitado = typeof tecnicoId === 'string' && tecnicoId ? tecnicoId : (req as AuthRequest).auth?.userId;
     const tecnicoValido = tecnicoSolicitado
       ? await prisma.usuario.findFirst({ where: { id: tecnicoSolicitado, empresaId, activo: true }, select: { id: true } })
       : null;
 
-    // Calcular estado automático a partir de umbrales del activo.
-    // Si el técnico no envió estado (o envió 'normal'), lo calculamos.
-    // Si envió 'urgente'/'critico', respetamos su criterio visual.
     const estadoCalculado = peorEstado(
-      calcularEstadoAutomatico(
-        {
-          temperatura: activo.tipo.mideTemperatura ? temperatura : null,
-          amperaje: activo.tipo.mideAmperaje ? amperaje : null,
-          presion: activo.tipo.midePresion ? presion : null,
-          voltaje: activo.tipo.mideVoltaje ? voltaje : null,
-          porcentajeBateria: activo.tipo.mideBateria ? porcentajeBateria : null,
-          nivelToner: activo.tipo.mideToner ? nivelToner : null,
-          vibracion: activo.tipo.mideVibracion ? vibracion : null,
-        },
-        activo,
-      ),
+      calcularEstadoAutomatico({
+        temperatura: activo.tipo.mideTemperatura ? temperatura : null,
+        amperaje: activo.tipo.mideAmperaje ? amperaje : null,
+        presion: activo.tipo.midePresion ? presion : null,
+        voltaje: activo.tipo.mideVoltaje ? voltaje : null,
+        porcentajeBateria: activo.tipo.mideBateria ? porcentajeBateria : null,
+        nivelToner: activo.tipo.mideToner ? nivelToner : null,
+        vibracion: activo.tipo.mideVibracion ? vibracion : null,
+      }, activo),
       calcularEstadoParametrosExtra(
-        parametrosExtra && typeof parametrosExtra === 'object' && !Array.isArray(parametrosExtra)
-          ? parametrosExtra
-          : null,
+        parametrosExtra && typeof parametrosExtra === 'object' && !Array.isArray(parametrosExtra) ? parametrosExtra : null,
         activo.tipo.categoria?.parametros ?? [],
       ),
     );
-    // El estado final es el peor entre el calculado y el enviado por el técnico.
+
     const estadoAutomaticoPersistible: 'normal' | 'revision' | 'urgente' =
-      estadoCalculado === 'urgente' || estadoCalculado === 'critico'
-        ? 'urgente'
-        : estadoCalculado === 'alerta'
-          ? 'revision'
-          : 'normal';
+      estadoCalculado === 'urgente' || estadoCalculado === 'critico' ? 'urgente'
+      : estadoCalculado === 'alerta' ? 'revision' : 'normal';
     const nivelPersistible: Record<string, number> = { normal: 0, revision: 1, urgente: 2 };
     const estadoManual = ['normal', 'revision', 'urgente'].includes(estado) ? estado : 'normal';
     const estadoFinal = nivelPersistible[estadoManual] >= nivelPersistible[estadoAutomaticoPersistible]
-      ? estadoManual
-      : estadoAutomaticoPersistible;
+      ? estadoManual : estadoAutomaticoPersistible;
 
-    // Fotos: aceptamos string (solo URL) o objeto con evidencia forense
-    // (capturedLat, capturedLng, capturedAt, deviceModel, fuenteUbicacion).
     interface FotoCreateData {
       url: string;
       capturedLat: number | null;
@@ -183,20 +179,18 @@ router.post('/', requireTrabajoCampo as any, async (req: Request, res: Response,
       fuenteUbicacion: string | null;
     }
     const fotosNormalizadas: FotoCreateData[] = Array.isArray(fotos)
-      ? fotos
-          .map((f: any): FotoCreateData | null => {
-            const url = typeof f === 'string' ? f : (f?.url ?? null);
-            if (typeof url !== 'string' || !url) return null;
-            return {
-              url,
-              capturedLat: typeof f?.capturedLat === 'number' ? f.capturedLat : null,
-              capturedLng: typeof f?.capturedLng === 'number' ? f.capturedLng : null,
-              capturedAt: f?.capturedAt ? new Date(f.capturedAt) : null,
-              deviceModel: f?.deviceModel ? String(f.deviceModel).slice(0, 80) : null,
-              fuenteUbicacion: f?.fuenteUbicacion ? String(f.fuenteUbicacion).slice(0, 16) : null,
-            };
-          })
-          .filter((x): x is FotoCreateData => x !== null)
+      ? fotos.map((f: any): FotoCreateData | null => {
+          const url = typeof f === 'string' ? f : (f?.url ?? null);
+          if (typeof url !== 'string' || !url) return null;
+          return {
+            url,
+            capturedLat: typeof f?.capturedLat === 'number' ? f.capturedLat : null,
+            capturedLng: typeof f?.capturedLng === 'number' ? f.capturedLng : null,
+            capturedAt: f?.capturedAt ? new Date(f.capturedAt) : null,
+            deviceModel: f?.deviceModel ? String(f.deviceModel).slice(0, 80) : null,
+            fuenteUbicacion: f?.fuenteUbicacion ? String(f.fuenteUbicacion).slice(0, 16) : null,
+          };
+        }).filter((x): x is FotoCreateData => x !== null)
       : [];
     const fotosCreate = fotosNormalizadas.length > 0 ? { create: fotosNormalizadas } : undefined;
 
@@ -209,9 +203,7 @@ router.post('/', requireTrabajoCampo as any, async (req: Request, res: Response,
         amperaje: activo.tipo.mideAmperaje ? amperaje : null,
         presion: activo.tipo.midePresion ? presion : null,
         vibracion: activo.tipo.mideVibracion ? vibracion : 'ninguna',
-        horasMarcha: activo.estrategiaMantenimiento === 'horas' || activo.tipo.mideHoras
-          ? horasMarcha
-          : null,
+        horasMarcha: activo.estrategiaMantenimiento === 'horas' || activo.tipo.mideHoras ? horasMarcha : null,
         kilometraje: activo.estrategiaMantenimiento === 'kilometros' ? kilometraje : null,
         voltaje: activo.tipo.mideVoltaje ? voltaje : null,
         porcentajeBateria: activo.tipo.mideBateria ? porcentajeBateria : null,
@@ -220,44 +212,32 @@ router.post('/', requireTrabajoCampo as any, async (req: Request, res: Response,
         estado: estadoFinal as any,
         observaciones,
         origen,
-        parametrosExtra:
-          parametrosExtra && typeof parametrosExtra === 'object' && !Array.isArray(parametrosExtra)
-            ? parametrosExtra
-            : undefined,
+        parametrosExtra: parametrosExtra && typeof parametrosExtra === 'object' && !Array.isArray(parametrosExtra) ? parametrosExtra : undefined,
         ...(fotosCreate ? { fotos: fotosCreate } : {}),
       },
       include: { tecnico: { select: { id: true, nombre: true, cargo: true } }, fotos: true },
     });
 
-    // Actualizar estado del activo automáticamente según la medición.
     const nuevoEstadoActivo = estadoMedicionAActivo(estadoCalculado);
-    // Solo escalar (nunca bajar automáticamente — requiere revisión manual).
     const nivelActivo: Record<string, number> = { normal: 0, alerta: 1, mantenimiento: 1, critico: 2 };
-    const nuevoEstado = (nivelActivo[nuevoEstadoActivo] ?? 0) > (nivelActivo[activo.estado] ?? 0)
-      ? nuevoEstadoActivo
-      : null;
+    const nuevoEstado = (nivelActivo[nuevoEstadoActivo] ?? 0) > (nivelActivo[activo.estado] ?? 0) ? nuevoEstadoActivo : null;
 
-    // Actualizar estado; las lecturas de mantenimiento se procesan abajo.
     const data: any = {};
     if (nuevoEstado) data.estado = nuevoEstado;
-    if (Object.keys(data).length > 0) {
-      await prisma.activo.update({ where: { id: activoId }, data });
-    }
+    if (Object.keys(data).length > 0) await prisma.activo.update({ where: { id: activoId }, data });
     await registrarLecturaMantenimiento(prisma, activo, {
       horasMarcha: medicion.horasMarcha,
       kilometraje: medicion.kilometraje,
     });
 
-    // Crear tarea de mantenimiento automática cuando el activo escala a crítico o alerta,
-    // pero solo si no hay ninguna tarea pendiente o vencida para ese activo.
+    const anomaliasInteligentes = await detectarAnomaliasMedicion(activoId, medicion);
+
     if (nuevoEstado === 'critico' || nuevoEstado === 'alerta') {
       const tareaExistente = await prisma.tareaMantenimiento.findFirst({
         where: { activoId, estado: { in: ['pendiente', 'vencido'] } },
       });
       if (!tareaExistente) {
-        const tipoTarea = nuevoEstado === 'critico'
-          ? 'Revision urgente — estado critico'
-          : 'Revision — estado en alerta';
+        const tipoTarea = nuevoEstado === 'critico' ? 'Revision urgente — estado critico' : 'Revision — estado en alerta';
         await prisma.tareaMantenimiento.create({
           data: {
             activoId,
@@ -271,17 +251,25 @@ router.post('/', requireTrabajoCampo as any, async (req: Request, res: Response,
       }
     }
 
-    // Notificar push cuando el activo escala a crítico o alerta.
     if (nuevoEstado === 'critico' || nuevoEstado === 'alerta') {
-      enviarPushAEmpresa(
-        activo.empresaId,
-        {
-          title: 'Alerta en ' + activo.nombre,
-          body: 'Estado: ' + nuevoEstado + '. Codigo ' + activo.codigo,
-          url: '#/activos/' + activo.id,
-        },
-        ['admin', 'operador', 'tecnico', 'mantenimiento', 'jefatura', 'direccion'],
-      ).catch((e) => console.error('[medicion] error push:', e));
+      enviarPushAEmpresa(activo.empresaId, {
+        title: 'Alerta en ' + activo.nombre,
+        body: 'Estado: ' + nuevoEstado + '. Codigo ' + activo.codigo,
+        url: '#/activos/' + activo.id,
+        severity: nuevoEstado === 'critico' ? 'critical' : 'warning',
+        tag: `estado-${activo.id}`,
+      }, ['admin', 'operador', 'tecnico', 'mantenimiento', 'jefatura', 'direccion'])
+        .catch((e) => console.error('[medicion] error push:', e));
+    } else if (anomaliasInteligentes.length > 0) {
+      enviarPushAEmpresa(activo.empresaId, {
+        title: 'Anomalía detectada en ' + activo.nombre,
+        body: anomaliasInteligentes.slice(0, 2).join(' · '),
+        url: '#/activos/' + activo.id,
+        severity: 'warning',
+        tag: `anomalia-${activo.id}`,
+      }, ['admin', 'operador', 'tecnico', 'mantenimiento', 'jefatura', 'direccion'])
+        .catch((e) => console.error('[medicion] error push anomalia:', e));
+      void auditar(req as AuthRequest, 'anomalia', 'activo', activo.id, `Anomalia estadistica: ${anomaliasInteligentes.join(' | ')}`);
     }
 
     void auditar(req as AuthRequest, 'medicion', 'medicion', medicion.id, `Medicion en ${activo.codigo} — estado ${estadoFinal}`);
@@ -291,15 +279,11 @@ router.post('/', requireTrabajoCampo as any, async (req: Request, res: Response,
   }
 });
 
-// DELETE /api/mediciones/:id — solo admin (operador no puede borrar historial)
 router.delete('/:id', requireJefatura as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const empresaId = await resolveEmpresaId(req);
-    const existing = await prisma.medicion.findFirst({
-      where: { id: req.params.id, activo: { empresaId } },
-    });
+    const existing = await prisma.medicion.findFirst({ where: { id: req.params.id, activo: { empresaId } } });
     if (!existing) return res.status(404).json({ error: 'Medición no encontrada' });
-
     await prisma.medicion.delete({ where: { id: req.params.id } });
     res.json({ ok: true });
   } catch (err) {
