@@ -56,21 +56,20 @@ export default defineConfig({
         ]
       },
       workbox: {
+        // En iOS la PWA debe poder arrancar sin red incluso si el usuario nunca
+        // abrió cada módulo antes de salir al campo. Por eso precargamos TODO el
+        // JavaScript/CSS necesario para montar la aplicación y sus rutas.
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        // Lo que NO se precarga al instalar la app. Se descarga la primera vez
-        // que se usa y queda cacheado (ver runtimeCaching). El objetivo es que
-        // el tecnico en el campo tenga offline lo que necesita —cargar
-        // mediciones— sin esperar megas de librerias que quiza no abra nunca.
+        // Solo dejamos fuera recursos pesados que no son necesarios para abrir,
+        // navegar, consultar activos ni cargar mediciones. Exportar PDF puede
+        // requerir conexión la primera vez, pero nunca debe impedir el arranque.
         globIgnores: [
-          'og-image.png',                    // solo para previews de WhatsApp y redes
-          'assets/jspdf*.js',                // exportar PDF
-          'assets/html2canvas*.js',          // capturas para el PDF
-          'assets/generateCategoricalChart*.js', // graficos de analitica
-          'assets/index.es-*.js',            // dependencia de los graficos
-          'assets/purify.es-*.js',           // saneado de HTML para el PDF
+          'og-image.png',
+          'assets/jspdf*.js',
+          'assets/html2canvas*.js',
+          'assets/purify.es-*.js',
           '**/jspdf*.js',
           '**/html2canvas*.js',
-          '**/generateCategoricalChart*.js',
           '**/purify*.js',
         ],
         importScripts: ['push-sw.js'],
@@ -86,8 +85,8 @@ export default defineConfig({
             options: { cacheName: 'gstatic-fonts-cache', expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 } }
           },
           {
-            // Lo excluido del precache: se guarda al primer uso y desde ahi
-            // queda disponible sin conexion.
+            // Las imagenes que no forman parte del precache se guardan al primer
+            // uso y quedan disponibles para visitas posteriores sin conexión.
             urlPattern: ({ request, sameOrigin }) => sameOrigin && request.destination === 'image',
             handler: 'StaleWhileRevalidate',
             options: { cacheName: 'activaqr-bajo-demanda', expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 30 } }
