@@ -41,3 +41,21 @@ test('habilita la proyección cuando hay historia suficiente y consistente', () 
   assert.ok(resultado.pendienteMensual != null);
   assert.equal(resultado.confianza, 'media');
 });
+
+test('detecta un salto anómalo aunque todavía no cruce el umbral fijo', () => {
+  const puntos = [20, 20.2, 19.9, 20.1, 20, 20.2, 28].map((valor, i) => ({ fecha: fecha(i * 2), valor }));
+  const resultado = analizarTendencia({
+    puntos,
+    alerta: 35,
+    critico: 45,
+    direccion: 'creciente',
+    unidad: '°C',
+    parametro: 'Temperatura',
+  });
+
+  assert.ok(resultado.anomalias.length >= 1);
+  assert.equal(resultado.ultimaAnomalia?.valor, 28);
+  assert.match(resultado.resumen, /Anomalía reciente/);
+  assert.match(resultado.recomendacion ?? '', /salto brusco|valor atípico/);
+  assert.ok(['observar', 'alerta'].includes(resultado.severidad));
+});
