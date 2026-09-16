@@ -17,6 +17,7 @@ export type AccionAuditoria =
   | 'acceso_remoto'
   | 'habilitar_modulo'
   | 'alarma'
+  | 'anomalia'
   | 'comando';
 
 export async function registrarAuditoria(params: {
