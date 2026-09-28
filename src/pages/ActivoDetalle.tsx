@@ -188,8 +188,8 @@ export const ActivoDetalle: React.FC = () => {
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">
             <span className="font-mono font-black text-2xl sm:text-3xl text-content">{activo.codigo}</span>
-            <StatusBadge estado={activo.estado} size="lg" />
-            <EstadoOperativoBadge estado={activo.estadoOperativo ?? 'operativo'} size="lg" />
+            <span className="text-xs text-muted">Condición:</span><StatusBadge estado={activo.estado} size="lg" />
+            <span className="text-xs text-muted">Operación:</span><EstadoOperativoBadge estado={activo.estadoOperativo ?? 'operativo'} size="lg" />
           </div>
           <h1 className="text-lg font-bold text-content mt-0.5">{activo.nombre}</h1>
           {puedeEditar ? <div className="flex items-center gap-2 mt-2">

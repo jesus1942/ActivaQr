@@ -10,6 +10,9 @@ import { Medicion as MedicionType, EstadoMedicion, Activo } from '../data/types'
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { CategoriaEquipo, ParametroCategoria, getCategoria } from '../data/categoriasApi';
 import { comprimirImagen } from '../utils/comprimirImagen';
+import { EstadoCampo } from '../components/ui/EstadoCampo';
+import { EstadoOperativoBadge } from '../components/ui/EstadoOperativoBadge';
+import { useColaOffline } from '../hooks/useColaOffline';
 import { useAuth } from '../context/AuthContext';
 
 // ── Lógica de alertas (espejo del backend) ────────────────────────────────────
@@ -261,6 +264,7 @@ export const Medicion: React.FC = () => {
   const navigate = useNavigate();
   const { activos, mediciones, tecnicos, addMedicion, updateActivo, getSectorNombre, getTipo, getTecnicoNombre } = useActivos();
   const { usuario } = useAuth();
+  const { online } = useColaOffline();
   const tecnicosActivos = tecnicos.filter((t) => t.activo);
 
   const [searchCodigo, setSearchCodigo] = useState('');
@@ -360,6 +364,15 @@ export const Medicion: React.FC = () => {
       }
     });
   };
+  useEffect(() => {
+    setForm((prev) => ({ ...prev, temperatura: '', amperaje: '', presion: '', vibracion: 'ninguna', horasMarcha: '', kilometraje: '', voltaje: '', porcentajeBateria: '', nivelToner: '', contador: '', estado: 'normal', observaciones: '' }));
+    setParametrosExtra({});
+    setFotos([]);
+    setErrorFoto(null);
+    setSubmitted(false);
+    setSavedMedicion(null);
+  }, [activo?.id]);
+
   const setParamExtra = (clave: string, val: string | number | boolean) =>
     setParametrosExtra((p) => ({ ...p, [clave]: val }));
 
@@ -396,7 +409,7 @@ export const Medicion: React.FC = () => {
     const newMedicion: MedicionType = {
       id: `med-${Date.now()}`,
       activoId: activo.id,
-      fecha: format(new Date(), 'yyyy-MM-dd'),
+      fecha: new Date().toISOString(),
       temperatura: parseFloat(form.temperatura) || 0,
       amperaje: parseFloat(form.amperaje) || 0,
       presion: parseFloat(form.presion) || 0,
@@ -460,7 +473,7 @@ export const Medicion: React.FC = () => {
           <div className="text-left bg-subtle border border-line p-4 space-y-2 mb-4">
             <div className="flex justify-between">
               <span className="text-xs font-bold uppercase text-muted">Fecha</span>
-              <span className="font-mono text-sm">{format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es })}</span>
+              <span className="font-mono text-sm">{format(parseISO(savedMedicion.fecha), 'dd/MM/yyyy HH:mm', { locale: es })}</span>
             </div>
             {mideTemperatura && <div className="flex justify-between">
               <span className="text-xs font-bold uppercase text-muted">Temperatura</span>
@@ -493,12 +506,16 @@ export const Medicion: React.FC = () => {
               </div>
             )}
           </div>
+          <div className="mb-4 text-left"><EstadoCampo /></div>
           <div className="flex gap-3">
             <button
               onClick={() => {
                 setSubmitted(false);
                 setForm({ temperatura: '', amperaje: '', presion: '', vibracion: 'ninguna', horasMarcha: '', kilometraje: '', voltaje: '', porcentajeBateria: '', nivelToner: '', contador: '', estado: 'normal', observaciones: '', tecnicoId: usuario?.id ?? '' });
               setParametrosExtra({});
+              setFotos([]);
+              setErrorFoto(null);
+              setSavedMedicion(null);
               }}
               className="flex-1 bg-brand-600 text-white px-4 py-3 font-display font-bold text-xl border border-line"
             >
@@ -517,37 +534,39 @@ export const Medicion: React.FC = () => {
   }
 
   return (
-    <div className="max-w-lg mx-auto pb-24">
+    <div className="max-w-xl mx-auto pb-44 sm:pb-32">
       {escaneando && (
         <QrScanner onResult={onEscaneo} onClose={() => setEscaneando(false)} />
       )}
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <button onClick={() => navigate(-1)} className="border border-line p-2 hover:border-content transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
+        <button aria-label="Volver" onClick={() => navigate(-1)} className="border border-line p-2 hover:border-content transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
           <ArrowLeft size={18} />
         </button>
-        <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-black text-content tracking-tight">Tomar Medición</h1>
+        <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-black text-content tracking-tight">Nueva medición</h1>
       </div>
+
+      <div className="mb-4"><EstadoCampo /></div>
 
       {/* Search by código */}
       {!activoId && (
         <div className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4 mb-4">
-          <label className="block text-xs font-black uppercase tracking-wider text-muted mb-2">Buscar por Código de Activo</label>
+          <label className="block text-xs font-black uppercase tracking-wider text-muted mb-2">Buscar por código o nombre</label>
           <div className="flex gap-2">
-            <div className="flex items-center gap-2 border border-line px-3 h-14 flex-1">
+            <div className="flex items-center gap-2 border border-line px-3 h-14 flex-1 min-w-0 rounded-md">
               <Search size={18} className="text-faint flex-shrink-0" />
               <input
                 type="text"
                 placeholder="Ej: HOR-MOT-001"
                 value={searchCodigo}
                 onChange={(e) => setSearchCodigo(e.target.value)}
-                className="flex-1 outline-none text-xl font-mono uppercase bg-transparent"
+                className="w-full min-w-0 flex-1 outline-none text-base font-mono bg-transparent" aria-label="Buscar activo por código o nombre"
               />
             </div>
             <button
               onClick={() => setEscaneando(true)}
-              title="Escanear QR"
-              className="flex items-center justify-center gap-2 bg-slate-900 text-white px-4 h-14 font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all"
+              title="Escanear QR" aria-label="Escanear QR"
+              className="flex items-center justify-center gap-2 bg-brand-600 text-white px-4 h-14 shrink-0 whitespace-nowrap rounded-md font-display font-bold uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all"
             >
               <Camera size={20} />
               <span className="hidden sm:inline">Escanear</span>
@@ -591,17 +610,17 @@ export const Medicion: React.FC = () => {
         <>
           {/* Activo info */}
           <div className="bg-slate-900 text-white border border-line shadow-soft p-4 mb-4">
-            <div className="flex justify-between items-start">
+            <div className="flex flex-col gap-3">
               <div>
                 <div className="font-display font-black text-3xl text-brand-400">{activo.codigo}</div>
                 <div className="font-semibold text-white text-sm">{activo.nombre}</div>
                 <div className="text-faint text-xs mt-0.5">{getSectorNombre(activo.sectorId)} · {activo.ubicacion}</div>
               </div>
-              <StatusBadge estado={activo.estado} />
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300"><span className="flex items-center gap-2">Condición:<StatusBadge estado={activo.estado} /></span><span className="flex items-center gap-2">Operación:<EstadoOperativoBadge estado={activo.estadoOperativo ?? 'operativo'} /></span></div>
             </div>
             {lastMedicion && (
               <div className="mt-3 pt-3 border-t border-line text-xs text-faint">
-                Última medición: {format(parseISO(lastMedicion.fecha), 'dd/MM/yyyy', { locale: es })}
+                Última medición: {format(parseISO(lastMedicion.fecha), lastMedicion.fecha.includes('T') ? 'dd/MM/yyyy HH:mm' : 'dd/MM/yyyy', { locale: es })}
                 {mideTemperatura && <> — <span className="text-warn font-mono">{lastMedicion.temperatura}°C</span></>}
               </div>
             )}
@@ -631,7 +650,7 @@ export const Medicion: React.FC = () => {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="bg-surface/85 backdrop-blur-xl border border-line shadow-soft p-4 space-y-5">
+          <form onSubmit={handleSubmit} className="bg-surface border border-line rounded-lg shadow-soft p-4 sm:p-5 space-y-5">
             {/* Temperature */}
             {mideTemperatura && (
             <div>
@@ -643,7 +662,7 @@ export const Medicion: React.FC = () => {
                 type="number"
                 step="0.1"
                 required
-                value={form.temperatura}
+                aria-label="Temperatura (°C)" value={form.temperatura}
                 onChange={(e) => setForm((p) => ({ ...p, temperatura: e.target.value }))}
                 className="w-full border border-line px-4 h-14 text-2xl font-mono font-black outline-none focus:border-brand-600 text-center bg-surface"
                 placeholder="0.0"
@@ -663,7 +682,7 @@ export const Medicion: React.FC = () => {
                 <input
                   type="number"
                   step="0.1"
-                  value={form.amperaje}
+                  aria-label="Amperaje (A)" value={form.amperaje}
                   onChange={(e) => setForm((p) => ({ ...p, amperaje: e.target.value }))}
                   className="w-full border border-line px-4 h-14 text-xl font-mono outline-none focus:border-brand-600 text-center bg-surface"
                   placeholder="0.0"
@@ -683,7 +702,7 @@ export const Medicion: React.FC = () => {
                 <input
                   type="number"
                   step="0.1"
-                  value={form.presion}
+                  aria-label="Presión (bar)" value={form.presion}
                   onChange={(e) => setForm((p) => ({ ...p, presion: e.target.value }))}
                   className="w-full border border-line px-4 h-14 text-xl font-mono outline-none focus:border-brand-600 text-center bg-surface"
                   placeholder="0.0"
@@ -721,7 +740,7 @@ export const Medicion: React.FC = () => {
               <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Horas de Marcha</label>
               <input
                 type="number"
-                value={form.horasMarcha}
+                aria-label="Horas de marcha" value={form.horasMarcha}
                 onChange={(e) => setForm((p) => ({ ...p, horasMarcha: e.target.value }))}
                 className="w-full border border-line px-4 h-14 text-xl font-mono outline-none focus:border-brand-600 text-center bg-surface"
                 placeholder={String(activo.horasActuales)}
@@ -735,7 +754,7 @@ export const Medicion: React.FC = () => {
               <input
                 type="number"
                 min={activo.kilometrosActuales ?? 0}
-                value={form.kilometraje}
+                aria-label="Kilometraje" value={form.kilometraje}
                 onChange={(e) => setForm((p) => ({ ...p, kilometraje: e.target.value }))}
                 className="w-full border border-line px-4 h-14 text-xl font-mono outline-none focus:border-brand-600 text-center bg-surface"
                 placeholder={String(activo.kilometrosActuales ?? 0)}
@@ -749,7 +768,7 @@ export const Medicion: React.FC = () => {
                 <input
                   type="number"
                   step="0.1"
-                  value={form.voltaje}
+                  aria-label="Voltaje (V)" value={form.voltaje}
                   onChange={(e) => setForm((p) => ({ ...p, voltaje: e.target.value }))}
                   className="w-full border border-line px-4 h-14 text-xl font-mono outline-none focus:border-brand-600 text-center bg-surface"
                   placeholder="0.0"
@@ -765,7 +784,7 @@ export const Medicion: React.FC = () => {
                   type="number"
                   min="0"
                   max="100"
-                  value={form.porcentajeBateria}
+                  aria-label="Batería (%)" value={form.porcentajeBateria}
                   onChange={(e) => setForm((p) => ({ ...p, porcentajeBateria: e.target.value }))}
                   className="w-full border border-line px-4 h-14 text-xl font-mono outline-none focus:border-brand-600 text-center bg-surface"
                   placeholder="0"
@@ -783,7 +802,7 @@ export const Medicion: React.FC = () => {
                   type="number"
                   min="0"
                   max="100"
-                  value={form.nivelToner}
+                  aria-label="Nivel de tóner (%)" value={form.nivelToner}
                   onChange={(e) => setForm((p) => ({ ...p, nivelToner: e.target.value }))}
                   className="w-full border border-line px-4 h-14 text-xl font-mono outline-none focus:border-brand-600 text-center bg-surface"
                   placeholder="0"
@@ -799,7 +818,7 @@ export const Medicion: React.FC = () => {
                 <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Contador (páginas/ciclos)</label>
                 <input
                   type="number"
-                  value={form.contador}
+                  aria-label="Contador (páginas/ciclos)" value={form.contador}
                   onChange={(e) => setForm((p) => ({ ...p, contador: e.target.value }))}
                   className="w-full border border-line px-4 h-14 text-xl font-mono outline-none focus:border-brand-600 text-center bg-surface"
                   placeholder="0"
@@ -877,7 +896,7 @@ export const Medicion: React.FC = () => {
             <div>
               <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Observaciones</label>
               <textarea
-                value={form.observaciones}
+                aria-label="Observaciones" value={form.observaciones}
                 onChange={(e) => setForm((p) => ({ ...p, observaciones: e.target.value }))}
                 rows={3}
                 className="w-full border border-line px-3 py-3 text-base outline-none focus:border-brand-600 bg-surface"
@@ -930,7 +949,7 @@ export const Medicion: React.FC = () => {
               <label className="block text-xs font-black uppercase tracking-wider text-muted mb-1">Técnico Responsable</label>
               <select
                 required
-                value={form.tecnicoId}
+                aria-label="Técnico responsable" value={form.tecnicoId}
                 onChange={(e) => setForm((p) => ({ ...p, tecnicoId: e.target.value }))}
                 className="w-full border border-line px-3 h-14 text-xl outline-none focus:border-brand-600 bg-surface"
               >
@@ -942,12 +961,12 @@ export const Medicion: React.FC = () => {
             </div>
 
             {/* Submit sticky en mobile */}
-            <div className="fixed bottom-0 left-0 right-0 md:relative md:bottom-auto md:left-auto md:right-auto p-4 md:p-0 bg-canvas md:bg-transparent border border-line md:border-0 z-30">
+            <div className="sticky bottom-20 md:bottom-4 p-3 bg-canvas border border-line rounded-lg z-20">
               <button
                 type="submit"
-                className="w-full bg-brand-600 text-white px-4 h-16 font-display font-black text-2xl uppercase border border-line shadow-soft hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-soft transition-all"
+                className="w-full bg-brand-600 text-white px-4 h-16 font-display font-bold text-lg rounded-lg border border-line shadow-soft transition-colors"
               >
-                Registrar Medición
+                {online ? 'Registrar medición' : 'Guardar sin conexión'}
               </button>
             </div>
           </form>
@@ -956,6 +975,15 @@ export const Medicion: React.FC = () => {
 
       {!activo && !activoId && (
         <div className="mt-6 space-y-4">
+          {activos.length > 0 && <section className="rounded-lg border border-line bg-surface p-4">
+            <h2 className="font-bold text-content mb-3">Equipos para medir</h2>
+            <div className="space-y-2">{[...activos].sort((a, b) => {
+              const nivel = { critico: 0, alerta: 1, mantenimiento: 2, normal: 3 };
+              return nivel[a.estado] - nivel[b.estado];
+            }).slice(0, 4).map((a) => <button key={a.id} onClick={() => navigate(`/medicion/${a.id}`)} className="w-full min-h-[60px] p-3 rounded-md border border-line text-left hover:bg-subtle">
+              <span className="block text-sm font-bold text-content">{a.nombre}</span><span className="text-xs text-muted">{a.codigo}</span>
+            </button>)}</div>
+          </section>}
           <div className="bg-slate-900 border border-line shadow-soft p-6 text-white">
             <p className="text-xs font-black uppercase tracking-widest text-brand-400 mb-2">Como registrar</p>
             <div className="space-y-3">

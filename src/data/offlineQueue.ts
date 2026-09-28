@@ -69,7 +69,7 @@ export async function encolarOperacion(
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE, 'readwrite');
     tx.objectStore(STORE).add(op);
-    tx.oncomplete = () => { db.close(); resolve(id); };
+    tx.oncomplete = () => { db.close(); window.dispatchEvent(new Event('activaqr:cola-cambiada')); resolve(id); };
     tx.onerror = () => { db.close(); reject(tx.error); };
   });
 }
@@ -107,7 +107,7 @@ export async function actualizarOperacion(id: string, cambios: Partial<Operacion
       if (!actual) { db.close(); return resolve(); }
       store.put({ ...actual, ...cambios });
     };
-    tx.oncomplete = () => { db.close(); resolve(); };
+    tx.oncomplete = () => { db.close(); window.dispatchEvent(new Event('activaqr:cola-cambiada')); resolve(); };
     tx.onerror = () => { db.close(); reject(tx.error); };
   });
 }
@@ -117,7 +117,7 @@ export async function borrarOperacion(id: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE, 'readwrite');
     tx.objectStore(STORE).delete(id);
-    tx.oncomplete = () => { db.close(); resolve(); };
+    tx.oncomplete = () => { db.close(); window.dispatchEvent(new Event('activaqr:cola-cambiada')); resolve(); };
     tx.onerror = () => { db.close(); reject(tx.error); };
   });
 }

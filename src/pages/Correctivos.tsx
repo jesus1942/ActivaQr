@@ -13,6 +13,7 @@ import {
 } from '../data/correctivosApi';
 import { useToast } from '../components/ui/Toast';
 import { comprimirImagen } from '../utils/comprimirImagen';
+import { useRemote } from '../data/store';
 
 const ARS = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
 const NIVEL_STYLE: Record<NivelAlerta, string> = {
@@ -62,6 +63,7 @@ export const Correctivos: React.FC = () => {
   const puedeDecidirCliente = usuario?.rol === 'admin';
   const empresaInicial = params.get('empresaId') ?? '';
   const alertaInicial = params.get('alerta');
+  const activoFiltro = params.get('activoId');
   const [alertas, setAlertas] = useState<AlertaTecnica[]>([]);
   const [empresas, setEmpresas] = useState<EmpresaAdmin[]>([]);
   const [empresaId, setEmpresaId] = useState(empresaInicial);
@@ -78,6 +80,7 @@ export const Correctivos: React.FC = () => {
   const [ordenFoto, setOrdenFoto] = useState<string | null>(null);
 
   const cargar = useCallback(async () => {
+    if (!useRemote) { setCargando(false); return; }
     setCargando(true);
     try {
       if (esSuperadmin) {
@@ -95,7 +98,7 @@ export const Correctivos: React.FC = () => {
 
   useEffect(() => { cargar(); }, [cargar]);
 
-  const visibles = useMemo(() => alertas.filter((a) => !empresaId || a.empresaId === empresaId), [alertas, empresaId]);
+  const visibles = useMemo(() => alertas.filter((a) => (!empresaId || a.empresaId === empresaId) && (!activoFiltro || a.activo.id === activoFiltro)), [alertas, empresaId, activoFiltro]);
   const criticas = visibles.filter((a) => a.nivel === 'critico' && a.estado !== 'cerrada').length;
   const permisosPendientes = visibles.filter((a) => a.orden?.estadoPermiso === 'pendiente').length;
 
@@ -202,6 +205,8 @@ export const Correctivos: React.FC = () => {
         </button>
       </div>
 
+      {!useRemote && <p className="rounded-md border border-line bg-subtle p-3 text-sm">Las alertas y órdenes requieren una cuenta conectada al servidor. Esta sesión utiliza datos locales.</p>}
+      {activoFiltro && <div className="rounded-md border border-line bg-subtle p-3 text-sm">Alertas del equipo seleccionado. <Link className="text-brand-600 underline ml-2" to="/correctivos">Ver todos los equipos</Link></div>}
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <div className="border border-line bg-surface p-3"><p className="text-[10px] font-black uppercase text-muted">Alertas</p><p className="text-2xl font-black">{visibles.length}</p></div>
         <div className="border border-danger bg-danger/10 p-3"><p className="text-[10px] font-black uppercase text-danger">Críticas</p><p className="text-2xl font-black">{criticas}</p></div>

@@ -53,13 +53,13 @@ export const AssetCard: React.FC<AssetCardProps> = ({ activo, lastMedicion, sect
 
       {/* Header: estado + sector (texto discreto) */}
       <div className="flex justify-between items-center gap-2 mb-2 pr-8">
-        <StatusBadge estado={activo.estado} size="sm" />
+        <div className="flex flex-col gap-1"><span className="text-[10px] text-muted uppercase tracking-wide">Condición</span><StatusBadge estado={activo.estado} size="sm" /></div>
         <span className="text-xs font-medium text-faint truncate max-w-[45%]" title={sectorNombre}>
           {sectorNombre}
         </span>
       </div>
       <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
-        <EstadoOperativoBadge estado={activo.estadoOperativo ?? 'operativo'} size="sm" />
+        <span className="text-xs text-muted">Operación:</span><EstadoOperativoBadge estado={activo.estadoOperativo ?? 'operativo'} size="sm" />
         {activo.esItinerante && (
           <span className="inline-flex items-center gap-1 text-xs font-medium text-brand-600 dark:text-brand-300">
             <span className="w-1 h-3 rounded-sm bg-brand-500" />

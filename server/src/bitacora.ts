@@ -11,6 +11,16 @@ export type EntradaBitacora = {
 
 export const ENTRADAS_BITACORA: EntradaBitacora[] = [
   {
+    version: 'OPERACIÓN EN CAMPO',
+    fecha: '28 de septiembre de 2026',
+    fechaIso: '2026-09-28',
+    titulo: 'El inicio prioriza la próxima acción y las mediciones muestran su estado de envío',
+    resumen: 'El Centro de decisiones destaca el equipo que requiere atención y permite abrir su historial o sus alertas. La condición técnica y la situación operativa aparecen identificadas por separado.',
+    impacto: 'El equipo de campo puede consultar los cambios pendientes de envío, registrar la hora original de cada lectura y volver a medir sin arrastrar las fotos de la lectura anterior. Los indicadores y el calendario siguen accesibles.',
+    capacidades: ['Prioridad diaria con acceso al equipo y sus correctivos', 'Consulta de cambios pendientes por cuenta y dispositivo', 'Formulario adaptable con fecha y hora de campo', 'Condición y operación identificadas en cada activo'],
+    destacada: true,
+  },
+  {
     version: 'CONTROL DIRECTO',
     fecha: '8 de septiembre de 2026',
     fechaIso: '2026-09-08',

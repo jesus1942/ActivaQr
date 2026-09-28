@@ -9,6 +9,7 @@ const base = process.env.VITE_BASE || '/app/';
 
 export default defineConfig({
   base,
+  server: { host: '0.0.0.0', allowedHosts: ['terminal.local'] },
   plugins: [
     react(),
     VitePWA({

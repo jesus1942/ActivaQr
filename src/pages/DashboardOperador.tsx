@@ -1,3 +1,4 @@
+import { EstadoCampo } from '../components/ui/EstadoCampo';
 // v1.2.0
 import React, { useEffect, useState, useCallback } from 'react';
 import { apiFetch, apiPostOffline, apiPutOffline } from '../data/auth';
@@ -409,6 +410,7 @@ export const DashboardOperador: React.FC = () => {
     return (
       <div className="min-h-screen bg-subtle">
         <SyncBadge />
+        <div className="max-w-lg mx-auto px-4 pt-4"><EstadoCampo /></div>
         <div className="max-w-lg mx-auto space-y-4 px-4 py-6">
           <div className="bg-slate-900 text-white px-5 py-4 border border-line shadow-soft flex items-start justify-between">
             <div>
@@ -567,6 +569,7 @@ export const DashboardOperador: React.FC = () => {
     return (
       <div className="min-h-screen bg-subtle">
         <SyncBadge />
+        <div className="max-w-lg mx-auto px-4 pt-4"><EstadoCampo /></div>
         <div className="max-w-lg mx-auto space-y-4 px-4 py-6">
           <div className="bg-slate-900 text-white px-5 py-4 border border-line shadow-soft flex items-start justify-between">
             <div>
@@ -628,6 +631,7 @@ export const DashboardOperador: React.FC = () => {
       )}
 
       <SyncBadge />
+        <div className="max-w-lg mx-auto px-4 pt-4"><EstadoCampo /></div>
 
       {/* Header */}
       <div className="bg-slate-900 text-white px-5 py-4 border border-line flex items-center justify-between">
@@ -705,12 +709,12 @@ export const DashboardOperador: React.FC = () => {
                         <p className="text-xs text-faint">{activo.sector?.nombre}{activo.tipo ? ` · ${activo.tipo.nombre}` : ''}</p>
                       </div>
                       <span className={`text-xs font-black uppercase px-2 py-1 border whitespace-nowrap flex-shrink-0 ${ESTADO_BADGE[activo.estado] ?? 'bg-subtle border-line text-muted'}`}>
-                        {activo.estadoOperativo === 'mantenimiento' ? 'mantenimiento' : activo.estado}
+                        Condición: {activo.estado}
                       </span>
                     </div>
-                    {activo.estadoOperativo && activo.estadoOperativo !== 'operativo' && (
+                    {activo.estadoOperativo && (
                       <span className={`inline-block text-xs font-bold px-2 py-0.5 border mb-3 ${OP_BADGE[activo.estadoOperativo] ?? ''}`}>
-                        {activo.estadoOperativo.replace('_', ' ')}
+                        Operación: {activo.estadoOperativo.replace('_', ' ')}
                       </span>
                     )}
                     {ultima && (

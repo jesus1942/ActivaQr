@@ -14,17 +14,22 @@ import {
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
-  Package, AlertTriangle, ChevronRight, CalendarClock, CheckCircle2, Wrench, ClipboardList, Sparkles,
+  Package, AlertTriangle, ChevronRight, CalendarClock, CheckCircle2, Wrench, ClipboardList, Sparkles, ScanLine,
 } from 'lucide-react';
 import { useActivos } from '../hooks/useActivos';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { Card } from '../components/ui/Card';
 import { useTheme } from '../context/ThemeContext';
+import { EstadoOperativoBadge } from '../components/ui/EstadoOperativoBadge';
+import { EstadoCampo } from '../components/ui/EstadoCampo';
+import { useAuth } from '../context/AuthContext';
+import { puedeVerModulo, puedeCargarMediciones } from '../data/permisos';
 import { OnboardingTour } from '../components/OnboardingTour';
 
 export const Dashboard: React.FC = () => {
   const { activos, mediciones, tareas, sectores, tipos, getSectorNombre, getTecnicoNombre } = useActivos();
   const navigate = useNavigate();
+  const { usuario } = useAuth();
   const { theme } = useTheme();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -91,6 +96,12 @@ export const Dashboard: React.FC = () => {
     [mediciones]
   );
 
+  // Prioriza condición crítica y después la tarea con mayor atraso.
+  const prioridad = buckets.activosCriticos[0]
+    ?? activos.find((a) => a.id === buckets.vencidas[0]?.activoId)
+    ?? buckets.activosAlerta[0];
+  const tareaPrioritaria = prioridad ? buckets.vencidas.find((t) => t.activoId === prioridad.id) : undefined;
+
   const gridColor = theme === 'dark' ? '#262C3A' : '#E8EBF0';
   const axisColor = theme === 'dark' ? '#9CA7BA' : '#94A3B8';
 
@@ -98,11 +109,12 @@ export const Dashboard: React.FC = () => {
     <div>
       <div className="flex items-baseline justify-between gap-3 mb-6 flex-wrap">
         <div>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight">Dashboard</h1>
-          <p className="text-muted text-sm mt-1">Lo que hay que hacer hoy</p>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-content tracking-tight">Centro de decisiones</h1>
+          <p className="text-muted text-sm mt-1">Prioridades, mediciones y próximos pasos</p>
         </div>
-        <div className="text-xs font-mono text-muted">
-          {format(today, "EEEE d 'de' MMMM", { locale: es })}
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-xs text-muted">{format(today, "EEEE d 'de' MMMM", { locale: es })}</span>
+          {(!usuario || puedeCargarMediciones(usuario.rol)) && <button onClick={() => navigate('/medicion')} className="flex items-center justify-center gap-2 min-h-[48px] px-4 rounded-md bg-brand-600 text-white text-sm font-bold"><ScanLine size={18} /> Registrar medición</button>}
         </div>
       </div>
 
@@ -134,12 +146,43 @@ export const Dashboard: React.FC = () => {
         </div>
       )}
 
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] gap-4 mb-6">
+        <Card padding="md" className={prioridad ? 'border-l-4 border-l-danger' : 'border-l-4 border-l-ok'}>
+          <p className="text-xs font-bold uppercase tracking-wider text-muted mb-3">Prioridad de hoy</p>
+          {prioridad ? <>
+            <h2 className="text-xl sm:text-2xl font-display font-bold text-content">{prioridad.nombre}</h2>
+            <p className="font-mono text-xs text-muted mt-1">{prioridad.codigo} · {getSectorNombre(prioridad.sectorId)}</p>
+            <div className="flex flex-wrap gap-x-5 gap-y-2 my-4 text-xs text-muted">
+              <div className="flex items-center gap-2">Condición <StatusBadge estado={prioridad.estado} size="sm" /></div>
+              <div className="flex items-center gap-2">Operación <EstadoOperativoBadge estado={prioridad.estadoOperativo ?? 'operativo'} size="sm" /></div>
+            </div>
+            <p className="text-sm text-muted mb-4">{tareaPrioritaria ? `${tareaPrioritaria.tipo} · vencida hace ${Math.abs(tareaPrioritaria.dias)} días` : 'Revisá la última medición y las alertas antes de definir la intervención.'}</p>
+            <div className="flex gap-2 flex-wrap">
+              <button className="min-h-[44px] px-4 rounded-md border border-line text-sm font-semibold text-content hover:bg-subtle" onClick={() => navigate(`/activos/${prioridad.id}`)}>Ver equipo y tareas</button>
+              {puedeVerModulo(usuario?.rol, 'correctivos') && <button className="min-h-[44px] px-4 rounded-md bg-brand-600 text-white text-sm font-semibold" onClick={() => navigate(`/correctivos?activoId=${encodeURIComponent(prioridad.id)}`)}>Revisar alertas y órdenes</button>}
+            </div>
+          </> : <>
+            <h2 className="text-xl font-bold text-content">Sin alertas ni tareas vencidas</h2>
+            <p className="text-sm text-muted mt-2">Consultá la agenda de la semana y mantené las mediciones al día.</p>
+          </>}
+        </Card>
+        <EstadoCampo />
+      </div>
+      {/* ───────── KPIs chicos ───────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+        <Kpi label="Activos totales" value={kpis.totalActivos} icon={Package} tint="text-brand-600 bg-brand-50 dark:bg-brand-600/15" onClick={() => navigate('/activos')} />
+        <Kpi label="Operativos" value={kpis.operativos} icon={CheckCircle2} tint="text-ok-strong bg-ok/10 dark:text-ok" onClick={() => navigate('/activos')} />
+        <Kpi label="Fuera de servicio" value={kpis.fueraServicio} icon={Wrench} tint="text-danger-strong bg-danger/10 dark:text-danger" onClick={() => navigate('/activos')} />
+        <Kpi label="Inspecciones del mes" value={kpis.inspeccionesMes} icon={ClipboardList} tint="text-warn-strong bg-warn/10 dark:text-warn" onClick={() => navigate('/activos')} />
+      </div>
+
       {/* ───────── Franjas accionables ───────── */}
-      <div className="space-y-3 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-8 items-start">
         <FranjaUrgencia
           tono="rojo"
           icono={<AlertTriangle size={18} />}
-          titulo="Vencido"
+          titulo="Atención prioritaria"
+          colapsableInicial
           contador={buckets.vencidas.length + buckets.activosCriticos.length}
           subtitulo={
             buckets.activosCriticos.length > 0
@@ -175,6 +218,7 @@ export const Dashboard: React.FC = () => {
           tono="amarillo"
           icono={<CalendarClock size={18} />}
           titulo="Esta semana"
+          colapsableInicial
           contador={buckets.semana.length + buckets.activosAlerta.length}
           subtitulo={
             buckets.activosAlerta.length > 0
@@ -209,21 +253,13 @@ export const Dashboard: React.FC = () => {
         <FranjaUrgencia
           tono="verde"
           icono={<CheckCircle2 size={18} />}
-          titulo="Al día"
+          titulo="Próximas tareas"
           contador={buckets.alDiaCount}
           subtitulo="Tareas programadas más adelante"
           colapsableInicial
         >
-          <VacioMsg texto="Todo lo que viene más adelante está en orden." />
+          <VacioMsg texto="Consultá el calendario para ver las tareas programadas después de esta semana." />
         </FranjaUrgencia>
-      </div>
-
-      {/* ───────── KPIs chicos ───────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-        <Kpi label="Activos totales" value={kpis.totalActivos} icon={Package} tint="text-brand-600 bg-brand-50 dark:bg-brand-600/15" onClick={() => navigate('/activos')} />
-        <Kpi label="Operativos" value={kpis.operativos} icon={CheckCircle2} tint="text-ok-strong bg-ok/10 dark:text-ok" onClick={() => navigate('/activos')} />
-        <Kpi label="Fuera de servicio" value={kpis.fueraServicio} icon={Wrench} tint="text-danger-strong bg-danger/10 dark:text-danger" onClick={() => navigate('/activos')} />
-        <Kpi label="Inspecciones del mes" value={kpis.inspeccionesMes} icon={ClipboardList} tint="text-warn-strong bg-warn/10 dark:text-warn" onClick={() => navigate('/activos')} />
       </div>
 
       {/* ───────── Vistas secundarias (graficos + actividad) ───────── */}
@@ -310,6 +346,7 @@ const FranjaUrgencia: React.FC<FranjaUrgenciaProps> = ({
   return (
     <div className={`bg-surface border border-line border-l-4 ${t.border} rounded-md shadow-soft overflow-hidden`}>
       <button
+        aria-expanded={abierto}
         onClick={() => setAbierto((v) => !v)}
         className="w-full flex items-center gap-3 px-4 py-3 text-left"
       >
@@ -321,7 +358,7 @@ const FranjaUrgencia: React.FC<FranjaUrgenciaProps> = ({
             <h2 className={`font-display text-base sm:text-lg font-bold ${t.text}`}>{titulo}</h2>
             <span className={`text-sm font-semibold ${t.text} opacity-70`}>{contador}</span>
           </div>
-          <p className="text-xs text-muted truncate">{subtitulo}</p>
+          <p className="text-xs text-muted">{subtitulo}</p>
         </div>
         <ChevronRight
           size={18}

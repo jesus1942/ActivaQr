@@ -74,7 +74,10 @@ test('la landing abre una bitácora pública con avances verificables', () => {
   assert.match(bitacora, /@media\(max-width:640px\)/);
   assert.match(bitacora, /\.entrada\{grid-template-columns:1fr/);
   assert.match(landing, /@media\(max-width:820px\).*\.bitacora-preview-grid\{grid-template-columns:1fr\}/);
-  assert.equal(ENTRADAS_BITACORA[0].version, 'CONTROL DIRECTO');
+  assert.ok(ENTRADAS_BITACORA.some((entrada) => entrada.version === 'CONTROL DIRECTO'));
+  assert.ok(ENTRADAS_BITACORA.every((entrada, index, entradas) => index === 0 || entradas[index - 1].fechaIso >= entrada.fechaIso));
+  assert.ok(landing.includes(ENTRADAS_BITACORA[0].titulo));
+  assert.ok(bitacora.includes(ENTRADAS_BITACORA[0].titulo));
   assert.match(bitacora, /Las luces identificadas ahora se operan con un solo toque/);
   assert.match(bitacora, /Pulsadores grandes por canal/);
   assert.match(bitacora, /Vista en vivo multimarca mediante gateway HTTPS/);

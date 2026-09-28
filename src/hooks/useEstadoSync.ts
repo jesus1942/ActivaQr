@@ -71,11 +71,13 @@ export function useEstadoSync() {
     const handleOffline = () => setOnline(false);
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    window.addEventListener('activaqr:cola-cambiada', refrescarConteo);
     refrescarConteo();
     drenarAhora();
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('activaqr:cola-cambiada', refrescarConteo);
     };
   }, [drenarAhora, refrescarConteo]);
 
